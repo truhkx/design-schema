@@ -1,10 +1,22 @@
 # Gap digest — phase final
 
-Generated 2026-09-23T14:25 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-23T16:44 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
 Doc: `site/src/content/docs/components/accordion.md`
+
+### 2026-09-23 16:02 — web round 2
+
+- **DOC** Accordion: the check_hooks gate requires hooks for the locked `minTarget`, `focusRing` and `focusRingWidth`, but the spec says these are applied by the composed Disclosure and 'Accordion adds no rule for it'; the web notes also say `--ds-accordion-item-gap` is 'the only hook a consumer can set from CSS'. They aren't in `composition.item.forwards` (Disclosure has no overridable binding for them), so the gate's exemption doesn't apply. I declared all three on `.ds-accordion` with their token defaults and wrote no rule reading them. As a result they are inert: setting `--ds-accordion-focus-ring` from page CSS changes nothing. The doc should either list these bindings as exempt from the hook rule or say how they reach Disclosure's `--ds-disclosure-*` hooks, and it should stop calling item-gap the only CSS-settable hook. → `site/src/content/docs/components/accordion.md`
+
+### 2026-09-23 16:01 — web round 1
+
+- **DOC** Accordion: the controlled echo check is ambiguous: 'a set the accordion did not itself just emit' doesn't say whether the incoming `value` or the set shown after the `exclusive` trim is compared with the emitted set. I compare the raw incoming `value` (as a set, order ignored), so a parent that answers with extra ids under `exclusive` gets `controlled` reports. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: the spec says the warning fires once per distinct id list but not whether order matters. I key it on the ordered list, so ['a','b'] and ['b','a'] each warn once, since 'first' depends on order. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: examples say the story's args are 'exactly its given', but stories inherit the Default meta args (headingLevel '3', exclusive false, divided true, keepMounted false), which match the schema defaults. I left the inherited defaults in place instead of clearing them. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: the item type's `disabled` is written `disabled?: boolean | undefined` per the package convention; the schema shape says `disabled?: boolean`. The description allows this, but the shape string itself is not verbatim. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: `onKeyDown` from rest props runs before the arrow-key handler, and a consumer's `preventDefault()` skips arrow navigation. The spec doesn't say how a consumer keydown handler on the root interacts with the built-in keys. → `site/src/content/docs/components/accordion.md`
 
 ### 2026-09-21 14:33 — rn round 1
 
@@ -156,6 +168,24 @@ Doc: `site/src/content/docs/components/accordion.md`
 ## ActionSheet
 
 Doc: `site/src/content/docs/components/actionsheet.md`
+
+### 2026-09-23 15:39 — web round 2
+
+- **DOC** ActionSheet: maxWidth is locked and 'read from the theme token, not per instance', yet the hooks gate requires `--ds-action-sheet-max-width`. The breakpoint is decided before the sheet's <dialog> exists, so the hook on the root can never affect it. I declare it on the root and have the logic read a `--ds-action-sheet-max-width` set on :root first, falling back to `--layout-max-width-prose`. The doc should say whether a page-wide hook on :root is the sanctioned way to re-theme the breakpoint. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: titleColor is 'realized by the composed heading Text's tone="muted"; Text owns its color', but the gate requires a hook. I declare `--ds-action-sheet-title-color` (default color.foreground.muted) and point Text's `--ds-text-color` at it from the sheet's two-class heading rule, the same delivery titleSize uses. The doc should say that titleColor is delivered like titleSize (through Text's CSS hook, never through `overrides`) rather than 'not overridable'. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: minTarget, focusRing and focusRingWidth have no `part` in the schema. I apply them to the item rows (min-block-size, the :focus-visible outline); the Cancel row's Button keeps its own target and ring. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: FocusScope receives `returnFocusTo` (the opener captured when `open` turned true) on top of the listed composition props; the doc should allow it or name the restore target (carried over from round 1). → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the focusScope part is on a wrapper inside FocusScope, because FocusScope stamps its own data-part="scope" (carried over from round 1). → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: closing before the enter frame finishes the exit immediately rather than waiting for a transitionend that never fires; the exit binding's description should cover this (carried over from round 1). → `site/src/content/docs/components/actionsheet.md`
+
+### 2026-09-23 15:38 — web round 1
+
+- **DOC** ActionSheet: composition says focusScope receives exactly trapped/restoreFocus/autoFocus none/active, but the web implementation also passes FocusScope's `returnFocusTo` (the opener captured once when `open` turned true), because otherwise FocusScope restores to whatever was focused when it activated, which can be wrong after a switch from the wide presentation to the sheet while open. The doc should either allow `returnFocusTo` or say the restore target is FocusScope's own capture. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the `focusScope` anatomy part can't sit on FocusScope itself on web, because FocusScope stamps its own data-part="scope" after its rest spread. I put it on a wrapper div inside the scope, as BottomSheet does. The platform note should say this, as it does for cancelButton and itemIcon. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the doc doesn't say what happens when `open` goes false before the enter frame has run. I finish the exit at once (close() and unmount) instead of waiting for a transitionend that never comes, matching the overlay first-frame Escape fix; the exit binding's description should cover this case. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the scrim dismisses only for a click whose target is the scrim element itself (a click that bubbled up from a child doesn't count), matching BottomSheet. The doc says only 'the scrim was clicked'. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the doc says the drag claims 'a pointer' but not which: non-primary pointers and secondary mouse buttons never claim the gesture (as BottomSheet). The doc could say so. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the `with-an-unavailable-action` example has only one enabled action, so the Keyboard story (not that example) is the one with at least three focusable children; no story exercises roving over a disabled row in the browser, only the unit test does. → `site/src/content/docs/components/actionsheet.md`
 
 ### 2026-09-23 04:33 — web round 1
 
@@ -362,6 +392,15 @@ Doc: `site/src/content/docs/components/actionsheet.md`
 
 Doc: `site/src/content/docs/components/alert.md`
 
+### 2026-09-23 15:00 — web round 1
+
+- **DOC** Alert: the web notes say 'no role when off' and give the root a name either way, but they don't say whether the icon span and content column need data-part hooks beyond the anatomy; only the anatomy parts (container, icon, heading, body, dismissButton) got data-part, and the content column wrapper has none. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the Overrides section says a binding forwarded to a child's overrides declares no hook, but iconSize is both forwarded to the Icon's `overrides.size` and written as --ds-alert-icon-size for the icon-box math; the iconSize description wins, so both exist. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the Behavior section limits the focus-onward step to when focus is inside the alert (`:focus-within`), but the web notes and the onDismiss description don't repeat this. The code checks root.matches(':focus-within') at click time; with a click that focused nothing, focus stays where it was. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the spec doesn't say whether jsdom-only tests of the focus-onward step count as behaviour scenarios; they are extra tests in a separate describe block, and the 14 scenarios stay one test each. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the spec doesn't say whether a `contenteditable="false"` element is a focus candidate; it is excluded (matches `[contenteditable]:not([contenteditable="false"])`). → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the WithHeading and WithLink stories are extra 'notable states' the spec doesn't list; they were kept from the previous generation. WithLink uses Link's `tone="inherit"`, which the Alert spec never mentions (the contrast list checks color.link, the default tone). → `site/src/content/docs/components/alert.md`
+
 ### 2026-09-21 03:21 — rn round 1
 
 - **DOC** Alert: the `icon` style binding says the Alert-owned box 'adds no accessibility props on any platform', while the package convention is to hide decorative glyphs with `accessibilityElementsHidden`/`importantForAccessibility="no"`. I followed the schema and left the box bare, relying on Icon self-hiding when it has no `label` — but the doc never states that the box may omit them *because* Icon sets them, so the two readings look contradictory in isolation. → `site/src/content/docs/components/alert.md`
@@ -515,6 +554,21 @@ Doc: `site/src/content/docs/components/alert.md`
 ## AlertDialog
 
 Doc: `site/src/content/docs/components/alertdialog.md`
+
+### 2026-09-23 15:24 — web round 2
+
+- **DOC** AlertDialog: `focusRing` and `focusRingWidth` are locked bindings with no part, and every focusable element inside the dialog is a composed Button that draws its own ring from its own tokens. The hooks gate needs these hooks to be read somewhere, so they style a `:focus-visible` outline on the <dialog> element itself, which is only reachable if the browser focuses the dialog (for example, a native re-open before Cancel takes focus). The spec should say which element, if any, these bindings style on web. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: the round-2 axe failure was ERR_CONNECTION_REFUSED on localhost:6007 (no Storybook server running), not a violation. The scoped rerun with a Storybook webServer passes in light and dark, and no code was changed for it. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: `tools/check_hooks.ts` still exits 1 across the repo because of 375 locked bindings without hooks in other React and Lit components, including Lit AlertDialog. The React AlertDialog no longer appears, but a gate run over the whole repo will stay red until those are fixed. → `site/src/content/docs/components/alertdialog.md`
+
+### 2026-09-23 15:23 — web round 1
+
+- **DOC** AlertDialog: the Keyboard-story rule asks for at least three focusable children, but the Behavior section says it doesn't apply because there are exactly two (Cancel, Confirm). Chose the doc: the Keyboard story renders the trigger plus the two buttons. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: 'The heading's id, ref and tabindex' is listed as wiring every platform passes, but the web notes never say what the heading ref or tabindex is for, since initial focus is on Cancel. Chose to pass only `id` (for aria-labelledby) and no ref or tabindex. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: the per-part wrappers for cancelButton and confirmButton forward a click that lands on the wrapper to the Button (the package's overlay part-wrapper rule). The spec doesn't say whether this applies to Confirm when `confirmDisabled` is set. The forwarded click reaches Button's own disabled guard, so onConfirm still doesn't fire. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: `layer` is described as a no-op in the top layer, but the web CSS still writes it as `z-index` on the <dialog>, as the doc says. Kept it. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: the `inset` binding says block padding sits once on the surface column and inline padding on every part. The description is a wrapper inside the text column, not a direct surface child, so the inline inset is applied on the icon-and-text row and the footer rather than on each named part. The rendered result is the same. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: nothing says whether the development warning should fire again if `heading` goes empty after an earlier warning, or on a later re-open. Chose once per mount, and only while open. → `site/src/content/docs/components/alertdialog.md`
 
 ### 2026-09-21 07:13 — rn round 1
 
@@ -708,6 +762,23 @@ Doc: `site/src/content/docs/components/alertdialog.md`
 ## BottomSheet
 
 Doc: `site/src/content/docs/components/bottomsheet.md`
+
+### 2026-09-23 15:36 — web round 2
+
+- **DOC** BottomSheet: the hooks gate and the spec conflict on maxWidth. The gate says a locked binding must declare a hook that its rules read. The spec says maxWidth 'styles nothing': the breakpoint is read from the theme token on the page root, not per instance, and the sheet's root doesn't exist yet when that choice is made. I declared --ds-bottom-sheet-max-width with the token as its default so the gate and the naming codemod can find it. The component never reads it, so consumer CSS on that hook does not move the breakpoint. The doc should say whether a breakpoint-only locked binding gets a hook, and whether a hook nothing reads is acceptable or the binding should be exempt, like forwarded bindings. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: (carried from round 1) dragSlop says rem and em 'multiply by the root font size', but em is relative to the element's font size. I followed the spec. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: (carried from round 1) the closeButton wrapper rule (focus the Button and call onClose itself) contradicts the package convention that a part wrapper forwards the press with button.click(). I followed the spec. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: (carried from round 1) the examples' footer args are prose strings ('Clear and Apply Buttons'), so the Filters and FullScreenTask stories show that text instead of real Buttons. → `site/src/content/docs/components/bottomsheet.md`
+
+### 2026-09-23 15:35 — web round 1
+
+- **DOC** BottomSheet: maxWidth is locked, and the conventions say a locked binding keeps its hook, but the spec also says it 'styles nothing' and the breakpoint is 'read from the theme token, not per instance'. I declared no --ds-bottom-sheet-max-width hook, because a hook that nothing reads would suggest consumer CSS can move the breakpoint. The doc should say whether locked-but-unstyled bindings get a hook. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: the SSR rule says to render the narrow form on the server and switch after mount, but both presentations portal, so the server renders nothing either way. I gate everything on an 'undecided' state (null until a layout effect reads the breakpoint) so a wide client-only mount never calls showModal on the narrow sheet and then tears it down. The doc could say that the presentation is decided before first paint and that nothing renders until then. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: dragSlop says rem and em 'multiply by the root font size'. Em is relative to the element's font size, not the root's. I followed the spec and multiply both by the root font size. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: the closeButton wrapper rule (focus the Button and call onClose itself, never button.click()) contradicts the package convention that a part wrapper forwards the press with button.click(). The spec section wins, so I followed it; the digest or the doc should reconcile the two. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: the examples' `footer` args are prose strings ('Clear and Apply Buttons', 'Cancel and Save Buttons'), and 'exactly its given as args' puts them in the story as literal text rather than real Buttons. I kept them verbatim, so the Filters and FullScreenTask stories show text where the actions would be. The doc could give example footers as content descriptions the generator may render. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: contentCap (0.9) is described as a 'documented module constant marked literal-ok', but on web the cap is only used in CSS (max-block-size: 90dvh). No TS constant exists, because script never reads it. The doc could say that web expresses it only in the stylesheet. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: when the viewport crosses the breakpoint while open, the spec says focus and scroll lock are 're-established by the new surface' but not where focus lands. I used the sheet's initial-focus order going narrow and Dialog's default ('first') going wide. → `site/src/content/docs/components/bottomsheet.md`
 
 ### 2026-09-21 09:09 — rn round 1
 
@@ -1171,6 +1242,13 @@ Doc: `site/src/content/docs/components/box.md`
 ## Breadcrumb
 
 Doc: `site/src/content/docs/components/breadcrumb.md`
+
+### 2026-09-23 15:03 — web round 1
+
+- **DOC** Breadcrumb: collapse is a boolean, so there is no enum; the rule 'one story per enum value' was read as CollapseTrue/CollapseFalse, which repeat the DeepTrailCollapsed example's items — the doc does not say which items those two stories should use. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the behavior says tabindex=-1 goes on the index-1 <li> 'when focus moves' only when no revealed item is a link; the doc does not say whether a later items change that makes index 1 a link (or leaves no fallback needed) should remove it. Kept it on index 1 for the life of the instance, per 'belongs to the position'. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the ellipsis <li> carries data-part="item" and minTarget like the other items; the doc says it 'sits in its own item like any other' but does not say whether it shares the `item` part hook, so tests that count `item` parts see length+1 fewer-hidden entries when collapsed. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the Default story's args are not specified by the doc; used the settings-trail example (three items), so the collapsed path and the focus-after-expand behavior have no behavior scenario on web. → `site/src/content/docs/components/breadcrumb.md`
 
 ### 2026-09-21 03:46 — rn round 1
 
@@ -1944,6 +2022,14 @@ Doc: `site/src/content/docs/components/code.md`
 
 Doc: `site/src/content/docs/components/card.md`
 
+### 2026-09-23 14:46 — web round 2
+
+- **DOC** Card: the axe gate failure is in the test setup, not the component. playwright.config.ts starts the React Storybook on fixed port 6007 with reuseExistingServer: true, and another checkout took 6007 while the gate was starting. This worktree's Storybook died with EADDRINUSE and Playwright tested the other checkout's server, which went away or hung (a timeout in round 2; ERR_CONNECTION_REFUSED and a hang in my reruns). Card's 22 stories pass axe in light and dark against this worktree's own Storybook on a private port (logs/card-axe.config.ts), so I changed no component code. The gate needs a port per worktree or reuseExistingServer: false. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the web platform notes say `focusable` draws its ring 'on :focus-visible', but the a11y note says it must draw whenever the card takes focus, tracked from focusin/focusout and skipped after a pointerdown. I did both: an outline on :focus-visible OR on a `ds-card--focus-ring` class set from focusin. → `site/src/content/docs/components/card.md`
+- **DOC** Card: Behavior says '`tabIndex` is not a Card prop' but doesn't say whether to remove it from the props type. CardProps inherits `tabIndex` from the article props and passes it through, and `focusable` overrides it. → `site/src/content/docs/components/card.md`
+- **DOC** Card: a Link or Button target is recognised by component identity (Link, Button, 'button', or 'a' with href). A wrapper around Link (memo, a re-export) isn't recognised and falls back to non-interactive with a warning. The doc doesn't say whether wrappers count. → `site/src/content/docs/components/card.md`
+- **DOC** Card: a disabled target only removes hover. The keyboard ring still draws around a focused disabled target, since Button stays focusable when disabled. The notes don't say which is intended. → `site/src/content/docs/components/card.md`
+
 ### 2026-09-23 14:18 — web round 1
 
 - **DOC** Card: the web platform notes say `focusable` draws its ring 'on :focus-visible', but the a11y note says it must draw whenever the card takes focus, tracked from focusin/focusout and skipped after a pointerdown, because Chromium doesn't match :focus-visible on focus() after a pointer interaction. I did both: an outline on :focus-visible OR on a `ds-card--focus-ring` class set from focusin. The web note should say 'on focus (focusin state), as well as :focus-visible'. → `site/src/content/docs/components/card.md`
@@ -2381,6 +2467,13 @@ Doc: `site/src/content/docs/components/card.md`
 
 Doc: `site/src/content/docs/components/carousel.md`
 
+### 2026-09-23 16:23 — web round 1
+
+- **DOC** Carousel: 'Reaching the last page without loop counts as stopped' does not say whether it applies when every slide fits on one page (total ≤ page) — chose: yes, rotation shows copy.play at once and a timer is never started. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: pressing play in a controlled carousel stopped at the end fires onChange(0, 'autoplay'), but if the parent keeps activeIndex it is still on the last page and rotation stops again right away — the doc doesn't say whether play should wait for the index to change; left as immediate re-stop. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the missing-label development warning is only described for the tabs picker's text; chose to warn only when picker is 'tabs', since dots and none never show the label. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the `@container (max-width: 572px)` breakpoint copies layout.maxWidth.prose from the built tokens (same in calm-precise and warm-sleek); the doc says to duplicate it but doesn't give the value per theme. → `site/src/content/docs/components/carousel.md`
+
 ### 2026-09-23 13:43 — web round 1
 
 - **DOC** Carousel: the missing-`label` development warning is tied to the tabs fallback text, but the doc also says `label` is required 'on every platform'. It does not say whether a dots or none picker should warn when the label is unused; I chose to warn only when picker is `tabs`, where the fallback text is actually shown. → `site/src/content/docs/components/carousel.md`
@@ -2610,6 +2703,22 @@ Doc: `site/src/content/docs/components/carousel.md`
 
 Doc: `site/src/content/docs/components/checkbox.md`
 
+### 2026-09-23 14:51 — web round 2
+
+- **DOC** Checkbox: the spec contradicts the hooks gate. indicatorStroke ('It declares no --ds-checkbox-* hook on any platform: Icon already applies it'), descriptionText and errorText ('Realised by the composed Text's muted/danger tone; no --ds-checkbox-* hook') are locked but not in composition.forwards, so tools/check_hooks.ts, which only exempts forwarded bindings, requires a hook for each. Chose to declare all three on the root with their tokens, as DatePicker already does, and have no rule read them, because the composed Icon and Texts realise these bindings and must not be restyled. The doc should either drop the 'no hook' wording for these three or the gate should exempt bindings realised by a composed child's props or tone. As it stands, these hooks exist but changing them has no visible effect. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the helperSize doc says there is no hook 'because there is no element of Checkbox's own to hang it on', but under the gate's rule the same reasoning did not save descriptionText or errorText. helperSize only passes because it is forwarded. The doc's explanation for which bindings skip a hook should use the gate's criterion (forwarded, or not). → `site/src/content/docs/components/checkbox.md`
+
+### 2026-09-23 14:50 — web round 1
+
+- **DOC** Checkbox: partGap says the error indent is 'padding-inline-start on the message itself', but the message is a composed Text and the conventions forbid restyling a child (and Text has no padding override). Chose a wrapper div (.ds-checkbox__error) around the Text that carries the padding; the Text keeps data-part="errorMessage" and role=alert. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: minTarget gives the padding formula and the minimum height but not the box model. With content-box sizing, min-block-size plus the padding would make a one-line row taller than minTarget. Chose box-sizing: border-box on the row. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the clamp 'max(0, …)' needs a unit in CSS. Wrote max(0px, …); lint_literals accepts 0px. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: hideLabel uses the absolute clip pattern but names no containing block. Chose position: relative on the row, so the hidden label stays inside the row's hit area. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the web note says Fieldset's group disabled arrives only as the disabled prop. The component also treats FormContext.disabled as disabled, since the conventions say every field reflects a disabled Form. The doc doesn't mention this. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the controlled writeback needs the prop value from the render that received the click. The doc doesn't say that a parent which changes the prop inside onChange then relies on the post-render sync effect to set the new value. Kept both paths: an immediate writeback of the current prop, then the effect keyed on the checked state. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: FormContext's FormFieldValue comment says Checkbox contributes 'its value when checked', which contradicts the schema (form.valueType boolean: checked, false when unchecked). Followed the schema; the FormContext comment is stale. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: no enum props, so there are no <Prop><Value> stories. The spec doesn't say which state stories beyond the examples are required; kept Checked, Disabled, DisabledChecked, Invalid, WithError and Controlled. → `site/src/content/docs/components/checkbox.md`
+
 ### 2026-09-20 22:27 — rn round 2
 
 - **DOC** Checkbox: the RN platform notes list accessibilityRole, accessibilityLabel, accessibilityHint and accessibilityState but never mention the aria-* mirrors react-native-web needs. Under RNW 0.21 accessibilityState is dropped entirely, so role=checkbox ships without aria-checked and fails axe's aria-required-attr on every story. I added aria-checked as a prop and aria-disabled via a DOM effect (Button's existing pattern). The doc should state that any RN component carrying a role with a required ARIA state must mirror it, or the axe gate fails every time this component is generated. → `site/src/content/docs/components/checkbox.md`
@@ -2760,6 +2869,22 @@ Doc: `site/src/content/docs/components/checkbox.md`
 ## Combobox
 
 Doc: `site/src/content/docs/components/combobox.md`
+
+### 2026-09-23 16:00 — web round 2
+
+- **DOC** Combobox: `iconColor`'s description says it has no --ds-combobox-* hook because it is forwarded to each composed Icon's `overrides.color`, but `composition` declares no `forwards` entries (e.g. `toggleButton`/`clearButton`/`chipRemove` forwards `iconColor` → Icon `color`). check_hooks only exempts forwarded bindings through that field, so it demanded a hook. I declared `--ds-combobox-icon-color` (nothing reads it; the Icon override is unchanged). Better fix: add the `forwards` entries to the doc and remove the hook. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: `descriptionText` and `errorText` style the composed description and error Text, which gets its colour from `tone` (muted/danger); the combobox cannot apply a root hook to them without restyling the child. The doc gives them no `forwards` to Text either. I declared `--ds-combobox-description-text` and `--ds-combobox-error-text` on the root, and nothing reads them, the same as Select's `--ds-select-description-text`/`--ds-select-error-text`. The doc should say whether these are forwards (to a Text `color` binding) or hooks that are declared but not read. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the doc gives `inputMinTarget` (size.target.min) as the input's floor but does not say which axis. I applied it as `min-block-size` only; the input's inline floor stays at `size.target.comfortable`, which comes from the field layout and is not a binding. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: gaps from round 1 still apply: `--visible` fade class vs `enter`'s 'fade-in' wording; active option after async rows change (reset to none); `onActiveChange(null)` treated as 'no active option'; `copy.done`/`copy.activeOption` unused on web; getValue returning `string[]` although the FormContext type says `string | boolean | undefined`. → `site/src/content/docs/components/combobox.md`
+
+### 2026-09-23 15:59 — web round 1
+
+- **DOC** Combobox: the Overlays section of the conventions says every portaled overlay fades in with a `--visible` class; the Combobox doc's `enter` binding only says 'popup opacity fade-in'. I used the convention: `ds-combobox__popup--visible`, added one frame after the popup mounts, and dropped `@starting-style`. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the doc does not say which option is active after the async results change while the list is open. I reset it to no active option, the same as typing does. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the doc does not say what happens when the Listbox reports `onActiveChange(null)`. The list never has focus here, so I treat null as 'no active option'. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: `copy.done` and `copy.activeOption` are not rendered on web (the platform notes say so). The constants are left out of the COPY table rather than kept unused. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the `enter-commits-the-active-option` scenario only passes because an `open: true` prop opens with the selected-or-first rule (Apple here). If that rule changed, the scenario would have nothing to commit. The doc could say the scenario depends on it. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: `form.valueType: string[]`, but Form's `getValue` returns `string | boolean | undefined` in the conventions. As Listbox and Select do, I return an array with `multiple` and a bare string otherwise; the conventions' getValue type does not list arrays. → `site/src/content/docs/components/combobox.md`
 
 ### 2026-09-21 14:19 — rn round 1
 
@@ -3312,6 +3437,28 @@ Doc: `site/src/content/docs/components/container.md`
 
 Doc: `site/src/content/docs/components/datagrid.md`
 
+### 2026-09-23 16:35 — web round 1
+
+- **DOC** DataGrid: the package digest gives no API for the composed children (Input/NumberInput/Select/DatePicker/Checkbox/Button/Text/Heading props and override binding names), and the generator may open only one file; I read Table.tsx and searched the others' prop interfaces. The doc or digest should list each composed child's props used (hideLabel, size, defaultValue, open/onOpenChange, container, overrides keys). → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: the column `editor` is optional with no stated default; I used `number` when the cell's raw value is a number, otherwise `text`. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: typing a printable character opens a number editor 'with that character as its defaultValue', but NumberInput.defaultValue is a number; I use Number(char) and leave it empty for a non-digit such as '-' or '.'. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: the text editor commits a string, so committing an untouched text editor on a numeric cell ('12' vs 12) fails Object.is and fires onCellChange; the spec doesn't say whether the text editor should keep the value's original type. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: date editor blur-commit — the spec forbids reading DatePicker internals, but focus moving into the calendar popup is a blur of the text field. I skip the commit when relatedTarget is outside the grid inside [role=dialog]/[role=listbox]/[popover]; the doc should name the sanctioned test. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: Select editor — 'opens its popup at once' plus 'closing without a choice cancels': I pass open={true} with onOpenChange(false) → cancel. Whether Select calls onChange before onOpenChange(false) is not documented; I guard with a closed flag. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: Enter/Tab/F2/Escape on a checkbox editor are unspecified (it commits on change only); only Escape (cancel) and F2 (commit in place) apply to it, and Enter does nothing. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: the caption part is 'a span the grid owns around the composed Heading', which puts an <h2> inside a <span> (invalid content model); I followed the spec and made the span display:block. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: headerWeight/headerSize are forwarded to the sort Button, but they also style plain (non-sortable) header text on the header part; I kept a root hook for both besides the forward, against the 'a forwarded binding declares no hook' rule. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: minTarget is locked and forwarded to Checkbox.controlSize, yet it is also the resize floor that must be measured; I declared --ds-data-grid-min-target for the probe. statusBarColor is locked but the status Texts are tone=muted; I set it as `color` on the bar div so the hook is not dead. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: resizeHandle aria-valuemin 'is the column's minWidth', whose default is size.target.min, unknown in px at render; I omit it until the probe has measured after mount, then write the measured value. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: rowsPerPage needs a measured row and region; unmeasured (jsdom, first frame) there is no stated fallback, so PageUp/PageDown move one row and onRangeNeeded asks for one row until measured. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: range mode — the spec says a plain navigation key collapses the range, but not what happens when the plain key moves into the header row; I leave the range untouched there. Shift+ArrowUp from the first body row is clamped to the body. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: cell mode has no copy for a status-bar selection count (selectedRows is rows, selectedRange is range), so nothing shows there in cell mode; statusBarGap says 'the selection count only while something is selected' without covering cell mode. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: pointer clicks on the select Checkbox or sort Button take real focus; the spec doesn't say whether focus returns to the grid. I refocus the grid after clicks on grid-owned parts, while a control rendered by `render` keeps focus until Escape. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: Delete/Backspace fires onCellChange 'only when the committed value differs' — I skip cells already undefined; the spec's clearing rule doesn't say whether the Object.is rule applies to a clear. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: keyboard resize direction in RTL is unspecified; I made the arrow pointing toward the trailing edge widen (ArrowRight in LTR, ArrowLeft in RTL), matching the pointer drag. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: the examples' `height: fixed` (RangeSelection) with no overrides.fixedHeight renders no visible rows by design; the HeightFixed story adds overrides.fixedHeight 'layout.maxWidth.prose', a token the spec doesn't name for this. The doc could suggest a token for demos. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: the Keyboard story needs 'at least three focusable children', but the grid's model is one tab stop with every inner control demoted to tabindex=-1; I used selectable row with 20 rows (demoted Checkboxes and sort Buttons are still focusable by script). The gate's expectation for a one-tab-stop composite should be stated. → `site/src/content/docs/components/datagrid.md`
+
 ### 2026-09-23 13:52 — web round 1
 
 - **DOC** DataGrid: headerSize/headerWeight are forwarded to the sort Button's overrides AND style the header part (the text of non-sortable headers). The 'forwarded bindings declare no hook' rule doesn't say what happens when a binding does both; I kept their hooks. captionSize/captionWeight/statusBarSize are only forwarded, so I dropped their hooks. → `site/src/content/docs/components/datagrid.md`
@@ -3577,6 +3724,18 @@ Doc: `site/src/content/docs/components/datagrid.md`
 
 Doc: `site/src/content/docs/components/datepicker.md`
 
+### 2026-09-23 16:20 — web round 1
+
+- **DOC** DatePicker: `value` says 'on blur ... the inputs show the formatted value', but that would erase unparseable text (so `copy.invalid` could never be reported on blur-validated forms) and a typed end of an incomplete range (so the range `required` message could never fire). Chose: on blur, reformat only an input whose text parses (single), or both inputs when both parse (range); unparseable text and one-sided ranges are kept. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the composition gives Popover exactly `initialFocus: none`, but the web notes and the Tab cycle (prev, month, year, next, grid, Today, Clear) assume no close button, and Popover's `dismissible` defaults to true. Chose: also pass `dismissible={false}` and `placement="bottom-start"`; the composition's `props` should list both. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `locale` defaults to `document.documentElement.lang`, which cannot be read in render under the SSR rule. Chose: render first with the Intl default and switch after mount (the inputs reformat on the locale change). The Intl default itself can differ between server and browser, which can still mismatch the placeholder on hydration; the doc does not say what the server should assume. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: calendarInset is forwarded to Popover `inset`, so per the hook rule it declares no parent hook, while the web note says DatePicker 'declares the --ds-date-picker-* hook defaults' on the calendar content. Chose: no hooks for any forwarded binding (helperSize, monthTitleSize, monthTitleWeight, calendarInset); fontFamily keeps its hook because the field reads it too. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: descriptionText and errorText are locked bindings on the description/errorMessage parts, but those parts are composed Text components whose colour comes from `tone`, and restyling a child is forbidden. Chose: declare the hooks (the locked-hook rule) with nothing reading them; the Text tones realise the tokens. The doc should either forward them or say the hook is inert on web. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the today-ring spec says web animates the ring's border-color and that the focus ring uses the ring's geometry, while the a11y rules require an outline on :focus-visible. Chose: the today ring is a transparent-by-default border of dayTodayBorderWidth; focus is an outline inset by focusRingWidth over the same box, and the today border goes transparent while focused. If the two width tokens ever differ, the rings no longer share a geometry. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `isDateDisabled` says Arrow keys stop 'before min/max, or, with no bound in that direction, ... within 3660 days' but does not say whether the bound in the travel direction or either bound counts. Chose: the bound in the direction of travel (min for backward, max for forward); either bound still stops the step if it is crossed. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `tooEarly`/`tooLate` show `{min}`/`{max}` in the input's pattern, and an unparseable bound is 'still compared as a string', but the doc gives no text for an unparseable bound in the message. Chose: fall back to the raw bound string. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: Escape from inside the calendar with a controlled owner that ignores onOpenChange: Popover records reason `escape` but does not close, and that stale reason is reused on a later parent-driven close (focus then returns to the button even if it had left the panel). Popover-level behaviour, not addressed here. → `site/src/content/docs/components/datepicker.md`
+
 ### 2026-09-21 17:51 — rn round 1
 
 - **DOC** DatePicker: the grid's accessible name has no native home. The rn notes say `copy.gridLabel` is "the accessibilityLabel of the grid View", but a View with an accessibilityLabel and no `accessible` exposes no name on native, and setting `accessible` would swallow all 42 day buttons. I set the label and left the View non-accessible, so the month/year name is reachable only through the AccessibilityInfo announcement on month change — the name is not discoverable by swiping into the grid. The doc needs to either drop the claim or name a different carrier (e.g. a visible month heading Text inside the sheet). → `site/src/content/docs/components/datepicker.md`
@@ -3788,6 +3947,19 @@ Doc: `site/src/content/docs/components/datepicker.md`
 ## Dialog
 
 Doc: `site/src/content/docs/components/dialog.md`
+
+### 2026-09-23 15:20 — web round 2
+
+- **DOC** Dialog: the task's Rules and web platform notes draw the heading focus ring straight from `--color-border-focus` / `--border-width-focus` and the surface from the `color.overlay.surface` token, and never say that locked bindings (surface, focusRing, focusRingWidth) need their own `--ds-dialog-*` hook. That rule is only in the conventions digest ('locked closes the override API, not the styling hook'), and the first round missed it. I added `--ds-dialog-surface`, `--ds-dialog-focus-ring` and `--ds-dialog-focus-ring-width` on the root, defaulting to the tokens, with the rules reading the hooks. The component doc's style section could say this for locked bindings directly. → `site/src/content/docs/components/dialog.md`
+
+### 2026-09-23 15:19 — web round 1
+
+- **DOC** Dialog: the Guidance says focus restore runs 'when `open` becomes false, at the start of the exit transition', but the web notes say FocusScope 'keeps ownership of capturing and restoring the opener', and FocusScope restores only on unmount, which comes after the exit transition. I kept FocusScope's ownership, so focus returns at the end of the exit transition. The doc should pick one, or FocusScope needs a way to restore without unmounting. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: the Guidance lists the story set as Default, one per size and initialFocus, the examples, Closed and Keyboard, with 'a platform adds none of its own'. But generated/examples/Dialog.json (and the Lit and RN stories) still reference HideHeading, WithDescription and NotDismissible (storyIds dialog-react--hide-heading and dialog-react--not-dismissible), so removing them from React alone would break the website examples. I kept them. The doc and the examples index need to agree. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: the reading-dialog example has no `footer`, and the Guidance says to restate it as absent because Storybook merges meta.args. It doesn't say how, and Storybook may drop an `undefined` arg rather than let it override. I used `footer: null`; the doc could name the value. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: the parts section says the body forwards `inset` to `overrides.paddingInline`, while the web notes say the stylesheet hook is 'the whole delivery'. I followed the web notes: the Box gets no element-level override, and `.ds-dialog__body > .ds-box` sets `--ds-box-padding-inline`. For footerGap the doc says 'either route', so the Stack gets both. The doc should say whether web passes the Box override at all. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: the spec leaves the source of Escape open. It routes Escape through the native `cancel` event, but jsdom never fires `cancel`, and the tests press Escape with a keydown. I handle Escape on keydown (preventDefault, report once) and keep `cancel` and `close` as fallbacks, with one guard so each Escape is reported exactly once. The doc could state keydown as the primary path on web. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: the Controlled state section says `open` is 'uncontrolled from its initial state when omitted', which contradicts the prop description ('Controlled only — there is no uncontrolled mode'). I followed the prop: `open` is required and there is no local open state. → `site/src/content/docs/components/dialog.md`
 
 ### 2026-09-22 01:38 — lit round 1
 
@@ -4062,6 +4234,14 @@ Doc: `site/src/content/docs/components/dialog.md`
 
 Doc: `site/src/content/docs/components/disclosure.md`
 
+### 2026-09-23 14:59 — web round 1
+
+- **DOC** Disclosure: fullWidth says 'Accordion sets it on every section it renders', but the existing packages/react/src/Accordion.tsx does not pass fullWidth and the Disclosure-only generation scope did not allow editing it; Accordion sections stay content-width until Accordion is regenerated. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: minTarget says the trigger is 'inline-level on web' (start-aligned), but the web notes make the root a wrapping <div> without saying what layout it uses. The previous flex-column root stretched the trigger across the row, contradicting that. I chose a flex column with align-items: flex-start and gave the panel align-self: stretch; the doc should say which root layout to use. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the fullWidth description says 'block-level flex box' for the trigger but doesn't say what happens to the headingLevel wrapper. I made the heading stretch as well, otherwise the trigger inside it can't reach the full row. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: no behavior scenario covers fullWidth (for example, the trigger spans its container), and none covers the onToggle echo and pending-request rules or focus returning to the trigger when the panel closes. These are only described in prose, so the tests don't check them. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: copy.expanded/copy.collapsed are declared but the web notes say they are SwiftUI-only; I left them unused on web as instructed. The spec's rule to 'use every copy.* string verbatim' contradicts this, and the platform note wins. → `site/src/content/docs/components/disclosure.md`
+
 ### 2026-09-21 03:12 — rn round 2
 
 - **DOC** Disclosure: the rn notes say `accessibilityState={{ expanded, disabled }}` is how the state is conveyed, but react-native-web 0.21 ignores accessibilityState entirely — under the axe gate (which runs the RN stories on react-native-web) neither state reaches the DOM. Both had to be mirrored: aria-expanded as a prop, aria-disabled written onto the node in an effect (Pressable's own `disabled` would set the native attribute and drop the trigger from the tab order). The doc should say accessibilityState alone is not sufficient on rn, as Button, Checkbox, Switch and RadioGroup already work around. → `site/src/content/docs/components/disclosure.md`
@@ -4210,6 +4390,23 @@ Doc: `site/src/content/docs/components/disclosure.md`
 ## Divider
 
 Doc: `site/src/content/docs/components/divider.md`
+
+### 2026-09-23 14:48 — web round 3
+
+- NOISE: 5 repeated or empty line(s) collapsed
+
+### 2026-09-23 14:48 — web round 2
+
+- **DOC** Divider: the spec and the hooks gate conflict on `labelColor`. The gate (and the overrides contract: 'locked bindings… keep their hook; rules read the hook') requires `--ds-divider-label-color`, but the labelColor description says Divider writes no label colour rule because it would restyle the composed Text, and labelColor is not in `composition.label.forwards`, so the forwarded-binding exemption does not apply. I declared the hook on the root, defaulting to `var(--color-foreground-muted)`, and no rule reads it. Setting it from page CSS does nothing, and the label is re-themed only through Text's own hooks. The doc should either add labelColor to the forwards exemption or say the hook is declared but inert. → `site/src/content/docs/components/divider.md`
+- NOISE: 4 repeated or empty line(s) collapsed
+
+### 2026-09-23 14:47 — web round 1
+
+- **DOC** Divider: the web notes say the labelled line spans are 'flex-grow' but give no flex-basis or a rule for long labels (only the rn notes say a long label overflows rather than wraps); chose `flex: 1 1 0` on each line piece and left the Text free to wrap on web. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: a horizontal unlabelled divider is described as 'block-level and fills its container's inline size', which says nothing about a horizontal divider inside a horizontal flex row (where block-level does not fill); chose an explicit `inline-size: 100%` on the unlabelled horizontal root and the labelled row. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: 'overrides change values, never presence' is spelled out for `spacing` and `labelGap` but not for `labelSize`/`fontFamily` when no label is in effect; chose to drop them (moot on web, since no Text renders then). → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the decorative-divider scenario asserts `aria-hidden` without naming the element; the test reads it on the `data-ds="Divider"` root (the hr). → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the dev warning uses a module-level `process` guard (`typeof process !== 'undefined' && process.env.NODE_ENV !== 'production'`) because the spec gives only the condition, not how to guard when `process` is undefined. → `site/src/content/docs/components/divider.md`
 
 ### 2026-09-22 04:20 — rn round 1
 
@@ -4463,6 +4660,13 @@ Doc: `site/src/content/docs/components/folds.md`
 
 Doc: `site/src/content/docs/components/feed.md`
 
+### 2026-09-23 16:43 — web round 1
+
+- **DOC** Feed: the web notes say the loading indicator is 'not live, aria-busy covers loading', but the ProgressBar they specify (`label={copy.loading} hideLabel`) announces `copy.indeterminate` by default (announce defaults to `complete`). I passed `announce="none"`; the notes should list that prop on the composed ProgressBar. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: relative timestamps are 'computed at render' from Date.now() and `Intl.DateTimeFormat(undefined, …)`, but the SSR rule says the first client render must match the server's. A minute boundary crossed between server render and hydration, or a server locale different from the browser's, changes the text and title. I kept render-time computation as specified; the doc doesn't say whether this hydration mismatch is accepted or should be fixed in a layout effect after mount. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the `newItemsButton` part hook is on the always-present role="status" row, but the doc doesn't say whether the hook exists while no button is shown. I put `data-part="newItemsButton"` on the row only while the button is shown, while `newItemsLayer` (z-index) applies to the row at all times. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: timestampColor is 'expressed as the composed Text's tone="muted"', yet the locked binding still declares its hook. I also read `--ds-feed-timestamp-color` on Feed's own <time>, so the hook is live from page CSS. The doc doesn't say whether the hook should style the <time> or only be declared, as endMessageColor and emptyStateColor are. → `site/src/content/docs/components/feed.md`
+
 ### 2026-09-23 14:24 — web round 2
 
 - **DOC** Feed: timestampColor, endMessageColor and emptyStateColor are locked and 'expressed as the composed Text's tone="muted"', and focusRing/focusRingWidth are 'child-owned on web'. None of them is forwarded to a child's overrides, so check_hooks requires a --ds-feed-* hook, but web never restyles a child, so the hook has no element to style. I declared all five on .ds-feed. Only timestamp-color is read, by Feed's own <time class="ds-feed__timestamp">. The end-message, empty-state and focus-ring hooks are declared and unread, so re-theming them from page CSS does nothing on web. The doc should either mark these bindings as child-expressed and exempt from check_hooks, or say which Feed-owned element reads each hook (for example a Feed-owned span inside the end-message/empty-state Text). → `site/src/content/docs/components/feed.md`
@@ -4687,6 +4891,22 @@ Doc: `site/src/content/docs/components/feed.md`
 
 Doc: `site/src/content/docs/components/fieldset.md`
 
+### 2026-09-23 15:09 — web round 2
+
+- **DOC** Fieldset: the spec says legendColor, descriptionText and errorText have 'no --ds-fieldset-* hook' because the Texts' tones realise them. That contradicts the package convention (locked closes the override API, not the hook; only forwarded bindings are exempt) and the check_hooks gate, which does not count tone-realised bindings as forwarded. Chose: follow the convention, as Meter does. The root declares --ds-fieldset-legend-color / -description-text / -error-text, and each Fieldset-owned wrapper points the token its Text's tone reads (--color-foreground / -muted / -danger) at that hook. The hooks are live and the Text is not restyled. The doc should drop 'no --ds-fieldset-* hook' for these three and describe the token re-scope. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the literals gate matches `fontFamily: '` as a font-stack literal even when the value is a TokenRef path ('font.family.body') sent through a child's overrides. Chose: a `literal-ok` marker on that line. The doc or lint rule could allow token paths in override objects. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the web notes say the required indicator counts 'only the value-bearing children' but give no way to tell a value-bearing component element from any other before render. Chose: native input (non-action types), select and textarea, plus every component element except the package's Button, Text and Fieldset, compared by identity. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: disabledOpacity requires aria-disabled on the dimmed <legend> and the role-less description <div>. ARIA 1.2 deprecates aria-disabled on generic elements. Chose: set it as written. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the examples give `children` as prose. Chose: real Input and Checkbox elements with the named labels. The NotificationPreferences Checkbox names stay notifyEmail/notifySms/notifyPush rather than the example's email/sms/push. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the disabled pass-down counts any component element as a field, so Text, Link or Icon children also receive a `disabled` prop. Kept as the web notes state it. → `site/src/content/docs/components/fieldset.md`
+
+### 2026-09-23 15:08 — web round 1
+
+- **DOC** Fieldset: the web notes say the required indicator counts 'only the value-bearing children' but give no way to tell a value-bearing component element from any other before render (e.g. Button vs Input). Chose: native input (except type button/submit/reset/image), select and textarea, plus every component element except the package's Button, Text and Fieldset, compared by identity. A consumer's own non-field component (say a Link or a custom hint) beside required Inputs therefore still suppresses the indicator. The doc should name the rule (an explicit list, a static marker on field components, or 'has a name prop'). → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: disabledOpacity requires aria-disabled on every dimmed element; on web those are the <legend> and a role-less <div data-part="description">. ARIA 1.2 deprecates aria-disabled on generic elements, and the spec doesn't say whether axe tolerates it there. Chose: aria-disabled="true" on both, as written. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the four examples give `children` as prose ('An Input name=street label=Street and ...'). Chose: build the stories from the package's real Input and Checkbox elements with those names and labels. The Checkbox names in NotificationPreferences stay notifyEmail/notifySms/notifyPush from the earlier generation, not the example's email/sms/push. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the disabled pass-down counts any component element as a field, so Text, Link or Icon children also receive a `disabled` prop they may not declare. Kept as the web notes state it ('any component element'), but the doc could narrow it the same way as the required indicator. → `site/src/content/docs/components/fieldset.md`
+
 ### 2026-09-21 04:10 — rn round 2
 
 - **DOC** Fieldset: `disabledOpacity` on the legend and description collides with the `contrast-aa` requirement and the axe gate. Dimming color.foreground on color.background by opacity.disabled drops the legend under 4.5:1, and under react-native-web that dimmed text is real DOM the checker measures. The schema says where the opacity goes but never says how the dimmed state is marked, so the gate reads it as a contrast failure. Chose `aria-disabled` on the two Fieldset-owned wrapper Views that carry the opacity, matching Input's precedent — note this sits in tension with the rn note "A non-accessible View exposes no state, so `disabled` is not asserted on the group": I assert it on the dimmed parts, never on the group root. The doc should state the rule (every element carrying disabledOpacity also carries aria-disabled) rather than leaving each component to rediscover it from a red gate. → `site/src/content/docs/components/fieldset.md`
@@ -4860,6 +5080,14 @@ Doc: `site/src/content/docs/components/fieldset.md`
 ## FocusScope
 
 Doc: `site/src/content/docs/components/focusscope.md`
+
+### 2026-09-23 15:11 — web round 1
+
+- **DOC** FocusScope: the notes say a reactivated scope is re-inserted 'directly below the lowest stacked scope it contains — rather than on top', but not where it goes when it contains no stacked scope; I put it on top (activation order), which is the only position that keeps every containing scope below it without inventing an order among unrelated siblings. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: 'the same walker the keyboard gate uses' does not say whether a shadow host's light children are walked in addition to its shadow root, or only through their slots, nor whether slot fallback content counts; I walk the flat tree (shadow root only, slots pull in assigned nodes, fallback content when nothing is assigned), so a slotted element is visited once, in rendered order. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: `styles: {}` and 'no appearance', but `autoFocus: container` makes the wrapper focusable, and a11y.requires omits focus-visible; I left the UA focus ring on the wrapper rather than add a token outline the schema does not declare — the doc should say whether a focused wrapper shows the system focus ring or none. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the notes put the restore marker 'beside' the opener without saying what kind of node; I use a Comment node, since an element could be picked up by layout or selectors — this inserts a foreign node into a React-owned parent, which React tolerates but the doc could name. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: unmount order for nested scopes that unmount in the same commit is unspecified (the outer's cleanup can restore before the inner's); I left each scope restoring to its own opener independently. → `site/src/content/docs/components/focusscope.md`
 
 ### 2026-09-21 04:55 — rn round 1
 
@@ -6552,6 +6780,14 @@ Doc: `site/src/content/docs/components/input.md`
 
 Doc: `site/src/content/docs/components/landmark.md`
 
+### 2026-09-23 15:02 — web round 1
+
+- **DOC** Landmark: the doc disagrees on whether `search` is in the shared-label/both-unlabelled duplicate check. The Behavior warning list names only navigation, complementary, region and form. The Behavior paragraph on stories says complementary and search 'are in the shared-label duplicate check', and the `label` description says a page with two searches needs a label. I added `search` to the check; the Behavior warning list should name it (or the other two statements should drop it). → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the rule that As* stories pair each element with the role it belongs to leaves `as: form` open, since `form` is the default element for both `search` and `form`. I paired AsForm with role `form` and label "Sign in", because a plain <form> implies the form role. Using search would also need `role="search"`, which the story wouldn't show as a pure default-element case. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the As* stories don't say which label to use, and the per-role labels are only defined for the Role*/scenario stories. I reused the per-role labels (AsNav "Primary", AsAside "Related links", AsSection "Related articles", AsForm "Sign in"). → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the derived renders-as-* scenarios apply `as` to the Default story's navigation, which renders things like <main role="navigation"> — the exact pairing the doc forbids for the As* stories. The tests follow the scenarios literally (they only assert that something renders); the doc could say that renders-as-* scenarios pair `as` with its role the way the As* stories do. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the doc doesn't say whether a composite's `aria-labelledby` should be read through `getRootNode().getElementById` only (so a document root, or a ShadowRoot in browsers that support it) or fall back to the document. I resolve ids in `getRootNode()` only, matching the Lit note. → `site/src/content/docs/components/landmark.md`
+
 ### 2026-09-21 03:33 — rn round 1
 
 - **DOC** Landmark: the guidance says "the per-role stories and scenarios set label: undefined for banner, main, contentinfo, complementary and search, label 'Related articles' for region and 'Sign in' for form", but the scenarios' `given` in the frontmatter set only `role`, so every derived renders-role-* scenario inherits the Default story's label "Main" — including on banner, main and contentinfo, the roles the doc says never take a label. Kept the tests faithful to the scenario `given` (so they agree with generated/behavior/Landmark.rn.test.tsx) and the stories faithful to the guidance; the frontmatter scenarios need those labels added to make the two agree. → `site/src/content/docs/components/landmark.md`
@@ -7134,6 +7370,33 @@ Doc: `site/src/content/docs/components/link.md`
 
 Doc: `site/src/content/docs/components/listbox.md`
 
+### 2026-09-23 15:51 — web round 2
+
+- **DOC** Listbox: conflict between the spec and the hooks gate. `errorText` and `emptyColor` are documented as 'Realised by the composed Text's tone …; declares no hook of its own', but tools/check_hooks.ts only exempts bindings listed under `composition.<part>.forwards`, and the doc lists these only as Text `props` (tone). Chose the Fieldset pattern: declare `--ds-listbox-error-text` / `--ds-listbox-empty-color` on the root and re-bind `--color-foreground-danger` / `--color-foreground-muted` to them on plain wrappers the list owns, so the Text keeps its tone and is not restyled. The doc should either drop 'declares no hook of its own' or the gate should treat a binding realised by a composed prop as exempt. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: to re-bind the danger token only around the error message, the errorMessage Text is now wrapped in a plain div (`ds-listbox__error`). The Text keeps the id and `data-part`. The spec's web notes only mention 'the error Text after' the list inside the root, so this wrapper is not in the doc. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `onActiveChange` says 'only hover is deduped', which read literally means keyboard moves that clamp at an end and a real blur while nothing is active re-report the same value; implemented literally (keyboard/focus/blur always report, hover and click dedupe). → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `activeValue` naming a value not in `options` is not specified; chose to render no active option and no aria-activedescendant rather than point at a missing id. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `initialActiveValue` changing to a value that names no enabled option (or to undefined) while unfocused is unspecified; chose to leave the active option unchanged. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: typeahead with a one-character buffer — the spec defines 'one letter repeated' and 'any other buffer' but not which a single letter is; chose repeated (search from the option after the active one, per APG). → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: web option ids are `${id}-option-${value}`, so a value containing a space gives an invalid IDREF (Lit uses index-based ids); kept the web contract since hosts build these ids. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: composed Texts get the root `fontFamily`/`lineHeight` 'as their own overrides', but a consumer theming those via CSS hooks (not `overrides`) does not reach Text; chose to forward the `overrides` prop value, else the default token. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the `Keyboard` story needs 'at least three focusable children', but a listbox has one tab stop and non-focusable options; kept a five-option list as the closest match. → `site/src/content/docs/components/listbox.md`
+- NOISE: 4 repeated or empty line(s) collapsed
+
+### 2026-09-23 15:49 — web round 1
+
+- **DOC** Listbox: copy.selectedCount must be 'exported for a host' but the spec names no export shape or name; chose `export const LISTBOX_COPY` (all five copy strings, `{count}` left for the host to interpolate) and added it to index.ts. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `onActiveChange` says 'only hover is deduped', which read literally means keyboard moves that clamp at an end (ArrowDown on the last option) and a real blur while nothing is active re-report the same value; implemented literally (keyboard/focus/blur always report, hover and click dedupe). → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: with `activeValue` set, the spec says forwarded keys 'move nothing on their own' but does not say whether `selectionFollowsFocus` still commits a selection on those keys; chose to still commit the selection (only the active option is host-driven). → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `activeValue` naming a value that is not in `options` (or is filtered out) is not specified; chose to render no active option and no aria-activedescendant rather than point at a missing id. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: 'A disabled list still resolves initialActiveValue and keeps it in state' contradicts 'Focusing a disabled list sets no active option' unless 'sets' means 'draws/reports'; chose: focus on a disabled list stores the resolved option silently, and rendering hides it while disabled. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `initialActiveValue` changing to a value that names no enabled option (or to undefined) while unfocused — the fallback chain (first selected, else first enabled) is only defined for first focus; chose to leave the active option unchanged. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: typeahead for a single first letter — the spec defines 'one letter repeated' and 'any other buffer', but not whether a one-character buffer counts as repeated; chose repeated (search from the option after the active one, per APG). → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the keyboard table lists Control+a only, while Behavior says Ctrl/Cmd+A; implemented both. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: web option ids are `${id}-option-${value}`, so a value containing a space gives an invalid IDREF for aria-activedescendant (Lit avoids this with index-based ids); kept the web contract as specified, since hosts build these ids. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: composed emptyState/errorMessage Texts get the root `fontFamily`/`lineHeight` 'as their own overrides', but a consumer who themes those via the CSS hooks (not `overrides`) does not reach Text; chose to forward the `overrides` prop value, else the default token. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the `Keyboard` story needs 'at least three focusable children', but a listbox has one tab stop and its options are not focusable; kept a five-option list as the closest match. → `site/src/content/docs/components/listbox.md`
+
 ### 2026-09-21 13:14 — rn round 2
 
 - **DOC** Listbox: `platforms.rn.props` prescribes `accessibilityRole=list` on the FlatList and `accessibilityRole=menuitem` on the rows, which is not a legal ARIA tree once react-native-web renders it (menuitem requires a menu/menubar parent; list requires listitem children) — this is the whole aria-required-children/aria-required-parent gate failure. I kept those roles on native and emitted the doc's own web contract (role=listbox + role=option + aria-selected) under Platform.OS === 'web'. The doc should say what react-native-web is expected to render, since a11y.role: listbox is described as 'the web and Lit contract' and react-native-web is the web. → `site/src/content/docs/components/listbox.md`
@@ -7353,6 +7616,22 @@ Doc: `site/src/content/docs/components/listbox.md`
 ## Menu
 
 Doc: `site/src/content/docs/components/menu.md`
+
+### 2026-09-23 15:27 — web round 2
+
+- **DOC** Menu: `phoneBreakpoint` is locked, rn-only and has no `part`, yet the hooks gate requires every locked binding to declare a CSS hook on web; I declared `--ds-menu-phone-breakpoint: var(--layout-max-width-prose)` on the popup (where the other hooks live, since the popup is portaled out of the root). Nothing on web reads it. The doc should say that platform-exempt bindings still get a hook, and on which element when they have no part. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: the block-edge gutter clamp has no rule for which constraint wins when the popup plus popupOffset is taller than the viewport minus 2 × gutter; I let the edge the popup grows away from win (the top edge for bottom placements, the bottom edge for top), mirroring the inline 'leading edge wins' rule. → `site/src/content/docs/components/menu.md`
+- NOISE: 4 repeated or empty line(s) collapsed
+
+### 2026-09-23 15:26 — web round 1
+
+- **DOC** Menu: `phoneBreakpoint` is locked and rn-only with no `part`, but the overrides rule says every binding (locked included) declares a hook on the root; I declared no `--ds-menu-phone-breakpoint` on web since nothing reads it — the doc should say whether platform-exempt bindings get a hook. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: Behavior says an outside press on non-focusable ground returns focus to the trigger, but on web the close happens in pointerdown and the press's own mousedown default then blurs the trigger to the body; I call preventDefault() on that pointerdown (only when focus is inside the popup and the target has no focusable ancestor), which also suppresses the press's mouse compatibility events (text selection/drag start). The doc should name the mechanism, or accept focus on the body. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: the block-edge gutter clamp has no rule for which constraint wins when the popup plus popupOffset is taller than the viewport minus 2 × gutter (maxHeight should normally prevent it); I let the edge the popup grows away from win (the top edge for bottom placements, the bottom edge for top), mirroring the inline 'leading edge wins' rule. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: it is unspecified whether the gutter clamp keeps popupOffset between the popup and the viewport edge or only between popup and trigger; I clamp the box after its offset margin, so the gap to the edge is exactly `gutter`. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: typeahead from a focused disabled item is unspecified (the arrow rule covers it, typeahead does not); I search from the first enabled item, including it. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: blur with no relatedTarget (the popup removed while focused, a press on non-focusable ground, a window blur) — the doc does not say whether that counts as focus 'still inside' for the focus-to-trigger exception; I treat it as inside, so a window blur that closes with `focus-out` also returns focus to the trigger. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: examples must restate props they rely on being at their default, but no list says which; meta.args holds only label and items, so the examples restate only their `given`. → `site/src/content/docs/components/menu.md`
 
 ### 2026-09-21 07:45 — rn round 1
 
@@ -7594,6 +7873,20 @@ Doc: `site/src/content/docs/components/menu.md`
 
 Doc: `site/src/content/docs/components/meter.md`
 
+### 2026-09-23 15:05 — web round 2
+
+- **DOC** Meter: the spec says `labelColor` and `valueColor` are 'Realised by the label Text's tone default; no hook of its own' (and 'tone muted' for the value), but both are locked and not forwarded. The package convention and tools/check_hooks.ts say every locked, non-forwarded binding keeps a `--ds-<component>-<binding>` hook. I followed the convention: `--ds-meter-label-color` and `--ds-meter-value-color` are declared on `.ds-meter`, and each part wrapper span sets the token its Text's tone reads (`--color-foreground` on `.ds-meter__label`, `--color-foreground-muted` on `.ds-meter__value-text`) to that hook. This is the same inverse-surface pattern Toast and Tooltip use. The doc should drop 'no hook of its own' and describe this re-scope, or list these two bindings under composition forwards if Text gains a color override (Text's `color` is locked, so today it can't be forwarded). → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the invalid-range warning's `<max>`/`<min>` placeholders and the 'distinct min/max pair' key don't say whether they use the raw props or the substituted finite bounds (NaN → 0/100). I used the substituted bounds for both. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the web notes give the `label` and `valueText` wrappers only `flex-shrink`. I also added `min-inline-size: 0` on the label wrapper, since a flex item won't shrink below its content without it, and `white-space: nowrap` on the value wrapper so its text really doesn't wrap. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the spec doesn't say which class names the wrapper spans get. I used `ds-meter__label` and `ds-meter__value-text` (the camelCase part name made kebab-case). → `site/src/content/docs/components/meter.md`
+
+### 2026-09-23 15:04 — web round 1
+
+- **DOC** Meter: the invalid-range warning's `<max>`/`<min>` placeholders and the 'distinct min/max pair' key don't say whether they use the raw props or the substituted finite bounds (NaN → 0/100). I used the substituted bounds for both, so min=NaN, max=0 and min=0, max=0 count as the same pair and warn once. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the web notes give the `label` and `valueText` wrappers only `flex-shrink`. I also added `min-inline-size: 0` on the label wrapper, since a flex item won't shrink below its content without it, and `white-space: nowrap` on the value wrapper so its text really doesn't wrap. The spec should say whether these are intended. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the spec doesn't say which class names the wrapper spans get. I used `ds-meter__label` and `ds-meter__value-text`, making the camelCase part name kebab-case like other components do (e.g. `ds-bottom-sheet__title-row`). → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the spec doesn't say whether the root wrapper should carry `data-part="container"` as well as `data-ds`. I kept `data-part="container"` on the root, because the `container` part (partGap) has no other element. → `site/src/content/docs/components/meter.md`
+
 ### 2026-09-21 03:56 — rn round 2
 
 - **DOC** Meter: platforms.rn.props names `accessibilityValue`, but react-native-web 0.21 does not forward the object form — only the flattened `aria-value*` props reach the DOM. Since role=meter requires aria-valuenow, the root must carry both forms. The RN platform note should say so, and the same drop silently affects ProgressBar's value on web (it only escapes axe because role=progressbar has no required value attribute). → `site/src/content/docs/components/meter.md`
@@ -7730,6 +8023,20 @@ Doc: `site/src/content/docs/components/meter.md`
 ## NumberInput
 
 Doc: `site/src/content/docs/components/numberinput.md`
+
+### 2026-09-23 16:08 — web round 2
+
+- **DOC** NumberInput: descriptionText and errorText are locked bindings, so check_hooks requires a --ds-number-input-* hook for each, but both parts are the composed Text (tone muted / danger), which draws the colour itself and must never be restyled. Declared both hooks on the root; the description wrapper reads its hook as `color`, but the Text inside covers it, so re-theming it from page CSS does nothing. The doc should say whether these two bindings are forwarded to Text (tone, making them exempt like helperSize) or whether Text should read an inherited hook. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: errorMessage has no NumberInput-owned wrapper (the Text carries data-part itself), unlike description, so --ds-number-input-error-text is declared but no rule reads it. The doc should either give errorMessage a wrapper like description or mark errorText as forwarded to Text's tone. → `site/src/content/docs/components/numberinput.md`
+
+### 2026-09-23 16:07 — web round 1
+
+- **DOC** NumberInput: the rules say attach `ref` to the root, but platforms.web names `input` as the element and Input puts its ref on the `<input>`; kept Ref<HTMLInputElement> on the input for consistency with Input. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: disabledOpacity says 'the root group … carries aria-disabled' but no `role` for the root is declared anywhere; rendered the root as an unnamed role="group" with aria-disabled when disabled. The doc should say whether the root is a group and whether it is named (aria-labelledby the label would double-announce). → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: Behavior says the errorMessage part draws copy.invalid only 'while invalid is true', but also that committed non-numeric text 'reports invalid … so the user sees what was invalid'. Outside a Form nothing sets `invalid`, so a strict reading hides the message. Chose to draw copy.invalid for committed non-numeric text even without `invalid` (as a clamp message is drawn without it). → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: 'Typed text wins over the value whenever it exists, which after a commit is only the non-numeric case' leaves open what an external controlled change to null does while non-numeric text is shown after a commit; chose to keep the typed text (it wins) until the next edit. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the doc does not say whether a Form-context `disabled` (FormContext.disabled) disables the field; web notes mention only Fieldset's prop. Kept honouring both. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: minTargetSm says the stepper Buttons 'stretch to the field's height' but no binding places them; implemented as flex stretch on the NumberInput-owned wrapper spans (layout only, no rule on Button). → `site/src/content/docs/components/numberinput.md`
 
 ### 2026-09-21 16:05 — rn round 2
 
@@ -8088,6 +8395,17 @@ Doc: `site/src/content/docs/components/pattern.settingspage.md`
 
 Doc: `site/src/content/docs/components/popover.md`
 
+### 2026-09-23 15:32 — web round 1
+
+- **DOC** Popover: the doc says the reason type 'keeps its existing exported name, PopoverCloseReason', but the React package's existing export was PopoverOpenChangeReason (Lit and RN use PopoverCloseReason). Chose PopoverCloseReason as the primary type and kept PopoverOpenChangeReason as a @deprecated alias so nothing breaks; the doc should say which name React exports and whether the alias stays. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: `gutter` is a length token, but the flip/shift logic runs in JS and needs it in pixels. The doc does not say how web reads it back (it spells out the read-back for `offset`). Chose to read the computed `--ds-popover-gutter` custom property as px (or rem × the root font size); a token written in any other unit would read as 0. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: web notes pair a modal enter through `@starting-style` with the package's rule that the `--visible` class flips in a requestAnimationFrame. Chose both: the class flip drives enter and exit, and `@starting-style` is kept on `.ds-popover--visible` as a fallback. The doc should say whether a frame-delayed class replaces `@starting-style` or sits alongside it. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: the doc does not say whether the non-modal panel is hidden with hidePopover() immediately when `open` goes false or after the exit transition. Chose immediately, relying on `transition-behavior: allow-discrete` on display/overlay (the same as the modal close()), and checked where focus was before hiding so focus restore still works. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: the Escape keyboard rule is 'from inside', so with initialFocus `none` (focus still on the trigger) Escape pressed on the trigger does nothing unless the composer handles it (DatePicker does its own). The doc does not say whether the trigger should also listen for Escape while open; left unhandled. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: the doc does not say which `breakpoint` hook web should declare. Declared `--ds-popover-breakpoint` (locked, unused on web) so every binding has its hook, as the overrides contract requires. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: the web platform attributes list aria-expanded and aria-controls, which go on the cloned trigger, not the `div` element. The doc does not say whether aria-controls is present while closed. Chose to set aria-controls only while the panel is in the DOM (open or closing, after hydration), so it never points at an id that does not exist. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: PopoverProps now extends the div's attributes (minus children/role/id/popover), per the package convention, forwarded to the panel with className/style dropped. The doc never says whether ...rest belongs on the panel (the root) or the trigger; chose the panel, since it carries data-ds and the ref. → `site/src/content/docs/components/popover.md`
+
 ### 2026-09-21 08:35 — rn round 1
 
 - **DOC** Popover: the rn platform note says the root testID `Popover` sits on the panel View, but the package convention says the root view carries it and anatomy lists `panel` as its own part. Both cannot hold `Popover` (getByTestId would throw on two matches). Chose the note: the panel carries `Popover`, the outer anchor View carries no testID, and there is no `Popover.panel`. Consequence the doc does not address: at phone widths (BottomSheet) nothing carries `Popover` at all, and a closed popover is unfindable by testID. → `site/src/content/docs/components/popover.md`
@@ -8285,6 +8603,22 @@ Doc: `site/src/content/docs/components/popover.md`
 
 Doc: `site/src/content/docs/components/progressbar.md`
 
+### 2026-09-23 16:10 — web round 2
+
+- **DOC** ProgressBar: the spec says `labelColor` and `valueColor` are 'realised by the label/value Text's tone … no hook of its own', but check_hooks requires every locked binding that is not forwarded to declare `--ds-progress-bar-<binding>`. They are not in `composition.forwards`, and Text's `color` is locked, so they can't be forwarded. I followed the gate: the root declares `--ds-progress-bar-label-color` / `--ds-progress-bar-value-color` (defaults `--color-foreground` / `--color-foreground-muted`). Wrapper spans around each Text re-set that token from the hook (the inverse-surface re-scoping Text.css documents), so the Text is never restyled. The doc should either drop 'no hook of its own' and describe this token re-scope, or have check_hooks exempt bindings the spec realises through a composed child's tone. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the spec doesn't say whether `fill`, `fillSuccess` and `fillDanger` are separate hooks or one interpolated per-tone hook. I declared three root hooks (`--ds-progress-bar-fill`, `-fill-success`, `-fill-danger`), and the tone modifier selects one into an internal `--ds-progress-bar-tone-fill`, so re-theming one tone from page CSS doesn't affect the others. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the value Text now sits in a wrapper span (`ds-progress-bar__value`) that carries the value-color hook. The web platform notes only mention the header holding the Text directly. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar (from round 1): with max ≤ min the value text is always the default "0%" and a custom formatValue is not called. The spec says both 'exposes "0%"' and 'called with the clamped value'. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar (from round 1): an indeterminate bar with an invalid range that later gets a value in a valid range records that value silently, as for a range becoming valid, instead of announcing its tier as the first known value after indeterminate. → `site/src/content/docs/components/progressbar.md`
+
+### 2026-09-23 16:09 — web round 1
+
+- **DOC** ProgressBar: with max ≤ min, `formatValue` says the bar 'exposes "0%" as aria-valuetext and shows it', but it also says the formatter is 'called with the clamped value' and does not say whether a custom formatter is bypassed for an invalid range. I chose to always use the default percentage ("0%") for an invalid range and not call the custom formatter. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: `labelGap` says 'the label's wrapper shrinks', but the web platform notes describe the header holding the label Text directly and only mention a wrapper for the hideLabel visually-hidden case. I always wrap the label Text in a span (ds-progress-bar__label, flex-shrink 1, min-inline-size 0) that also takes the visually-hidden clip when hideLabel is set and the value text shows. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the web Guidance says the live region sits 'beside the bar', while platforms.web.notes and Behavior say it is the last child inside the root container. I followed the notes: it is the root's last child. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the invalid-range rules say a bar that becomes valid records silently, but nothing covers an indeterminate bar with an invalid range that then gets a value in a valid range. I treat it as entering the range (silent record), not as the first known value after indeterminate (which would announce its tier under milestones). → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the sweep's easing is overridable (`sweepEasing`), but the determinate `transition` easing is fixed to motion.easing.standard with no hook, as the spec says. Noting the asymmetry only; implemented as written. → `site/src/content/docs/components/progressbar.md`
+
 ### 2026-09-21 16:24 — rn round 1
 
 - **DOC** ProgressBar: platforms.rn.props names `accessibilityRole=progressbar`, but the package convention (and Meter, which the notes say to follow) prefers the `role` prop on RN >= 0.87. Kept `accessibilityRole` because the declared-contract section wins; the schema should say which one it wants. → `site/src/content/docs/components/progressbar.md`
@@ -8435,6 +8769,21 @@ Doc: `site/src/content/docs/components/progressbar.md`
 
 Doc: `site/src/content/docs/components/radiogroup.md`
 
+### 2026-09-23 14:56 — web round 2
+
+- **DOC** RadioGroup: the schema says descriptionText and errorText are 'realised by the composed Text's tone … no --ds-radio-group-* hook', but the hooks gate (tools/check_hooks.ts) requires every locked binding that isn't passed on to a child to declare its hook, and these two are realised through a tone, not passed on. I followed the gate and Checkbox's precedent: both hooks are declared on the root, defaulting to their tokens, and nothing reads them, because the Texts take their colour from their tones and restyling a child isn't allowed. Either the doc should drop 'no hook', or the gate should also exempt bindings realised by a composed child's props. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the round-2 axe failure was infrastructure, not the component: ERR_CONNECTION_REFUSED on localhost:6007, with no Storybook running. Rerun scoped to RadioGroup with a webServer config (logs/radiogroup-axe.config.ts), light and dark both pass with no code change. → `site/src/content/docs/components/radiogroup.md`
+
+### 2026-09-23 14:55 — web round 1
+
+- **DOC** RadioGroup: the indicator is 'a span inside the option's label, positioned over the input', but the web markup is a sibling `<input>` + `<label for>`, so the label does not contain the input. The doc doesn't say how the span reaches the input. I made the label cover the control's column (grid-column 1 / -1, stretched to the first row, text padded by controlSize + optionGap) and placed the dot at 50% of the label's height, so it lines up with the centred input. The label and input now overlap, and the label is on top in the control area. That's harmless because label-for activates the radio, but the doc should state the layout. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the doc doesn't say how the control lines up vertically against a label that wraps onto several lines (centred on the label block, or aligned to the first line). I centred it on the label block, as before. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: partGap between the description, list and error. The composed Texts can't take a margin or class. The doc only says 'partGap below the legend is a margin', so I added a non-part body wrapper (flex column, gap partGap, margin-block-start partGap). The per-option description also sits in a non-part wrapper that places it in the grid. The doc should name these wrappers as allowed, non-part elements. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: 'Invalid and focus border changes switch instantly' can't be done while leaving the selected-colour transition in place. I clear `transition` on :focus-visible and on radios in an invalid group, so entering those states is instant and leaving them fades back, as the doc accepts. A side effect the doc doesn't mention: in an invalid group, the selected-colour change stops animating. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: forced-colors mode. The dot is a background-coloured span, and forced colours removes backgrounds, so selection may not be visible. The doc doesn't cover it. I added nothing beyond the transparent outline that keeps a focus ring. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the disabled-group change guard. The doc wants an early return because `change` can't be cancelled. The click guard on each input already keeps a disabled group from checking, so the early return is a second line of defence. Implemented as described. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the Keyboard story has no `given` in the keyboard rules, so it renders the Default args: three enabled options, nothing selected. → `site/src/content/docs/components/radiogroup.md`
+
 ### 2026-09-21 02:58 — rn round 2
 
 - **DOC** RadioGroup: platforms.rn.notes prescribe accessibilityState={{ checked, disabled }} on each option Pressable, but react-native-web 0.21 renders neither, so role=radio ships without the aria-checked that axe requires (aria-required-attr) and a dimmed disabled row is audited as enabled body copy (color-contrast). Both need an explicit aria-* mirror on web — aria-checked as a prop, aria-disabled written onto the DOM node because RNW's Pressable clobbers the prop form. Button, Checkbox and Switch all carry the same undocumented workaround; the rn platform note should state it once rather than leaving each component to rediscover it from a red gate. → `site/src/content/docs/components/radiogroup.md`
@@ -8577,6 +8926,18 @@ Doc: `site/src/content/docs/components/radiogroup.md`
 ## Search
 
 Doc: `site/src/content/docs/components/search.md`
+
+### 2026-09-23 16:16 — web round 1
+
+- **DOC** Search: `loading` is announced 'whenever suggestions is set and this is true, list open or not', but Behavior says 'the live region is emptied when the list closes'. Closing while loading can't do both; I let loading win, so the region keeps `copy.loading` after a close until loading ends. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the label composition puts data-part on ds-text for Lit, but web doesn't say where `data-part="label"` goes. I put it on the `<label>` wrapper, because Text renders no data-part of its own and the whole label is the part. → `site/src/content/docs/components/search.md`
+- **DOC** Search: Icon always renders its own `data-part="glyph"`, so the `icon` part can't sit on the composed Icon. It is on a wrapping span. The doc should say that, as it does for the Button parts. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the spec says the combobox wiring works 'exactly as Combobox does', but Combobox drives the highlight through Listbox's controlled `activeValue`, while Search's wiring list names only a remount key and onActiveChange. I followed Search's list: an uncontrolled Listbox reset by a key, with ArrowDown/ArrowUp forwarded as synthetic keydowns. The first ArrowDown is queued until the list mounts. → `site/src/content/docs/components/search.md`
+- **DOC** Search: 'ArrowDown opens suggestions and highlights the first' depends on Listbox moving an uncontrolled, empty highlight to the first option on ArrowDown. That isn't stated in Search's doc; I relied on Listbox's own behavior. → `site/src/content/docs/components/search.md`
+- **DOC** Search: suggestionsOffset has to be 'folded into the fixed popup's own position calculation — exactly the mechanism ds-combobox uses', but React's Combobox applies its offset as a margin. I wrote the measured field edge to an inline `--ds-search-anchor` and set `top`/`bottom: calc(anchor + offset)` in CSS. The flip decision doesn't include the offset. → `site/src/content/docs/components/search.md`
+- **DOC** Search: `emptyMessage` should be passed 'while empty'. I always pass it (loading ? copy.loading : copy.noSuggestions), assuming Listbox only shows it when there are no options. → `site/src/content/docs/components/search.md`
+- **DOC** Search: 'no event fires' while disabled, but consumer `onKeyDown` on the input still runs, because it's passed through rest like other fields. Only Search's own events are suppressed. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the rule to add portaled overlays to hydration.test.tsx names only new overlays; Search was missing, so I added it. SSR output is unaffected either way, because the list never opens before an interaction. → `site/src/content/docs/components/search.md`
 
 ### 2026-09-21 17:18 — rn round 1
 
@@ -8769,6 +9130,13 @@ Doc: `site/src/content/docs/components/search.md`
 
 Doc: `site/src/content/docs/components/segmentedcontrol.md`
 
+### 2026-09-23 15:45 — web round 1
+
+- **DOC** SegmentedControl: `options` says the icon colour is segmentColor / segmentSelectedColor 'forwarded as the Icon's overrides.color', but those bindings are locked, and page CSS is the only sanctioned way to re-theme them (`--ds-segmented-control-segment-color`). Overrides take a TokenRef, not a CSS variable, so the forwarded icon colour is fixed to the default tokens (color.foreground.muted / .strong) and does not follow a page-CSS re-theme of the hook, while the label text does. Chose the literal TokenRefs. The doc should say whether the icon should follow the hook (e.g. inherit currentColor on web) or keep the token. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: Behavior's toolbar rule says 'When focus is on no enabled segment, an outward arrow moves to the first or last enabled segment', but it never says which one each direction picks. It also never says whether a focused *disabled* segment (reachable by click, since it is aria-disabled and not disabled) counts as 'the focused segment' that arrows move from. Chose: a focused disabled segment → ArrowRight/Down goes to the first enabled segment and ArrowLeft/Up to the last, never handed to the toolbar. No segment focused → move from the tab stop with wrapping, never handed to the toolbar. Only a focused enabled end segment leaves an outward arrow unhandled. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: the keyboard block's Home/End rules and the 'selects' expectation apply outside a toolbar, but inside one Home/End are left unhandled even when focus is on no enabled segment. The 'focus first' sentence covers only arrows, so Home/End stay unhandled in every toolbar case. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: iconOnly with an option that has no icon — 'at its natural width, no icon-sized box is reserved' conflicts with `fill`, which gives every segment an equal share. Chose: fill wins (equal flex segments), and without fill the text segment sizes to its label. → `site/src/content/docs/components/segmentedcontrol.md`
+
 ### 2026-09-21 12:16 — rn round 2
 
 - **DOC** SegmentedControl: the rn platform note says segments carry `accessibilityState={{ checked, disabled }}`, but react-native-web 0.21 forwards neither, so on the axe gate's own target that spelling produces zero `aria-checked` (an `aria-required-attr` violation on every radio) and zero `aria-disabled` (a contrast violation on the disabled segment, which WCAG 1.4.3 would otherwise exempt). The working spelling is accessibilityState for native plus an `aria-checked` prop mirror and an `aria-disabled`/`tabindex` effect for web. Tabs already carries this workaround in a comment; the note should state it so each regeneration does not rediscover it through a red gate. → `site/src/content/docs/components/segmentedcontrol.md`
@@ -8921,6 +9289,25 @@ Doc: `site/src/content/docs/components/segmentedcontrol.md`
 ## Select
 
 Doc: `site/src/content/docs/components/select.md`
+
+### 2026-09-23 15:56 — web round 2
+
+- **DOC** Select: the spec's Behavior section says bindings realised by a child's tone (valueColor, placeholderColor, descriptionText, errorText) 'declare no --ds-select-* hook', but the hooks gate (tools/check_hooks.ts) requires every locked binding to declare one and only exempts forwarded bindings. I declared all four on the root (the gate wins, as the Overrides section's 'locked closes the override API, not the styling hook' agrees). valueColor and placeholderColor are now read by the `native: always` <select> (text color, and placeholder color while nothing is selected, which fixes the round-1 gap where the native select read the token directly). descriptionText and errorText are declared but read by no rule, since the only element they style is the composed Text, which may not be restyled. The doc should drop the 'declare no hook' sentence and say which hooks are declaration-only. → `site/src/content/docs/components/select.md`
+- **DOC** Select: chevron is locked and forwarded into the Icon's overrides.color; the gate treats it as a forwarded binding and exempts it, so it still has no hook, matching the spec. The doc should say forwarded locked bindings are the one exception, as the gate does. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the doc never says that minTargetSm needs its own hook read by the sm modifier (`--ds-select-min-target: var(--ds-select-min-target-sm)`) rather than the sm class setting the minTarget hook straight from the token; the gate requires it. The doc should state the pattern for size-keyed locked bindings. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the doc does not say how the native single select shows its placeholder color; I added a `ds-select__native--placeholder` modifier set while nothing is selected, and reset <option> text to valueColor so the list itself is not muted. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the hooks gate also fails for 49 other components, including Select (lit), which is outside this job; `pnpm gates:hooks` exits 1 overall even though Select (web) is clean. → `site/src/content/docs/components/select.md`
+
+### 2026-09-23 15:55 — web round 1
+
+- **DOC** Select: the rules say `ref` goes on the root, but the root is the field-group div and DatePicker/Form focus the control; I kept `ref` on the control (the trigger button, or the <select> with `native: always`), typed `Ref<HTMLButtonElement | HTMLSelectElement>`. The doc should say which element the ref reaches. → `site/src/content/docs/components/select.md`
+- **DOC** Select: valueColor has no --ds-select-* hook (it is realised by the value Text's tone), but the `native: always` <select> draws its own text and has no Text to carry a tone. I read `var(--color-foreground)` directly on `.ds-select__native`. The doc should either give the native text color a hook or bless reading the token there. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the Guidance says a toggled value lands 'in option order, with values that match no option appended', but the composed Listbox's inOptionOrder drops values that match no option. Select's own Enter toggle (multiple) appends them; a click or Space toggle through Listbox still drops them, so the three paths disagree when the value holds an unknown entry. Listbox's doc/impl needs the same rule. → `site/src/content/docs/components/select.md`
+- **DOC** Select: `initialActiveValue` (selectedValues[0]) and a controlled `activeValue` are both passed, as the Guidance asks, but Listbox's `activeValue` wins over `initialActiveValue` whenever it is set, so `initialActiveValue` has no effect on web. The doc could drop it for web or say it is parity-only. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the doc gives no order for the rAF visible flip versus the first position measurement; I measure in the same layout effect (keyed on open and hydrated) and flip `--visible` a frame later, so the fade starts at the final position. → `site/src/content/docs/components/select.md`
+- **DOC** Select: focusout with a null relatedTarget (the window losing focus, e.g. switching tabs) counts as 'focus moved outside' and closes the popup; the doc does not say whether a window blur should close it. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the doc does not say whether a Form's validate-on-blur should run when the trigger blurs while the popup is open; I skip validation while open (focus never leaves the trigger during a pick), and Tab closes first, then blurs. → `site/src/content/docs/components/select.md`
+- **DOC** Select: `native: always` with `disabled` uses the real `disabled` attribute, which takes the <select> out of the tab order and conflicts with 'stays focusable'; I followed the platform note (real disabled) over the prop description. → `site/src/content/docs/components/select.md`
 
 ### 2026-09-21 13:41 — rn round 1
 
@@ -9119,6 +9506,20 @@ Doc: `site/src/content/docs/components/select.md`
 ## SidePanel
 
 Doc: `site/src/content/docs/components/sidepanel.md`
+
+### 2026-09-23 15:42 — web round 2
+
+- **DOC** SidePanel: the spec's Rules section says to write `:focus-visible` with `--color-border-focus` / `--border-width-focus`, while the overrides contract says locked bindings (`focusRing`, `focusRingWidth`, `surface`) keep a hook that the rules read; the doc names no hook for them anywhere, and the web platform notes list only the `--ds-side-panel-*` defaults for overridable bindings. Chose hooks `--ds-side-panel-surface`, `--ds-side-panel-focus-ring`, `--ds-side-panel-focus-ring-width` defaulting to the tokens, read by the surface background and the heading's focus outline. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the only focus ring SidePanel draws itself is on the heading wrapper (the modal's last initial-focus target, tabindex -1); every other focusable is a composed Button/Link with its own ring, and the doc does not say whether the SidePanel focusRing binding should reach them. Chose to apply it to the heading only, never restyling a composed child. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the non-modal scrim shares the hook-default selector with the root (as the notes require for overridable hooks), so it now also declares the three locked hooks it never reads; the doc does not say whether locked hooks belong on the scrim. Left them there as harmless. → `site/src/content/docs/components/sidepanel.md`
+
+### 2026-09-23 15:41 — web round 1
+
+- **DOC** SidePanel: the web platform notes hide the persistent trigger wrapper 'with display none' but the Guidance web section says 'the trigger wrapper with `hidden`'; chose both (the `hidden` attribute plus a display:none modifier class, since the wrapper's display: contents would otherwise beat the UA [hidden] rule). → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: Behavior says 'every other close returns focus to the trigger', but for a non-modal panel it never says what happens when focus is not inside the panel at close time (a scrim click puts it on <body>; an outside press or a Toolbar-controlled close may have moved it to another page control). Chose: restore to the trigger when focus is inside the panel or has fallen to <body>, and leave focus alone when it is already on another page element. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the modal scrim's aria-hidden is unspecified (the notes give `<div aria-hidden>` only for the non-modal scrim); left the modal scrim without it, since it is an empty non-focusable div inside the dialog. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: footerGap has both a `--ds-side-panel-footer-gap` hook and a forward to Stack `overrides.gap`, which contradicts the overrides rule that a forwarded binding declares no hook of its own; kept the hook (the stylesheet sets `--ds-stack-gap` from it, as `inset` does for Box) and pass `overrides.gap` only when the caller overrode footerGap. The doc spells this route out for `inset` and `headingGap` but not for footerGap. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the non-modal scrim scenario says `click: scrim`, but when the panel is closed the non-modal scrim stays mounted with `hidden` while the modal one unmounts, and no scenario says which state `part('scrim')` should resolve in; tests use open: true as given. → `site/src/content/docs/components/sidepanel.md`
 
 ### 2026-09-23 04:29 — web round 2
 
@@ -9346,6 +9747,20 @@ Doc: `site/src/content/docs/components/sidepanel.md`
 ## Slider
 
 Doc: `site/src/content/docs/components/slider.md`
+
+### 2026-09-23 16:05 — web round 2
+
+- **DOC** Slider: the spec says valueColor, markLabelColor, descriptionText and errorText are 'realised by the composed Text's tone; no hook of its own', but check_hooks requires a hook for every locked binding, and the digest says locked bindings keep their hook. I followed the gate and the digest: each hook is declared on the root with its token as the default, and it sets the tone's colour variable on a wrapper element with no data-part. The schema descriptions for these four bindings (and the same wording on Input/NumberInput errorText) should be changed to say the hook exists and how it is applied. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the web notes say the value and description Texts carry their own data-part with 'no wrapper taking the part name', but they don't say whether an unparted wrapper is allowed. Re-scoping each colour separately needs one around the value and the description, because the value sits in the label row beside the label Text, which uses the same default tone. I added `span.ds-slider__value` and `div.ds-slider__description`, both without a data-part. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: bubbleText re-scopes --color-foreground on the bubble, and valueColor now re-scopes --color-foreground on the value wrapper. The bubble is not inside that wrapper, so valueColor never reaches the bubble's Text. The doc doesn't say whether valueColor should also apply there; I chose no, because the bubble is an inverse surface. → `site/src/content/docs/components/slider.md`
+
+### 2026-09-23 16:04 — web round 1
+
+- **DOC** Slider: web notes say pointer capture is on 'the track and thumbs' and 'the track click moves the nearest thumb', but only the RN notes say a press inside a thumb's hit area drags from its current value instead of jumping. I applied the RN rule on web too, keeping a grab offset so the drag doesn't jump; the web notes should say so. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: onChange says 'within one interaction the comparison is against the last value emitted', but no platform says what counts as the end of a key interaction when focus leaves before key-up. I end it on blur. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: during held-key autorepeat on a controlled slider whose owner never updates `value`, the doc doesn't say whether each keydown steps from the displayed (prop) value or from the last value emitted. I step from the displayed value, so the owner gets the same target once rather than a run of increasing values. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: bubbleText says web 're-scopes --color-foreground on the bubble', but the bubble also has its own locked `--ds-slider-bubble-text` hook. I kept both (the hook feeds the re-scoped variable); the doc could say which name a theme should set. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: `required` compares the value against a default that the doc says is clamped to [min, max], but it doesn't say whether a range default is also reordered when defaultValue[0] > defaultValue[1]. normalize() clamps the high value up to the low one. → `site/src/content/docs/components/slider.md`
 
 ### 2026-09-22 01:47 — lit round 1
 
@@ -9597,6 +10012,16 @@ Doc: `site/src/content/docs/components/slider.md`
 ## Splitter
 
 Doc: `site/src/content/docs/components/splitter.md`
+
+### 2026-09-23 16:42 — web round 1
+
+- **DOC** Splitter: onSizeChange 'never repeats the size it last reported' is undefined for a controlled splitter whose parent ignores the report — pressing End twice re-reports maxSize because the comparison is against the rendered (prop) size, not the last reported value; chose to compare against the rendered size → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: `size` changes from a controlled parent are not stated to clear the `ds-splitter--animate` hook ('cleared by the next size change'); chose to clear it only on user-driven size changes and pointerdown → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the web notes give the grid tracks but not how the stacked single-column grid sizes its rows; chose `auto auto` in source order → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the web notes say the collapsed primary pane gets 'inline-size 0', which only fits a horizontal splitter; chose block-size 0 for a vertical one → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: separatorHover is not scoped away from the collapsed state or the focus-visible/dragging colour; chose hover < focus-visible/dragging by source order and left hover active while collapsed → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the Keyboard story needs 'at least three focusable children' but the schema does not say which pane holds them; chose two links in the primary pane and a Button in the secondary, plus the separator and collapse Button → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the React stories need a definite height for a vertical splitter, but only the Lit notes specify the frame (layout.maxWidth.prose); chose a non-focusable decorator with block-size var(--layout-max-width-prose) → `site/src/content/docs/components/splitter.md`
 
 ### 2026-09-23 14:21 — web round 1
 
@@ -10044,6 +10469,18 @@ Doc: `site/src/content/docs/components/stack.md`
 
 Doc: `site/src/content/docs/components/stepper.md`
 
+### 2026-09-23 16:13 — web round 2
+
+- **DOC** Stepper: labelColor, labelUpcomingColor, descriptionColor and countColor say 'no --ds-stepper-* hook' (realised by the composed Text's tone), but tools/check_hooks.ts only exempts bindings listed under composition forwards, not tone-realised ones, so it requires a hook for all four. Chose to declare the four hooks on .ds-stepper as naming-only hooks, as Tree.css does for --ds-tree-badge-color; no rule reads them, because feeding them into Text would restyle a child. Either the doc should drop the 'no hook' wording and say the hook exists only for naming, or check_hooks should exempt bindings the doc marks as realised by a composed child's tone. As it stands, setting these hooks from page CSS changes nothing on screen, which contradicts the gate's stated reason for requiring them (re-theming from page CSS). → `site/src/content/docs/components/stepper.md`
+
+### 2026-09-23 16:12 — web round 1
+
+- **DOC** Stepper: `minTarget` says both kinds of step 'still carry the transparent focusRingWidth border', but `focusRing` says the ring is drawn outside the control on web/Lit and the reserved border is the React Native technique; the web connector offset formula (calc((indicatorSize − connectorWidth) / 2)) also has no border term. Chose no transparent border on web (outline outside, formula as written); the doc should scope that sentence to React Native. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: the compact rule 'reveals the first step's label when no id matches' is stated under `current` but not in the web platform notes or the Behavior section, which only say 'the current step'. Implemented as a separate reveal index (id match, else step 0) with its own class; no behavior scenario covers it. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: the web container-query breakpoint is the built value of layout.maxWidth.prose (572px in both calm-precise and warm-sleek). The breakpoint is baked into the CSS, so a theme with a different prose width will not move it; the doc does not say whether that is acceptable. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: the doc does not say when the no-match dev warning fires (every render or once per change). Chose an effect keyed on `current` and the match index, so it fires once per change and never during server rendering. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: `copy.stepLabel` is declared for every platform but unused on web. It is kept in the COPY constant with a comment rather than omitted. → `site/src/content/docs/components/stepper.md`
+
 ### 2026-09-21 16:46 — rn round 2
 
 - **DOC** Stepper: `platforms.rn.props` names only `accessibilityRole=list`, and nothing in the rn notes says what the steps are inside it. On react-native-web a `role="list"` whose children are buttons fails axe `aria-required-children`, so each step had to become a `role="listitem"` View wrapping the control (the web `<li>` shape). RN's `AccessibilityRole` union has no `listitem`, so this must be the `role` prop; the doc should state the wrapper and which element carries `testID="Stepper.step"` (I put it on the listitem, since the doc calls the `step` part the list item). → `site/src/content/docs/components/stepper.md`
@@ -10214,6 +10651,18 @@ Doc: `site/src/content/docs/components/stepper.md`
 
 Doc: `site/src/content/docs/components/switch.md`
 
+### 2026-09-23 14:53 — web round 2
+
+- **DOC** Switch: the spec contradicts itself on `descriptionText`. Its binding description says it is 'Realised by the composed Text's muted tone; no --ds-switch-* hook', and helperSize's note groups it with the forwarded-only bindings that get no hook. But `platforms.web.notes` says 'Locked bindings keep their --ds-switch-* hooks', the Overrides section says the same, and the hooks gate fails without one: descriptionText is locked but not forwarded to the Text's `overrides`, so the gate does not exempt it. I declared `--ds-switch-description-text` on the root and no rule reads it, as Checkbox does. The binding description and helperSize's note should drop descriptionText from the no-hook group. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the axe gate's failure was 'Switch/React/Controlled: story failed to render — Failed to fetch', a Storybook server fetch error rather than an axe violation. A scoped rerun passed in light and dark with no code change. Nothing in the spec is involved; it is recorded so a repeat is recognised as a problem with the gate's server, not with the component. → `site/src/content/docs/components/switch.md`
+
+### 2026-09-23 14:52 — web round 1
+
+- **DOC** Switch: the conventions say to put `ref` on the root, but the web notes treat the input as the track, the thing the user interacts with. I followed Checkbox: `ref` is typed `Ref<HTMLInputElement>` and resolves to the input through `useImperativeHandle`, while the root is the full-width div. The spec doesn't say which element the ref should reach. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the general rule says locked bindings keep a --ds-<name>-* hook, and the spec also says a binding carried by a composed child declares none. `descriptionText` is both locked and realised by the composed Text. I declared no --ds-switch-description-text hook, per the helperSize/descriptionText note. Checkbox does the opposite for its description and error text colors, so the two components disagree. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the web notes say a click on the root itself or on the description is forwarded to the input. Clicks on the row's gap, the text column and the track slot land on inner wrappers, not the root. I forward every click outside the input and the label, as Checkbox does. The spec's list of forwarded targets is narrower than the hit area it describes. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the spec doesn't say whether a Form's own `disabled` state counts as the switch being disabled. I made it count: it drops `name`, blocks toggling and makes the Form skip the switch, the same as Checkbox. → `site/src/content/docs/components/switch.md`
+
 ### 2026-09-21 02:39 — rn round 2
 
 - **DOC** Switch: platforms.rn.props requires accessibilityRole=switch, but on react-native-web that prop lands on RNW's Switch container View while RNW puts role=switch on the real <input> it renders — a duplicate role with no aria-checked (aria-required-attr) wrapping a focusable input (nested-interactive). I set accessibilityRole only when Platform.OS !== 'web'. The doc should say the rn props list is the native contract and that react-native-web supplies the role itself. → `site/src/content/docs/components/switch.md`
@@ -10364,6 +10813,15 @@ Doc: `site/src/content/docs/components/tooling.md`
 ## Table
 
 Doc: `site/src/content/docs/components/table.md`
+
+### 2026-09-23 16:24 — web round 1
+
+- **DOC** Table: the web notes say each theme's CSS build stamps its own prose and content widths into the container queries, but nothing in tools/ does that. Table.css hard-codes calm-precise's 572px and 960px, and warm-sleek builds layout.maxWidth.content as 1040px, so a warm-sleek table hides `hideBelow: content` columns at the wrong width. I kept the calm-precise numbers with `literal-ok`. → `site/src/content/docs/components/table.md`
+- **DOC** Table: 'Below' is strictly less, so I used `@container (width < Npx)` range syntax instead of `max-width`. The spec doesn't name the CSS form, and Carousel and Stepper still use the inclusive `max-width: 572px`. → `site/src/content/docs/components/table.md`
+- **DOC** Table: with `selectable: single`, the header's empty <td role=cell> selection spacer has no rule for the stacked header row. It stays visible as an empty cell in that row; I left it as is. → `site/src/content/docs/components/table.md`
+- **DOC** Table: the keyboard rule says the scroll region is focusable 'below the breakpoint', but the guidance says the region exists whenever `responsive: scroll`. I followed the guidance: the region is always present and focusable, and arrows scroll it at any width. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `aria-selected` on a role=row inside a role=table (not a grid) is what the spec asks for, but ARIA only defines it for rows in grid or treegrid. I kept it as specified; an axe aria-allowed-attr check may flag it. → `site/src/content/docs/components/table.md`
+- **DOC** Table: TableColumn's optional fields are written as the schema `shape` verbatim (`abbr?: string`), without the package's `| undefined` convention. Under exactOptionalPropertyTypes a caller can't pass `abbr: undefined`. I kept the shape verbatim, as the rules require. → `site/src/content/docs/components/table.md`
 
 ### 2026-09-23 13:47 — web round 2
 
@@ -10583,6 +11041,14 @@ Doc: `site/src/content/docs/components/table.md`
 ## Tabs
 
 Doc: `site/src/content/docs/components/tabs.md`
+
+### 2026-09-23 15:44 — web round 1
+
+- **DOC** Tabs: web notes give the RTL indicator offset as `list.clientWidth - tab.offsetLeft - tab.offsetWidth` plus the list's scroll offset, but offsetLeft does not change when the list scrolls, so it is unclear what adding scrollLeft corrects for (and the value would drift during the smooth first-render scroll). Chose getBoundingClientRect measured within the list's client box, plus scrollLeft in LTR and minus it in RTL, which gives the same inline-start position at any scroll offset; the doc should state the requirement (distance from the inline-start edge of the scrolled content), not an offsetLeft formula. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: 'the selected tab is kept in view by setting the list's own scrollLeft/scrollTop' conflicts with 'that scroll is animated unless reduced motion is on', since assigning scrollLeft cannot be animated without CSS scroll-behavior. Used `list.scrollBy({ left|top, behavior: smooth|auto })` on the list (it scrolls only the list, never the page), falling back to assigning scrollLeft/scrollTop when scrollBy is missing. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: 'only manual gets a handler' for Enter/Space, but a button also turns Space/Enter into a native click, which goes through onClick again before the new selection renders, so onChange can fire twice (and preventDefault on keydown does not reliably cancel Space's click on keyup). Added a one-shot ref that skips a keyboard-synthesized click (event.detail === 0) on the tab the key just selected; the doc does not say how to avoid the double fire. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: defaultValue 'defaults to the first enabled tab' does not say what happens when every tab is disabled. Kept the existing fallback to the first tab. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the behavior scenarios have no case for Enter/Space under manual activation, Home/End, RTL arrow swapping, or the tab stop following programmatic focus, so these rules are implemented but not tested by Tabs.test.tsx. → `site/src/content/docs/components/tabs.md`
 
 ### 2026-09-21 11:58 — rn round 2
 
@@ -10993,6 +11459,23 @@ Doc: `site/src/content/docs/components/text.md`
 
 Doc: `site/src/content/docs/components/toast.md`
 
+### 2026-09-23 15:16 — web round 2
+
+- **DOC** Toast: actionColor, dismissColor and focusRingInverse are locked bindings that must declare a `--ds-toast-*` hook (the hooks gate), but the doc says Button's `inverse` prop supplies these colours and Toast never restyles the Buttons, so it never says what reads the hooks. Chose to re-scope the tokens Button reads (`--color-inverse-link`, `--color-inverse-focus`) from the hooks on the Toast-owned actionButton/dismissButton wrappers, the same move the `text` binding makes on `--color-foreground`. The doc should say so. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: actionColor and dismissColor both default to color.inverse.link. Re-scoping one token at toast level can't give them different values, so each is re-scoped on its own part wrapper. The doc doesn't say whether the two are meant to diverge at all. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: a hook and the token it re-scopes can't both sit on the toast root (e.g. `--ds-toast-focus-ring-inverse: var(--color-inverse-focus)` and `--color-inverse-focus: var(--ds-toast-focus-ring-inverse)` on `.ds-toast` form a custom-property cycle and both become invalid), so the re-scope sits one level down on the wrappers. The styling-and-overrides doc should say where a re-scope may go. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: carried over from round 1 — ToastRegion's `ref` (dropped), whether actionLabel/tone changes re-fire the duration warning, the Keyboard story's trigger label and action, replacement of a toast already exiting, removal of a standalone Toast, and pointercancel on web. → `site/src/content/docs/components/toast.md`
+
+### 2026-09-23 15:15 — web round 1
+
+- **DOC** Toast: 'Toast exposes no ref on any platform' — unclear whether this also covers ToastRegion, which renders a root element and whose props are listed as only `container` and `overrides`; chose no ref on either. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the duration dev warning fires 'each time a change to duration, actionLabel or tone enters that case' — unclear whether changing actionLabel (Undo→View) or tone while the forced-persistent case already holds should warn again; chose to warn only on entering the case or on a duration change while it holds (effect deps: forcedPersistent, duration). → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the enter-frame rule is written for portaled overlays (keyed on present/open/hydrated), but Toast itself is not portaled — its region is. Chose a layout effect on the toast's own mount that flips `--entered` in a rAF, plus a `hydrated` gate on ToastRegion. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the Keyboard story needs 'a trigger button', but no trigger action or label is specified. Chose a secondary Button 'Show notifications' that re-shows both toasts under the same toastIds, so they replace rather than stack, with the toasts shown present on mount. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: a `toast()` whose toastId matches a toast already playing its exit transition — the spec says exiting toasts do not count toward three but not whether they can be replaced; chose to let the exiting one finish and stack the new one. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: a directly rendered Toast (outside a region) has no container to report removal to; chose onDismiss at exit start, then the component renders null once the exit transition ends. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: 'Timers pause on hover' (web) vs 'pointerenter until pointerleave or pointercancel' (Lit only) — web now also resumes on pointercancel to cover touch contact, matching Lit. → `site/src/content/docs/components/toast.md`
+
 ### 2026-09-21 06:02 — rn round 2
 
 - **DOC** Toast: the rn platform notes say only 'The region View takes accessibilityLabel from copy.regionLabel' and give the region no role. Under react-native-web that is an `aria-label` on a bare <div>, which axe fails as `aria-prohibited-attr` whenever the region is empty — the state it is documented to be in before any toast ('the region exists before content so announcements fire'). I added `role="region"`, matching the web and Lit regions; the rn notes should name the role. → `site/src/content/docs/components/toast.md`
@@ -11198,6 +11681,16 @@ Doc: `site/src/content/docs/components/toast.md`
 
 Doc: `site/src/content/docs/components/toolbar.md`
 
+### 2026-09-23 16:21 — web round 1
+
+- **DOC** Toolbar: 'A group takes its orientation, wrapping and gaps from the Toolbar' does not say how a ToolbarGroup wraps under `overflow: wrap` — as one unit, or with its own controls wrapping when the group is wider than a line. Chose the second: under wrap the group is `flex: 0 1 auto; flex-wrap: wrap`, and in the other modes it stays rigid (`flex: 0 0 auto`). → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the web roving-list selector lists `button` and `[role=radio][aria-checked=true]` separately, but SegmentedControl's options are `button[role=radio]`, so a plain `button` match would add every unchecked option as a stop. Chose `button:not([role=radio])` so a SegmentedControl stays one control. The doc should say that the `button` entry excludes role=radio buttons. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the doc does not say what a collapsed `disabled` Button becomes in the overflow Menu. Chose a disabled Menu item (`disabled: true`) rather than leaving it out of the Menu. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the doc does not say what the overflowMenu part hook goes on. The Menu is given `data-part="overflowMenu"` through its rest props and relies on Menu putting rest props on its root, not on its portaled popup, which I did not check in Menu.tsx. Menu's doc should promise this. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the measurement pass for `overflow: menu` counts one separator width for every adjacent group pair, taking the width from the first separator rendered. The doc does not say how to budget separators; if separator widths could differ (overrides are per toolbar, so they cannot today), this estimate would be wrong. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the doc does not say where the overflow Menu's trigger sits in the roving list. It is treated as the last top-level entry, so End lands on More and Tab falls back to the first enabled control when the last-focused control collapses. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: `the-toolbar-is-one-tab-stop` (`focusable: false`) is tested as 'no tabindex on the root, root.focus() does not take focus, exactly one descendant has tabIndex 0'. The scenario asserts only the first part; the 'exactly one control has tabindex 0' part comes from the description, not from a `then` expectation. → `site/src/content/docs/components/toolbar.md`
+
 ### 2026-09-23 13:41 — web round 1
 
 - **DOC** Toolbar: the fade must sit 'inside the toolbar's padding', which needs an inner scrolling element on web. The Lit notes put `data-part="container"` on that inner row; the web notes don't say where it goes. I kept `data-part="container"` on the role=toolbar root (the anatomy's container) and made the inner `ds-toolbar__row` an unnamed structural element, so web and Lit put the container hook on different elements. → `site/src/content/docs/components/toolbar.md`
@@ -11383,6 +11876,17 @@ Doc: `site/src/content/docs/components/toolbar.md`
 ## Tooltip
 
 Doc: `site/src/content/docs/components/tooltip.md`
+
+### 2026-09-23 15:13 — web round 1
+
+- **DOC** Tooltip: the web notes say `role="tooltip"`, the id and `data-ds` are on the visually-hidden span and that Tooltip exposes no ref, but the generic rule asks for `Tooltip({ ref, … })` with the ref on the root. I followed the component doc: no `ref` prop, and a caller's ref on the child is merged and kept. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the attributes list names `aria-describedby`/`aria-labelledby` as element attributes, but they go on the cloned child, not the tooltip element. I put them on the child and only `id`/`role`/`data-placement` on Tooltip's own nodes (`data-placement` on the bubble). → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: locked `surface` and `text` must keep a styling hook, but the doc never names them. I used `--ds-tooltip-surface` and `--ds-tooltip-text`, and the bubble re-scopes `--color-foreground` from `--ds-tooltip-text`. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the overlay convention's visible class (`--visible` / `__surface--visible`) doesn't say which applies to a bubble that is itself the root-styled `ds-tooltip`. I used `ds-tooltip--visible` on the bubble. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the non-focusable-child development warning is described for Lit but not for web. On web it fires when the child's ref resolves to an element with tabIndex < 0 or to no element at all (a child that doesn't forward ref). → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the doc doesn't say how cross-axis overflow is handled for the flipped bubble. I clamp the cross axis into the viewport as the RN notes describe, and flip only on the main axis when the opposite side fits. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the Keyboard story's layout wrapper uses an inline `gap: var(--space-2)` because the doc names no layout component for the three triggers. Stack would work, but the doc doesn't ask for it. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the docs don't say which Tooltip scenarios run on web vs native, and the Escape behaviour (closes, focus unchanged, dialog double-Escape) has no scenario, so no test covers it; it is implemented but untested. → `site/src/content/docs/components/tooltip.md`
 
 ### 2026-09-22 01:28 — lit round 1
 
@@ -11615,6 +12119,15 @@ Doc: `site/src/content/docs/components/tooltip.md`
 ## Tree
 
 Doc: `site/src/content/docs/components/tree.md`
+
+### 2026-09-23 16:40 — web round 1
+
+- **DOC** Tree: focusRing says the ring goes around the whole `node`, 'not around nodeRow alone', but on web the node is the <li> that also holds the child group, and the nodeRow div already contains the chevron. I draw the ring on the treeitem's own row (`.ds-tree__node:focus-visible > .ds-tree__row`), which covers the chevron without also ringing the open children. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: the web platform notes and Guidance still describe the drawn checkbox as `<span aria-hidden>` and the chevron as exposed. These agree, but the Web platform-notes paragraph under Guidance says 'indent as padding-inline-start' while the anatomy has an `indent` part. I kept a tree-owned `<span data-part="indent">` sized indent × (level − 1), so the part resolves. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: 'Disabled nodes … cannot be expanded by any means' conflicts with ArrowLeft's 'when the parent is disabled, focus stays put', which only matters if a disabled parent can be open. I kept disabled parents in `defaultExpanded`/`expanded`/`["*"]` able to render open (only user acts are blocked), so that ArrowLeft rule means something. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: the spec doesn't say whether the lazy placeholder <li role=treeitem> keeps any tabindex. 'Not navigable' and the roving-tabindex convention (every other treeitem has -1) pull in opposite directions. I gave it no tabindex at all, so it can't take focus. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: rowHover doesn't say whether disabled rows show the hover fill. They still do (at disabledOpacity); only selected rows and the placeholder are excluded. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: selectedCount counts every id in `selected`, including ids that aren't in `nodes` (or sit inside a collapsed or lazy branch). The spec doesn't say whether unknown ids count; I count the array length as given. → `site/src/content/docs/components/tree.md`
 
 ### 2026-09-23 14:18 — web round 2
 
@@ -11854,6 +12367,15 @@ Doc: `site/src/content/docs/components/tree.md`
 ## TreeGrid
 
 Doc: `site/src/content/docs/components/treegrid.md`
+
+### 2026-09-23 16:38 — web round 1
+
+- **DOC** TreeGrid: onEditStart is declared `cancelable` ('skips the default action when the handler returns false or calls preventDefault() on the event it receives'), but its payload is positional (rowId, column) with no event object, so on web only `return false` cancels; kept that, as DataGrid does. → `site/src/content/docs/components/treegrid.md`
+- **DOC** TreeGrid: the spec says the isRowHeader column is 'never pinned, never reordered' but does not say what happens when a caller pins it or places it elsewhere; chose a one-time dev warning and render as given (guide lines are then misplaced). → `site/src/content/docs/components/treegrid.md`
+- **DOC** TreeGrid: copy.selectedRows `count` is 'how many rows are selected', and it is unclear whether ids in `selected` that are not loaded rows count, or whether a selectChildren parent shown checked only because all its descendants are (its own id absent) counts; chose the length of the selected-id array as given. → `site/src/content/docs/components/treegrid.md`
+- **DOC** TreeGrid: once a lazy row is collapsed, the spec does not say whether its user-opened state persists if a controlled `expanded` lists it again; chose to clear it on collapse so it cannot be reopened programmatically ('a lazy row cannot be opened programmatically at all'). → `site/src/content/docs/components/treegrid.md`
+- **DOC** TreeGrid: 'DataGrid's own bindings apply at DataGrid's default token' does not say whether TreeGrid should read DataGrid's --ds-data-grid-* hooks or declare its own internal copies; TreeGrid keeps internal --ds-tree-grid-* values (row size, column size, resize step) set to the same tokens, so a page-CSS change to a DataGrid hook does not reach TreeGrid. → `site/src/content/docs/components/treegrid.md`
+- **DOC** TreeGrid: the guide-line offset formula names 'expandButtonSize / 2' but not whether the line's own width is centred on that point; chose to centre it ((expandButtonSize − guideLineWidth) / 2). → `site/src/content/docs/components/treegrid.md`
 
 ### 2026-09-23 14:13 — web round 2
 
@@ -12097,22 +12619,19 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 7943 · CODE: 149 · TOOLING: 7 · NOISE: 662
+DOC: 8272 · CODE: 149 · TOOLING: 7 · NOISE: 679
 
 ## Gates to fix
 
 - [ ] Box.lit — axe, keyboard-run
 - [ ] Box.rn — axe
-- [ ] Box.web — axe, keyboard-run
+- [ ] Box.web — axe
 - [ ] Heading.lit — axe, keyboard-run
 - [ ] Heading.rn — axe
-- [ ] Heading.web — axe, keyboard-run
 - [ ] Icon.lit — axe, keyboard-run
 - [ ] Icon.rn — axe
-- [ ] Icon.web — axe, keyboard-run
+- [ ] Input.web — axe, hooks
 - [ ] Stack.lit — axe, keyboard-run
 - [ ] Stack.rn — axe
-- [ ] Stack.web — axe, keyboard-run
 - [ ] Text.lit — axe, keyboard-run
 - [ ] Text.rn — axe
-- [ ] Text.web — axe, keyboard-run

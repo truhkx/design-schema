@@ -42,7 +42,7 @@ type Story = StoryObj<BreadcrumbArgs>;
 
 export const Default: Story = {};
 
-/* collapse */
+/* collapse (boolean; one story per value, matching React) */
 export const CollapseTrue: Story = {
   args: {
     collapse: true,
@@ -103,16 +103,20 @@ export const AlwaysInFull: Story = {
   },
 };
 
+export const AncestorWithoutHref: Story = {
+  args: {
+    items: [
+      { label: 'Docs', href: '/docs' },
+      { label: 'Reference' },
+      { label: 'Tokens', href: '/docs/reference/tokens' },
+      { label: 'Color' },
+    ],
+  },
+};
+
 export const SecondBreadcrumbOnAPage: Story = {
   args: {
     label: 'Catalogue breadcrumb',
     items: [{ label: 'Catalogue', href: '/catalogue' }, { label: 'Tents' }],
-  },
-};
-
-/* notable states */
-export const AncestorWithoutHref: Story = {
-  args: {
-    items: [{ label: 'Docs', href: '/docs' }, { label: 'Guides' }, { label: 'Theming' }],
   },
 };

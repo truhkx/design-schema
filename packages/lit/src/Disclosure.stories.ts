@@ -12,6 +12,7 @@ interface DisclosureArgs {
   defaultOpen: boolean;
   disabled: boolean;
   keepMounted: boolean;
+  fullWidth: boolean;
   /** Controlled open state. Bound as a property: a missing `open` attribute means uncontrolled. */
   open?: boolean | undefined;
   headingLevel?: DisclosureHeadingLevel | undefined;
@@ -27,6 +28,7 @@ const meta: Meta<DisclosureArgs> = {
     defaultOpen: { control: 'boolean' },
     disabled: { control: 'boolean' },
     keepMounted: { control: 'boolean' },
+    fullWidth: { control: 'boolean' },
     open: { control: 'boolean' },
     headingLevel: { control: 'select', options: [undefined, '2', '3', '4', '5', '6'] },
   },
@@ -37,6 +39,7 @@ const meta: Meta<DisclosureArgs> = {
     defaultOpen: false,
     disabled: false,
     keepMounted: false,
+    fullWidth: false,
     open: undefined,
     headingLevel: undefined,
   },
@@ -49,6 +52,7 @@ const meta: Meta<DisclosureArgs> = {
       ?default-open=${args.defaultOpen}
       ?disabled=${args.disabled}
       ?keep-mounted=${args.keepMounted}
+      ?full-width=${args.fullWidth}
     >
       <ds-text>${args.children}</ds-text>
     </ds-disclosure>
@@ -104,6 +108,7 @@ export const Disabled: Story = {
 export const Open: Story = { args: { defaultOpen: true } };
 export const Controlled: Story = { args: { open: true } };
 export const KeepMounted: Story = { args: { keepMounted: true } };
+export const FullWidth: Story = { args: { fullWidth: true } };
 
 /* accordion: independent disclosures stacked; nothing closes its siblings. */
 export const Accordion: Story = {

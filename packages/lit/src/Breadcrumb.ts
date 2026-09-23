@@ -1,4 +1,4 @@
-import { LitElement, css, html, type PropertyValues, type TemplateResult, type CSSResult } from 'lit';
+import { LitElement, css, html, nothing, type PropertyValues, type TemplateResult, type CSSResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import type { DsLink } from './Link.js';
@@ -6,7 +6,7 @@ import './Link.js';
 import './Button.js';
 import './Icon.js';
 
-/** Shape of each entry in `items`: `{ label: string; href?: string }`. */
+/** Shape of each entry in `items`: `{ label: string; href?: string | undefined }`. */
 export interface BreadcrumbItem {
   label: string;
   href?: string | undefined;
@@ -19,15 +19,21 @@ export interface BreadcrumbNavigateDetail {
   originalEvent: MouseEvent;
 }
 
-/** copy.separator — drawn with CSS from `--ds-breadcrumb-separator`, so it is not in the accessibility tree. */
-const COPY_SEPARATOR = '/';
-/** copy.expandLabel */
-const COPY_EXPAND_LABEL = 'Show all pages';
-/** copy.navLabel */
-const COPY_NAV_LABEL = 'Breadcrumb';
+/**
+ * copy.* — `current` is a native-only string (aria-current="page" announces it here), so it is omitted.
+ * `separator` is drawn with CSS from `--ds-breadcrumb-separator`, so it is not in the accessibility tree.
+ */
+const COPY = {
+  separator: '/',
+  expandLabel: 'Show all pages',
+  navLabel: 'Breadcrumb',
+} as const;
 
 /** Trails longer than this collapse (first, ellipsis, last two). */
 const COLLAPSE_ABOVE = 4;
+
+/** Index of the first item hidden by collapsing, and of the focus fallback after expanding. */
+const FIRST_HIDDEN = 1;
 
 /** Negates a boolean attribute: `no-collapse` present means `collapse` is `false`. */
 const NEGATED_BOOLEAN_CONVERTER = {
@@ -39,7 +45,16 @@ const NEGATED_BOOLEAN_CONVERTER = {
   },
 };
 
-/** Overridable style hooks; see the `overrides` property. `currentColor`, `itemColor`, `separatorColor` and `minTarget` are locked and excluded. */
+/** An ancestor with no page of its own renders as plain text, never an empty link. */
+function hasHref(item: BreadcrumbItem | undefined): item is BreadcrumbItem & { href: string } {
+  return item?.href !== undefined && item.href !== '';
+}
+
+/**
+ * Overridable style hooks; see the `overrides` property. `currentColor`, `itemColor`,
+ * `separatorColor`, `focusRing`, `focusRingWidth` and `minTarget` are locked: absent from this
+ * type, but their `--ds-breadcrumb-*` hooks stay on `:host` for page CSS.
+ */
 export type BreadcrumbOverridableBinding = 'gap' | 'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight';
 
 const HOOKS: Record<BreadcrumbOverridableBinding, string> = {
@@ -59,10 +74,9 @@ const HOOKS: Record<BreadcrumbOverridableBinding, string> = {
  * the last item is the current page, `<span aria-current="page">`. Separators
  * are CSS-generated. Activating an ancestor dispatches a composed, cancelable
  * `navigate` CustomEvent with `{ item, index, originalEvent }`; calling
- * `preventDefault()` on `originalEvent` (the retargeted native click) cancels
- * navigation. The ellipsis is a ghost `sm` icon-only `<ds-button>`, used
- * unchanged, whose `press` is stopped so consumers see only `navigate`. An
- * ancestor without an `href` renders as plain text.
+ * `preventDefault()` on it or on `originalEvent` (the retargeted native click)
+ * cancels navigation. The ellipsis is a ghost `sm` icon-only `<ds-button>`,
+ * used unchanged, whose `press` is stopped so consumers see only `navigate`.
  *
  * ## When to use
  *
@@ -83,18 +97,24 @@ export class DsBreadcrumb extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
+      --ds-breadcrumb-current-color: var(--color-foreground);
+      --ds-breadcrumb-item-color: var(--color-foreground-muted);
+      --ds-breadcrumb-separator-color: var(--color-foreground-muted);
       --ds-breadcrumb-gap: var(--space-2);
+      --ds-breadcrumb-focus-ring: var(--color-border-focus);
+      --ds-breadcrumb-focus-ring-width: var(--border-width-focus);
       --ds-breadcrumb-font-family: var(--font-family-body);
       --ds-breadcrumb-font-size: var(--font-size-sm);
       --ds-breadcrumb-font-weight: var(--font-weight-regular);
       --ds-breadcrumb-line-height: var(--font-line-height-normal);
+      --ds-breadcrumb-min-target: var(--size-target-min);
     }
 
     :host([hidden]) {
       display: none;
     }
 
-    /* fontFamily, fontSize, fontWeight, lineHeight on the nav; ds-link inherits (font: inherit on its anchor) */
+    /* fontFamily, fontSize, fontWeight, lineHeight on the nav; ds-link inherits them */
     [data-part='nav'] {
       font-family: var(--ds-breadcrumb-font-family);
       font-size: var(--ds-breadcrumb-font-size);
@@ -102,53 +122,54 @@ export class DsBreadcrumb extends LitElement {
       line-height: var(--ds-breadcrumb-line-height);
     }
 
-    /* the trail wraps rather than truncating; gap: after each separator */
+    /* the trail wraps rather than truncating; gap between items, no row gap (minTarget spaces the lines) */
     [data-part='list'] {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       column-gap: var(--ds-breadcrumb-gap);
+      row-gap: 0;
       margin: 0;
       padding: 0;
       list-style: none;
     }
 
-    /* minTarget on the list item, not the inline Link; itemColor: an ancestor without href */
+    /* minTarget on the list item, not the inline Link; itemColor reaches a plain ancestor; gap after the separator */
     [data-part='item'] {
       display: inline-flex;
       align-items: center;
       gap: var(--ds-breadcrumb-gap);
-      min-block-size: var(--size-target-min);
-      color: var(--color-foreground-muted);
+      min-block-size: var(--ds-breadcrumb-min-target);
+      color: var(--ds-breadcrumb-item-color);
     }
 
-    /* separator: copy.separator in separatorColor, gap before it; generated, so aria-hidden by construction */
+    /* separator: copy.separator, generated, so it is not in the accessibility tree */
     [data-part='item'] + [data-part='item']::before {
       content: var(--ds-breadcrumb-separator);
-      color: var(--color-foreground-muted);
+      color: var(--ds-breadcrumb-separator-color);
     }
 
-    /* currentColor: the current page, rendered as text in the regular weight */
+    /* currentColor: the current page, as text in the regular weight */
     [data-part='current'] {
-      color: var(--color-foreground);
+      color: var(--ds-breadcrumb-current-color);
     }
 
-    /*
-     * focusRing / focusRingWidth: only the focus-fallback item draws one — the <li> given
-     * tabindex="-1" after expanding when no revealed item is a link. Link and Button draw
-     * their own rings inside their shadow roots.
-     */
+    /* focusRing / focusRingWidth: only the focus-fallback item; Link and Button draw their own */
     [data-part='item']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-breadcrumb-focus-ring-width) solid var(--ds-breadcrumb-focus-ring);
+      outline-offset: var(--ds-breadcrumb-focus-ring-width);
     }
   `;
 
-  /** The trail from root to current page, in order. Every item but the last needs an `href`; the last is the current page and its `href` is ignored. A property, not an attribute. */
+  /**
+   * The trail from root to current page, in order. Every item but the last needs an `href`; an
+   * ancestor without one (or with `''`) renders as plain text. The last is the current page and
+   * its `href` is ignored. A property, not an attribute.
+   */
   @property({ attribute: false }) accessor items: BreadcrumbItem[] = [];
 
-  /** Accessible name of the navigation landmark. Change it only if the page has another breadcrumb. */
-  @property() accessor label: string = COPY_NAV_LABEL;
+  /** Accessible name of the navigation landmark (`copy.navLabel` by default). Change it only if the page has another breadcrumb. */
+  @property() accessor label: string = COPY.navLabel;
 
   /**
    * When there are more than four items, show the first, an ellipsis, and the last two; the
@@ -158,11 +179,19 @@ export class DsBreadcrumb extends LitElement {
   @property({ attribute: 'no-collapse', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
   accessor collapse = true;
 
-  /** Per-instance style overrides: `{ gap: 'space.3' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<BreadcrumbOverridableBinding, TokenRef | undefined>> | undefined;
+  /** Per-instance style overrides: `{ gap: 'space.3' }`. Locked bindings are not accepted. */
+  @property({ attribute: false }) accessor overrides:
+    | Partial<Record<BreadcrumbOverridableBinding, TokenRef | undefined>>
+    | undefined;
 
-  /** Whether the user has revealed the collapsed items (one-way). */
+  /** Whether the user has revealed the collapsed items: one-way, private, for the life of the instance. */
   @state() private accessor expanded = false;
+
+  /** Once focus has fallen back to an item, the `<li>` at index 1 keeps `tabindex="-1"`. */
+  @state() private accessor fallbackTabindex = false;
+
+  /** Focus target decided at the press, applied in the update that reveals the items. */
+  private pendingFocus: number | 'fallback' | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -175,6 +204,17 @@ export class DsBreadcrumb extends LitElement {
     }
   }
 
+  protected override updated(): void {
+    const target = this.pendingFocus;
+    if (target === undefined) return;
+    this.pendingFocus = undefined;
+    if (target === 'fallback') {
+      this.renderRoot.querySelector<HTMLElement>(`[data-index="${FIRST_HIDDEN}"]`)?.focus();
+    } else {
+      this.renderRoot.querySelector<DsLink>(`[data-index="${target}"] ds-link`)?.focus();
+    }
+  }
+
   protected override render(): TemplateResult {
     const items = this.items;
     const last = items.length - 1;
@@ -182,8 +222,8 @@ export class DsBreadcrumb extends LitElement {
 
     const entries: TemplateResult[] = [];
     items.forEach((item, index) => {
-      if (collapsed && index > 0 && index < last - 1) {
-        if (index === 1) {
+      if (collapsed && index >= FIRST_HIDDEN && index < last - 1) {
+        if (index === FIRST_HIDDEN) {
           entries.push(html`
             <li part="item" data-part="item">
               <span part="expand" data-part="expand">
@@ -191,7 +231,7 @@ export class DsBreadcrumb extends LitElement {
                   variant="ghost"
                   size="sm"
                   icon-only
-                  label=${COPY_EXPAND_LABEL}
+                  label=${COPY.expandLabel}
                   @press=${this.handleExpand}
                 >
                   <ds-icon slot="leading-icon" name="ellipsis"></ds-icon>
@@ -202,17 +242,21 @@ export class DsBreadcrumb extends LitElement {
         }
         return;
       }
+      const tabindex = this.fallbackTabindex && index === FIRST_HIDDEN ? '-1' : nothing;
       if (index === last) {
-        entries.push(
-          html`<li part="item" data-part="item" data-index=${index}><span part="current" data-part="current" aria-current="page">${item.label}</span></li>`,
-        );
-      } else if (item.href === undefined || item.href === '') {
-        // An ancestor with no page of its own: plain text inside the item, never an empty link.
-        // It has no anatomy part, so it takes itemColor from the <li>.
-        entries.push(html`<li part="item" data-part="item" data-index=${index}><span>${item.label}</span></li>`);
+        entries.push(html`
+          <li part="item" data-part="item" data-index=${index} tabindex=${tabindex}>
+            <span part="current" data-part="current" aria-current="page">${item.label}</span>
+          </li>
+        `);
+      } else if (!hasHref(item)) {
+        // No anatomy part of its own: plain text inside the item, taking itemColor from the <li>.
+        entries.push(html`
+          <li part="item" data-part="item" data-index=${index} tabindex=${tabindex}><span>${item.label}</span></li>
+        `);
       } else {
         entries.push(html`
-          <li part="item" data-part="item" data-index=${index}>
+          <li part="item" data-part="item" data-index=${index} tabindex=${tabindex}>
             <span part="link" data-part="link">
               <ds-link
                 tone="default"
@@ -227,7 +271,12 @@ export class DsBreadcrumb extends LitElement {
     });
 
     return html`
-      <nav part="nav" data-part="nav" aria-label=${this.label} style=${`--ds-breadcrumb-separator: ${JSON.stringify(COPY_SEPARATOR)}`}>
+      <nav
+        part="nav"
+        data-part="nav"
+        aria-label=${this.label}
+        style=${`--ds-breadcrumb-separator: ${JSON.stringify(COPY.separator)}`}
+      >
         <ol part="list" data-part="list">${entries}</ol>
       </nav>
     `;
@@ -247,26 +296,21 @@ export class DsBreadcrumb extends LitElement {
     }
   }
 
-  private async handleExpand(event: Event): Promise<void> {
+  private handleExpand(event: Event): void {
     // The ellipsis is internal; consumers see only `navigate`.
     event.stopPropagation();
-    const firstHidden = 1;
+    // The revealed items are 1 through length − 3 as they are now, at the press.
     const lastHidden = this.items.length - 3;
-    this.expanded = true;
-    await this.updateComplete;
-    // Focus moves to the first revealed link, or to the first revealed item when none is a link.
-    for (let index = firstHidden; index <= lastHidden; index++) {
-      const link = this.renderRoot.querySelector<DsLink>(`[data-index="${index}"] ds-link`);
-      if (link) {
-        link.focus();
-        return;
+    let target: number | 'fallback' = 'fallback';
+    for (let index = FIRST_HIDDEN; index <= lastHidden; index++) {
+      if (hasHref(this.items[index])) {
+        target = index;
+        break;
       }
     }
-    const first = this.renderRoot.querySelector<HTMLElement>(`[data-index="${firstHidden}"]`);
-    if (first) {
-      if (first.tabIndex !== -1) first.tabIndex = -1;
-      first.focus();
-    }
+    this.pendingFocus = target;
+    if (target === 'fallback') this.fallbackTabindex = true;
+    this.expanded = true;
   }
 
   private applyOverrides(): void {

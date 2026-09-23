@@ -42,3 +42,18 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Meter: the header is space-between with baseline alignment, but the doc does not say whether the value text may shrink or wrap when the label is long. I gave it neither `flex-shrink: 0` nor `text-align: end` (parity with React's Meter.css), so a long label pushes the value text into wrapping, start-aligned.
 - Meter: story parity forced three exports the doc's examples do not name — React exports `Empty`, `Full` and `AboveMaximum` as notable states, which I mirrored. Doing so dropped the Lit-only `EmptyRange` story, so the documented `max <= min` state (empty track, '0%', dev warning) now has no story on any platform.
 - Meter: the web note says the composed Texts receive only `data-part` and `id` besides their composition props. The Lit element also sets `part="label"` / `part="valueText"` on the `ds-text` hosts, per the package's anatomy convention, even though `::part` styling is not a sanctioned escape hatch — the doc does not say whether composed children should expose a part name.
+
+## 2026-09-23 14:17 — round 1
+
+- Meter: the invalid-range warning prints `<max>`/`<min>` and dedupes 'per distinct min/max pair', but the doc does not say whether that means the raw props or the substituted finite bounds (e.g. min=NaN, max=-5). Chose the substituted bounds for both the message and the dedupe key, matching what aria-valuemin/max expose.
+- Meter: header `align-items: baseline` is stated, but the label wrapper's `flex-shrink: 1` alone does not let a long label wrap in a flex row without `min-inline-size: 0`; added `min-inline-size: 0` to the label wrapper, which the doc does not list.
+- Meter: the doc lists `--ds-meter-track` and `--ds-meter-fill` as the locked hooks but not how the tone-interpolated fill hook is declared; chose one `--ds-meter-fill` redefined per `:host([tone=…])`.
+- Meter: stories beyond the enum values and examples (Empty, Full, AboveMaximum, and ToneWarning/ToneDanger's non-default `value`) come from React's stories rather than the doc; kept them for parity.
+
+## 2026-09-23 14:18 — round 2
+
+- Meter: the spec says labelColor and valueColor are 'Realised by the label/value Text's tone …; no hook of its own', but the hooks gate (and the prompt's Overrides section: locked bindings 'still declare their hook on :host') requires --ds-meter-label-color / --ds-meter-value-color. Chose the gate and the Divider precedent: both hooks are declared on :host with their tokens and nothing reads them, so no rule restyles the composed ds-text. As a result, setting these hooks from document CSS does not recolour the texts. The doc should either drop 'no hook of its own' or say how the hook reaches Text (e.g. a Text color override, which Text's schema does not offer for tone-bound colour).
+- Meter: the invalid-range warning prints `<max>`/`<min>` and dedupes 'per distinct min/max pair', but the doc does not say whether that means the raw props or the substituted finite bounds (e.g. min=NaN, max=-5). Chose the substituted bounds for both the message and the dedupe key, matching what aria-valuemin/max expose.
+- Meter: the label wrapper's `flex-shrink: 1` alone does not let a long label wrap in a flex row without `min-inline-size: 0`; added `min-inline-size: 0` to the label wrapper, which the doc does not list.
+- Meter: the doc names `--ds-meter-fill` as a locked hook but not how the tone-interpolated value is declared; chose one `--ds-meter-fill` redefined per `:host([tone=…])`.
+- Meter: stories beyond the enum values and examples (Empty, Full, AboveMaximum, and ToneWarning/ToneDanger's non-default `value`) come from React's stories rather than the doc; kept them for parity.

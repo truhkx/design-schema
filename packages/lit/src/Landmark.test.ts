@@ -14,18 +14,18 @@ interface Given {
 }
 
 /**
- * The label each role is rendered with: none for the roles that refuse one (`banner`, `main`,
- * `contentinfo`) or do not need one (`complementary`, `search`), and a name for `region` and
- * `form`, which are landmarks only when named. The Default story's label does not carry over.
+ * The label each role is rendered with in the per-role scenarios: none for the roles that refuse
+ * one (`banner`, `main`, `contentinfo`) and the doc's name for every other role. The Default
+ * story's label does not carry over.
  */
 const ROLE_LABEL: Readonly<Record<LandmarkRole, string | undefined>> = {
   banner: undefined,
-  navigation: 'Main',
+  navigation: 'Primary',
   main: undefined,
-  complementary: undefined,
+  complementary: 'Related links',
   contentinfo: undefined,
   region: 'Related articles',
-  search: undefined,
+  search: 'Site search',
   form: 'Sign in',
 };
 
@@ -72,8 +72,13 @@ describe('ds-landmark', () => {
   });
 
   it('main-is-the-primary-content-landmark', async () => {
-    const el = await setup({ role: 'main', label: ROLE_LABEL.main });
+    const el = await setup({ role: 'main', label: '' });
     expectRole(el, 'main');
+  });
+
+  it('a-label-is-dropped-on-a-role-that-refuses-one', async () => {
+    const el = await setup({ role: 'banner', label: 'Site header' });
+    expect(el).not.toHaveAttribute('aria-label');
   });
 
   it('a-region-is-named-by-its-label', async () => {

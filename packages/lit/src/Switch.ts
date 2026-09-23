@@ -116,8 +116,10 @@ export class DsSwitch extends LitElement {
       --ds-switch-focus-ring: var(--color-border-focus);
       --ds-switch-focus-ring-width: var(--border-width-focus);
       --ds-switch-min-target: var(--size-target-comfortable);
-      /* helperSize and descriptionText have no hook: they reach the composed Text only through its
-         tone prop and its own overrides. */
+      /* descriptionText is realised by the composed Text; this hook reaches it only through Text's
+         documented --ds-text-color (below), on the same token its muted tone uses, so page CSS can
+         still re-theme or rename it. helperSize has no hook: it is forwarded to the Text's overrides. */
+      --ds-switch-description-text: var(--color-foreground-muted);
 
       /* The label's first line box, which the track slot is tall, and the thumb's travel. */
       --ds-switch-line-box: calc(var(--ds-switch-label-size) * var(--ds-switch-line-height));
@@ -183,6 +185,11 @@ export class DsSwitch extends LitElement {
       line-height: var(--ds-switch-line-height);
       color: var(--ds-switch-label-color);
       cursor: pointer;
+    }
+
+    /* descriptionText: set through the child's documented hook, never by styling its shadow tree. */
+    .description {
+      --ds-text-color: var(--ds-switch-description-text);
     }
 
     /* One label line tall: the track centres on the label's first line. */
@@ -404,6 +411,7 @@ export class DsSwitch extends LitElement {
             ${this.description
               ? html`<ds-text
                   id="description"
+                  class="description"
                   part="description"
                   data-part="description"
                   element="p"

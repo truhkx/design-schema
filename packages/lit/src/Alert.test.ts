@@ -8,7 +8,7 @@ import './Alert.js';
 import type { AlertDismissDetail, DsAlert } from './Alert.js';
 import meta from './Alert.stories.js';
 
-type Given = Partial<Pick<DsAlert, 'tone' | 'heading' | 'live' | 'dismissible'>>;
+type Given = Partial<Pick<DsAlert, 'tone' | 'heading' | 'live' | 'dismissible'>> & { children?: string };
 
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
 async function setup(given: Given = {}) {
@@ -54,6 +54,13 @@ describe('ds-alert', () => {
   it('live-off-renders-no-role', async () => {
     const a = await setup({ live: 'off' });
     expect(a.el.getAttribute('role')).toBeNull();
+  });
+
+  it('an-empty-heading-falls-back-to-the-body', async () => {
+    const a = await setup({ heading: '', children: 'Your card was declined.' });
+    expect(a.part('heading')).toBeNull();
+    expect(a.el.textContent).toContain('Your card was declined.');
+    await vi.waitFor(() => expect(a.el.getAttribute('aria-label')).toBe('Your card was declined.'));
   });
 
   it('the-heading-is-rendered', async () => {

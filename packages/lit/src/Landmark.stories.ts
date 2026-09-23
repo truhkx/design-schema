@@ -41,20 +41,20 @@ type Story = StoryObj<LandmarkArgs>;
 export const Default: Story = {};
 
 /*
- * role — banner, main, contentinfo, complementary and search carry no label here, so no story
- * models a label on a role that refuses it or trips the missing-label warning by accident.
+ * role — banner, main and contentinfo refuse a label, so they carry none; every other role is
+ * named, since complementary and search are in the shared-label duplicate check too.
  */
 export const RoleBanner: Story = { args: { role: 'banner', label: undefined, children: 'Site header' } };
-export const RoleNavigation: Story = { args: { role: 'navigation', label: 'Main' } };
+export const RoleNavigation: Story = { args: { role: 'navigation', label: 'Primary' } };
 export const RoleMain: Story = { args: { role: 'main', label: undefined, children: 'Page content' } };
 export const RoleComplementary: Story = {
-  args: { role: 'complementary', label: undefined, children: 'Sidebar content' },
+  args: { role: 'complementary', label: 'Related links', children: 'Sidebar content' },
 };
 export const RoleContentinfo: Story = { args: { role: 'contentinfo', label: undefined, children: 'Site footer' } };
 export const RoleRegion: Story = {
   args: { role: 'region', label: 'Related articles', children: 'Section content' },
 };
-export const RoleSearch: Story = { args: { role: 'search', label: undefined, children: 'Search form' } };
+export const RoleSearch: Story = { args: { role: 'search', label: 'Site search', children: 'Search form' } };
 export const RoleForm: Story = { args: { role: 'form', label: 'Sign in', children: 'Form fields' } };
 
 /* examples */

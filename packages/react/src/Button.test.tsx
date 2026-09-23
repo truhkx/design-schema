@@ -146,6 +146,32 @@ describe('Button', () => {
     expect(screen.getByRole('button')).toHaveAttribute('type', 'submit');
   });
 
+  /* derived: props.haspopup */
+  it('renders-haspopup-menu', () => {
+    setup({ haspopup: 'menu' });
+    expect(screen.getByRole('button')).toHaveAttribute('aria-haspopup', 'menu');
+  });
+
+  it('renders-haspopup-listbox', () => {
+    setup({ haspopup: 'listbox' });
+    expect(screen.getByRole('button')).toHaveAttribute('aria-haspopup', 'listbox');
+  });
+
+  it('renders-haspopup-tree', () => {
+    setup({ haspopup: 'tree' });
+    expect(screen.getByRole('button')).toHaveAttribute('aria-haspopup', 'tree');
+  });
+
+  it('renders-haspopup-grid', () => {
+    setup({ haspopup: 'grid' });
+    expect(screen.getByRole('button')).toHaveAttribute('aria-haspopup', 'grid');
+  });
+
+  it('renders-haspopup-dialog', () => {
+    setup({ haspopup: 'dialog' });
+    expect(screen.getByRole('button')).toHaveAttribute('aria-haspopup', 'dialog');
+  });
+
   /* derived: a11y.requires */
   it('has-accessible-name', () => {
     const s = setup();

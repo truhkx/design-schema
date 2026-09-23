@@ -54,6 +54,12 @@ describe('Link', () => {
     expect(s.control()).toHaveAttribute('download', '');
   });
 
+  /* current announces the link as the page the user is on. */
+  it('current-marks-the-page', () => {
+    const s = setup({ current: true });
+    expect(s.control()).toHaveAttribute('aria-current', 'page');
+  });
+
   it('renders', () => {
     const s = setup();
     expect(s.container.querySelector('[data-ds="Link"]')).not.toBeNull();

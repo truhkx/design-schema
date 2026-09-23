@@ -217,3 +217,18 @@ Note KEYBOARD_EXPECTS has no 'submits' outcome, so Enter is asserted through its
 - Form: what `reportValidity()` should do on a disabled Form is unstated. Since a disabled Form disables every field, the validation pass skips them all and reports valid, so it returns true and fires nothing; the `disabled` early return in the submit handler is what keeps `onSubmit` from firing with an empty map, matching 'a submit attempted while disabled is cancelled early and fires neither event'.
 - Form: `copy.summaryHeadingOne` and `copy.invalidSummary` are declared but the doc says neither is rendered on web, Lit or RN — they have no consumer on any of the three. Kept both in the `COPY` constant so the copy table stays complete and verbatim, but they are dead on web.
 - Form: `errorSummaryGap` is forwarded to the two summary Stacks' `gap` override, but Stack's `gap` is an enum-valued binding whose override takes an arbitrary `TokenRef`; the doc does not say what happens if the forwarded token is not a `layout.gap.*` one. Passed it through unchecked, with the default left at `gap="tight"` (`layout.gap.tight`).
+
+## 2026-09-23 14:15 — round 1
+
+- Form: the spec says an error-summary entry whose field has unregistered becomes plain danger Text, but not what makes the Form re-render when a field registers or unregisters — the registry is a ref. Chose to bump a state counter on register and unregister so the summary updates; the context value does not depend on it, so fields do not re-render.
+- Form: the platform notes list `validate` next to `validateMode` in the React context without saying why both exist. Kept both, with the same value (`validate` for fields generated before `validateMode`).
+- Form: the doc asks for a `FailedSubmit` story but not how its play function should wait for the summary. Chose `form.requestSubmit()` and then one animation frame.
+- Form: the web notes say the summary's link targets are opaque ids but not how the generated id base is formed for an unnamed form. Chose `ds-form` + useId().
+- Form: the spec has no keyboard block, but a Keyboard story (three required Inputs and a submit Button) exists and was kept; the docs should either declare a keyboard block or drop the story from the requirements.
+- Form: the `LabelledBy` story is not one of the doc's examples; kept it to show that `labelledBy` wins over `label`.
+
+## 2026-09-23 14:16 — round 2
+
+- Form: the web platform notes say the locked errorSummaryText and errorSummaryBackground 'get no --ds-form-* hook on web or Lit; their rules read the token directly', but the prompt's Overrides section, the package conventions and the hooks gate all say a locked binding keeps its hook. Chose the Overrides contract: all three locked bindings (text, background, lineHeight) declare hooks and the rules read them. They are still left out of the `overrides` type. The notes should drop that sentence, for Lit too.
+- Form: after the Round 1 fix the spec is still unclear on what re-renders the summary when a field unregisters (it now bumps a registry counter), on the id base for an unnamed form (`ds-form` + useId()), on why the context carries both `validate` and `validateMode`, and on how the FailedSubmit play function waits for the summary (requestSubmit, then one animation frame).
+- Form: the spec has no keyboard block but a Keyboard story exists; the docs should declare a keyboard block or drop the requirement.

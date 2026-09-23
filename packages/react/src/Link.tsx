@@ -55,6 +55,14 @@ export interface LinkProps
   tone?: LinkTone | undefined;
   /** Downloads the resource instead of navigating, under the server's file name (a custom file name is out of scope). Web only. */
   download?: boolean | undefined;
+  /**
+   * The link points at the page the user is on, in a navigation list (a SidePanel drawer, a Tree of
+   * href nodes): `aria-current="page"` on the anchor. The link stays a link and keeps its colours and
+   * underline; how a navigation also marks it visually is that container's to say. False writes
+   * nothing, so an `aria-current` passed through `...rest` (a `step` or `location`) still applies;
+   * while `current` is true the prop wins.
+   */
+  current?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<LinkOverridableBinding, TokenRef | undefined>> | undefined;
   /**
@@ -80,6 +88,7 @@ export function Link({
   external = false,
   tone = 'default',
   download = false,
+  current = false,
   overrides,
   onClick,
   ...rest
@@ -103,6 +112,8 @@ export function Link({
       target={external ? '_blank' : undefined}
       rel={external ? 'noopener noreferrer' : undefined}
       download={download ? true : undefined}
+      // `current` writes aria-current only when true, so a consumer's own value from ...rest survives otherwise.
+      {...(current ? { 'aria-current': 'page' as const } : {})}
       onClick={handleClick}
     >
       <span className="ds-link__label" data-part="label">

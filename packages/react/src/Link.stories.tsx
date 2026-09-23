@@ -12,6 +12,7 @@ const meta: Meta<typeof Link> = {
     external: false,
     tone: 'default',
     download: false,
+    current: false,
   },
   argTypes: {
     onClick: { action: 'onClick' },

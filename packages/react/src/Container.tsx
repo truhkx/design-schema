@@ -41,11 +41,13 @@ export interface ContainerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'c
    * padded parent. */
   gutter?: ContainerGutter | undefined;
   /** Where the capped column sits in a wider viewport. `start` sets `margin-inline: 0` on both sides,
-   * not just the start side, so the column never picks up an asymmetric margin. */
+   * not just the start side, so the column never picks up an asymmetric margin. The margin is not a
+   * style binding: it has no hook and is not overridable. The selector is written at every `width`,
+   * `full` included, where it is inert. */
   align?: ContainerAlign | undefined;
   /** Use `main` for the page's main column when no Landmark wraps it. A page has exactly one `main`;
    * that is the author's responsibility, since the component cannot see the rest of the page, so it
-   * neither enforces it nor warns. */
+   * neither enforces it nor warns. `div` (the default) and `section` add no semantics. */
   element?: ContainerElement | undefined;
   /**
    * Per-instance style overrides: each entry sets the matching CSS hook to that token, inline.

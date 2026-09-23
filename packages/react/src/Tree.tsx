@@ -1,5 +1,7 @@
 import {
+  useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -189,9 +191,10 @@ export interface TreeProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   /** Heading level of the visible label in the page outline; its size is headingSize regardless. */
   headingLevel?: TreeHeadingLevel | undefined;
   /**
-   * The hierarchy. `href` makes a node's label a Link (navigation trees); `icon` is an Icon glyph
-   * (`folder` and `file` exist for the usual case); `badge` is a short trailing count or status;
-   * `children: "lazy"` loads on first expand through `onExpand`.
+   * The hierarchy. `href` makes a node's label a Link with `tone: inherit` nested inside the label Text, so it
+   * takes the label's font and color (navigation trees); `icon` is an Icon glyph (`folder` and `file` exist for
+   * the usual case); `badge` is a short trailing count or status; `children: "lazy"` loads on first expand
+   * through `onExpand`.
    */
   nodes: TreeNode[];
   /**
@@ -203,8 +206,9 @@ export interface TreeProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   /**
    * Initially expanded ids. `["*"]` opens every node whose `children` is a non-empty array and never a
    * `"lazy"` node; `"*"` is reserved as that sentinel, so a node whose id is literally `"*"` is never matched
-   * by it. A lazy id listed explicitly stays closed until the user opens it (onExpand only fires for user
-   * acts), and the same rule covers the controlled `expanded`.
+   * by it. The first user toggle resolves `"*"` to the concrete ids then open, and that resolved array is what
+   * onExpandChange reports, any held-lazy ids kept in place. A lazy id listed explicitly stays closed until the
+   * user opens it (onExpand only fires for user acts), and the same rule covers the controlled `expanded`.
    */
   defaultExpanded?: string[] | undefined;
   /**
@@ -217,22 +221,31 @@ export interface TreeProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   selected?: string[] | undefined;
   /** Initially selected ids. */
   defaultSelected?: string[] | undefined;
-  /** With `multiple`, selecting a parent selects its descendants and parents show indeterminate. */
+  /**
+   * With `multiple`, selecting a parent selects its descendants and parents show indeterminate. The cascade
+   * covers loaded, enabled descendants only; a parent's id is in `selected` exactly when all its enabled loaded
+   * descendants are, and unchecking any descendant removes it and every ancestor id. A parent with no enabled
+   * loaded descendants behaves as a leaf. Shift+ArrowDown/Up cascade like Space but only ever add.
+   */
   selectChildren?: boolean | undefined;
   /**
-   * With `single`, moving focus also selects (a settings sidebar where the tree drives a panel).
-   * Off by default: focus moves, Enter or Space selects.
+   * With `single`, moving focus also selects (a settings sidebar where the tree drives a panel). Moving focus
+   * means the keyboard — the arrows, Home, End and type-ahead; entering with Tab and pointer focus never select
+   * on their own. Off by default: focus moves, Enter or Space selects.
    */
   selectOnFocus?: boolean | undefined;
   /** Vertical guide lines under open parents. */
   showGuides?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook (or composed child override) to that token. */
   overrides?: Partial<Record<TreeOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired with the selected ids. */
+  /** Fired with the selected ids, in tree (document) order, and only when the set actually changes. */
   onSelectionChange?: ((ids: string[]) => void) | undefined;
-  /** Fired with the expanded ids. */
+  /** Fired with the expanded ids, in the order they were opened. */
   onExpandChange?: ((ids: string[]) => void) | undefined;
-  /** Fired when a lazy node is expanded for the first time, with its id. */
+  /**
+   * Fired with its id each time a node whose `children` is still `"lazy"` is opened, so a failed load can retry;
+   * replacing `children` is the only thing that stops it. Fires before the onExpandChange of the same act.
+   */
   onExpand?: ((id: string) => void) | undefined;
   /** Fired on Enter or double-click on a node (open the file, navigate), with its id. Nodes with `href` navigate instead. */
   onActivate?: ((id: string) => void) | undefined;
@@ -275,9 +288,29 @@ export function Tree({
     buffer: '',
     timer: undefined,
   });
+  /** Set while activation clicks an href node's anchor, so that click's bubble through the row does not toggle. */
+  const activating = useRef(false);
+
+  useEffect(() => {
+    const state = typeahead.current;
+    return () => {
+      if (state.timer !== undefined) clearTimeout(state.timer);
+    };
+  }, []);
 
   const everyNode = useMemo(() => allNodes(nodes), [nodes]);
   const nodeById = useMemo(() => new Map(everyNode.map((node) => [node.id, node])), [everyNode]);
+  const parentOf = useMemo(() => {
+    const map = new Map<string, string | null>();
+    const walk = (list: TreeNode[], parentId: string | null): void => {
+      for (const node of list) {
+        map.set(node.id, parentId);
+        walk(loadedChildren(node), node.id);
+      }
+    };
+    walk(nodes, null);
+    return map;
+  }, [nodes]);
 
   /* ---------- expansion (controlled or uncontrolled) ---------- */
   const [internalExpanded, setInternalExpanded] = useState<string[]>(defaultExpanded ?? []);
@@ -421,6 +454,23 @@ export function Tree({
     itemRefs.current.get(id)?.focus();
   };
 
+  // When a controlled `expanded` change closes an ancestor of the focused node, focus moves up to the nearest
+  // ancestor still shown, as TreeGrid does — never dropped to the document. React suppresses the blur of an
+  // element it removes, so `focusedId` still names the vanished node here.
+  useLayoutEffect(() => {
+    if (focusedId === undefined || navigable.some((entry) => entry.node.id === focusedId)) return;
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    let id = parentOf.get(focusedId) ?? null;
+    while (id !== null && !navigable.some((entry) => entry.node.id === id)) id = parentOf.get(id) ?? null;
+    if (id === null) {
+      setFocusedId(undefined);
+      return;
+    }
+    setFocusedId(id);
+    itemRefs.current.get(id)?.focus();
+  }, [focusedId, navigable, parentOf]);
+
   /** Keyboard focus movement: with single + selectOnFocus, the node is selected as focus lands. */
   const moveTo = (entry: VisibleNode | undefined): void => {
     if (!entry) return;
@@ -432,8 +482,15 @@ export function Tree({
     if (node.disabled) return;
     if (selectable === 'single') selectOnly(node.id);
     if (node.href) {
-      // The link part is a span the tree owns; the anchor Link renders inside it.
-      itemRefs.current.get(node.id)?.querySelector<HTMLAnchorElement>('[data-part="link"] a')?.click();
+      // The link part is a span the tree owns; the anchor Link renders inside it. Clicking it lets the page's
+      // click routing see the navigation; the guard keeps that click from toggling selection on its way up.
+      const anchor = itemRefs.current.get(node.id)?.querySelector<HTMLAnchorElement>('[data-part="link"] a');
+      activating.current = true;
+      try {
+        anchor?.click();
+      } finally {
+        activating.current = false;
+      }
     } else {
       onActivate?.(node.id);
     }
@@ -586,6 +643,8 @@ export function Tree({
         data-part="node"
         className="ds-tree__node"
         style={{ '--ds-tree-level': level - 1 } as CSSProperties}
+        // Named explicitly: the chevron stays exposed, so a name from contents would read "Expand Documents Documents".
+        aria-label={node.badge ? `${node.label}, ${node.badge}` : node.label}
         aria-level={level}
         aria-setsize={setsize}
         aria-posinset={posinset}
@@ -606,7 +665,7 @@ export function Tree({
             if (node.disabled) event.preventDefault();
           }}
           onClick={(event: ReactMouseEvent) => {
-            if (node.disabled) return;
+            if (node.disabled || activating.current) return;
             focusNode(node.id);
             // A double-click toggles once, then activates: the second click does not toggle again.
             if (event.detail >= 2) return;
@@ -721,7 +780,7 @@ export function Tree({
                   <span className="ds-tree__indent" aria-hidden="true" />
                   <span className="ds-tree__content">
                     <span className="ds-tree__expand" aria-hidden="true" />
-                    <Text element="span" tone="muted">
+                    <Text element="span" tone="muted" overrides={labelTextOverrides}>
                       {COPY.loading}
                     </Text>
                   </span>
@@ -766,7 +825,7 @@ export function Tree({
         {nodes.map((node, index) => renderNode(node, 1, index + 1, nodes.length))}
       </ul>
       {nodes.length === 0 ? (
-        <Text data-part="emptyState" tone="muted">
+        <Text data-part="emptyState" tone="muted" overrides={labelTextOverrides}>
           {COPY.empty}
         </Text>
       ) : null}

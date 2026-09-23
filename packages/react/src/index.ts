@@ -12,7 +12,7 @@
  */
 
 export { Button } from './Button';
-export type { ButtonProps, ButtonVariant, ButtonSize, ButtonType, ButtonOverridableBinding } from './Button';
+export type { ButtonProps, ButtonVariant, ButtonSize, ButtonType, ButtonHaspopup, ButtonOverridableBinding } from './Button';
 
 export { Heading } from './Heading';
 export type { HeadingProps, HeadingLevel, HeadingSize, HeadingOverridableBinding } from './Heading';

@@ -87,3 +87,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - DataGrid: aria-valuemin/aria-valuemax are not in the web attributes list, though role="separator" with aria-valuenow is under-specified without them. Set aria-valuemin from the column's `minWidth` only, and omitted aria-valuemax entirely.
 - DataGrid: the plural-rules locale is specified only for Lit (document.documentElement.lang). Used the same source on web for copy.copied and copy.rowCount.
 - DataGrid: stickyHeader is a prop but "always true when virtualized", and every height other than `content` virtualizes. Chose to force the sticky header whenever virtualized, so the prop only has an effect at height: content — where the spec says it has no effect anyway, making the prop unobservable on web.
+
+## 2026-09-23 13:52 — round 1
+
+- DataGrid: headerSize/headerWeight are forwarded to the sort Button's overrides AND style the header part (the text of non-sortable headers). The 'forwarded bindings declare no hook' rule doesn't say what happens when a binding does both; I kept their hooks. captionSize/captionWeight/statusBarSize are only forwarded, so I dropped their hooks.
+- DataGrid: minTarget is locked and forwarded to Checkbox controlSize, but it is also the resize floor, which is measured from a hidden probe element. It keeps a hook (--ds-data-grid-min-target) for the probe, so it is both forwarded and hooked.
+- DataGrid: 'A select editor opens its popup at once' — Select only has a controlled `open` prop (no defaultOpen). The grid owns that state and cancels on onOpenChange(false) in a microtask, relying on Select firing onChange before or in the same task as the close. The Select doc doesn't state that order.
+- DataGrid: the checkbox editor 'commits on change', but the spec doesn't say whether Enter commits it without a change. I kept the general rule: Enter commits and moves down.
+- DataGrid: Shift+click on the select Checkbox. Checkbox's onChange carries no modifier keys, so the grid records shiftKey from the cell's pointerdown. The spec could say whether the pointer path runs through the cell only.
+- DataGrid: the empty-state row has aria-rowindex 2 while aria-rowcount is (0 + 1) = 1. The spec defines no row index or role for the emptyState row.
+- DataGrid: the validation message is 'a cellInvalidBackground span … around a default-tone Text' inside the live status Text, which is muted-tone. That nests a Text inside a Text; the spec doesn't say whether the span replaces the live text or sits beside it. I render it in place of the announcement.
+- DataGrid: aria-valuemin on the resize separator is omitted when the column sets no minWidth. The spec says minWidth defaults to size.target.min, but that is only known as a pixel number after measuring.

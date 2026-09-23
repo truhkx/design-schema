@@ -48,7 +48,7 @@ async function setup(given: Given = {}) {
 
   document.body.append(el);
   await el.updateComplete;
-  const scope = el.shadowRoot!.querySelector<HTMLElement & { updateComplete: Promise<boolean> }>('[data-part="focusScope"]');
+  const scope = el.shadowRoot!.querySelector<HTMLElement & { updateComplete: Promise<boolean> }>('ds-focus-scope');
   await scope?.updateComplete;
   await new Promise((resolve) => requestAnimationFrame(resolve));
 

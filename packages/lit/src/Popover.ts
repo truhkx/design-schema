@@ -21,6 +21,9 @@ export type PopoverPlacement =
   | 'start'
   | 'end';
 
+/** Where focus goes on open: the first control, or nowhere (the composer moves it). */
+export type PopoverInitialFocus = 'first' | 'none';
+
 /** Why `open-change` fired. */
 export type PopoverCloseReason = 'trigger' | 'escape' | 'outside' | 'close-button' | 'tab-out';
 
@@ -41,6 +44,7 @@ export type PopoverOverridableBinding =
   | 'offset'
   | 'arrowSize'
   | 'maxWidth'
+  | 'gutter'
   | 'layer'
   | 'enter'
   | 'enterDistance'
@@ -56,6 +60,7 @@ const HOOKS: Record<PopoverOverridableBinding, string> = {
   offset: '--ds-popover-offset',
   arrowSize: '--ds-popover-arrow-size',
   maxWidth: '--ds-popover-max-width',
+  gutter: '--ds-popover-gutter',
   layer: '--ds-popover-layer',
   enter: '--ds-popover-enter',
   enterDistance: '--ds-popover-enter-distance',
@@ -115,18 +120,27 @@ function resolvePlacement(placement: PopoverPlacement, rtl: boolean): { side: Si
 
 /** How many modal `<ds-popover>` instances currently hold the page-scroll lock. */
 let openModalCount = 0;
+let previousOverflow = '';
+let previousGutter = '';
 
+/** Locks page scroll the way Dialog does; `scrollbar-gutter: stable` keeps the page from shifting by the scrollbar width. */
 function lockPageScroll(): void {
   openModalCount += 1;
   if (openModalCount === 1) {
-    document.documentElement.style.overflow = 'hidden';
+    const style = document.documentElement.style;
+    previousOverflow = style.getPropertyValue('overflow');
+    previousGutter = style.getPropertyValue('scrollbar-gutter');
+    style.setProperty('overflow', 'hidden');
+    style.setProperty('scrollbar-gutter', 'stable');
   }
 }
 
 function unlockPageScroll(): void {
   openModalCount = Math.max(0, openModalCount - 1);
   if (openModalCount === 0) {
-    document.documentElement.style.removeProperty('overflow');
+    const style = document.documentElement.style;
+    style.setProperty('overflow', previousOverflow);
+    style.setProperty('scrollbar-gutter', previousGutter);
   }
 }
 
@@ -196,10 +210,17 @@ export class DsPopover extends LitElement {
       --ds-popover-offset: var(--space-2);
       --ds-popover-arrow-size: var(--space-2);
       --ds-popover-max-width: var(--layout-max-width-prose);
+      --ds-popover-gutter: var(--layout-gutter);
       --ds-popover-layer: var(--layer-dropdown);
       --ds-popover-enter: var(--motion-duration-fast);
       --ds-popover-enter-distance: var(--space-1);
       --ds-popover-exit: var(--motion-duration-fast);
+      /* Locked: no override API, but still themeable from page CSS. */
+      --ds-popover-surface: var(--color-overlay-surface);
+      --ds-popover-focus-ring: var(--color-border-focus);
+      --ds-popover-focus-ring-width: var(--border-width-focus);
+      /* React Native only; declared so every platform carries the same hook set. */
+      --ds-popover-breakpoint: var(--layout-max-width-prose);
     }
 
     :host([hidden]) {
@@ -216,10 +237,9 @@ export class DsPopover extends LitElement {
       border-width: var(--ds-popover-border-width);
       border-color: var(--ds-popover-border);
       border-radius: var(--ds-popover-radius);
-      /* surface: color.overlay.surface, locked — no override hook */
-      background: var(--color-overlay-surface);
+      background: var(--ds-popover-surface);
       box-shadow: var(--ds-popover-shadow);
-      max-inline-size: min(var(--ds-popover-max-width), calc(100vw - 2 * var(--layout-gutter)));
+      max-inline-size: min(var(--ds-popover-max-width), calc(100vw - 2 * var(--ds-popover-gutter)));
       max-block-size: none;
       overflow: visible;
       color: var(--color-foreground);
@@ -246,8 +266,8 @@ export class DsPopover extends LitElement {
     }
 
     [data-part='panel']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-popover-focus-ring-width) solid var(--ds-popover-focus-ring);
+      outline-offset: var(--ds-popover-focus-ring-width);
     }
 
     /* exit: fade out with motion.easing.exit. */
@@ -326,8 +346,8 @@ export class DsPopover extends LitElement {
 
     /* The heading is focused only when the panel has no controls; its wrapper draws the ring. */
     [data-part='heading']:has(:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-popover-focus-ring-width) solid var(--ds-popover-focus-ring);
+      outline-offset: var(--ds-popover-focus-ring-width);
     }
 
     [data-part='closeButton'] {
@@ -345,7 +365,7 @@ export class DsPopover extends LitElement {
       box-sizing: border-box;
       inline-size: var(--ds-popover-arrow-size);
       block-size: var(--ds-popover-arrow-size);
-      background: var(--color-overlay-surface);
+      background: var(--ds-popover-surface);
       border: 0 solid var(--ds-popover-border);
       transform: rotate(45deg);
     }
@@ -403,6 +423,13 @@ export class DsPopover extends LitElement {
    */
   @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
   accessor dismissible = true;
+
+  /**
+   * Where focus goes on open. `first` (default): the first control in the body, then the close
+   * button, then the heading, then the panel. `none`: no focus move — the composer focuses its own
+   * element once the panel is shown (with `modal` that is outside the trap until it does).
+   */
+  @property({ attribute: 'initial-focus', reflect: true }) accessor initialFocus: PopoverInitialFocus = 'first';
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are not accepted. */
   @property({ attribute: false }) accessor overrides: Partial<Record<PopoverOverridableBinding, TokenRef | undefined>> | undefined;
@@ -571,6 +598,16 @@ export class DsPopover extends LitElement {
             </div>
           `}
     `;
+  }
+
+  /**
+   * Re-measures and re-places the open panel. For composers whose slotted content lays out after
+   * the panel opens, which the scroll and resize listeners never see. A no-op while closed.
+   */
+  reposition(): void {
+    if (this.currentOpen) {
+      this.updatePosition();
+    }
   }
 
   /* ---- trigger ---- */
@@ -775,7 +812,10 @@ export class DsPopover extends LitElement {
   private handleClosed(): void {
     const request = this.request;
     this.request = null;
-    const focusInside = this.isWithin(getDeepActiveElement(), this);
+    // A controlled close with no reason from the popover restores focus only when it is inside the panel;
+    // a modal popover's <dialog> close has already moved it to the body, which counts as inside.
+    const active = getDeepActiveElement();
+    const focusInside = this.isWithin(active, this.panelEl) || (this.modal && (active === null || active === document.body));
     // Trigger, Escape and the close button return focus; outside press and Tab out leave it where it went.
     const focusTrigger = request && request.open === false ? request.focusTrigger : focusInside;
     this.removeOpenListeners();
@@ -857,6 +897,9 @@ export class DsPopover extends LitElement {
     }
     // Content that rendered after the first pass changes the panel's size.
     this.updatePosition();
+    if (this.initialFocus === 'none') {
+      return;
+    }
     const target = this.getBodyFocusables()[0] ?? this.closeButtonControlEl ?? this.headingControlEl ?? this.panelEl;
     target?.focus();
   }
@@ -922,20 +965,21 @@ export class DsPopover extends LitElement {
     const viewportHeight = document.documentElement.clientHeight;
     // offset is the margin on the side currently facing the trigger; every side carries the same hook.
     const gap = parseFloat(getComputedStyle(panel)[OFFSET_MARGIN[this.side]]) || 0;
-    const gutter = this.readLength('--layout-gutter', panel);
+    const gutter = this.readLength('--ds-popover-gutter', panel);
     const rtl = getComputedStyle(trigger).direction === 'rtl';
 
     const { side: preferred, align } = resolvePlacement(this.placement, rtl);
+    // A side fits when the panel stays `gutter` clear of that viewport edge.
     const fits = (candidate: Side): boolean => {
       switch (candidate) {
         case 'bottom':
-          return triggerRect.bottom + gap + panelRect.height <= viewportHeight;
+          return triggerRect.bottom + gap + panelRect.height + gutter <= viewportHeight;
         case 'top':
-          return triggerRect.top - gap - panelRect.height >= 0;
+          return triggerRect.top - gap - panelRect.height - gutter >= 0;
         case 'right':
-          return triggerRect.right + gap + panelRect.width <= viewportWidth;
+          return triggerRect.right + gap + panelRect.width + gutter <= viewportWidth;
         case 'left':
-          return triggerRect.left - gap - panelRect.width >= 0;
+          return triggerRect.left - gap - panelRect.width - gutter >= 0;
       }
     };
     const side = !fits(preferred) && fits(OPPOSITE[preferred]) ? OPPOSITE[preferred] : preferred;
@@ -1013,6 +1057,11 @@ export class DsPopover extends LitElement {
     if (!hasBody) {
       this.warned = true;
       console.warn('<ds-popover> needs panel content in its default slot.', this);
+    }
+    this.updateTriggerAccessibleName();
+    if (!this.heading && !this.triggerAccessibleName) {
+      this.warned = true;
+      console.warn('<ds-popover> panel has no accessible name: set `heading`, or give the trigger a readable name.', this);
     }
   }
 }

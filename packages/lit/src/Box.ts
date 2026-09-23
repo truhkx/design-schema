@@ -230,6 +230,9 @@ export class DsBox extends LitElement {
   @property({ attribute: false })
   accessor overrides: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined;
 
+  /** The role this element last wrote, so it never removes a `role` the consumer set. */
+  private ownRole: string | undefined;
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Box');
@@ -242,9 +245,14 @@ export class DsBox extends LitElement {
       /* A plain attribute, not ElementInternals: the accessible-role tests cannot read internals. */
       const role = SECTIONING_ROLES[this.element];
       if (role === undefined) {
-        this.removeAttribute('role');
-      } else if (this.getAttribute('role') !== role) {
-        this.setAttribute('role', role);
+        /* Remove only a role Box wrote itself, so a consumer `role` on a `div` box stays. */
+        if (this.ownRole !== undefined && this.getAttribute('role') === this.ownRole) {
+          this.removeAttribute('role');
+        }
+        this.ownRole = undefined;
+      } else {
+        if (this.getAttribute('role') !== role) this.setAttribute('role', role);
+        this.ownRole = role;
       }
     }
     /* `border` and `radius` decide which overrides are in effect, so a change to either re-applies them. */

@@ -67,3 +67,27 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Splitter: `collapseButtonOffset` positions the button "from the separator's start edge along the separator", but the collapsed rule only describes the cross-axis ("its cross-axis start edge sits at the separator's end edge"). Chose to keep the along-axis offset unchanged while collapsed and only drop the cross-axis centering.
 - Splitter: the Keyboard story pins `stackBelow: 'never'` so the separator survives the narrow widths the keyboard and axe gates run at, which makes its args diverge from React's Keyboard story (collapsible only). Story parity is otherwise exact; the doc should either pin it on both platforms or say the gate width is platform business.
 - Splitter: the doc gives no guidance on what the Lit stories should slot, and the platform note only says example string values render as slotted text. Chose ds-box wrappers with inset=md inside a bordered frame sized to --layout-max-width-prose, so a vertical splitter has a definite height; that frame is story scaffolding and now appears verbatim in every published Lit code sample.
+
+## 2026-09-23 14:01 — round 1
+
+- Splitter: minSize says 'A collapse fires only onCollapseChange, no size events', but onSizeChangeEnd says a drag that collapses still fires it once, carrying the last expanded size. Chose the onSizeChangeEnd rule: a collapsing drag fires size-change-end (last expanded size), then collapse-change.
+- Splitter: onSizeChangeEnd says 'a drag always fires it once on release' and also that after a collapse 'the rest of that gesture is ignored'. It is unclear whether the end event fires when the pane collapses or when the pointer is released. Chose: it fires when the pane collapses, pointer capture is released, and the later pointerup is silent.
+- Splitter: transition says data-animating is 'cleared by the next size change'. It doesn't say whether a change of a controlled `size` prop counts, or a key press that changes nothing. Chose: only an actual size change clears it (user, or a new controlled prop value); a no-op key press does not.
+- Splitter: persistKey says the record is written 'whenever either value settles' without defining settle during a drag. Chose: write whenever the stored {size, collapsed} JSON would differ, which includes every drag move, instead of waiting for size-change-end.
+- Splitter: a controlled `collapsed` changing from undefined to a value (becoming controlled) is not animated; the spec doesn't say whether that transition counts as 'the collapsed state changes'.
+- Splitter: the lit notes ask for a frame 'the width of layout.maxWidth.prose with a definite height' but give no height token. Used layout.maxWidth.prose for the block size too.
+- Splitter: stackBelow's comparison is strict, and the story frame is exactly prose wide. So StackBelowProse renders side by side in its own story, and only stacks when the frame is narrower (e.g. the gates' narrow viewports). The docs don't say which of those the story is meant to show.
+
+## 2026-09-23 14:02 — round 2
+
+- Splitter: the hooks gate needs a hook for every locked binding, but the prompt's Style bindings list names only separatorHover and separatorActive among the locked ones. grip, paneMinTarget, minTarget, focusRing and focusRingWidth appear only in the schema and under 'Locked'. Declared all seven on :host from the schema's token list.
+- Splitter: separatorActive's hook drives both the dragging and :focus-visible separator colour, because the doc gives the two states one binding. There is no separate hook for the focused colour.
+
+## 2026-09-23 15:43 — round 1
+
+- Splitter: minSize says 'A collapse fires only onCollapseChange, no size events', but onSizeChangeEnd says a drag that collapses still fires it once on release with the last expanded size. These contradict each other; I chose onSizeChangeEnd's rule: a collapsing drag fires size-change-end with the last expanded size, while Enter or the collapse button fires only collapse-change.
+- Splitter: collapseButtonOffset / handleSize say the button, grab area and grip are 'centered across the separator' but don't say how to center them in RTL. With the logical inset-inline-start: 50% plus translateX(-50%) they sit off-center in RTL; I used physical left: 50% for the cross-axis centering (with left: auto where a logical offset takes over).
+- Splitter: the Lit notes say the story frame has 'a definite height' but name no token for it. I kept block-size: var(--layout-max-width-prose), which makes the frame square and probably too tall; the doc should name a height token.
+- Splitter: persistKey says to write 'whenever either value settles', but a drag changes the size on every move. I write on every change after dedupe, so localStorage is written throughout a drag, not only on size-change-end. The doc should say whether 'settles' means commit (size-change-end) only.
+- Splitter: the collapsed description says the Lit property is 'reflected when true' with an absent attribute meaning uncontrolled, which a type: Boolean property can't express. I used a custom converter (present = true, absent = undefined); the platform digest should state that pattern.
+- Splitter: the web notes say persistKey reads localStorage but don't say what happens when the stored size is outside minSize–maxSize, or when a stored collapsed: true meets collapsible=false. I clamp the size and ignore the collapsed value unless collapsible.

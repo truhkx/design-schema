@@ -7,6 +7,8 @@ import { trackPress } from './custom/analytics.js';
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 export type ButtonType = 'button' | 'submit';
+/** ARIA's own `aria-haspopup` values, without `true` (which means `menu`). */
+export type ButtonHaspopup = 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog';
 
 /** Detail carried by the `press` CustomEvent (none). */
 export type ButtonPressDetail = void;
@@ -20,9 +22,9 @@ export interface ButtonTrackDetail {
 /**
  * Overridable style hooks; see the `overrides` property. The accessibility-bearing
  * bindings — `background`, `backgroundHover`, `foreground`, `focusRing`,
- * `focusRingWidth`, `inverseForeground`, `inverseFocusRing`, `minTarget` and
- * `spinnerStroke` — are locked and excluded; of those, only `spinnerStroke` keeps
- * a CSS hook (`--ds-button-spinner-stroke`), the rest read their tokens directly.
+ * `focusRingWidth`, `focusRingOffset`, `inverseForeground`, `inverseFocusRing`,
+ * `minTarget` and `spinnerStroke` — are locked and excluded, but each keeps its
+ * `--ds-button-*` hook on `:host`, so page CSS can still re-theme it.
  */
 export type ButtonOverridableBinding =
   | 'iconGap'
@@ -104,14 +106,24 @@ export class DsButton extends LitElement {
 
   static override styles: CSSResult = css`
     /*
-     * Hooks for the overridable bindings, plus spinnerStroke (locked, but its
-     * binding keeps the hook). The other locked bindings (background,
-     * backgroundHover, foreground, focusRing, focusRingWidth, inverseForeground,
-     * inverseFocusRing, minTarget) have no hook: their rules read the token.
+     * One hook per binding, locked ones included: locked closes the overrides
+     * API, not the CSS escape hatch, so every rule reads a --ds-button-* hook.
+     * background, backgroundHover and foreground are set per variant below.
      */
     :host {
       display: inline-flex;
       vertical-align: middle;
+      --ds-button-background: var(--color-action-primary-background);
+      --ds-button-background-hover: var(--color-action-primary-background-hover);
+      --ds-button-foreground: var(--color-action-primary-foreground);
+      --ds-button-focus-ring: var(--color-border-focus);
+      --ds-button-focus-ring-width: var(--border-width-focus);
+      --ds-button-focus-ring-offset: var(--border-width-focus);
+      --ds-button-inverse-foreground: var(--color-inverse-link);
+      --ds-button-inverse-focus-ring: var(--color-inverse-focus);
+      --ds-button-min-target: var(--size-target-min);
+      /* touchTarget is an rn/swiftui binding: declared for the hook contract, read by no Lit rule */
+      --ds-button-touch-target: var(--size-target-comfortable);
       --ds-button-icon-gap: var(--space-2);
       --ds-button-padding-inline: var(--space-md);
       --ds-button-padding-block: var(--space-sm);
@@ -141,8 +153,8 @@ export class DsButton extends LitElement {
       justify-content: center;
       inline-size: 100%;
       /* minTarget: locked; the floor at every size (WCAG 2.5.8) */
-      min-inline-size: var(--size-target-min);
-      min-block-size: var(--size-target-min);
+      min-inline-size: var(--ds-button-min-target);
+      min-block-size: var(--ds-button-min-target);
       margin: 0;
       padding-block: var(--ds-button-padding-block);
       padding-inline: var(--ds-button-padding-inline);
@@ -151,8 +163,8 @@ export class DsButton extends LitElement {
       font-family: var(--ds-button-font-family);
       font-size: var(--ds-button-font-size);
       font-weight: var(--ds-button-font-weight);
-      color: var(--color-action-primary-foreground);
-      background: var(--color-action-primary-background);
+      color: var(--ds-button-foreground);
+      background: var(--ds-button-background);
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
@@ -192,45 +204,35 @@ export class DsButton extends LitElement {
       padding-inline: var(--ds-button-padding-block);
     }
 
-    /* background / foreground: color.action.{variant}.*, locked (no hook) */
-    :host([variant='primary']) [data-part='container'] {
-      color: var(--color-action-primary-foreground);
-      background: var(--color-action-primary-background);
+    /* background / backgroundHover / foreground: color.action.{variant}.*, locked; hooks set per variant */
+    :host([variant='primary']) {
+      --ds-button-background: var(--color-action-primary-background);
+      --ds-button-background-hover: var(--color-action-primary-background-hover);
+      --ds-button-foreground: var(--color-action-primary-foreground);
     }
-    :host([variant='secondary']) [data-part='container'] {
-      color: var(--color-action-secondary-foreground);
-      background: var(--color-action-secondary-background);
+    :host([variant='secondary']) {
+      --ds-button-background: var(--color-action-secondary-background);
+      --ds-button-background-hover: var(--color-action-secondary-background-hover);
+      --ds-button-foreground: var(--color-action-secondary-foreground);
     }
-    :host([variant='ghost']) [data-part='container'] {
-      color: var(--color-action-ghost-foreground);
-      background: var(--color-action-ghost-background);
+    :host([variant='ghost']) {
+      --ds-button-background: var(--color-action-ghost-background);
+      --ds-button-background-hover: var(--color-action-ghost-background-hover);
+      --ds-button-foreground: var(--color-action-ghost-foreground);
     }
-    :host([variant='danger']) [data-part='container'] {
-      color: var(--color-action-danger-foreground);
-      background: var(--color-action-danger-background);
+    :host([variant='danger']) {
+      --ds-button-background: var(--color-action-danger-background);
+      --ds-button-background-hover: var(--color-action-danger-background-hover);
+      --ds-button-foreground: var(--color-action-danger-foreground);
     }
 
     /*
-     * backgroundHover: color.action.{variant}.backgroundHover on pointer hover and
-     * pressed, locked. Suppressed by selector while the button is not accepting a
-     * press -- :not([aria-disabled='true']):not([aria-busy='true']), the same
-     * suppression web writes, read off the inner button's own state attributes.
+     * backgroundHover on pointer hover and pressed. Suppressed by selector while
+     * the button is not accepting a press -- :not([aria-disabled='true']):not([aria-busy='true']),
+     * the same suppression web writes, read off the inner button's own state attributes.
      */
-    :host([variant='primary'])
-      [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
-      background: var(--color-action-primary-background-hover);
-    }
-    :host([variant='secondary'])
-      [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
-      background: var(--color-action-secondary-background-hover);
-    }
-    :host([variant='ghost'])
-      [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
-      background: var(--color-action-ghost-background-hover);
-    }
-    :host([variant='danger'])
-      [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
-      background: var(--color-action-danger-background-hover);
+    [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
+      background: var(--ds-button-background-hover);
     }
 
     /*
@@ -240,7 +242,7 @@ export class DsButton extends LitElement {
      * keep their own fills.
      */
     :host([inverse][variant='ghost']) [data-part='container'] {
-      color: var(--color-inverse-link);
+      color: var(--ds-button-inverse-foreground);
     }
     :host([inverse][variant='ghost'])
       [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
@@ -251,15 +253,18 @@ export class DsButton extends LitElement {
       );
     }
 
-    /* focusRing / focusRingWidth: color.border.focus at border.width.focus, locked */
+    /*
+     * focusRing / focusRingWidth / focusRingOffset: color.border.focus at
+     * border.width.focus, offset by the same token so the ring clears the fill; locked
+     */
     [data-part='container']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-button-focus-ring-width) solid var(--ds-button-focus-ring);
+      outline-offset: var(--ds-button-focus-ring-offset);
     }
 
     /* inverseFocusRing: the ring must read against the inverse surface, for every variant */
     :host([inverse]) [data-part='container']:focus-visible {
-      outline-color: var(--color-inverse-focus);
+      outline-color: var(--ds-button-inverse-focus-ring);
     }
 
     /* disabledOpacity: the whole button; colors are unchanged so the contrast math still holds */
@@ -337,6 +342,14 @@ export class DsButton extends LitElement {
    * attribute on the host does not reach the inner button.
    */
   @property({ attribute: false }) accessor expanded: boolean | undefined;
+
+  /**
+   * Set by a parent whose popup the button opens (Menu's trigger takes `menu`):
+   * rendered as `aria-haspopup` on the inner button, the element that carries the
+   * button role. A JS property only, like `expanded`; `undefined` (the default)
+   * means the button opens nothing and no `aria-haspopup` is written.
+   */
+  @property({ attribute: false }) accessor haspopup: ButtonHaspopup | undefined;
 
   /**
    * Prevents activation. The button stays in the tab order and is announced as
@@ -440,6 +453,7 @@ export class DsButton extends LitElement {
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
         aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
         aria-expanded=${ifDefined(this.expanded === undefined ? undefined : String(this.expanded))}
+        aria-haspopup=${ifDefined(this.haspopup)}
         aria-label=${ifDefined(this.accessibleName ?? (this.iconOnly ? this.label : undefined))}
         aria-describedby=${ifDefined(this.loading ? 'loading-description' : undefined)}
         @click=${this.handleClick}

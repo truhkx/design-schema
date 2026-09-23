@@ -78,6 +78,7 @@ export type {
   ButtonVariant,
   ButtonSize,
   ButtonType,
+  ButtonHaspopup,
   ButtonPressDetail,
   ButtonTrackDetail,
   ButtonOverridableBinding,
@@ -251,6 +252,7 @@ export { DsPopover } from './Popover.js';
 export type {
   PopoverHeadingLevel,
   PopoverPlacement,
+  PopoverInitialFocus,
   PopoverCloseReason,
   PopoverOpenChangeDetail,
   PopoverOverridableBinding,

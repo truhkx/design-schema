@@ -22,6 +22,7 @@ type Given = Partial<
     | 'inverse'
     | 'track'
     | 'expanded'
+    | 'haspopup'
     | 'accessibleName'
   >
 >;
@@ -164,6 +165,32 @@ describe('ds-button', () => {
 
   it('renders-type-submit', async () => {
     const b = await setup({ type: 'submit' });
+    expect(b.container()).not.toBeNull();
+  });
+
+  /* derived: props.haspopup (web and Lit only) */
+  it('renders-haspopup-menu', async () => {
+    const b = await setup({ haspopup: 'menu' });
+    expect(b.container()).not.toBeNull();
+  });
+
+  it('renders-haspopup-listbox', async () => {
+    const b = await setup({ haspopup: 'listbox' });
+    expect(b.container()).not.toBeNull();
+  });
+
+  it('renders-haspopup-tree', async () => {
+    const b = await setup({ haspopup: 'tree' });
+    expect(b.container()).not.toBeNull();
+  });
+
+  it('renders-haspopup-grid', async () => {
+    const b = await setup({ haspopup: 'grid' });
+    expect(b.container()).not.toBeNull();
+  });
+
+  it('renders-haspopup-dialog', async () => {
+    const b = await setup({ haspopup: 'dialog' });
     expect(b.container()).not.toBeNull();
   });
 

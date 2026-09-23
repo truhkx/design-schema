@@ -4,6 +4,7 @@ import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
+import type { DsFormField } from './Form.js';
 import type { TextOverridableBinding } from './Text.js';
 import './Text.js';
 
@@ -92,8 +93,10 @@ const GUARDED_KEYS = new Set(['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft',
  * and Space come from the browser and are not reimplemented. Per-option
  * `disabled` is the native attribute so arrow movement skips it; a `disabled`
  * group uses `aria-disabled` plus click, key and change guards so it stays
- * focusable but inert. The indicator dot is the radio's `::before` and has no
- * part: it is a pseudo-element, not a node.
+ * focusable but inert. The indicator dot is a real node — a span inside the
+ * option's label, laid over the `appearance: none` input with
+ * `pointer-events: none` and carrying `part`/`data-part="radioIndicator"` — not
+ * a pseudo-element of the input, which Firefox does not render on form controls.
  *
  * The element is form-associated (`setFormValue(value)`) and carries
  * `data-ds-field`, so `<ds-form>` collects the selected value, or no key while
@@ -118,7 +121,7 @@ const GUARDED_KEYS = new Set(['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft',
  * @fires change - Fired when the selection changes, with `{ value }` in `detail`.
  */
 @customElement('ds-radio-group')
-export class DsRadioGroup extends LitElement {
+export class DsRadioGroup extends LitElement implements DsFormField {
   static formAssociated = true;
 
   static override shadowRootOptions: ShadowRootInit = {
@@ -147,10 +150,30 @@ export class DsRadioGroup extends LitElement {
       --ds-radio-group-line-height: var(--font-line-height-normal);
       --ds-radio-group-disabled-opacity: var(--opacity-disabled);
       --ds-radio-group-transition: var(--motion-duration-fast);
-      /* controlBackground, controlBorder, controlSelectedBackground, indicator, legendColor,
-         labelColor, focusRing, focusRingWidth and minTarget are locked, so they read their token
-         directly. helperSize, descriptionText and errorText have no hook either: the composed
-         Texts realise them through their own props and overrides. */
+      /* Locked: out of the overrides type, but they keep their hook so page CSS can re-theme them
+         and the naming codemod can rename them. */
+      --ds-radio-group-control-background: var(--color-control-background);
+      --ds-radio-group-control-border: var(--color-control-border);
+      --ds-radio-group-control-selected-background: var(--color-control-selected-background);
+      --ds-radio-group-indicator: var(--color-control-selected-background);
+      --ds-radio-group-legend-color: var(--color-foreground);
+      --ds-radio-group-label-color: var(--color-foreground);
+      --ds-radio-group-description-text: var(--color-foreground-muted);
+      --ds-radio-group-error-text: var(--color-foreground-danger);
+      --ds-radio-group-focus-ring: var(--color-border-focus);
+      --ds-radio-group-focus-ring-width: var(--border-width-focus);
+      --ds-radio-group-min-target: var(--size-target-comfortable);
+      /* helperSize has no hook: it reaches the composed Texts only through their overrides. */
+    }
+
+    /* descriptionText, errorText: the Texts' tone draws them; the parent's hook feeds Text's own
+       documented --ds-text-color hook on the child host, never the child's shadow tree. */
+    [data-part='description'],
+    [data-part='radioDescription'] {
+      --ds-text-color: var(--ds-radio-group-description-text);
+    }
+    [data-part='errorMessage'] {
+      --ds-text-color: var(--ds-radio-group-error-text);
     }
 
     :host([hidden]) {
@@ -173,7 +196,7 @@ export class DsRadioGroup extends LitElement {
     legend {
       margin-block-end: var(--ds-radio-group-part-gap);
       padding: 0;
-      color: var(--color-foreground);
+      color: var(--ds-radio-group-legend-color);
       font-family: var(--ds-radio-group-font-family);
       font-size: var(--ds-radio-group-legend-size);
       font-weight: var(--ds-radio-group-legend-weight);
@@ -201,7 +224,7 @@ export class DsRadioGroup extends LitElement {
       row-gap: var(--ds-radio-group-option-text-gap);
       align-items: center;
       align-content: center;
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-radio-group-min-target);
       padding-block: var(--ds-radio-group-option-padding-block);
       cursor: pointer;
     }
@@ -212,66 +235,78 @@ export class DsRadioGroup extends LitElement {
       box-sizing: border-box;
       grid-column: 1;
       grid-row: 1;
-      display: inline-grid;
-      place-items: center;
+      display: block;
       inline-size: var(--ds-radio-group-control-size);
       block-size: var(--ds-radio-group-control-size);
       margin: 0;
       padding: 0;
-      border: var(--ds-radio-group-control-border-width) solid var(--color-control-border);
+      border: var(--ds-radio-group-control-border-width) solid var(--ds-radio-group-control-border);
       border-radius: var(--ds-radio-group-control-radius);
-      background-color: var(--color-control-background);
+      background-color: var(--ds-radio-group-control-background);
       cursor: inherit;
       appearance: none;
       -webkit-appearance: none;
     }
 
-    /* indicator, indicatorInset: the centre dot, controlSize minus 2 × indicatorInset across, always
-       a circle (it does not follow controlRadius). Its size is fixed and it fades rather than scales,
-       so the thicker focus border eats into the inset rather than shrinking the dot. A pseudo-element,
-       so it carries no part or data-part. */
-    .radio::before {
-      content: '';
-      display: block;
-      inline-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
-      block-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
-      border-radius: var(--radius-full);
-      background-color: var(--color-control-selected-background);
-      opacity: 0;
-    }
-
     /* controlSelectedBackground: selected border color; the fill stays controlBackground */
     .radio:checked {
-      border-color: var(--color-control-selected-background);
-    }
-    .radio:checked::before {
-      opacity: 1;
-    }
-
-    /* controlBorderInvalid: aria-invalid lives on the fieldset only, so the state comes from the host */
-    :host([invalid]) .radio {
-      border-color: var(--ds-radio-group-control-border-invalid);
+      border-color: var(--ds-radio-group-control-selected-background);
     }
 
     /* focusRing, focusRingWidth: the radio's border becomes the focus ring, replacing
        controlBorderWidth/controlBorder; the option row is not outlined. The transparent outline
        keeps a ring in forced-colors mode. */
     .radio:focus-visible {
-      outline: var(--border-width-focus) solid transparent;
-      border-width: var(--border-width-focus);
-      border-color: var(--color-border-focus);
+      outline: var(--ds-radio-group-focus-ring-width) solid transparent;
+      border-width: var(--ds-radio-group-focus-ring-width);
+      border-color: var(--ds-radio-group-focus-ring);
     }
 
-    /* labelColor, labelSize, labelWeight, fontFamily, lineHeight: the label's own rule */
+    /* controlBorderInvalid: aria-invalid lives on the fieldset only, so the state comes from the host.
+       Border-colour precedence is invalid, then selected, then rest; focus does not replace it —
+       a focused invalid radio keeps the danger colour and takes only the focus width. */
+    :host([invalid]) .radio,
+    :host([invalid]) .radio:focus-visible {
+      border-color: var(--ds-radio-group-control-border-invalid);
+    }
+
+    /* labelColor, labelSize, labelWeight, fontFamily, lineHeight: the label's own rule. Positioned,
+       so the indicator inside it can be laid over the radio in column 1 of the same grid row; both
+       are centred in that row, so their centres line up whatever the label's height. */
     .label {
+      position: relative;
       grid-column: 2;
       grid-row: 1;
-      color: var(--color-foreground);
+      color: var(--ds-radio-group-label-color);
       font-family: var(--ds-radio-group-font-family);
       font-size: var(--ds-radio-group-label-size);
       font-weight: var(--ds-radio-group-label-weight);
       line-height: var(--ds-radio-group-line-height);
       cursor: inherit;
+    }
+
+    /* indicator, indicatorInset: the centre dot, controlSize minus 2 × indicatorInset across, always
+       a circle (it does not follow controlRadius). A real span inside the label, pulled back over the
+       input by controlSize + optionGap and in by indicatorInset; pointer-events: none so a click on
+       it reaches the input. Its size is fixed and it fades rather than scales, so the thicker focus
+       border eats into the inset rather than shrinking the dot. */
+    .indicator {
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: calc(
+        var(--ds-radio-group-indicator-inset) - var(--ds-radio-group-option-gap) -
+          var(--ds-radio-group-control-size)
+      );
+      inline-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
+      block-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
+      margin-block: auto;
+      border-radius: var(--radius-full);
+      background-color: var(--ds-radio-group-indicator);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .radio:checked + .label .indicator {
+      opacity: 1;
     }
 
     /* optionTextGap is the row-gap above; the description sits under the label, not under the radio */
@@ -295,7 +330,7 @@ export class DsRadioGroup extends LitElement {
       .radio {
         transition: border-color var(--ds-radio-group-transition) var(--motion-easing-standard);
       }
-      .radio::before {
+      .indicator {
         transition: opacity var(--ds-radio-group-transition) var(--motion-easing-standard);
       }
       .radio:focus-visible,
@@ -357,6 +392,9 @@ export class DsRadioGroup extends LitElement {
 
   /** Uncontrolled selection, seeded from `defaultValue`. */
   @state() private accessor internalValue: string | undefined;
+
+  /** `defaultValue` as it stood at first render; what a form reset returns to. */
+  private initialValue: string | undefined;
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`), or by `ds-fieldset`. */
   @state() private accessor formDisabled = false;
@@ -423,9 +461,9 @@ export class DsRadioGroup extends LitElement {
     this.formDisabled = disabled;
   }
 
-  /** Back to the initial selection: `defaultValue`, else nothing. */
+  /** Back to the initial selection: `defaultValue` as read at first render, else nothing. */
   formResetCallback(): void {
-    this.internalValue = this.defaultValue;
+    this.internalValue = this.initialValue;
   }
 
   formStateRestoreCallback(state: File | string | FormData | null): void {
@@ -435,7 +473,9 @@ export class DsRadioGroup extends LitElement {
   }
 
   protected override willUpdate(changed: PropertyValues): void {
+    // `defaultValue` is read once, at first render; a later assignment is a no-op, like a React state initialiser.
     if (!this.hasUpdated) {
+      this.initialValue = this.defaultValue;
       this.internalValue = this.defaultValue;
     }
     if (changed.has('overrides')) {
@@ -506,7 +546,10 @@ export class DsRadioGroup extends LitElement {
                   aria-disabled=${ifDefined(groupDisabled ? 'true' : undefined)}
                   @change=${(event: Event) => this.handleChange(event, option)}
                 />
-                <label class="label" part="radioLabel" data-part="radioLabel" for=${id}>${option.label}</label>
+                <label class="label" part="radioLabel" data-part="radioLabel" for=${id}
+                  ><span class="indicator" part="radioIndicator" data-part="radioIndicator" aria-hidden="true"></span
+                  >${option.label}</label
+                >
                 ${option.description
                   ? html`<ds-text
                       id="${id}-description"

@@ -275,11 +275,12 @@ export class DsIcon extends LitElement {
   }
 
   protected override render(): TemplateResult {
-    const glyph: TemplateResult | undefined = GLYPHS[this.name];
     /*
      * Unreachable from TypeScript, possible from JavaScript: an empty glyph, and a warning on every
-     * render with no dedupe. Developer-facing, not copy.
+     * render with no dedupe. Developer-facing, not copy. `Object.hasOwn` so a prototype key
+     * (`toString`, `constructor`) takes the same path instead of rendering a function.
      */
+    const glyph: TemplateResult | undefined = Object.hasOwn(GLYPHS, this.name) ? GLYPHS[this.name] : undefined;
     if (import.meta.env.DEV && glyph === undefined) {
       console.warn(`Icon: unknown name "${String(this.name)}"`);
     }
@@ -291,6 +292,12 @@ export class DsIcon extends LitElement {
         part="glyph"
         data-part="glyph"
         viewBox="0 0 16 16"
+        width="1em"
+        height="1em"
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
         focusable="false"
         role=${ifDefined(labelled ? 'img' : undefined)}
         aria-label=${ifDefined(labelled ? this.label : undefined)}

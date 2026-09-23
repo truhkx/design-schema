@@ -292,6 +292,13 @@ export class DsToast extends LitElement {
       --ds-toast-enter: var(--motion-duration-base);
       --ds-toast-enter-offset: var(--space-2);
       --ds-toast-exit: var(--motion-duration-fast);
+      /* Locked bindings: out of the overrides API, but themeable from page CSS through these hooks. */
+      --ds-toast-surface: var(--color-inverse-surface);
+      --ds-toast-text: var(--color-inverse-foreground);
+      --ds-toast-action-color: var(--color-inverse-link);
+      --ds-toast-dismiss-color: var(--color-inverse-link);
+      --ds-toast-focus-ring-inverse: var(--color-inverse-focus);
+      --ds-toast-min-target: var(--size-target-min);
       max-inline-size: var(--ds-toast-max-width);
     }
 
@@ -305,19 +312,19 @@ export class DsToast extends LitElement {
       align-items: center;
       gap: var(--ds-toast-gap);
       /* minTarget: size.target.min, locked — the row never falls below the minimum target height */
-      min-block-size: var(--size-target-min);
+      min-block-size: var(--ds-toast-min-target);
       padding-block: var(--ds-toast-padding-block);
       padding-inline: var(--ds-toast-padding-inline);
       border-radius: var(--ds-toast-radius);
       box-shadow: var(--ds-toast-shadow);
       /* surface: color.inverse.surface, locked — inverted like Tooltip, so it floats above any page surface */
-      background: var(--color-inverse-surface);
+      background: var(--ds-toast-surface);
       /* text: color.inverse.foreground, locked. Text's color binding is locked and it has no inverse tone,
          so the toast re-scopes the token Text already reads on its own container and composes Text unchanged. */
-      --color-foreground: var(--color-inverse-foreground);
-      color: var(--color-inverse-foreground);
+      --color-foreground: var(--ds-toast-text);
+      color: var(--ds-toast-text);
       /* focusRingInverse: color.inverse.focus, locked — replaces color.border.focus inside the toast */
-      --color-border-focus: var(--color-inverse-focus);
+      --color-border-focus: var(--ds-toast-focus-ring-inverse);
       opacity: 1;
       transform: none;
       transition:
@@ -369,6 +376,17 @@ export class DsToast extends LitElement {
       display: inline-flex;
       flex: none;
     }
+
+    /* actionColor / dismissColor: color.inverse.link, locked. The Buttons are ghost + inverse and are
+       never restyled; each wrapper re-scopes the token Button's inverse text already reads, as the
+       toast does for Text's foreground, so the hooks take effect without reaching into Button. */
+    [data-part='actionButton'] {
+      --color-inverse-link: var(--ds-toast-action-color);
+    }
+
+    [data-part='dismissButton'] {
+      --color-inverse-link: var(--ds-toast-dismiss-color);
+    }
   `;
 
   /** One sentence saying what happened ("Message sent", "3 files deleted"). Also the toast's accessible name. */
@@ -413,6 +431,7 @@ export class DsToast extends LitElement {
   @state() private accessor closing = false;
 
   private dismissed = false;
+  private wasMoot = false;
   private timerId: ReturnType<typeof setTimeout> | undefined;
   private remainingMs: number | null = null;
   private timerStartedAt = 0;
@@ -475,7 +494,7 @@ export class DsToast extends LitElement {
   protected override updated(changed: PropertyValues): void {
     if (changed.has('duration') || changed.has('actionLabel') || changed.has('tone')) {
       this.restartTimer();
-      this.warnForcedPersistent();
+      this.warnForcedPersistent(changed.has('duration'));
     }
     if (changed.has('message') && import.meta.env.DEV && !this.message) {
       console.warn('<ds-toast> requires a `message`.', this);
@@ -495,6 +514,7 @@ export class DsToast extends LitElement {
     return html`
       <div
         class=${this.closing ? 'closing' : ''}
+        ?inert=${this.closing}
         part="toast"
         data-part="toast"
         role=${this.tone === 'danger' ? 'alert' : 'status'}
@@ -600,10 +620,13 @@ export class DsToast extends LitElement {
   };
 
   /**
-   * Removes the toast and dispatches `dismiss` once it has left: after the exit
-   * transition, or at once for `replaced`, under reduced motion, and when the
-   * exit time cannot be resolved. A toast holding focus when it leaves — for any
-   * reason, including `replaced` and `programmatic` — sends focus back first.
+   * Starts the toast leaving. `dismiss` fires synchronously here, while the
+   * toast is still connected so it bubbles to the region, and the element is
+   * removed once the exit transition ends — at once for `replaced`, under
+   * reduced motion, and when the exit time cannot be resolved. A toast holding
+   * focus sends it back first; a `replaced` toast restores at unmount, and only
+   * while focus is still inside it or has fallen to the body, so no dismissal
+   * restores twice.
    */
   public requestDismiss(reason: ToastDismissReason): void {
     if (this.dismissed) {
@@ -611,15 +634,17 @@ export class DsToast extends LitElement {
     }
     this.dismissed = true;
     this.clearTimer();
+    const root = this.closest('ds-toast-region') ?? this;
+
+    if (reason !== 'replaced' && this.matches(':focus-within')) {
+      returnFocus(root);
+    }
+    this.dispatchEvent(
+      new CustomEvent<ToastDismissDetail>('dismiss', { detail: { reason }, bubbles: true, composed: true }),
+    );
 
     const finish = (): void => {
-      const root = this.closest('ds-toast-region') ?? this;
-      const hadFocus = this.matches(':focus-within');
-      // Dispatched once the toast has left the screen, while still connected so it bubbles to the region.
-      this.dispatchEvent(
-        new CustomEvent<ToastDismissDetail>('dismiss', { detail: { reason }, bubbles: true, composed: true }),
-      );
-      if (hadFocus) {
+      if (reason === 'replaced' && (this.matches(':focus-within') || (this.focused && deepActiveElement() === null))) {
         returnFocus(root);
       }
       this.remove();
@@ -717,13 +742,17 @@ export class DsToast extends LitElement {
     }
   }
 
-  /** Warns each time a change to `duration`, `actionLabel` or `tone` makes an assigned `duration` moot. */
-  private warnForcedPersistent(): void {
-    if (!import.meta.env.DEV || !this.durationAssigned) {
-      return;
-    }
+  /**
+   * Warns each time a change to `duration`, `actionLabel` or `tone` enters the case where an
+   * assigned `short`/`long` is moot — including a `duration` change while the case already held.
+   */
+  private warnForcedPersistent(durationChanged: boolean): void {
     const assigned = this.duration;
-    if ((assigned === 'short' || assigned === 'long') && this.effectiveDuration === 'persistent') {
+    const moot =
+      this.durationAssigned && (assigned === 'short' || assigned === 'long') && this.effectiveDuration === 'persistent';
+    const entered = moot && (!this.wasMoot || durationChanged);
+    this.wasMoot = moot;
+    if (import.meta.env.DEV && entered) {
       console.warn(
         `<ds-toast>: \`duration="${assigned}"\` is ignored — a toast with an action or \`tone="danger"\` is persistent until dismissed.`,
         this,
@@ -822,7 +851,8 @@ export class DsToastRegion extends LitElement {
   }
 
   private readonly handleDocumentKeydown = (event: KeyboardEvent): void => {
-    if (event.key !== 'F6') {
+    // With two regions on a page, the first handler to act wins the press.
+    if (event.key !== 'F6' || event.defaultPrevented) {
       return;
     }
     const first = Array.from(this.querySelectorAll('ds-toast')).find((el) => !el.dismissing);

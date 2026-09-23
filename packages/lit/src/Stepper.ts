@@ -212,6 +212,10 @@ export class DsStepper extends LitElement {
       --ds-stepper-indicator-error-background: var(--color-status-danger-background);
       --ds-stepper-indicator-error-foreground: var(--color-status-danger-foreground);
       --ds-stepper-indicator-error-border: var(--color-status-danger-icon);
+      --ds-stepper-label-color: var(--color-foreground);
+      --ds-stepper-label-upcoming-color: var(--color-foreground-muted);
+      --ds-stepper-description-color: var(--color-foreground-muted);
+      --ds-stepper-count-color: var(--color-foreground-muted);
       --ds-stepper-connector-complete: var(--color-control-selected-background);
       --ds-stepper-connector-width: var(--border-width-focus);
       --ds-stepper-min-target: var(--size-target-min);
@@ -226,9 +230,24 @@ export class DsStepper extends LitElement {
       display: none;
     }
 
-    /* Label, description and count colour, size and weight belong to the composed Text: labelColor,
-       labelUpcomingColor, descriptionColor and countColor are its tone, and labelSize, labelWeight,
-       labelCurrentWeight, descriptionSize and countSize reach its overrides. */
+    /* Label, description and count size and weight reach the composed Text's overrides. Their colours
+       are the Text's tone; the locked colour bindings keep their own hooks, which feed Text's documented
+       --ds-text-color hook (same token as the tone by default) so page CSS can still re-theme them. */
+    [data-part='label'] {
+      --ds-text-color: var(--ds-stepper-label-color);
+    }
+
+    li[data-status='upcoming'] [data-part='label'] {
+      --ds-text-color: var(--ds-stepper-label-upcoming-color);
+    }
+
+    [data-part='description'] {
+      --ds-text-color: var(--ds-stepper-description-color);
+    }
+
+    [data-part='count'] {
+      --ds-text-color: var(--ds-stepper-count-color);
+    }
 
     /* The count follows the list, stepGap after it; while it is display:none the gap collapses with it. */
     nav {
@@ -393,7 +412,8 @@ export class DsStepper extends LitElement {
       );
     }
 
-    /* vertical: descriptions under each label; the connector runs down from the indicator's centre. */
+    /* vertical: descriptions under each label; the connector runs down from the indicator's centre and
+       is exactly stepGap tall, since a column of auto-height steps has no free space to grow into. */
     :host([orientation='vertical']) ol {
       flex-direction: column;
     }
@@ -411,7 +431,7 @@ export class DsStepper extends LitElement {
     :host([orientation='vertical']) [data-part='connector'] {
       align-self: flex-start;
       inline-size: var(--ds-stepper-connector-width);
-      min-block-size: var(--ds-stepper-step-gap);
+      block-size: var(--ds-stepper-step-gap);
       margin-inline-start: calc(
         var(--ds-stepper-step-padding) +
           (var(--ds-stepper-indicator-size) - var(--ds-stepper-connector-width)) / 2
@@ -420,7 +440,7 @@ export class DsStepper extends LitElement {
 
     /* compact (horizontal only): the indicators stay, only the current step's label shows, then
        "Step n of m". Hidden labels are clipped, not removed, so a screen reader still reaches them. */
-    :host([compact]:not([orientation='vertical'])) li:not([data-selected]) .content {
+    :host([compact]:not([orientation='vertical'])) li:not([data-revealed]) .content {
       position: absolute;
       inline-size: 1px;
       block-size: 1px;
@@ -438,7 +458,7 @@ export class DsStepper extends LitElement {
 
     @container (max-width: ${unsafeCSS(PROSE_WIDTH_PX)}px) { /* literal-ok: breakpoint from layout.maxWidth.prose */
       /* visually-hidden clip pattern, as compact */
-      :host(:not([orientation='vertical'])) li:not([data-selected]) .content {
+      :host(:not([orientation='vertical'])) li:not([data-revealed]) .content {
         position: absolute;
         inline-size: 1px;
         block-size: 1px;
@@ -511,10 +531,8 @@ export class DsStepper extends LitElement {
     if (import.meta.env.DEV && (changed.has('steps') || changed.has('current'))) {
       // An empty `current` is "not yet set", not a mistake, so it does not warn.
       if (this.current !== '' && !this.steps.some((step) => step.id === this.current)) {
-        console.warn(
-          `<ds-stepper> \`current\` "${this.current}" matches no step id — nothing is selected.`,
-          this,
-        );
+        // Developer-only English, worded identically on every platform; not copy.
+        console.warn(`Stepper: current "${this.current}" matches no step id; nothing is selected.`);
       }
     }
   }
@@ -556,6 +574,9 @@ export class DsStepper extends LitElement {
     // Selection, navigability, connector and the compact reveal follow position; the indicator, its
     // colours and the status word follow the status.
     const isCurrent = index === currentIndex;
+    // Compact reveals the selected step's label, or the first step's when no id matches, so a
+    // compact stepper is never label-less.
+    const isRevealed = index === Math.max(currentIndex, 0);
     const isBefore = currentIndex !== -1 && index < currentIndex;
     const isNavigable = this.navigable === 'all' || (this.navigable === 'completed' && isBefore);
     const statusWord = STATUS_WORD[status];
@@ -612,7 +633,7 @@ export class DsStepper extends LitElement {
     `;
 
     return html`
-      <li data-part="step" part="step" data-status=${status} ?data-selected=${isCurrent}>
+      <li data-part="step" part="step" data-status=${status} ?data-revealed=${isRevealed}>
         ${isNavigable
           ? html`<button
               type="button"

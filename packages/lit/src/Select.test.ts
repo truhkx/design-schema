@@ -96,6 +96,7 @@ describe('ds-select', () => {
     expect(s.openChange).not.toHaveBeenCalled();
     expect(s.el).toHaveAttribute('disabled');
     expect(s.trigger()).toHaveAttribute('aria-disabled', 'true');
+    expect(s.trigger()).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('required-is-shown-in-the-label', async () => {
@@ -107,6 +108,9 @@ describe('ds-select', () => {
     const s = await setup({ invalid: true });
     expect(s.el).toHaveAttribute('invalid');
     expect(s.trigger()).toHaveAttribute('aria-invalid', 'true');
+    const error = s.el.shadowRoot!.querySelector<HTMLElement>('[data-part=errorMessage]')!;
+    expect(error).toHaveAttribute('role', 'alert');
+    expect(error.textContent).toContain(`${s.props.label} is not valid.`);
   });
 
   /* derived */

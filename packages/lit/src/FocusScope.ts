@@ -561,7 +561,7 @@ export class DsFocusScope extends LitElement {
   }
 
   private warnInDev(): void {
-    if (!import.meta.env.DEV || !this.trapped || !this.active) {
+    if (!import.meta.env.DEV || !this.trapped) {
       return;
     }
     if (this.getFocusableDescendants().length === 0) {

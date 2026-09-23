@@ -81,9 +81,26 @@ export class DsFieldset extends LitElement {
       display: block;
       --ds-fieldset-part-gap: var(--layout-gap-tight);
       --ds-fieldset-disabled-opacity: var(--opacity-disabled);
-      /* legendColor, descriptionText and errorText are locked, and legendSize, legendWeight,
-         helperSize, fontFamily, lineHeight and fieldsGap only forward: the composed Text and
-         Stack realise all of them through their own props and overrides. */
+      /* Locked: out of the overrides type, but they keep their hook so page CSS can re-theme them
+         and the naming codemod can rename them. */
+      --ds-fieldset-legend-color: var(--color-foreground);
+      --ds-fieldset-description-text: var(--color-foreground-muted);
+      --ds-fieldset-error-text: var(--color-foreground-danger);
+      /* legendSize, legendWeight, helperSize, fontFamily, lineHeight and fieldsGap only forward:
+         the composed Text and Stack realise them through their own overrides, so no hook. */
+    }
+
+    /* legendColor, descriptionText, errorText: the Texts' tones draw them; the parent's hook feeds
+       Text's own documented --ds-text-color hook on the child host (an outer-scope rule, so it
+       wins over the child's :host([tone]) declaration), never the child's shadow tree. */
+    legend > ds-text {
+      --ds-text-color: var(--ds-fieldset-legend-color);
+    }
+    [data-part='description'] > ds-text {
+      --ds-text-color: var(--ds-fieldset-description-text);
+    }
+    [data-part='errorMessage'] > ds-text {
+      --ds-text-color: var(--ds-fieldset-error-text);
     }
 
     :host([hidden]) {
@@ -141,7 +158,7 @@ export class DsFieldset extends LitElement {
   @state() private accessor allFieldsRequired = false;
 
   /** The fields this Fieldset disabled itself, so clearing `disabled` never enables one disabled on its own. */
-  private readonly disabledByFieldset = new WeakSet<Field>();
+  private readonly disabledByFieldset = new Set<Field>();
 
   /** Watches the light DOM for `required` attribute changes; the callback writes state only, never an observed attribute, so it cannot re-trigger itself. */
   private readonly requiredObserver = new MutationObserver(() => this.syncRequired());
@@ -255,7 +272,15 @@ export class DsFieldset extends LitElement {
 
   /** Sets `disabled` on direct fields, remembering which it set so clearing is exact. */
   private syncDisabled(): void {
-    for (const field of this.directFields()) {
+    const fields = this.directFields();
+    // A field this Fieldset disabled that has since left it gets its own state back.
+    for (const field of this.disabledByFieldset) {
+      if (!fields.includes(field)) {
+        field.disabled = false;
+        this.disabledByFieldset.delete(field);
+      }
+    }
+    for (const field of fields) {
       if (this.disabled) {
         if (!field.disabled) {
           this.disabledByFieldset.add(field);

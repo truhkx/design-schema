@@ -309,8 +309,17 @@ export class DsTreeGrid extends LitElement {
       --ds-tree-grid-fixed-height: var(--space-20);
       --ds-tree-grid-parent-weight: var(--font-weight-medium);
       --ds-tree-grid-transition: var(--motion-duration-fast);
+      /*
+       * Locked bindings: not in the overrides type, but each keeps its hook so page CSS can re-theme it and the
+       * naming codemod can rename it.
+       */
+      --ds-tree-grid-expand-button-size: var(--size-target-min);
+      --ds-tree-grid-loading-color: var(--color-foreground-muted);
+      --ds-tree-grid-focus-ring: var(--color-border-focus);
+      --ds-tree-grid-focus-ring-width: var(--border-width-focus);
+      --ds-tree-grid-min-target: var(--size-target-min);
       /* minTarget (locked): the row-height floor. Virtualization measures a rendered row instead. */
-      --ds-tree-grid-row-size: var(--size-target-min);
+      --ds-tree-grid-row-size: var(--ds-tree-grid-min-target);
       /*
        * Internal, not an override hook: where the row-header column starts inside a row. The row header is
        * required to come first after the selection column, so this is that column's width or nothing, and it
@@ -338,7 +347,7 @@ export class DsTreeGrid extends LitElement {
      */
     :host([selectable='row']) {
       --ds-tree-grid-row-size: var(--size-target-comfortable);
-      --ds-tree-grid-guide-start: var(--size-target-min);
+      --ds-tree-grid-guide-start: var(--ds-tree-grid-min-target);
     }
 
     :host([hidden]) {
@@ -378,6 +387,7 @@ export class DsTreeGrid extends LitElement {
     }
 
     [data-part='caption'] {
+      display: block;
       padding-block-end: var(--space-2);
     }
     [data-part='caption'] ds-heading {
@@ -399,8 +409,8 @@ export class DsTreeGrid extends LitElement {
     }
     /* focusRing / focusRingWidth (locked): the grid is the tab stop */
     [data-part='scrollRegion']:has([data-part='grid']:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-tree-grid-focus-ring-width) solid var(--ds-tree-grid-focus-ring);
+      outline-offset: calc(-1 * var(--ds-tree-grid-focus-ring-width));
     }
 
     [data-part='grid'] {
@@ -453,7 +463,7 @@ export class DsTreeGrid extends LitElement {
       inset-block: 0;
       inset-inline-start: calc(
         var(--ds-tree-grid-guide-start) + var(--ds-tree-grid-cell-padding-inline) +
-          (var(--size-target-min) - var(--ds-tree-grid-guide-line-width)) / 2
+          (var(--ds-tree-grid-expand-button-size) - var(--ds-tree-grid-guide-line-width)) / 2
       );
       inline-size: calc(var(--ds-tree-grid-indent) * var(--ds-tree-grid-depth));
       background-image: repeating-linear-gradient(
@@ -570,8 +580,8 @@ export class DsTreeGrid extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      inline-size: var(--size-target-min);
-      min-block-size: var(--size-target-min);
+      inline-size: var(--ds-tree-grid-expand-button-size);
+      min-block-size: var(--ds-tree-grid-expand-button-size);
     }
     /* transition: the chevron rotation, on the span around the Button and never on the Icon */
     .expand-chevron {
@@ -591,17 +601,17 @@ export class DsTreeGrid extends LitElement {
     .cell.parent [data-part='cellContent'] {
       font-weight: var(--ds-tree-grid-parent-weight);
     }
-    /* loadingColor (locked): the lazy-loading placeholder text */
-    .loading-text {
-      color: var(--color-foreground-muted);
-    }
+    /*
+     * loadingColor (locked): the lazy-loading placeholder text is a composed Text with tone="muted", which
+     * resolves to this token; Text.color is locked, so the hook above is never forwarded as a colour.
+     */
 
     /* minTarget (locked) */
     .select-cell,
     .select-all-cell {
       justify-content: center;
       padding-inline: 0;
-      min-inline-size: var(--size-target-min);
+      min-inline-size: var(--ds-tree-grid-min-target);
     }
     /*
      * minTarget (locked) answers target-24px for the composed Checkbox, whose own control is smaller than a
@@ -611,7 +621,7 @@ export class DsTreeGrid extends LitElement {
      */
     [data-part='selectCell'],
     [data-part='selectAllCell'] {
-      --ds-checkbox-control-size: var(--size-target-min);
+      --ds-checkbox-control-size: var(--ds-tree-grid-min-target);
     }
 
     .pinned-start,
@@ -715,7 +725,7 @@ export class DsTreeGrid extends LitElement {
       position: absolute;
       visibility: hidden;
       pointer-events: none;
-      block-size: var(--size-target-min);
+      block-size: var(--ds-tree-grid-min-target);
     }
     .probe-step {
       display: block;
@@ -927,9 +937,9 @@ export class DsTreeGrid extends LitElement {
 
     return html`
       <div data-part="container">
-        <div data-part="caption" class=${classMap({ 'visually-hidden': this.hideCaption })}>
+        <span data-part="caption" class=${classMap({ 'visually-hidden': this.hideCaption })}>
           <ds-heading id="caption" level=${this.captionLevel} size="md">${this.caption}</ds-heading>
-        </div>
+        </span>
         <div
           data-part="scrollRegion"
           class=${classMap({ 'x-scrolled': this.scrolledX })}
@@ -1174,7 +1184,7 @@ export class DsTreeGrid extends LitElement {
     const raw = row?.[column.key];
     const content = !row
       ? isRowHeader
-        ? html`<span data-part="cellContent" class="loading-text">${COPY_LOADING}</span>`
+        ? html`<ds-text data-part="cellContent" element="span" tone="muted">${COPY_LOADING}</ds-text>`
         : nothing
       : editing
         ? this.renderEditor(column, row, editing)
@@ -1544,8 +1554,8 @@ export class DsTreeGrid extends LitElement {
     const tracks = widths.map((width) => `${width}px`);
     if (this.hasSelectColumn) {
       return {
-        columns: ['var(--size-target-min)', ...tracks].join(' '),
-        width: `calc(var(--size-target-min) + ${sum}px)`,
+        columns: ['var(--ds-tree-grid-min-target)', ...tracks].join(' '),
+        width: `calc(var(--ds-tree-grid-min-target) + ${sum}px)`,
       };
     }
     return { columns: tracks.join(' '), width: `${sum}px` };
@@ -1573,7 +1583,7 @@ export class DsTreeGrid extends LitElement {
         }
       }
       return {
-        insetInlineStart: this.hasSelectColumn ? `calc(var(--size-target-min) + ${offset}px)` : `${offset}px`,
+        insetInlineStart: this.hasSelectColumn ? `calc(var(--ds-tree-grid-min-target) + ${offset}px)` : `${offset}px`,
       };
     }
     if (column.pinned === 'end') {

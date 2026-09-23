@@ -118,6 +118,10 @@ export class DsAccordion extends LitElement {
       --ds-accordion-font-family: var(--font-family-body);
       --ds-accordion-trigger-font-size: var(--font-size-md);
       --ds-accordion-trigger-font-weight: var(--font-weight-medium);
+      /* Locked: no overrides entry, but the hook stays themeable from page CSS. Disclosure applies them. */
+      --ds-accordion-min-target: var(--size-target-min);
+      --ds-accordion-focus-ring: var(--color-border-focus);
+      --ds-accordion-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -131,13 +135,17 @@ export class DsAccordion extends LitElement {
       gap: var(--ds-accordion-item-gap);
     }
 
-    /* triggerPaddingBlock / fontFamily / triggerFontSize / triggerFontWeight reach each Disclosure through its documented hooks */
+    /* triggerPaddingBlock / fontFamily / triggerFontSize / triggerFontWeight (and the locked hooks) reach each Disclosure through its documented hooks */
     [data-part='list'] > ds-disclosure,
     ::slotted(ds-disclosure) {
       --ds-disclosure-trigger-padding-block: var(--ds-accordion-trigger-padding-block);
       --ds-disclosure-trigger-font-family: var(--ds-accordion-font-family);
       --ds-disclosure-trigger-font-size: var(--ds-accordion-trigger-font-size);
       --ds-disclosure-trigger-font-weight: var(--ds-accordion-trigger-font-weight);
+      /* minTarget / focusRing / focusRingWidth (locked): the Disclosure trigger draws them from its own hooks */
+      --ds-disclosure-min-target: var(--ds-accordion-min-target);
+      --ds-disclosure-focus-ring: var(--ds-accordion-focus-ring);
+      --ds-disclosure-focus-ring-width: var(--ds-accordion-focus-ring-width);
     }
 
     /* divider / dividerWidth reach each Divider through its documented hooks */
@@ -208,18 +216,25 @@ export class DsAccordion extends LitElement {
 
   protected override willUpdate(changed: PropertyValues): void {
     if (!this.hasUpdated) {
-      this.warnExclusive(this.defaultValue);
+      // Given both, `value` controls and `defaultValue` is ignored.
+      this.warnExclusive(this.value !== undefined ? this.value : this.defaultValue);
       this.internalOpenIds = this.toOpenIds(this.defaultValue);
       this.renderedIds = this.openIds;
-    } else if (changed.has('value')) {
-      this.warnExclusive(this.value);
-      this.reportControlledChange();
-    } else if (changed.has('exclusive')) {
-      // Turning `exclusive` on trims the open set to its first id, silently.
-      if (this.exclusive && this.internalOpenIds.length > 1) {
+    } else {
+      if (changed.has('exclusive') && this.exclusive && this.internalOpenIds.length > 1) {
+        // Turning `exclusive` on trims the uncontrolled set to its first-opened id, silently and for good.
         this.internalOpenIds = this.internalOpenIds.slice(0, 1);
       }
-      this.renderedIds = this.openIds;
+      if (changed.has('value') || changed.has('exclusive')) {
+        // A standing controlled `value` with several ids keeps warning, once per distinct id list.
+        this.warnExclusive(this.value);
+      }
+      if (changed.has('value')) {
+        this.reportControlledChange();
+      } else if (changed.has('exclusive')) {
+        // Toggling `exclusive` changes only what is shown: no events, and a pending emitted set stays pending.
+        this.renderedIds = this.openIds;
+      }
     }
     if (changed.has('overrides')) {
       this.applyOverrides();
@@ -251,6 +266,7 @@ export class DsAccordion extends LitElement {
         id=${item.id}
         summary=${item.summary}
         heading-level=${this.headingLevel}
+        full-width
         ?disabled=${item.disabled === true}
         ?keep-mounted=${this.keepMounted}
         .open=${this.openIds.includes(item.id)}
@@ -422,8 +438,14 @@ export class DsAccordion extends LitElement {
     return this.exclusive ? ids.slice(0, 1) : [...ids];
   }
 
+  /** Id lists already warned about, so each distinct list warns once. */
+  private readonly warnedIdLists = new Set<string>();
+
   private warnExclusive(value: string | string[] | undefined): void {
     if (!import.meta.env.DEV || !this.exclusive || !Array.isArray(value) || value.length < 2) return;
+    const key = JSON.stringify(value);
+    if (this.warnedIdLists.has(key)) return;
+    this.warnedIdLists.add(key);
     console.warn(
       `ds-accordion: \`exclusive\` opens one section; opened "${value[0]}" and ignored ${value
         .slice(1)

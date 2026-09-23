@@ -110,6 +110,14 @@ export class DsDisclosure extends LitElement {
       --ds-disclosure-panel-padding-inline: var(--space-sm);
       --ds-disclosure-disabled-opacity: var(--opacity-disabled);
       --ds-disclosure-transition: var(--motion-duration-base);
+      /* Locked: no overrides entry, but the hook stays themeable from page CSS. */
+      --ds-disclosure-trigger-color: var(--color-foreground);
+      --ds-disclosure-trigger-background-hover: var(--color-background-subtle);
+      --ds-disclosure-icon: var(--color-foreground-muted);
+      --ds-disclosure-panel-color: var(--color-foreground);
+      --ds-disclosure-focus-ring: var(--color-border-focus);
+      --ds-disclosure-focus-ring-width: var(--border-width-focus);
+      --ds-disclosure-min-target: var(--size-target-min);
     }
 
     :host([hidden]) {
@@ -128,8 +136,8 @@ export class DsDisclosure extends LitElement {
       display: inline-flex;
       align-items: center;
       gap: var(--ds-disclosure-trigger-gap);
-      min-inline-size: var(--size-target-min);
-      min-block-size: var(--size-target-min);
+      min-inline-size: var(--ds-disclosure-min-target);
+      min-block-size: var(--ds-disclosure-min-target);
       margin: 0;
       padding-block: var(--ds-disclosure-trigger-padding-block);
       padding-inline: var(--ds-disclosure-trigger-padding-inline);
@@ -140,21 +148,28 @@ export class DsDisclosure extends LitElement {
       font-weight: var(--ds-disclosure-trigger-font-weight);
       line-height: var(--ds-disclosure-trigger-line-height);
       text-align: start;
-      color: var(--color-foreground);
+      color: var(--ds-disclosure-trigger-color);
+      /* At rest the trigger has no fill; no token expresses its absence. */
       background: transparent;
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
     }
 
-    /* triggerBackgroundHover: pointer hover and pressed state */
+    /* fullWidth: the whole row is the hit area; icon and summary stay at the start. */
+    :host([full-width]) [data-part='trigger'] {
+      display: flex;
+      inline-size: 100%;
+    }
+
+    /* triggerBackgroundHover: pointer hover and pressed state, instant, suppressed while disabled */
     :host(:not([disabled])) [data-part='trigger']:is(:hover, :active) {
-      background: var(--color-background-subtle);
+      background: var(--ds-disclosure-trigger-background-hover);
     }
 
     [data-part='trigger']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-disclosure-focus-ring-width) solid var(--ds-disclosure-focus-ring);
+      outline-offset: var(--ds-disclosure-focus-ring-width);
     }
 
     :host([disabled]) [data-part='trigger'] {
@@ -167,7 +182,7 @@ export class DsDisclosure extends LitElement {
     [data-part='triggerIcon'] {
       display: inline-flex;
       flex: none;
-      color: var(--color-foreground-muted);
+      color: var(--ds-disclosure-icon);
       transition: transform var(--ds-disclosure-transition) var(--motion-easing-standard);
     }
     [aria-expanded='true'] [data-part='triggerIcon'] {
@@ -189,7 +204,7 @@ export class DsDisclosure extends LitElement {
     [data-part='panel'] {
       padding-block: var(--ds-disclosure-panel-padding-block);
       padding-inline: var(--ds-disclosure-panel-padding-inline);
-      color: var(--color-foreground);
+      color: var(--ds-disclosure-panel-color);
     }
     [data-part='panel'][hidden] {
       display: none;
@@ -210,6 +225,9 @@ export class DsDisclosure extends LitElement {
 
   /** Keep the panel in the tree while closed (hidden, not unmounted). Required when the panel contains form fields. */
   @property({ type: Boolean, reflect: true, attribute: 'keep-mounted' }) accessor keepMounted = false;
+
+  /** The trigger spans the width of its row, so the whole row is the hit area. */
+  @property({ type: Boolean, reflect: true, attribute: 'full-width' }) accessor fullWidth = false;
 
   /** When set, the trigger is wrapped in a heading of this level so it appears in the outline. */
   @property({ attribute: 'heading-level' }) accessor headingLevel: DisclosureHeadingLevel | undefined;

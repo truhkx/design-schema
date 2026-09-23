@@ -201,3 +201,30 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Form: 'a field inside a closed Disclosure is not collected' is explained on web by unmounting, which does not happen in the light DOM. The spec does not name the properties to read on ds-disclosure, so Lit walks ancestors and tests `keepMounted` and `currentOpen`; a Disclosure that renames either property silently starts collecting hidden fields.
 - Form: the Enter-to-submit exclusion is 'a textarea, a button or a link'. Tested the composed path's origin against HTMLTextAreaElement/HTMLButtonElement/HTMLAnchorElement, which also excludes Enter on a ds-button nested inside a field, since its inner <button> is the origin. The spec does not say whether that was intended.
 - Form: the value contract distinguishes [number, number] from string[]/number, but a range pair is indistinguishable from any two-element number array at runtime. currentValue is trusted as given and only emptiness (null, '', []) is normalised.
+
+## 2026-09-23 13:57 — round 1
+
+- Form: errorSummaryLineHeight is locked, and the generic overrides rule says a locked binding keeps its :host hook. But the web platform note names only errorSummaryText and errorSummaryBackground as the hookless locked bindings and says nothing about line height. I followed React: no --ds-form-error-summary-line-height hook, with the rule reading --font-line-height-normal directly. The note should list all three locked bindings, or say line height keeps a hook.
+- Form: the errorSummary id `{idBase}-error-summary` is given only in the web notes. Lit says only that 'the summary reuses the web markup', so I added the id on that basis. The Lit notes should state it.
+- Form: 'the nearest lang ancestor' does not say whether the lookup crosses shadow roots. Lit uses this.closest('[lang]'), which stops at the host's own tree, so a ds-form inside another component's shadow root ignores the page's lang.
+- Form: 'warns once in development' does not say once per element or once per page. The warning is emitted once per element.
+- Form: there is no keyboard block, but the package convention expects a Keyboard story when there is one. The existing Keyboard story (three required Inputs and a submit Button) is kept for parity with React.
+
+## 2026-09-23 13:57 — round 2
+
+- Form: the web platform note says errorSummaryText and errorSummaryBackground 'get no --ds-form-* hook on web or Lit; their rules read the token directly'. This contradicts the overrides contract and the hooks gate: locked bindings leave the overrides type but keep their :host hook. I followed the contract and the gate. --ds-form-error-summary-text, --ds-form-error-summary-background and --ds-form-error-summary-line-height are now declared on :host and read by the errorSummary rules, and none of them is in FormOverridableBinding. The web note should be corrected, and React's Form.css has the same missing hooks.
+- Form: errorSummaryLineHeight is locked, but the web note lists only errorSummaryText and errorSummaryBackground as the locked summary bindings. It now has a hook, like the other two, and the note should name all three.
+- Form: the errorSummary id `{idBase}-error-summary` is given only in the web notes. Lit says only that 'the summary reuses the web markup', so I added the id on that basis. The Lit notes should state it.
+- Form: 'the nearest lang ancestor' does not say whether the lookup crosses shadow roots. Lit uses this.closest('[lang]'), which stops at the host's own tree.
+- Form: 'warns once in development' does not say once per element or once per page. The warning is emitted once per element.
+- Form: there is no keyboard block, but a Keyboard story is kept for parity with React.
+
+## 2026-09-23 13:58 — round 3
+
+- Form: the web platform note says errorSummaryText and errorSummaryBackground 'get no --ds-form-* hook on web or Lit; their rules read the token directly'. This contradicts the overrides contract and the hooks gate: locked bindings leave the overrides type but keep their :host hook. I followed the contract and the gate. --ds-form-error-summary-text, --ds-form-error-summary-background and --ds-form-error-summary-line-height are declared on :host and read by the errorSummary rules, and none of them is in FormOverridableBinding. The web note should be corrected, and React's Form.css has the same missing hooks.
+- Form: errorSummaryLineHeight is locked, but the web note lists only errorSummaryText and errorSummaryBackground as the locked summary bindings. It has a hook like the other two, and the note should name all three.
+- Form: the errorSummary id `{idBase}-error-summary` is given only in the web notes. Lit says only that 'the summary reuses the web markup', so I added the id on that basis. The Lit notes should state it.
+- Form: 'the nearest lang ancestor' does not say whether the lookup crosses shadow roots. Lit uses this.closest('[lang]'), which stops at the host's own tree.
+- Form: 'warns once in development' does not say once per element or once per page. The warning is emitted once per element.
+- Form: there is no keyboard block, but a Keyboard story is kept for parity with React.
+- Form (gate, not spec): the round-3 typecheck failure was in src/Tree.ts, a file this job never touched. Tree.ts was changed concurrently in the same worktree, and the error was gone on rerun. A package-wide typecheck can blame whichever job happens to be running.

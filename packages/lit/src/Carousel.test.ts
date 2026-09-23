@@ -10,14 +10,14 @@ import meta from './Carousel.stories.js';
 
 type Given = Partial<Pick<DsCarousel, 'label' | 'perView' | 'loop' | 'autoplay' | 'interval' | 'picker' | 'activeIndex' | 'snap'>>;
 
-/** The Default story's args plus the scenario's `given`, as properties on a fresh element with three slides. */
+/** The Default story's args plus the scenario's `given`, as properties on a fresh element with the Default story's four slides. */
 async function setup(given: Given = {}) {
   const el = document.createElement('ds-carousel');
   const props = { ...meta.args, ...given };
   for (const [key, value] of Object.entries(props)) {
     if (value !== undefined) (el as unknown as Record<string, unknown>)[key] = value;
   }
-  for (const label of ['First', 'Second', 'Third']) {
+  for (const label of ['Product 1', 'Product 2', 'Product 3', 'Product 4']) {
     const slide = document.createElement('ds-carousel-slide');
     slide.label = label;
     slide.textContent = label;
@@ -54,7 +54,7 @@ describe('ds-carousel', () => {
     const { part, events } = await setup({ loop: true });
     await userEvent.click(part('prevButton'));
     expect(events).toHaveLength(1);
-    expect(events[0]).toEqual({ index: 2, reason: 'prev' });
+    expect(events[0]).toEqual({ index: 3, reason: 'prev' });
   });
 
   it('the-picker-jumps-straight-to-a-slide', async () => {

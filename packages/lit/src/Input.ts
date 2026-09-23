@@ -101,6 +101,17 @@ export class DsInput extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
+      /* Locked bindings: out of the overrides API, still themeable from page CSS. */
+      --ds-input-background: var(--color-background);
+      --ds-input-foreground: var(--color-foreground);
+      --ds-input-placeholder: var(--color-foreground-muted);
+      --ds-input-border: var(--color-border-strong);
+      --ds-input-border-focus: var(--color-border-focus);
+      --ds-input-min-target: var(--size-target-comfortable);
+      --ds-input-min-target-sm: var(--size-target-min);
+      --ds-input-focus-ring-width: var(--border-width-focus);
+      --ds-input-error-text: var(--color-foreground-danger);
+      --ds-input-description-text: var(--color-foreground-muted);
       --ds-input-border-invalid: var(--color-border-danger);
       --ds-input-border-width: var(--border-width-thin);
       --ds-input-radius: var(--radius-md);
@@ -163,25 +174,37 @@ export class DsInput extends LitElement {
       font-size: var(--ds-input-font-size);
       font-weight: var(--ds-input-label-weight);
       line-height: var(--ds-input-line-height);
-      color: var(--color-foreground);
+      color: var(--ds-input-foreground);
+    }
+
+    /*
+     * errorText / descriptionText: the composed Text keeps its danger / muted tone;
+     * the parent hook only sets Text's own documented --ds-text-color hook on its
+     * host (same token by default), never Text's shadow tree.
+     */
+    [data-part='description'] {
+      --ds-text-color: var(--ds-input-description-text);
+    }
+    [data-part='errorMessage'] {
+      --ds-text-color: var(--ds-input-error-text);
     }
 
     [data-part='field'] {
       box-sizing: border-box;
       display: block;
       inline-size: 100%;
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-input-min-target);
       margin: 0;
       padding-block: var(--ds-input-padding-block);
       padding-inline: var(--ds-input-padding-inline);
-      border: var(--ds-input-border-width) solid var(--color-border-strong);
+      border: var(--ds-input-border-width) solid var(--ds-input-border);
       border-radius: var(--ds-input-radius);
       outline: none;
       font-family: var(--ds-input-font-family);
       font-size: var(--ds-input-font-size);
       line-height: var(--ds-input-line-height);
-      color: var(--color-foreground);
-      background: var(--color-background);
+      color: var(--ds-input-foreground);
+      background: var(--ds-input-background);
       appearance: none;
       -webkit-appearance: none;
       /* transition: border color only; border width and padding change instantly */
@@ -196,12 +219,12 @@ export class DsInput extends LitElement {
 
     /* minTargetSm: the field height floor at size sm */
     :host([size='sm']) [data-part='field'] {
-      min-block-size: var(--size-target-min);
+      min-block-size: var(--ds-input-min-target-sm);
     }
 
     /* placeholder: color.foreground.muted */
     [data-part='field']::placeholder {
-      color: var(--color-foreground-muted);
+      color: var(--ds-input-placeholder);
       opacity: 1;
     }
 
@@ -213,10 +236,10 @@ export class DsInput extends LitElement {
      * locked width leaves the padding alone rather than eating into it.
      */
     [data-part='field']:focus-visible {
-      border-color: var(--color-border-focus);
-      border-width: var(--border-width-focus);
-      padding-inline: calc(var(--ds-input-padding-inline) - max(0px, var(--border-width-focus) - var(--ds-input-border-width)));
-      padding-block: calc(var(--ds-input-padding-block) - max(0px, var(--border-width-focus) - var(--ds-input-border-width)));
+      border-color: var(--ds-input-border-focus);
+      border-width: var(--ds-input-focus-ring-width);
+      padding-inline: calc(var(--ds-input-padding-inline) - max(0px, var(--ds-input-focus-ring-width) - var(--ds-input-border-width)));
+      padding-block: calc(var(--ds-input-padding-block) - max(0px, var(--ds-input-focus-ring-width) - var(--ds-input-border-width)));
     }
 
     /* borderInvalid: the danger color stays while focused; only the width changes */

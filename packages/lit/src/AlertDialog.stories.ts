@@ -85,7 +85,7 @@ export const Closed: Story = { args: { open: false } };
  */
 export const Keyboard: Story = { args: { open: true } };
 
-/* examples */
+/* examples: each sets every prop it names or relies on at its default, since meta.args merge in */
 export const DeleteFiles: Story = {
   args: {
     open: true,
@@ -93,6 +93,8 @@ export const DeleteFiles: Story = {
     heading: 'Delete 3 files?',
     description: 'They will be removed from all shared folders. This cannot be undone.',
     confirmLabel: 'Delete files',
+    cancelLabel: undefined,
+    confirmDisabled: false,
   },
 };
 
@@ -104,6 +106,7 @@ export const LeaveWithoutSaving: Story = {
     description: 'Your changes to this draft will be lost.',
     confirmLabel: 'Leave',
     cancelLabel: 'Keep editing',
+    confirmDisabled: false,
   },
 };
 
@@ -114,6 +117,7 @@ export const TypedConfirmation: Story = {
     heading: 'Cancel your subscription?',
     description: 'Your workspace stays read-only after the current billing period ends.',
     confirmLabel: 'Cancel subscription',
+    cancelLabel: undefined,
     confirmDisabled: true,
   },
 };
@@ -125,5 +129,7 @@ export const PublishToTheTeam: Story = {
     heading: 'Publish to the team?',
     description: 'Everyone in the workspace will be able to see this page.',
     confirmLabel: 'Publish',
+    cancelLabel: undefined,
+    confirmDisabled: false,
   },
 };

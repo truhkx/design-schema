@@ -67,6 +67,7 @@ export type ProgressBarOverridableBinding =
   | 'labelGap'
   | 'transition'
   | 'indeterminateLoop'
+  | 'indeterminateReducedOpacity'
   | 'sweepEasing';
 
 type ProgressBarOverrides = Partial<Record<ProgressBarOverridableBinding, TokenRef | undefined>>;
@@ -86,6 +87,7 @@ const HOOKS: Partial<Record<ProgressBarOverridableBinding, string>> = {
   labelGap: '--ds-progress-bar-label-gap',
   transition: '--ds-progress-bar-transition',
   indeterminateLoop: '--ds-progress-bar-indeterminate-loop',
+  indeterminateReducedOpacity: '--ds-progress-bar-indeterminate-reduced-opacity',
   sweepEasing: '--ds-progress-bar-sweep-easing',
 };
 
@@ -146,7 +148,17 @@ export class DsProgressBar extends LitElement {
       --ds-progress-bar-label-gap: var(--space-2);
       --ds-progress-bar-transition: var(--motion-duration-base);
       --ds-progress-bar-indeterminate-loop: var(--motion-duration-loop);
+      --ds-progress-bar-indeterminate-reduced-opacity: var(--opacity-disabled);
       --ds-progress-bar-sweep-easing: var(--motion-easing-standard);
+      /* Locked: out of the overrides type, but still themeable from document CSS. */
+      --ds-progress-bar-fill: var(--color-control-selected-background);
+      /* locked labelColor / valueColor: declared for the CSS escape hatch and the naming codemod; the
+         colours come from the composed Texts' tone="default" / tone="muted" (same tokens), so no rule
+         restyles the children */
+      --ds-progress-bar-label-color: var(--color-foreground);
+      --ds-progress-bar-value-color: var(--color-foreground-muted);
+      --ds-progress-bar-fill-success: var(--color-status-success-icon);
+      --ds-progress-bar-fill-danger: var(--color-status-danger-icon);
     }
 
     :host([hidden]) {
@@ -175,6 +187,15 @@ export class DsProgressBar extends LitElement {
       justify-content: flex-end;
     }
 
+    /* The label's wrapper shrinks so a long label wraps inside the row; the value text never does. */
+    .label-wrap {
+      flex: 0 1 auto;
+      min-inline-size: 0;
+    }
+    [data-part='valueText'] {
+      flex-shrink: 0;
+    }
+
     /* track: color.background.strong; trackHeight: space.2; radius: radius.full (the track clips the fill) */
     [data-part='track'] {
       position: relative;
@@ -193,15 +214,15 @@ export class DsProgressBar extends LitElement {
       inset-inline-start: 0;
       inline-size: 0;
       border-radius: var(--ds-progress-bar-radius);
-      background-color: var(--color-control-selected-background);
+      background-color: var(--ds-progress-bar-fill);
     }
     /* fillSuccess: color.status.success.icon, locked */
     :host([tone='success']) [data-part='fill'] {
-      background-color: var(--color-status-success-icon);
+      background-color: var(--ds-progress-bar-fill-success);
     }
     /* fillDanger: color.status.danger.icon, locked */
     :host([tone='danger']) [data-part='fill'] {
-      background-color: var(--color-status-danger-icon);
+      background-color: var(--ds-progress-bar-fill-danger);
     }
 
     /* The sweeping fill is one third of the track: geometry, not a token. */
@@ -225,11 +246,11 @@ export class DsProgressBar extends LitElement {
       }
     }
 
-    /* Reduced motion: no sweep — the fill is static and full-width at opacity.disabled, keeping its tone. */
+    /* Reduced motion: no sweep — the fill is static and full-width at indeterminateReducedOpacity, keeping its tone. */
     @media (prefers-reduced-motion: reduce) {
       [data-part='fill'].indeterminate {
         inline-size: 100%;
-        opacity: var(--opacity-disabled);
+        opacity: var(--ds-progress-bar-indeterminate-reduced-opacity);
       }
     }
 
@@ -294,8 +315,8 @@ export class DsProgressBar extends LitElement {
    * (there is no locale prop), so 99.5% of the way shows "100%" before completion; completion is only
    * the clamped value reaching `max`. Called with the clamped value. Rounding is for the text only;
    * the fill uses the exact fraction. A `max` at or below `min` is not a range: the bar renders empty,
-   * exposes `min` as its value with the given bounds, shows and exposes "0%" unless a custom formatter
-   * says otherwise, makes no progress or completion announcements, and warns in development.
+   * exposes `min` as its value with the given bounds, shows and exposes "0%" (the formatter is not
+   * called), makes no progress or completion announcements, and warns in development once per pair.
    */
   @property({ attribute: false })
   accessor formatValue: ((value: number, min: number, max: number) => string) | undefined;
@@ -385,7 +406,9 @@ export class DsProgressBar extends LitElement {
 
   /** The value text — the same string as `aria-valuetext` and as `{value}` in an announcement. */
   get displayText(): string {
-    const { min, max } = this.bounds;
+    const { min, max, valid } = this.bounds;
+    // `max ≤ min` is not a range: the bar exposes and shows "0%", whatever the formatter.
+    if (!valid) return defaultFormatValue(min, min, max);
     return (this.formatValue ?? defaultFormatValue)(this.clampedValue, min, max);
   }
 
@@ -446,9 +469,11 @@ export class DsProgressBar extends LitElement {
             'label-hidden': this.hideLabel && showValueText,
           })}
         >
-          ${this.hideLabel && showValueText
-            ? html`<span class="visually-hidden">${labelText}</span>`
-            : labelText}
+          <!-- Layout and the visually-hidden styles go on this wrapper, never on the label part. -->
+          <span
+            class=${classMap({ 'label-wrap': true, 'visually-hidden': this.hideLabel && showValueText })}
+            >${labelText}</span
+          >
           ${showValueText
             ? html`<ds-text
                 part="valueText"

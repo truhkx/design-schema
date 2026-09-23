@@ -126,7 +126,9 @@ export type TableOverridableBinding =
   | 'numericFont'
   | 'transition';
 
-const HOOKS: Record<TableOverridableBinding, string> = {
+/** Table's own hooks. captionSize/captionWeight/captionGap are forwarded to the caption Heading's `overrides` and
+    declare no hook here: a consumer restyles the caption through `--ds-heading-*`. */
+const HOOKS: Partial<Record<TableOverridableBinding, string>> = {
   headerWeight: '--ds-table-header-weight',
   headerSize: '--ds-table-header-size',
   headerBorder: '--ds-table-header-border',
@@ -138,9 +140,6 @@ const HOOKS: Record<TableOverridableBinding, string> = {
   cellPaddingInline: '--ds-table-cell-padding-inline',
   cellPaddingBlock: '--ds-table-cell-padding-block',
   cellGap: '--ds-table-cell-gap',
-  captionSize: '--ds-table-caption-size',
-  captionWeight: '--ds-table-caption-weight',
-  captionGap: '--ds-table-caption-gap',
   stackedRowInset: '--ds-table-stacked-row-inset',
   stackedRowGap: '--ds-table-stacked-row-gap',
   stackedBlockGap: '--ds-table-stacked-block-gap',
@@ -158,6 +157,13 @@ const HOOKS: Record<TableOverridableBinding, string> = {
 
 function textOf(value: unknown): string {
   return value === undefined || value === null ? '' : String(value);
+}
+
+/** A click that landed on the composed control itself (or anything inside it) runs the control's own action. */
+function isInsideControl(event: Event): boolean {
+  return event.composedPath().some(
+    (node) => node instanceof Element && (node.localName === 'ds-button' || node.localName === 'ds-checkbox'),
+  );
 }
 
 /** Uncontrolled sort: `localeCompare` (numeric) for strings, subtraction for numbers. */
@@ -202,9 +208,6 @@ export class DsTable extends LitElement {
       --ds-table-cell-padding-inline: var(--layout-inset-md);
       --ds-table-cell-padding-block: var(--space-sm);
       --ds-table-cell-gap: var(--layout-gap-tight);
-      --ds-table-caption-size: var(--font-size-md);
-      --ds-table-caption-weight: var(--font-weight-semibold);
-      --ds-table-caption-gap: var(--space-2);
       --ds-table-stacked-row-inset: var(--layout-inset-md);
       --ds-table-stacked-row-gap: var(--layout-gap-tight);
       --ds-table-stacked-block-gap: var(--layout-gap-tight);
@@ -218,14 +221,27 @@ export class DsTable extends LitElement {
       --ds-table-line-height: var(--font-line-height-normal);
       --ds-table-numeric-font: var(--font-family-mono);
       --ds-table-transition: var(--motion-duration-fast);
+      /* locked: out of the overrides API, still themeable from page CSS */
+      --ds-table-surface: var(--color-background);
+      --ds-table-header-surface: var(--color-background-subtle);
+      --ds-table-header-color: var(--color-foreground);
+      --ds-table-row-stripe: var(--color-background-subtle);
+      --ds-table-row-selected: var(--color-background-subtle);
+      --ds-table-row-selected-border: var(--color-control-selected-background);
+      --ds-table-row-selected-border-width: var(--border-width-focus);
+      --ds-table-cell-color: var(--color-foreground);
+      --ds-table-cell-muted-color: var(--color-foreground-muted);
+      --ds-table-stacked-label-color: var(--color-foreground-muted);
+      --ds-table-min-target: var(--size-target-min);
+      --ds-table-focus-ring: var(--color-border-focus);
+      --ds-table-focus-ring-width: var(--border-width-focus);
 
       display: block;
       container-type: inline-size;
       font-family: var(--ds-table-font-family);
       font-size: var(--ds-table-font-size);
       line-height: var(--ds-table-line-height);
-      /* cellColor: color.foreground (locked) */
-      color: var(--color-foreground);
+      color: var(--ds-table-cell-color);
     }
 
     /* cellPaddingInline by density */
@@ -285,8 +301,8 @@ export class DsTable extends LitElement {
       position: relative;
     }
     .region:has([data-part='scrollRegion']:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-table-focus-ring-width) solid var(--ds-table-focus-ring);
+      outline-offset: calc(-1 * var(--ds-table-focus-ring-width));
     }
     [data-part='scrollRegion']:focus-visible {
       outline: none;
@@ -295,8 +311,7 @@ export class DsTable extends LitElement {
     table {
       inline-size: 100%;
       border-collapse: collapse;
-      /* surface: color.background (locked) */
-      background: var(--color-background);
+      background: var(--ds-table-surface);
     }
 
     th,
@@ -312,9 +327,8 @@ export class DsTable extends LitElement {
     [data-part='columnHeader'],
     [data-part='selectAllCell'],
     .header-select {
-      /* headerSurface / headerColor (locked) */
-      background: var(--color-background-subtle);
-      color: var(--color-foreground);
+      background: var(--ds-table-header-surface);
+      color: var(--ds-table-header-color);
       font-weight: var(--ds-table-header-weight);
       font-size: var(--ds-table-header-size);
       border-block-end: var(--ds-table-header-border-width) solid var(--ds-table-header-border);
@@ -333,31 +347,30 @@ export class DsTable extends LitElement {
     }
 
     [data-part='row'] {
-      background: var(--color-background);
+      background: var(--ds-table-surface);
     }
 
     [data-part='row'] > th,
     [data-part='row'] > td {
-      color: var(--color-foreground);
+      color: var(--ds-table-cell-color);
       border-block-end: var(--ds-table-row-border-width) solid var(--ds-table-row-border);
     }
 
-    /* rowStripe (locked) */
     :host([striped]) [data-part='row']:nth-child(even) {
-      background: var(--color-background-subtle);
+      background: var(--ds-table-row-stripe);
     }
 
-    /* rowSelected (locked): the same tint as a stripe */
+    /* rowSelected: the same tint as a stripe */
     [data-part='row'][aria-selected='true'] {
-      background: var(--color-background-subtle);
+      background: var(--ds-table-row-selected);
     }
 
-    /* rowSelectedBorder / rowSelectedBorderWidth (locked): a start-edge bar, so selection is not fill alone */
+    /* rowSelectedBorder / rowSelectedBorderWidth: a start-edge bar, so selection is not fill alone */
     [data-part='row'][aria-selected='true'] > :first-child {
-      box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+      box-shadow: inset var(--ds-table-row-selected-border-width) 0 0 0 var(--ds-table-row-selected-border);
     }
     [data-part='row'][aria-selected='true'] > :first-child:dir(rtl) {
-      box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+      box-shadow: inset calc(-1 * var(--ds-table-row-selected-border-width)) 0 0 0 var(--ds-table-row-selected-border);
     }
 
     /* rowHover: interactive rows only. A render function's output cannot be inspected, so a
@@ -384,8 +397,7 @@ export class DsTable extends LitElement {
     [data-part='selectCell'],
     [data-part='selectAllCell'],
     .header-select {
-      /* minTarget (locked) */
-      inline-size: var(--size-target-min);
+      inline-size: var(--ds-table-min-target);
     }
 
     .align-end {
@@ -405,6 +417,11 @@ export class DsTable extends LitElement {
     }
     .width-fill {
       inline-size: 100%;
+    }
+
+    /* sortButton: the wrapper around the composed Button, which writes its own part hooks */
+    .sort {
+      display: inline-flex;
     }
 
     .actions {
@@ -431,14 +448,15 @@ export class DsTable extends LitElement {
       font: inherit;
     }
 
-    /* hideBelow applies to responsive: stack only; scrolling tables keep every column */
-    @container (max-width: ${unsafeCSS(CONTENT_BREAKPOINT)}px) {
+    /* hideBelow applies to responsive: stack only; scrolling tables keep every column. "Below" is strictly
+       less than the token: at exactly the width the table is still columnar. */
+    @container (width < ${unsafeCSS(CONTENT_BREAKPOINT)}px) {
       :host([responsive='stack']) .hide-below-content {
         display: none;
       }
     }
 
-    @container (max-width: ${unsafeCSS(PROSE_BREAKPOINT)}px) {
+    @container (width < ${unsafeCSS(PROSE_BREAKPOINT)}px) {
       :host([responsive='stack']) .hide-below-prose {
         display: none;
       }
@@ -452,17 +470,26 @@ export class DsTable extends LitElement {
         z-index: 2;
       }
 
-      /* select-all and sortable headers stay visible as a wrapping row, so no focusable control is invisible */
+      /* select-all and sortable headers stay visible as a wrapping row, so no focusable control is invisible.
+         The cells keep headerSurface/Size/Weight/Color; headerBorder and the scrolled-under headerShadow move
+         to the row, which also takes headerSurface so the wrap gaps are filled. */
       :host([responsive='stack']) [data-part='headerRow'] {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: var(--ds-table-stacked-row-gap);
+        background: var(--ds-table-header-surface);
+        border-block-end: var(--ds-table-header-border-width) solid var(--ds-table-header-border);
+      }
+      :host([responsive='stack']:not([no-sticky-header])[data-header-scrolled]) [data-part='headerRow'] {
+        box-shadow: var(--ds-table-header-shadow);
       }
       :host([responsive='stack']) thead th,
       :host([responsive='stack']) thead td {
         position: static;
         display: block;
+        border-block-end: 0;
+        box-shadow: none;
       }
 
       /* plain column headers: visually hidden, not display none, so the columnheaders stay in the tree */
@@ -500,13 +527,16 @@ export class DsTable extends LitElement {
         padding: 0;
         border: 0;
         box-shadow: none;
+        /* a width-min column's nowrap would push its longest line past a phone-width block */
+        white-space: normal;
       }
 
       :host([responsive='stack']) [data-part='row'][aria-selected='true'] {
-        box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+        box-shadow: inset var(--ds-table-row-selected-border-width) 0 0 0 var(--ds-table-row-selected-border);
       }
       :host([responsive='stack']) [data-part='row'][aria-selected='true']:dir(rtl) {
-        box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+        box-shadow: inset calc(-1 * var(--ds-table-row-selected-border-width)) 0 0 0
+          var(--ds-table-row-selected-border);
       }
 
       /* stackedLabel, drawn as a pseudo-element with empty alternative text: the roles already associate the header */
@@ -514,8 +544,7 @@ export class DsTable extends LitElement {
         content: attr(data-label);
         content: attr(data-label) / '';
         display: block;
-        /* stackedLabelColor (locked) */
-        color: var(--color-foreground-muted);
+        color: var(--ds-table-stacked-label-color);
         font-size: var(--ds-table-stacked-label-size);
         font-weight: var(--ds-table-stacked-label-weight);
       }
@@ -732,12 +761,19 @@ export class DsTable extends LitElement {
       return nothing;
     }
     if (this.selectable === 'single') {
-      return html`<td role="cell" class="header-select"></td>`;
+      return html`<td role="cell" class="header-select plain"></td>`;
     }
     const selected = new Set(this.currentSelected);
     const allSelected = this.data.length > 0 && this.data.every((row) => selected.has(row.id));
     const someSelected = !allSelected && this.data.some((row) => selected.has(row.id));
-    return html`<th role="columnheader" scope="col" data-part="selectAllCell">
+    return html`<th
+      role="columnheader"
+      scope="col"
+      data-part="selectAllCell"
+      @click=${(event: MouseEvent) => {
+        if (!isInsideControl(event)) this.commitSelection(allSelected ? [] : this.data.map((row) => row.id));
+      }}
+    >
       <ds-checkbox
         label=${COPY_SELECT_ALL}
         hide-label
@@ -761,8 +797,13 @@ export class DsTable extends LitElement {
       aria-sort=${ifDefined(sorted)}
     >
       ${column.sortable
-        ? html`<ds-button
+        ? html`<span
             data-part="sortButton"
+            class="sort"
+            @click=${(event: MouseEvent) => {
+              if (!isInsideControl(event)) this.handleSort(event, column);
+            }}
+            ><ds-button
             variant="ghost"
             size="sm"
             .overrides=${{
@@ -780,7 +821,8 @@ export class DsTable extends LitElement {
                   inline
                 ></ds-icon>`
               : nothing}
-          </ds-button>`
+          </ds-button></span
+          >`
         : column.header}
     </th>`;
   }
@@ -796,7 +838,13 @@ export class DsTable extends LitElement {
       @click=${rowsInteractive ? (event: MouseEvent) => this.handleRowClick(event, row.id) : nothing}
     >
       ${this.selectable !== 'none'
-        ? html`<td role="cell" data-part="selectCell">
+        ? html`<td
+            role="cell"
+            data-part="selectCell"
+            @click=${(event: MouseEvent) => {
+              if (!isInsideControl(event)) this.selectRow(row.id, !isSelected);
+            }}
+          >
             <ds-checkbox
               label=${COPY_SELECT_ROW(name)}
               hide-label
@@ -895,7 +943,10 @@ export class DsTable extends LitElement {
 
   private handleSelectRow(event: CustomEvent<CheckboxChangeDetail>, id: string): void {
     event.stopPropagation();
-    const checked = event.detail.checked;
+    this.selectRow(id, event.detail.checked);
+  }
+
+  private selectRow(id: string, checked: boolean): void {
     const current = this.currentSelected.filter((existing) => existing !== id);
     if (this.selectable === 'single') {
       this.commitSelection(checked ? [id] : []);
@@ -931,7 +982,9 @@ export class DsTable extends LitElement {
     const target = event.target;
     if (
       target instanceof Element &&
-      target.closest('ds-button, ds-checkbox, ds-link, ds-menu, a, button, input, select, textarea, label, [tabindex]')
+      target.closest(
+        '[data-part="selectCell"], ds-button, ds-checkbox, ds-link, ds-menu, a, button, input, select, textarea, label, [tabindex]',
+      )
     ) {
       return;
     }
@@ -1022,7 +1075,10 @@ export class DsTable extends LitElement {
     this.headerObserver?.disconnect();
     this.headerObserver = undefined;
     this.observedFor = key;
-    if (!this.stickyHeader || !sentinel || typeof IntersectionObserver === 'undefined') {
+    // In responsive: scroll the scroll region is the sticky container, so against the page scroll the header
+    // does not stick and casts no shadow; it sticks only with maxHeight: viewport.
+    const inert = this.responsive === 'scroll' && this.maxHeight !== 'viewport';
+    if (!this.stickyHeader || inert || !sentinel || typeof IntersectionObserver === 'undefined') {
       if (this.hasAttribute('data-header-scrolled')) {
         this.removeAttribute('data-header-scrolled');
       }
@@ -1046,12 +1102,12 @@ export class DsTable extends LitElement {
   }
 
   private applyOverrides(): void {
-    for (const binding of Object.keys(HOOKS) as TableOverridableBinding[]) {
+    for (const [binding, hook] of Object.entries(HOOKS) as [TableOverridableBinding, string][]) {
       const ref = this.overrides?.[binding];
       if (ref === undefined) {
-        this.style.removeProperty(HOOKS[binding]);
+        this.style.removeProperty(hook);
       } else {
-        this.style.setProperty(HOOKS[binding], cssVar(ref));
+        this.style.setProperty(hook, cssVar(ref));
       }
     }
   }

@@ -1,18 +1,18 @@
 {
   "Accordion.lit": {
-    "hash": "f3a210201a5dd142",
-    "lastAttemptHash": "f3a210201a5dd142",
-    "generatedAt": "2026-09-21T18:31:22+00:00",
+    "hash": "358661345b2e8218",
+    "lastAttemptHash": "358661345b2e8218",
+    "generatedAt": "2026-09-23T19:09:33+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 3.6295,
+    "rounds": 2,
+    "costUsd": 2.057,
     "files": [
       "packages/lit/src/Accordion.stories.ts",
       "packages/lit/src/Accordion.test.ts",
       "packages/lit/src/Accordion.ts"
     ],
-    "gaps": 10,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -20,24 +20,25 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
     }
   },
   "ActionSheet.lit": {
-    "hash": "a2992ad891fcc624",
-    "lastAttemptHash": "a2992ad891fcc624",
-    "generatedAt": "2026-09-21T13:42:02+00:00",
+    "hash": "e49c6b4ccf7c2400",
+    "lastAttemptHash": "e49c6b4ccf7c2400",
+    "generatedAt": "2026-09-23T18:46:02+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 6.3581,
+    "rounds": 2,
+    "costUsd": 3.2988,
     "files": [
       "packages/lit/src/ActionSheet.stories.ts",
       "packages/lit/src/ActionSheet.ts"
     ],
-    "gaps": 8,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -45,24 +46,25 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
     }
   },
   "Alert.lit": {
-    "hash": "e50f5feeafc18028",
-    "lastAttemptHash": "e50f5feeafc18028",
-    "generatedAt": "2026-09-21T07:19:13+00:00",
+    "hash": "4589b284f8a1d88c",
+    "lastAttemptHash": "4589b284f8a1d88c",
+    "generatedAt": "2026-09-23T18:14:18+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.2825,
+    "costUsd": 0.6044,
     "files": [
-      "packages/lit/src/Alert.stories.ts",
+      "packages/lit/src/Alert.test.ts",
       "packages/lit/src/Alert.ts"
     ],
-    "gaps": 7,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -70,47 +72,24 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
   },
   "AlertDialog.lit": {
-    "hash": "db464b570e57cddc",
-    "lastAttemptHash": "db464b570e57cddc",
-    "generatedAt": "2026-09-21T11:10:36+00:00",
+    "hash": "0953ca6057303acb",
+    "lastAttemptHash": "0953ca6057303acb",
+    "generatedAt": "2026-09-23T18:32:38+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 6.136,
+    "rounds": 2,
+    "costUsd": 1.925,
     "files": [
       "packages/lit/src/AlertDialog.stories.ts",
       "packages/lit/src/AlertDialog.test.ts",
-      "packages/lit/src/AlertDialog.ts"
-    ],
-    "gaps": 12,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "BottomSheet.lit": {
-    "hash": "8f54a827c999a34d",
-    "lastAttemptHash": "8f54a827c999a34d",
-    "generatedAt": "2026-09-21T13:04:16+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 6.2615,
-    "files": [
-      "packages/lit/src/BottomSheet.stories.ts",
-      "packages/lit/src/BottomSheet.ts"
+      "packages/lit/src/AlertDialog.ts",
+      "packages/lit/src/index.ts"
     ],
     "gaps": 9,
     "gates": {
@@ -120,25 +99,27 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
     }
   },
-  "Box.lit": {
-    "hash": "a58e82de074fa31e",
-    "lastAttemptHash": "a11f754f475788d4",
-    "generatedAt": "2026-09-19T12:12:18+00:00",
+  "BottomSheet.lit": {
+    "hash": "e338a01926a7d3bf",
+    "lastAttemptHash": "e338a01926a7d3bf",
+    "generatedAt": "2026-09-23T18:41:54+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 1.7277,
+    "rounds": 2,
+    "costUsd": 2.8988,
     "files": [
-      "logs/box-axe.config.ts",
-      "logs/box-axe.spec.ts",
-      "packages/lit/src/Box.stories.ts"
+      "packages/lit/src/BottomSheet.stories.ts",
+      "packages/lit/src/BottomSheet.test.ts",
+      "packages/lit/src/BottomSheet.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -146,21 +127,49 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
-      "keyboard-run": false,
-      "axe": false
+      "keyboard-run": true,
+      "axe": true
     }
   },
-  "Breadcrumb.lit": {
-    "hash": "e626315a01c5135b",
-    "lastAttemptHash": "e626315a01c5135b",
-    "generatedAt": "2026-09-21T07:40:10+00:00",
+  "Box.lit": {
+    "hash": "43f5fc8fc9579c92",
+    "lastAttemptHash": "43f5fc8fc9579c92",
+    "generatedAt": "2026-09-23T17:48:04+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.7728,
+    "costUsd": 0.5858,
+    "files": [
+      "packages/lit/src/Box.stories.ts",
+      "packages/lit/src/Box.test.ts",
+      "packages/lit/src/Box.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Breadcrumb.lit": {
+    "hash": "7a5e6ac7eabb2106",
+    "lastAttemptHash": "7a5e6ac7eabb2106",
+    "generatedAt": "2026-09-23T18:17:09+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.8216,
     "files": [
       "packages/lit/src/Breadcrumb.stories.ts",
+      "packages/lit/src/Breadcrumb.test.ts",
       "packages/lit/src/Breadcrumb.ts",
       "packages/lit/src/index.ts"
     ],
@@ -172,22 +181,26 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
   },
   "Button.lit": {
-    "hash": "a3a7b113c88b9c19",
-    "lastAttemptHash": "a3a7b113c88b9c19",
-    "generatedAt": "2026-09-22T07:03:49+00:00",
+    "hash": "4bada4c0795917e1",
+    "lastAttemptHash": "4bada4c0795917e1",
+    "generatedAt": "2026-09-23T17:51:09+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.6328,
+    "rounds": 2,
+    "costUsd": 2.0318,
     "files": [
-      "packages/lit/src/Button.ts"
+      "packages/lit/src/Button.stories.ts",
+      "packages/lit/src/Button.test.ts",
+      "packages/lit/src/Button.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -195,373 +208,21 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
   },
   "Card.lit": {
-    "hash": "b644cf79abaaa8a7",
-    "lastAttemptHash": "b644cf79abaaa8a7",
-    "generatedAt": "2026-09-22T08:09:40+00:00",
+    "hash": "eaf6a2c4b7e70eb6",
+    "lastAttemptHash": "eaf6a2c4b7e70eb6",
+    "generatedAt": "2026-09-23T18:01:13+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.7526,
+    "costUsd": 0.6732,
     "files": [
-      "packages/lit/src/Card.stories.ts",
       "packages/lit/src/Card.ts"
-    ],
-    "gaps": 9,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "Carousel.lit": {
-    "hash": "c76d4f3c022fbe5d",
-    "lastAttemptHash": "c76d4f3c022fbe5d",
-    "generatedAt": "2026-09-21T22:57:34+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 5.3822,
-    "files": [
-      "packages/lit/src/Carousel.stories.ts",
-      "packages/lit/src/Carousel.ts"
-    ],
-    "gaps": 11,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Checkbox.lit": {
-    "hash": "60dcf6ce0c0dc240",
-    "lastAttemptHash": "60dcf6ce0c0dc240",
-    "generatedAt": "2026-09-21T02:18:36+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.3162,
-    "files": [
-      "packages/lit/src/Checkbox.stories.ts",
-      "packages/lit/src/Checkbox.ts"
-    ],
-    "gaps": 8,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "Combobox.lit": {
-    "hash": "eb7cfa91916ac82c",
-    "lastAttemptHash": "eb7cfa91916ac82c",
-    "generatedAt": "2026-09-21T18:05:07+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 5.1883,
-    "files": [
-      "packages/lit/src/Combobox.stories.ts",
-      "packages/lit/src/Combobox.ts"
-    ],
-    "gaps": 12,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Container.lit": {
-    "hash": "b50edb892d14b8e1",
-    "lastAttemptHash": "b50edb892d14b8e1",
-    "generatedAt": "2026-09-22T07:57:55+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.9098,
-    "files": [
-      "packages/lit/src/Container.stories.ts",
-      "packages/lit/src/Container.test.ts",
-      "packages/lit/src/Container.ts",
-      "packages/lit/src/index.ts"
-    ],
-    "gaps": 9,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "DataGrid.lit": {
-    "hash": "2137d2cb0bfb2b8d",
-    "lastAttemptHash": "2137d2cb0bfb2b8d",
-    "generatedAt": "2026-09-22T00:59:40+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 2,
-    "costUsd": 13.8515,
-    "files": [
-      "packages/lit/src/DataGrid.ts"
-    ],
-    "gaps": 17,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "DatePicker.lit": {
-    "hash": "9d82029e2b428976",
-    "lastAttemptHash": "9d82029e2b428976",
-    "generatedAt": "2026-09-21T21:39:35+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 7.7148,
-    "files": [
-      "packages/lit/src/DatePicker.stories.ts",
-      "packages/lit/src/DatePicker.ts"
-    ],
-    "gaps": 11,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Dialog.lit": {
-    "hash": "e1c7c9a42cc247ad",
-    "lastAttemptHash": "e1c7c9a42cc247ad",
-    "generatedAt": "2026-09-22T05:38:49+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 4.6927,
-    "files": [
-      "packages/lit/src/Dialog.test.ts",
-      "packages/lit/src/Dialog.ts"
-    ],
-    "gaps": 8,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Disclosure.lit": {
-    "hash": "4b6ce65fe674187e",
-    "lastAttemptHash": "4b6ce65fe674187e",
-    "generatedAt": "2026-09-21T07:06:31+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 3.8251,
-    "files": [
-      "packages/lit/src/Disclosure.stories.ts",
-      "packages/lit/src/Disclosure.test.ts",
-      "packages/lit/src/Disclosure.ts"
-    ],
-    "gaps": 7,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "Divider.lit": {
-    "hash": "85bb55250d7a77ca",
-    "lastAttemptHash": "85bb55250d7a77ca",
-    "generatedAt": "2026-09-22T08:18:41+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.3418,
-    "files": [
-      "packages/lit/src/Divider.stories.ts",
-      "packages/lit/src/Divider.test.ts",
-      "packages/lit/src/Divider.ts",
-      "packages/lit/src/index.ts"
-    ],
-    "gaps": 7,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "Feed.lit": {
-    "hash": "af829359dd1aa23f",
-    "lastAttemptHash": "af829359dd1aa23f",
-    "generatedAt": "2026-09-22T03:57:48+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 9.8117,
-    "files": [
-      "packages/lit/src/Feed.stories.ts",
-      "packages/lit/src/Feed.test.ts",
-      "packages/lit/src/Feed.ts"
-    ],
-    "gaps": 15,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Fieldset.lit": {
-    "hash": "9c06c7597370e536",
-    "lastAttemptHash": "9c06c7597370e536",
-    "generatedAt": "2026-09-21T08:04:56+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.2243,
-    "files": [
-      "packages/lit/src/Fieldset.stories.ts",
-      "packages/lit/src/Fieldset.ts"
-    ],
-    "gaps": 9,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "FocusScope.lit": {
-    "hash": "40ce6b142ee2c4be",
-    "lastAttemptHash": "40ce6b142ee2c4be",
-    "generatedAt": "2026-09-21T08:51:43+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 6.6119,
-    "files": [
-      "packages/lit/src/FocusScope.stories.ts",
-      "packages/lit/src/FocusScope.test.ts",
-      "packages/lit/src/FocusScope.ts"
-    ],
-    "gaps": 13,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Form.lit": {
-    "hash": "85d06fc5319f1021",
-    "lastAttemptHash": "85d06fc5319f1021",
-    "generatedAt": "2026-09-22T07:43:44+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.9913,
-    "files": [
-      "packages/lit/src/Form.ts"
-    ],
-    "gaps": 13,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "Heading.lit": {
-    "hash": "d6394fdc073861c1",
-    "lastAttemptHash": "4904d882829efc5c",
-    "generatedAt": "2026-09-19T10:04:33+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 3,
-    "costUsd": 1.7156,
-    "files": [
-      "logs/heading-axe.config.ts",
-      "logs/heading-axe.spec.ts",
-      "packages/lit/src/Heading.stories.ts",
-      "packages/lit/src/Heading.test.ts",
-      "packages/lit/src/Heading.ts",
-      "packages/lit/src/index.ts"
     ],
     "gaps": 6,
     "gates": {
@@ -571,49 +232,23 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
-      "keyboard-run": false,
-      "axe": false
+      "axe": true
     }
   },
-  "Icon.lit": {
-    "hash": "59cc45d2874f6b3b",
-    "lastAttemptHash": "2642eda66d42e233",
-    "generatedAt": "2026-09-19T07:31:48+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 3,
-    "costUsd": 1.877,
-    "files": [
-      "packages/lit/src/Icon.stories.ts",
-      "packages/lit/src/Icon.test.ts",
-      "packages/lit/src/Icon.ts",
-      "packages/lit/src/index.ts"
-    ],
-    "gaps": 16,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": false,
-      "axe": false
-    }
-  },
-  "Input.lit": {
-    "hash": "5234a5f6e0fbcd19",
-    "lastAttemptHash": "5234a5f6e0fbcd19",
-    "generatedAt": "2026-09-22T07:31:12+00:00",
+  "Carousel.lit": {
+    "hash": "2ba919f706d6d073",
+    "lastAttemptHash": "2ba919f706d6d073",
+    "generatedAt": "2026-09-23T19:31:54+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.254,
+    "costUsd": 0.741,
     "files": [
-      "packages/lit/src/Input.stories.ts",
-      "packages/lit/src/Input.ts",
+      "packages/lit/src/Carousel.stories.ts",
+      "packages/lit/src/Carousel.test.ts",
+      "packages/lit/src/Carousel.ts",
       "packages/lit/src/index.ts"
     ],
     "gaps": 4,
@@ -624,24 +259,27 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
+      "keyboard-run": true,
       "axe": true
     }
   },
-  "Landmark.lit": {
-    "hash": "8ad505366cc51454",
-    "lastAttemptHash": "8ad505366cc51454",
-    "generatedAt": "2026-09-21T07:30:57+00:00",
+  "Checkbox.lit": {
+    "hash": "417b7d2a79726e5d",
+    "lastAttemptHash": "417b7d2a79726e5d",
+    "generatedAt": "2026-09-23T18:05:50+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.4146,
+    "rounds": 2,
+    "costUsd": 1.7995,
     "files": [
-      "packages/lit/src/Landmark.stories.ts",
-      "packages/lit/src/Landmark.test.ts",
-      "packages/lit/src/Landmark.ts"
+      "packages/lit/src/Checkbox.stories.ts",
+      "packages/lit/src/Checkbox.test.ts",
+      "packages/lit/src/Checkbox.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -649,22 +287,268 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
   },
-  "Link.lit": {
-    "hash": "e924fb06badb953b",
-    "lastAttemptHash": "e924fb06badb953b",
-    "generatedAt": "2026-09-22T07:20:13+00:00",
+  "Combobox.lit": {
+    "hash": "67ee88281b1b6338",
+    "lastAttemptHash": "67ee88281b1b6338",
+    "generatedAt": "2026-09-23T19:06:42+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 3.2266,
+    "files": [
+      "packages/lit/src/Combobox.stories.ts",
+      "packages/lit/src/Combobox.test.ts",
+      "packages/lit/src/Combobox.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 13,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Container.lit": {
+    "hash": "abb9c13c1c0ae1bb",
+    "lastAttemptHash": "abb9c13c1c0ae1bb",
+    "generatedAt": "2026-09-23T17:59:53+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 4.4746,
+    "costUsd": 0.496,
     "files": [
-      "packages/lit/src/Link.stories.ts",
-      "packages/lit/src/Link.test.ts",
-      "packages/lit/src/Link.ts",
+      "packages/lit/src/Container.stories.ts",
+      "packages/lit/src/Container.test.ts",
+      "packages/lit/src/Container.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 3,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "DataGrid.lit": {
+    "hash": "40d9c9697b506d36",
+    "lastAttemptHash": "40d9c9697b506d36",
+    "generatedAt": "2026-09-23T19:38:07+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.9632,
+    "files": [
+      "packages/lit/src/DataGrid.stories.ts",
+      "packages/lit/src/DataGrid.test.ts",
+      "packages/lit/src/DataGrid.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 11,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "DatePicker.lit": {
+    "hash": "684b6ab28c575d5a",
+    "lastAttemptHash": "684b6ab28c575d5a",
+    "generatedAt": "2026-09-23T19:28:53+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 3.9692,
+    "files": [
+      "packages/lit/src/DatePicker.stories.ts",
+      "packages/lit/src/DatePicker.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 16,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Dialog.lit": {
+    "hash": "ea64aff98863a38c",
+    "lastAttemptHash": "ea64aff98863a38c",
+    "generatedAt": "2026-09-23T18:30:02+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 2.1234,
+    "files": [
+      "packages/lit/src/Dialog.stories.ts",
+      "packages/lit/src/Dialog.test.ts",
+      "packages/lit/src/Dialog.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Disclosure.lit": {
+    "hash": "2d5b837bb784dbf7",
+    "lastAttemptHash": "2d5b837bb784dbf7",
+    "generatedAt": "2026-09-23T18:13:13+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.699,
+    "files": [
+      "packages/lit/src/Disclosure.stories.ts",
+      "packages/lit/src/Disclosure.ts"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Divider.lit": {
+    "hash": "756e4085d88eb6fa",
+    "lastAttemptHash": "756e4085d88eb6fa",
+    "generatedAt": "2026-09-23T18:02:58+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 1.1215,
+    "files": [
+      "packages/lit/src/Divider.stories.ts",
+      "packages/lit/src/Divider.test.ts",
+      "packages/lit/src/Divider.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Feed.lit": {
+    "hash": "d5138e1ff5b5440a",
+    "lastAttemptHash": "d5138e1ff5b5440a",
+    "generatedAt": "2026-09-23T19:45:50+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.9372,
+    "files": [
+      "packages/lit/src/Feed.stories.ts",
+      "packages/lit/src/Feed.test.ts",
+      "packages/lit/src/Feed.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Fieldset.lit": {
+    "hash": "e5e2a8559bd3a6b0",
+    "lastAttemptHash": "e5e2a8559bd3a6b0",
+    "generatedAt": "2026-09-23T18:21:22+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 1.5581,
+    "files": [
+      "packages/lit/src/Fieldset.stories.ts",
+      "packages/lit/src/Fieldset.test.ts",
+      "packages/lit/src/Fieldset.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 12,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "FocusScope.lit": {
+    "hash": "f039ba95b9507313",
+    "lastAttemptHash": "f039ba95b9507313",
+    "generatedAt": "2026-09-23T18:22:41+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.6066,
+    "files": [
+      "packages/lit/src/FocusScope.stories.ts",
+      "packages/lit/src/FocusScope.test.ts",
+      "packages/lit/src/FocusScope.ts",
       "packages/lit/src/index.ts"
     ],
     "gaps": 7,
@@ -675,22 +559,25 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
+      "keyboard-run": true,
       "axe": true
     }
   },
-  "Listbox.lit": {
-    "hash": "778eac5c73187345",
-    "lastAttemptHash": "778eac5c73187345",
-    "generatedAt": "2026-09-21T16:57:28+00:00",
+  "Form.lit": {
+    "hash": "f3126ce83de4b96f",
+    "lastAttemptHash": "f3126ce83de4b96f",
+    "generatedAt": "2026-09-23T17:58:38+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 5.3514,
+    "rounds": 3,
+    "costUsd": 2.7214,
     "files": [
-      "packages/lit/src/Listbox.stories.ts",
-      "packages/lit/src/Listbox.test.ts",
-      "packages/lit/src/Listbox.ts"
+      "packages/lit/src/Form.stories.ts",
+      "packages/lit/src/Form.test.ts",
+      "packages/lit/src/Form.ts",
+      "packages/lit/src/index.ts"
     ],
     "gaps": 18,
     "gates": {
@@ -700,47 +587,22 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
-      "keyboard-run": true,
       "axe": true
     }
   },
-  "Menu.lit": {
-    "hash": "cea81cf18d15014a",
-    "lastAttemptHash": "cea81cf18d15014a",
-    "generatedAt": "2026-09-21T11:41:17+00:00",
+  "Heading.lit": {
+    "hash": "9907c32f1974797b",
+    "lastAttemptHash": "9907c32f1974797b",
+    "generatedAt": "2026-09-23T17:45:38+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 8.9265,
+    "rounds": 2,
+    "costUsd": 1.1279,
     "files": [
-      "packages/lit/src/Menu.stories.ts",
-      "packages/lit/src/Menu.ts"
-    ],
-    "gaps": 18,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Meter.lit": {
-    "hash": "e1c9829c2a5f8589",
-    "lastAttemptHash": "e1c9829c2a5f8589",
-    "generatedAt": "2026-09-21T07:52:55+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.5495,
-    "files": [
-      "packages/lit/src/Meter.stories.ts",
-      "packages/lit/src/Meter.ts"
+      "packages/lit/src/Heading.stories.ts",
+      "packages/lit/src/Heading.ts"
     ],
     "gaps": 8,
     "gates": {
@@ -750,23 +612,24 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
   },
-  "NumberInput.lit": {
-    "hash": "9c823ccd4609a235",
-    "lastAttemptHash": "9c823ccd4609a235",
-    "generatedAt": "2026-09-21T19:56:58+00:00",
+  "Icon.lit": {
+    "hash": "b7d22efac72377f3",
+    "lastAttemptHash": "b7d22efac72377f3",
+    "generatedAt": "2026-09-23T17:41:19+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 4.097,
+    "costUsd": 0.6828,
     "files": [
-      "packages/lit/src/NumberInput.stories.ts",
-      "packages/lit/src/NumberInput.ts"
+      "packages/lit/src/Icon.test.ts",
+      "packages/lit/src/Icon.ts"
     ],
-    "gaps": 13,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -774,6 +637,195 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Input.lit": {
+    "hash": "3bf91610a6ad52a8",
+    "lastAttemptHash": "3bf91610a6ad52a8",
+    "generatedAt": "2026-09-23T17:56:04+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 1.6335,
+    "files": [
+      "packages/lit/src/Input.stories.ts",
+      "packages/lit/src/Input.test.ts",
+      "packages/lit/src/Input.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 14,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Landmark.lit": {
+    "hash": "668727253d002c0f",
+    "lastAttemptHash": "668727253d002c0f",
+    "generatedAt": "2026-09-23T18:15:23+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.5146,
+    "files": [
+      "packages/lit/src/Landmark.stories.ts",
+      "packages/lit/src/Landmark.test.ts",
+      "packages/lit/src/Landmark.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Link.lit": {
+    "hash": "ae8e6f5f44463619",
+    "lastAttemptHash": "ae8e6f5f44463619",
+    "generatedAt": "2026-09-23T17:53:37+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 1.7644,
+    "files": [
+      "packages/lit/src/Link.stories.ts",
+      "packages/lit/src/Link.test.ts",
+      "packages/lit/src/Link.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Listbox.lit": {
+    "hash": "eadc1c2c57acff98",
+    "lastAttemptHash": "eadc1c2c57acff98",
+    "generatedAt": "2026-09-23T18:58:29+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 3.1785,
+    "files": [
+      "packages/lit/src/Listbox.stories.ts",
+      "packages/lit/src/Listbox.ts"
+    ],
+    "gaps": 12,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Menu.lit": {
+    "hash": "c89256bf0a866cca",
+    "lastAttemptHash": "c89256bf0a866cca",
+    "generatedAt": "2026-09-23T18:35:55+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 2.3792,
+    "files": [
+      "packages/lit/src/Menu.stories.ts",
+      "packages/lit/src/Menu.test.ts",
+      "packages/lit/src/Menu.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Meter.lit": {
+    "hash": "4bfa01e4aec2b6c7",
+    "lastAttemptHash": "4bfa01e4aec2b6c7",
+    "generatedAt": "2026-09-23T18:19:04+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 1.2623,
+    "files": [
+      "packages/lit/src/Meter.stories.ts",
+      "packages/lit/src/Meter.test.ts",
+      "packages/lit/src/Meter.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 9,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "NumberInput.lit": {
+    "hash": "7b1c008579972b58",
+    "lastAttemptHash": "7b1c008579972b58",
+    "generatedAt": "2026-09-23T19:15:50+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 2.0548,
+    "files": [
+      "packages/lit/src/NumberInput.stories.ts",
+      "packages/lit/src/NumberInput.test.ts",
+      "packages/lit/src/NumberInput.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 11,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -804,21 +856,20 @@
     }
   },
   "Popover.lit": {
-    "hash": "40b0c2a396a0cf1b",
-    "lastAttemptHash": "40b0c2a396a0cf1b",
-    "generatedAt": "2026-09-21T12:28:17+00:00",
+    "hash": "40a1ef1a61fc10f9",
+    "lastAttemptHash": "40a1ef1a61fc10f9",
+    "generatedAt": "2026-09-23T18:38:38+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 29.0696,
+    "rounds": 1,
+    "costUsd": 1.2734,
     "files": [
-      "packages/lit/src/FocusScope.ts",
       "packages/lit/src/Popover.stories.ts",
       "packages/lit/src/Popover.test.ts",
       "packages/lit/src/Popover.ts",
-      "tools/keyboard_tests.ts"
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 27,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -826,25 +877,25 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
     }
   },
   "ProgressBar.lit": {
-    "hash": "cf4ade314ea9949c",
-    "lastAttemptHash": "cf4ade314ea9949c",
-    "generatedAt": "2026-09-21T20:19:42+00:00",
+    "hash": "6e4189f3a64bbb5e",
+    "lastAttemptHash": "6e4189f3a64bbb5e",
+    "generatedAt": "2026-09-23T19:18:25+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 4.0468,
+    "rounds": 2,
+    "costUsd": 1.7701,
     "files": [
-      "packages/lit/src/ProgressBar.stories.ts",
-      "packages/lit/src/ProgressBar.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/ProgressBar.test.ts",
+      "packages/lit/src/ProgressBar.ts"
     ],
-    "gaps": 7,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -852,23 +903,26 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
   },
   "RadioGroup.lit": {
-    "hash": "6779ff2cac50d4e8",
-    "lastAttemptHash": "6779ff2cac50d4e8",
-    "generatedAt": "2026-09-21T06:51:53+00:00",
+    "hash": "4fad644e2c93a778",
+    "lastAttemptHash": "4fad644e2c93a778",
+    "generatedAt": "2026-09-23T18:11:49+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 3.8721,
+    "rounds": 2,
+    "costUsd": 2.5704,
     "files": [
       "packages/lit/src/RadioGroup.stories.ts",
-      "packages/lit/src/RadioGroup.ts"
+      "packages/lit/src/RadioGroup.test.ts",
+      "packages/lit/src/RadioGroup.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -876,25 +930,25 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
     }
   },
   "Search.lit": {
-    "hash": "9253417fe8db6db6",
-    "lastAttemptHash": "9253417fe8db6db6",
-    "generatedAt": "2026-09-21T21:13:08+00:00",
+    "hash": "0e32abd73d29665b",
+    "lastAttemptHash": "0e32abd73d29665b",
+    "generatedAt": "2026-09-23T19:24:14+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 3.1951,
+    "rounds": 2,
+    "costUsd": 2.5188,
     "files": [
       "packages/lit/src/Search.stories.ts",
-      "packages/lit/src/Search.test.ts",
       "packages/lit/src/Search.ts"
     ],
-    "gaps": 10,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -902,25 +956,27 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
     }
   },
   "SegmentedControl.lit": {
-    "hash": "952cd3800e0a6eb3",
-    "lastAttemptHash": "952cd3800e0a6eb3",
-    "generatedAt": "2026-09-21T16:11:09+00:00",
+    "hash": "1e34f4096a6b6f1f",
+    "lastAttemptHash": "1e34f4096a6b6f1f",
+    "generatedAt": "2026-09-23T18:54:13+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.571,
+    "costUsd": 0.8591,
     "files": [
       "packages/lit/src/SegmentedControl.stories.ts",
       "packages/lit/src/SegmentedControl.test.ts",
-      "packages/lit/src/SegmentedControl.ts"
+      "packages/lit/src/SegmentedControl.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -928,350 +984,23 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
     }
   },
   "Select.lit": {
-    "hash": "59b714aa8188807c",
-    "lastAttemptHash": "59b714aa8188807c",
-    "generatedAt": "2026-09-21T17:33:19+00:00",
+    "hash": "a1ec2e87bec5d4cb",
+    "lastAttemptHash": "a1ec2e87bec5d4cb",
+    "generatedAt": "2026-09-23T19:01:35+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 7.0442,
+    "rounds": 2,
+    "costUsd": 2.2192,
     "files": [
-      "packages/lit/src/Select.stories.ts",
+      "packages/lit/src/Select.test.ts",
       "packages/lit/src/Select.ts"
-    ],
-    "gaps": 12,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "SidePanel.lit": {
-    "hash": "34e6554b66136905",
-    "lastAttemptHash": "34e6554b66136905",
-    "generatedAt": "2026-09-22T05:43:03+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.7938,
-    "files": [
-      "packages/lit/src/SidePanel.ts"
-    ],
-    "gaps": 9,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Slider.lit": {
-    "hash": "a7d39242a3dc39af",
-    "lastAttemptHash": "a7d39242a3dc39af",
-    "generatedAt": "2026-09-22T05:47:44+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.4727,
-    "files": [
-      "packages/lit/src/Slider.ts"
-    ],
-    "gaps": 10,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Splitter.lit": {
-    "hash": "651119241af0958b",
-    "lastAttemptHash": "651119241af0958b",
-    "generatedAt": "2026-09-22T03:00:55+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.9206,
-    "files": [
-      "packages/lit/src/Splitter.stories.ts",
-      "packages/lit/src/Splitter.ts"
-    ],
-    "gaps": 14,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Stack.lit": {
-    "hash": "371e07cafb06f8f6",
-    "lastAttemptHash": "73585aa7a87ae91c",
-    "generatedAt": "2026-09-19T11:10:31+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 3,
-    "costUsd": 2.0579,
-    "files": [
-      "packages/lit/src/Stack.stories.ts",
-      "packages/lit/src/Stack.test.ts",
-      "packages/lit/src/Stack.ts"
-    ],
-    "gaps": 8,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": false,
-      "axe": false
-    }
-  },
-  "Stepper.lit": {
-    "hash": "b068e0585a6570a7",
-    "lastAttemptHash": "b068e0585a6570a7",
-    "generatedAt": "2026-09-21T20:39:22+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 3.6452,
-    "files": [
-      "packages/lit/src/Stepper.stories.ts",
-      "packages/lit/src/Stepper.ts"
-    ],
-    "gaps": 9,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Switch.lit": {
-    "hash": "dbc65bc098cd416f",
-    "lastAttemptHash": "dbc65bc098cd416f",
-    "generatedAt": "2026-09-21T06:29:07+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 3.1692,
-    "files": [
-      "packages/lit/src/Switch.stories.ts",
-      "packages/lit/src/Switch.ts"
-    ],
-    "gaps": 10,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "Table.lit": {
-    "hash": "932854e4d3dce3c4",
-    "lastAttemptHash": "932854e4d3dce3c4",
-    "generatedAt": "2026-09-21T23:28:22+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 5.2963,
-    "files": [
-      "packages/lit/src/Table.stories.ts",
-      "packages/lit/src/Table.ts"
-    ],
-    "gaps": 12,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Tabs.lit": {
-    "hash": "682dd57f2bca3a51",
-    "lastAttemptHash": "682dd57f2bca3a51",
-    "generatedAt": "2026-09-21T15:50:00+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 4.8008,
-    "files": [
-      "packages/lit/src/Tabs.stories.ts",
-      "packages/lit/src/Tabs.ts"
-    ],
-    "gaps": 8,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Text.lit": {
-    "hash": "cf3715323143f219",
-    "lastAttemptHash": "22c54def15ebdc68",
-    "generatedAt": "2026-09-19T09:00:22+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 3,
-    "costUsd": 1.4067,
-    "files": [
-      "packages/lit/src/Text.stories.ts",
-      "packages/lit/src/Text.test.ts",
-      "packages/lit/src/Text.ts",
-      "packages/lit/src/index.ts"
-    ],
-    "gaps": 9,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": false,
-      "axe": false
-    }
-  },
-  "Toast.lit": {
-    "hash": "51a679e94f468e67",
-    "lastAttemptHash": "51a679e94f468e67",
-    "generatedAt": "2026-09-21T09:55:10+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 6.3144,
-    "files": [
-      "packages/lit/src/Toast.stories.ts",
-      "packages/lit/src/Toast.test.ts",
-      "packages/lit/src/Toast.ts"
-    ],
-    "gaps": 11,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Toolbar.lit": {
-    "hash": "c3cec2cdd59fe306",
-    "lastAttemptHash": "c3cec2cdd59fe306",
-    "generatedAt": "2026-09-21T22:36:59+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 9.1891,
-    "files": [
-      "packages/lit/src/Toolbar.stories.ts",
-      "packages/lit/src/Toolbar.test.ts",
-      "packages/lit/src/Toolbar.ts"
-    ],
-    "gaps": 14,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Tooltip.lit": {
-    "hash": "01a16c331e21816f",
-    "lastAttemptHash": "01a16c331e21816f",
-    "generatedAt": "2026-09-22T05:29:27+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 3.5922,
-    "files": [
-      "packages/lit/src/Tooltip.stories.ts",
-      "packages/lit/src/Tooltip.ts",
-      "packages/lit/src/index.ts"
-    ],
-    "gaps": 10,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Tree.lit": {
-    "hash": "237829599960185f",
-    "lastAttemptHash": "237829599960185f",
-    "generatedAt": "2026-09-22T02:20:45+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 6.3394,
-    "files": [
-      "packages/lit/src/Tree.stories.ts",
-      "packages/lit/src/Tree.ts"
     ],
     "gaps": 15,
     "gates": {
@@ -1281,22 +1010,238 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
     }
   },
-  "TreeGrid.lit": {
-    "hash": "89bbfc7b35b93094",
-    "lastAttemptHash": "89bbfc7b35b93094",
-    "generatedAt": "2026-09-22T06:01:08+00:00",
+  "SidePanel.lit": {
+    "hash": "fddf4184508bddd9",
+    "lastAttemptHash": "fddf4184508bddd9",
+    "generatedAt": "2026-09-23T18:49:43+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 2.8133,
+    "files": [
+      "packages/lit/src/SidePanel.stories.ts",
+      "packages/lit/src/SidePanel.test.ts",
+      "packages/lit/src/SidePanel.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 18,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Slider.lit": {
+    "hash": "2c2663cec71acaee",
+    "lastAttemptHash": "2c2663cec71acaee",
+    "generatedAt": "2026-09-23T19:12:49+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 2.5322,
+    "files": [
+      "packages/lit/src/Slider.stories.ts",
+      "packages/lit/src/Slider.test.ts",
+      "packages/lit/src/Slider.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 11,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Splitter.lit": {
+    "hash": "a29ea40c355e8084",
+    "lastAttemptHash": "a29ea40c355e8084",
+    "generatedAt": "2026-09-23T19:43:56+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 9.46,
+    "costUsd": 0.9545,
     "files": [
-      "packages/lit/src/TreeGrid.stories.ts",
-      "packages/lit/src/TreeGrid.ts"
+      "packages/lit/src/Splitter.stories.ts",
+      "packages/lit/src/Splitter.test.ts",
+      "packages/lit/src/Splitter.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Stack.lit": {
+    "hash": "042482aa1664665f",
+    "lastAttemptHash": "042482aa1664665f",
+    "generatedAt": "2026-09-23T17:46:43+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.4996,
+    "files": [
+      "packages/lit/src/Stack.stories.ts"
+    ],
+    "gaps": 5,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Stepper.lit": {
+    "hash": "e4a6f90d705a54b5",
+    "lastAttemptHash": "e4a6f90d705a54b5",
+    "generatedAt": "2026-09-23T19:20:52+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 1.7994,
+    "files": [
+      "packages/lit/src/Stepper.ts"
+    ],
+    "gaps": 11,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Switch.lit": {
+    "hash": "582ef4ded6c10bca",
+    "lastAttemptHash": "582ef4ded6c10bca",
+    "generatedAt": "2026-09-23T18:08:06+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 1.7216,
+    "files": [
+      "packages/lit/src/Switch.ts"
+    ],
+    "gaps": 15,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Table.lit": {
+    "hash": "45dc0505f29fa92c",
+    "lastAttemptHash": "45dc0505f29fa92c",
+    "generatedAt": "2026-09-23T19:33:53+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.0328,
+    "files": [
+      "packages/lit/src/Table.stories.ts",
+      "packages/lit/src/Table.test.ts",
+      "packages/lit/src/Table.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 7,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Tabs.lit": {
+    "hash": "a9a0869f8d090158",
+    "lastAttemptHash": "a9a0869f8d090158",
+    "generatedAt": "2026-09-23T18:52:18+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.0277,
+    "files": [
+      "packages/lit/src/Tabs.stories.ts",
+      "packages/lit/src/Tabs.test.ts",
+      "packages/lit/src/Tabs.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Text.lit": {
+    "hash": "34b58a60e6f055b9",
+    "lastAttemptHash": "34b58a60e6f055b9",
+    "generatedAt": "2026-09-23T17:43:39+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 1.2969,
+    "files": [
+      "packages/lit/src/Text.stories.ts",
+      "packages/lit/src/Text.test.ts",
+      "packages/lit/src/Text.ts",
+      "packages/lit/src/index.ts"
     ],
     "gaps": 10,
     "gates": {
@@ -1306,6 +1251,138 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Toast.lit": {
+    "hash": "bf1237503588533d",
+    "lastAttemptHash": "bf1237503588533d",
+    "generatedAt": "2026-09-23T18:27:04+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 2.1665,
+    "files": [
+      "packages/lit/src/Toast.test.ts",
+      "packages/lit/src/Toast.ts"
+    ],
+    "gaps": 13,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Toolbar.lit": {
+    "hash": "204b483d41168981",
+    "lastAttemptHash": "204b483d41168981",
+    "generatedAt": "2026-09-23T19:30:21+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.7488,
+    "files": [
+      "packages/lit/src/Toolbar.stories.ts",
+      "packages/lit/src/Toolbar.test.ts",
+      "packages/lit/src/Toolbar.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Tooltip.lit": {
+    "hash": "7833e7a33f7d92ae",
+    "lastAttemptHash": "7833e7a33f7d92ae",
+    "generatedAt": "2026-09-23T18:23:52+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.6687,
+    "files": [
+      "packages/lit/src/Tooltip.stories.ts",
+      "packages/lit/src/Tooltip.test.ts",
+      "packages/lit/src/Tooltip.ts",
+      "packages/lit/src/index.ts"
+    ],
+    "gaps": 6,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Tree.lit": {
+    "hash": "501fcb692ce7203c",
+    "lastAttemptHash": "501fcb692ce7203c",
+    "generatedAt": "2026-09-23T19:42:00+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.108,
+    "files": [
+      "packages/lit/src/Tree.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "TreeGrid.lit": {
+    "hash": "5b24989e50a571b7",
+    "lastAttemptHash": "5b24989e50a571b7",
+    "generatedAt": "2026-09-23T19:40:11+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 1.1713,
+    "files": [
+      "packages/lit/src/TreeGrid.ts"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true

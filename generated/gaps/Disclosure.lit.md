@@ -38,3 +38,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Disclosure: the platform note says markup can only express controlled-open (a present attribute) and that controlled-closed must go through the property, but the story contract wants a `Controlled` story whose args are readable as a code sample. Chose: the meta render binds `.open=${args.open}` as a property, which covers both and still extracts as `open` in the snippet; a reader of the Lit sample cannot tell from the markup that `open` absent means uncontrolled.
 - Disclosure: `headingLevel` has no `none`/default enum value, so no story or derived scenario covers the common case of a trigger NOT wrapped in a heading — only `Default` exercises it, and it asserts nothing about the absence of a heading.
 - Disclosure: the RTL mirror is specified as `[dir=rtl]` on web. Chose `:host(:dir(rtl))` for Lit, since a shadow root cannot see an ancestor's `dir` attribute with an attribute selector; this needs Chromium 120+ / the `:dir()` pseudo-class, which the spec never mentions as a floor.
+
+## 2026-09-23 14:12 — round 1
+
+- Disclosure: `fullWidth` has no example and no behavior scenario, and the React stories don't cover it either, so there is no story to match. I added a Lit-only `FullWidth` state story; the docs should name one (e.g. story `FullWidth`) so React and Lit stay in step.
+- Disclosure: `fullWidth` says 'the host and the inner button both' are full-width block-level flex boxes. The host is already `display: block` at every width, so under `full-width` only the trigger changes (`display: flex; inline-size: 100%`). The doc doesn't say whether the host should become `display: flex` too; I kept it block.
+- Disclosure: `triggerBackgroundHover` allows the literal `transparent` at rest but doesn't say whether that literal also needs its own hook. I left `background: transparent` unhooked and hooked only the hover token.
+- Disclosure: the focus ring's `outline-offset` isn't specified. I reused `focusRingWidth` (`border.width.focus`) as the offset.
+- Disclosure: the `Accordion` story in React and Lit stacks three plain disclosures, but the `fullWidth` doc says Accordion sets it on every section. I left the story without `full-width` to keep parity with React; the doc should say whether that story should set it.
+- Disclosure: the doc doesn't say whether a `part` attribute should sit alongside `data-part`. I kept `part` on trigger, triggerIcon and panel with the anatomy names; nothing styles through `::part`.

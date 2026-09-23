@@ -67,3 +67,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-19 07:03 — round 3
 
 - Stack: `axe` and `keyboard-run` run over the whole Lit Storybook and fail on other components: axe in Carousel, DataGrid, Feed, Listbox, NumberInput, Select, Slider, Splitter, Tabs and TreeGrid (63 light, 105 dark in test-results/*/error-context.md, none of them Stack); keyboard in Combobox, DatePicker, Dialog, Feed, Listbox, Menu, Popover, Search, SegmentedControl, Select, SidePanel, Slider, Stepper, Tabs, Toast, Toolbar, Tooltip and Tree. Stack/Lit passes axe in both modes (26 stories), and Stack declares no keyboard block, so no Stack keyboard spec exists. I made no code change. The gates need to be limited to the component being generated or baselined against the existing failures; otherwise this job cannot pass.
+
+## 2026-09-23 13:46 — round 1
+
+- Stack: the wrapping-filters decorator width `layout.maxWidth.prose × 0.5` has no token and is written as calc(var(--layout-max-width-prose) * 0.5) in the story; React's Stack.stories.tsx still caps at the full prose width, so the two platforms' Wrap/WrappingFilters stories diverge until React is regenerated.
+- Stack: `wrap` says its story uses 'the same width-bounded decorator' as wrapping-filters but gives no gap for it; Lit keeps the schema default `gap: normal` (only horizontal + align: start added), whereas the filter row in WrappingFilters is `tight` — chose the default to keep 'enum-value stories add only the args that make the value visible'.
+- Stack: the button-row example names 'a primary submit Button' — rendered as <ds-button type="submit" label="Submit"> relying on Button's default variant being primary, since the doc gives no explicit variant arg.
+- Stack: the eight filter Buttons are 'small secondary', mapped to Button size="sm" variant="secondary"; the doc does not name the Button enum values, so this relies on Button's current `sm`/`secondary` spelling.
+- Stack: the ElementNav story adds direction: horizontal + align: start (matching React) though the doc's rule that enum stories may add visibility args is stated only under `justify`; the doc should say whether it applies to `element` stories too.

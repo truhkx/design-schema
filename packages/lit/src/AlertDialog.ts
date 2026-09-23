@@ -163,6 +163,10 @@ export class DsAlertDialog extends LitElement {
       --ds-alert-dialog-rise: var(--space-2);
       --ds-alert-dialog-enter: var(--motion-duration-base);
       --ds-alert-dialog-exit: var(--motion-duration-fast);
+      /* Locked bindings: out of the overrides type, but still hooks for page CSS and the naming codemod. */
+      --ds-alert-dialog-surface: var(--color-overlay-surface);
+      --ds-alert-dialog-focus-ring: var(--color-border-focus);
+      --ds-alert-dialog-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -233,8 +237,8 @@ export class DsAlertDialog extends LitElement {
       padding-block: var(--ds-alert-dialog-inset);
       font-family: var(--font-family-body);
       color: var(--color-foreground);
-      /* surface: color.overlay.surface, locked — no hook */
-      background: var(--color-overlay-surface);
+      /* surface: color.overlay.surface, locked (hook only, not in overrides) */
+      background: var(--ds-alert-dialog-surface);
       border-style: solid;
       border-width: var(--ds-alert-dialog-border-width);
       border-color: var(--ds-alert-dialog-border);
@@ -334,6 +338,13 @@ export class DsAlertDialog extends LitElement {
     .action {
       display: inline-flex;
     }
+
+    /* focusRing / focusRingWidth: the only focusables are the two Buttons, which draw their own
+       ring; the AlertDialog hooks reach them through the Buttons' own ring hooks, never their shadow. */
+    .action > ds-button {
+      --ds-button-focus-ring: var(--ds-alert-dialog-focus-ring);
+      --ds-button-focus-ring-width: var(--ds-alert-dialog-focus-ring-width);
+    }
   `;
 
   /** Controlled visibility, as in Dialog. The consumer owns it; the element requests changes through `cancel` and `confirm`. */
@@ -379,6 +390,7 @@ export class DsAlertDialog extends LitElement {
   private closingProgrammatically = false;
   /** Escape was already reported from a non-cancelable `cancel` that the native close follows. */
   private escapeReported = false;
+  private warnedEmpty = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -438,12 +450,13 @@ export class DsAlertDialog extends LitElement {
         role="alertdialog"
         aria-modal="true"
         aria-label=${this.heading}
-        aria-description=${this.description}
+        aria-describedby="description"
         @cancel=${this.handleCancel}
         @close=${this.handleNativeClose}
       >
-        <div class="scrim" part="scrim" data-part="scrim"></div>
-        <ds-focus-scope auto-focus="none" .trapped=${true} .restoreFocus=${true}>
+        <div class="scrim" part="scrim" data-part="scrim" aria-hidden="true"></div>
+        <!-- active follows open, so the trap releases when the exit starts. -->
+        <ds-focus-scope auto-focus="none" .trapped=${true} .restoreFocus=${true} .active=${this.open}>
           <div class="scope" part="focusScope" data-part="focusScope">
             <div class="surface" part="surface" data-part="surface">
               <!-- The icon-and-text row is AlertDialog-owned and carries no part: it only holds iconGap. -->
@@ -456,7 +469,8 @@ export class DsAlertDialog extends LitElement {
                   <div part="heading" data-part="heading">
                     <ds-heading level="2">${this.heading}</ds-heading>
                   </div>
-                  <div part="description" data-part="description">
+                  <!-- aria-describedby target: ids resolve within this one shadow root. -->
+                  <div id="description" part="description" data-part="description">
                     <ds-text tone="muted">${this.description}</ds-text>
                   </div>
                 </div>
@@ -607,18 +621,17 @@ export class DsAlertDialog extends LitElement {
     }
   }
 
+  /** Warns once per element, naming all three required strings. */
   private warnInDev(): void {
-    if (!this.open) {
+    if (this.warnedEmpty || !this.open) {
       return;
     }
-    if (!this.heading) {
-      console.warn('<ds-alert-dialog> requires a `heading`; it is the accessible name.', this);
-    }
-    if (!this.description) {
-      console.warn('<ds-alert-dialog> requires a `description` stating the consequence.', this);
-    }
-    if (!this.confirmLabel) {
-      console.warn('<ds-alert-dialog> requires a `confirm-label` restating the action.', this);
+    if (!this.heading || !this.description || !this.confirmLabel) {
+      this.warnedEmpty = true;
+      console.warn(
+        '<ds-alert-dialog> is open with an empty `heading`, `description` or `confirmLabel`; all three are required, and an empty heading removes the accessible name.',
+        this,
+      );
     }
   }
 }

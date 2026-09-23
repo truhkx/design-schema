@@ -1,4 +1,13 @@
-import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
+import {
+  LitElement,
+  css,
+  html,
+  nothing,
+  unsafeCSS,
+  type PropertyValues,
+  type CSSResult,
+  type TemplateResult,
+} from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
@@ -10,7 +19,7 @@ import './Box.js';
 import './Stack.js';
 import './FocusScope.js';
 import './Dialog.js';
-import type { DsFocusScope } from './FocusScope.js';
+import { focusableIn, type DsFocusScope } from './FocusScope.js';
 import type { DialogCloseDetail, DialogOverridableBinding } from './Dialog.js';
 import type { BoxOverridableBinding } from './Box.js';
 import type { StackOverridableBinding } from './Stack.js';
@@ -90,6 +99,12 @@ const MAX_WIDTH_PROPERTY = '--layout-max-width-prose';
 /** constants.dragSlop (space.1): read from the resolved custom property at gesture time. */
 const DRAG_SLOP_PROPERTY = '--space-1';
 
+/**
+ * constants.contentCap: fraction of the viewport a `height: content` sheet may grow to before its
+ * body scrolls. No token expresses a ratio, so it is a module constant (literal-ok).
+ */
+const CONTENT_CAP = 0.9;
+
 /** constants.dismissDistance: fraction of the sheet height a release must pass to dismiss. */
 const DISMISS_DISTANCE = 0.25;
 
@@ -109,57 +124,26 @@ const NEGATED_BOOLEAN_CONVERTER = {
   },
 };
 
-const FOCUSABLE_SELECTOR = [
-  'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  'summary',
-  '[contenteditable]:not([contenteditable="false"])',
-  '[tabindex]',
-].join(',');
-
-/** The first tabbable element in tree order, walking slot assignments and open shadow roots. */
+/**
+ * The first tabbable element in a slot's assigned content, by exactly the rules the trapped
+ * `<ds-focus-scope>` uses, so initial focus cannot land where Tab would refuse to return.
+ */
 function firstFocusableIn(node: Element): HTMLElement | null {
-  if (node.hasAttribute('inert') || node.getAttribute('aria-hidden') === 'true') {
-    return null;
-  }
-  if (node instanceof HTMLElement && !node.hidden && node.tabIndex >= 0 && node.matches(FOCUSABLE_SELECTOR)) {
-    return node;
-  }
-  if (node instanceof HTMLSlotElement) {
-    for (const assigned of node.assignedElements({ flatten: true })) {
-      const found = firstFocusableIn(assigned);
-      if (found) {
-        return found;
-      }
-    }
-    return null;
-  }
-  const scope = node.shadowRoot ?? node;
-  for (const child of Array.from(scope.children)) {
-    const found = firstFocusableIn(child);
-    if (found) {
-      return found;
-    }
-  }
-  return null;
+  return focusableIn(node)[0] ?? null;
 }
 
-/** A resolved length custom property (`4px`, `0.25rem`) in CSS pixels; an unresolvable value is 0. */
-function lengthInPx(element: Element, value: string): number {
+/**
+ * A resolved length custom property in CSS pixels: rem and em multiply by the root font size, px
+ * and unitless values are taken verbatim, and an unresolvable value counts as 0.
+ */
+function lengthInPx(value: string): number {
   const amount = Number.parseFloat(value);
   if (!Number.isFinite(amount)) {
     return 0;
   }
-  if (value.endsWith('rem')) {
+  if (value.endsWith('em')) {
     const root = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
     return Number.isFinite(root) ? amount * root : 0;
-  }
-  if (value.endsWith('em')) {
-    const own = Number.parseFloat(getComputedStyle(element).fontSize);
-    return Number.isFinite(own) ? amount * own : 0;
   }
   return amount;
 }
@@ -204,6 +188,8 @@ interface DragGesture {
   pointerId: number;
   /** Where the pointer went down; the slop is measured from here. */
   startY: number;
+  /** dragSlop in px, read from the resolved `--space-1` at gesture start. */
+  slop: number;
   /** Where the slop was crossed; the offset counts from here, so the surface does not jump. */
   originY: number;
   claimed: boolean;
@@ -268,6 +254,15 @@ export class DsBottomSheet extends LitElement {
       --ds-bottom-sheet-layer: var(--layer-sheet);
       --ds-bottom-sheet-enter: var(--motion-duration-base);
       --ds-bottom-sheet-exit: var(--motion-duration-fast);
+      /* Locked: not in the overrides type, but still hooks, themeable from page CSS. */
+      --ds-bottom-sheet-surface: var(--color-overlay-surface);
+      --ds-bottom-sheet-handle: var(--color-foreground-muted);
+      /* maxWidth is the breakpoint only and styles nothing; the presentation switch reads the theme
+         token from the document root, not this per-instance hook. */
+      --ds-bottom-sheet-max-width: var(--layout-max-width-prose);
+      --ds-bottom-sheet-min-target: var(--size-target-comfortable);
+      --ds-bottom-sheet-focus-ring: var(--color-border-focus);
+      --ds-bottom-sheet-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -313,11 +308,17 @@ export class DsBottomSheet extends LitElement {
       transition: opacity var(--ds-bottom-sheet-enter) var(--motion-easing-standard);
     }
 
-    /* focusScope: the <ds-focus-scope> host is the part element. Layout only. */
-    .scope {
+    /* The <ds-focus-scope> host carries no part: it writes its own data-part="scope". */
+    ds-focus-scope {
       position: relative;
       display: block;
       inline-size: 100%;
+      min-inline-size: 0;
+    }
+
+    /* focusScope: the sheet-owned part element directly inside the scope, wrapping the surface. */
+    .scope {
+      display: block;
       min-inline-size: 0;
     }
 
@@ -336,7 +337,7 @@ export class DsBottomSheet extends LitElement {
       padding-block-end: calc(var(--ds-bottom-sheet-inset) + env(safe-area-inset-bottom));
       font-family: var(--font-family-body);
       color: var(--color-foreground);
-      background: var(--color-overlay-surface);
+      background: var(--ds-bottom-sheet-surface);
       border-start-start-radius: var(--ds-bottom-sheet-radius);
       border-start-end-radius: var(--ds-bottom-sheet-radius);
       box-shadow: var(--ds-bottom-sheet-shadow);
@@ -351,10 +352,10 @@ export class DsBottomSheet extends LitElement {
       padding-block-start: var(--ds-bottom-sheet-header-padding-top);
     }
 
-    /* height: content caps at 90% of the viewport; half and full set the block size outright and
-       are deliberately not clamped by that cap, or full would stop short of near-full-screen. */
+    /* height: content caps at contentCap of the viewport; half and full set the block size outright
+       and are deliberately not clamped by that cap, or full would stop short of near-full-screen. */
     :host([height='content']) .surface {
-      max-block-size: 90dvh; /* literal-ok: the height prop's content cap, from the doc */
+      max-block-size: ${unsafeCSS(`${CONTENT_CAP * 100}dvh`)}; /* literal-ok: constants.contentCap */
     }
     :host([height='half']) .surface {
       block-size: 50dvh; /* literal-ok: the height prop's half value, from the doc */
@@ -424,7 +425,7 @@ export class DsBottomSheet extends LitElement {
       inline-size: var(--ds-bottom-sheet-handle-width);
       block-size: var(--ds-bottom-sheet-handle-height);
       border-radius: var(--ds-bottom-sheet-handle-radius);
-      background: var(--color-foreground-muted);
+      background: var(--ds-bottom-sheet-handle);
     }
 
     /* headerGap: the heading row's flex gap. Sheet-owned, not an anatomy part. With the heading
@@ -446,8 +447,8 @@ export class DsBottomSheet extends LitElement {
       outline: none;
     }
     .heading:has(:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-bottom-sheet-focus-ring-width) solid var(--ds-bottom-sheet-focus-ring);
+      outline-offset: var(--ds-bottom-sheet-focus-ring-width);
     }
 
     /* hideHeading: out of view, still the accessible name and still a focus target. */
@@ -472,8 +473,8 @@ export class DsBottomSheet extends LitElement {
       align-items: center;
       justify-content: center;
       margin-inline-start: auto;
-      min-inline-size: var(--size-target-comfortable);
-      min-block-size: var(--size-target-comfortable);
+      min-inline-size: var(--ds-bottom-sheet-min-target);
+      min-block-size: var(--ds-bottom-sheet-min-target);
     }
 
     /* body: the only region that scrolls, so the header and footer stay put. */
@@ -556,7 +557,7 @@ export class DsBottomSheet extends LitElement {
   @state() private accessor headingIsFallback = false;
 
   @query('dialog') private accessor dialogEl!: HTMLDialogElement | null;
-  @query('.scope') private accessor scopeEl!: DsFocusScope | null;
+  @query('ds-focus-scope') private accessor scopeEl!: DsFocusScope | null;
   @query('.scrim') private accessor scrimEl!: HTMLElement | null;
   @query('.surface') private accessor surfaceEl!: HTMLElement | null;
   @query('.heading ds-heading') private accessor headingEl!: HTMLElement | null;
@@ -699,60 +700,56 @@ export class DsBottomSheet extends LitElement {
         @close=${this.handleNativeClose}
       >
         <div class="scrim" part="scrim" data-part="scrim" @click=${this.handleScrimClick}></div>
-        <ds-focus-scope
-          class="scope"
-          part="focusScope"
-          data-part="focusScope"
-          auto-focus="none"
-          .active=${!this.closing}
-        >
-          <div class="surface" part="surface" data-part="surface">
-            ${showHeader
-              ? html`<div
-                  class=${classMap({ header: true, draggable: showHandle })}
-                  part="header"
-                  data-part="header"
-                  @pointerdown=${this.handlePointerDown}
-                  @pointermove=${this.handlePointerMove}
-                  @pointerup=${this.handlePointerUp}
-                  @pointercancel=${this.handlePointerCancel}
-                >
-                  ${showHandle
-                    ? html`<span class="handle" part="handle" data-part="handle" aria-hidden="true"></span>`
-                    : nothing}
-                  <div class="title-row">
-                    ${this.renderHeading()}
-                    ${showClose
-                      ? html`<div
-                          class="close-button"
-                          part="closeButton"
-                          data-part="closeButton"
-                          @click=${this.handleCloseWrapperClick}
-                        >
-                          <ds-button
-                            variant="ghost"
-                            size="sm"
-                            icon-only
-                            label=${COPY_CLOSE_LABEL}
-                            @press=${this.handleCloseButtonPress}
-                            ><ds-icon slot="leading-icon" name="close"></ds-icon
-                          ></ds-button>
-                        </div>`
+        <ds-focus-scope auto-focus="none" .active=${!this.closing}>
+          <div class="scope" part="focusScope" data-part="focusScope">
+            <div class="surface" part="surface" data-part="surface">
+              ${showHeader
+                ? html`<div
+                    class=${classMap({ header: true, draggable: showHandle })}
+                    part="header"
+                    data-part="header"
+                    @pointerdown=${this.handlePointerDown}
+                    @pointermove=${this.handlePointerMove}
+                    @pointerup=${this.handlePointerUp}
+                    @pointercancel=${this.handlePointerCancel}
+                  >
+                    ${showHandle
+                      ? html`<span class="handle" part="handle" data-part="handle" aria-hidden="true"></span>`
                       : nothing}
-                  </div>
-                </div>`
-              : // No header to put it in: the visually hidden heading sits at the start of the column.
-                this.renderHeading()}
-            <div class="body" part="body" data-part="body">
-              <ds-box .overrides=${bodyOverrides}><slot></slot></ds-box>
+                    <div class="title-row">
+                      ${this.renderHeading()}
+                      ${showClose
+                        ? html`<div
+                            class="close-button"
+                            part="closeButton"
+                            data-part="closeButton"
+                            @click=${this.handleCloseWrapperClick}
+                          >
+                            <ds-button
+                              variant="ghost"
+                              size="sm"
+                              icon-only
+                              label=${COPY_CLOSE_LABEL}
+                              @press=${this.handleCloseButtonPress}
+                              ><ds-icon slot="leading-icon" name="close"></ds-icon
+                            ></ds-button>
+                          </div>`
+                        : nothing}
+                    </div>
+                  </div>`
+                : // No header to put it in: the visually hidden heading sits at the start of the column.
+                  this.renderHeading()}
+              <div class="body" part="body" data-part="body">
+                <ds-box .overrides=${bodyOverrides}><slot></slot></ds-box>
+              </div>
+              ${this.hasFooter
+                ? html`<div class="footer" part="footer" data-part="footer">
+                    <ds-stack direction="horizontal" justify="end" wrap .overrides=${footerOverrides}
+                      ><slot name="footer"></slot
+                    ></ds-stack>
+                  </div>`
+                : nothing}
             </div>
-            ${this.hasFooter
-              ? html`<div class="footer" part="footer" data-part="footer">
-                  <ds-stack direction="horizontal" justify="end" .overrides=${footerOverrides}
-                    ><slot name="footer"></slot
-                  ></ds-stack>
-                </div>`
-              : nothing}
           </div>
         </ds-focus-scope>
       </dialog>
@@ -803,9 +800,12 @@ export class DsBottomSheet extends LitElement {
   private readonly handleCancel = (event: Event): void => {
     // The consumer owns `open`: never let the browser close the <dialog> on its own.
     event.preventDefault();
+    if (!this.open) {
+      return;
+    }
     // A non-cancelable cancel (Chromium without user activation) is followed by a native close.
     this.escapeReported = !event.cancelable;
-    // Escape reports even when the sheet is not dismissible.
+    // Escape reports even when the sheet is not dismissible, on every press.
     this.dispatchClose('escape');
   };
 
@@ -814,20 +814,24 @@ export class DsBottomSheet extends LitElement {
       this.closingProgrammatically = false;
       return;
     }
-    // The browser closed the <dialog> itself. If no `cancel` announced it, that was Escape too.
+    if (!this.open) {
+      return;
+    }
+    // The browser closed the <dialog> itself. If no `cancel` announced it, that was Escape too:
+    // report it once and re-open, since `open` is controlled only.
     if (!this.escapeReported) {
       this.dispatchClose('escape');
     }
     this.escapeReported = false;
     const dialog = this.dialogEl;
-    if (this.open && dialog && !dialog.open) {
+    if (dialog && !dialog.open) {
       dialog.showModal();
       void this.applyInitialFocus();
     }
   };
 
   private readonly handleScrimClick = (event: MouseEvent): void => {
-    if (!this.dismissible || event.target !== event.currentTarget) {
+    if (!this.open || !this.dismissible || event.target !== event.currentTarget) {
       return;
     }
     this.dispatchClose('scrim');
@@ -836,7 +840,9 @@ export class DsBottomSheet extends LitElement {
   private readonly handleCloseButtonPress = (event: Event): void => {
     // The composite reports `close`; the inner button's `press` stays inside.
     event.stopPropagation();
-    this.dispatchClose('close-button');
+    if (this.open) {
+      this.dispatchClose('close-button');
+    }
   };
 
   /**
@@ -845,7 +851,7 @@ export class DsBottomSheet extends LitElement {
    */
   private readonly handleCloseWrapperClick = (event: MouseEvent): void => {
     const button = this.closeButtonEl;
-    if (!button || event.composedPath().includes(button)) {
+    if (!button || !this.open || event.composedPath().includes(button)) {
       return;
     }
     button.focus();
@@ -889,7 +895,8 @@ export class DsBottomSheet extends LitElement {
     if (!this.dismissible || !this.dragToDismiss || !this.open || this.closing || this.gesture) {
       return;
     }
-    if (event.pointerType === 'mouse' && event.button !== 0) {
+    // A non-primary pointer and a secondary mouse button never claim the gesture.
+    if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) {
       return;
     }
     // No coordinate, no gesture: an environment without real pointer data must not move the surface.
@@ -899,6 +906,8 @@ export class DsBottomSheet extends LitElement {
     this.gesture = {
       pointerId: event.pointerId,
       startY: event.clientY,
+      // The token, not the handleHeight hook, so overriding the handle height does not move the slop.
+      slop: lengthInPx(getComputedStyle(this).getPropertyValue(DRAG_SLOP_PROPERTY).trim()),
       originY: event.clientY,
       claimed: false,
       previous: null,
@@ -914,8 +923,7 @@ export class DsBottomSheet extends LitElement {
     }
     if (!gesture.claimed) {
       const moved = event.clientY - gesture.startY;
-      const slop = lengthInPx(this, getComputedStyle(this).getPropertyValue(DRAG_SLOP_PROPERTY).trim());
-      if (moved <= 0 || moved < slop) {
+      if (moved <= 0 || moved < gesture.slop) {
         return;
       }
       gesture.claimed = true;
@@ -1055,15 +1063,29 @@ export class DsBottomSheet extends LitElement {
   private async applyInitialFocus(): Promise<void> {
     const bodyFirst = this.bodySlotEl ? firstFocusableIn(this.bodySlotEl) : null;
     const footerFirst = this.footerSlotEl ? firstFocusableIn(this.footerSlotEl) : null;
-    let target = bodyFirst ?? footerFirst ?? (this.dismissible ? this.closeButtonEl : null);
-    if (!target) {
-      if (!this.headingIsFallback) {
-        this.headingIsFallback = true;
-        await this.updateComplete;
-      }
-      target = this.headingEl;
-    }
+    const target = bodyFirst ?? footerFirst ?? (this.dismissible ? this.closeButtonEl : null);
     target?.focus();
+    if (target && this.focusIsInside()) {
+      return;
+    }
+    // Nothing focusable, or the candidate refused focus: the heading takes tabindex -1 only now.
+    if (!this.headingIsFallback) {
+      this.headingIsFallback = true;
+      await this.updateComplete;
+    }
+    this.headingEl?.focus();
+  }
+
+  /** Focus rests on something inside the sheet — not on the scrim, and not on the page behind it. */
+  private focusIsInside(): boolean {
+    let active: Element | null = document.activeElement;
+    while (active) {
+      if (active === this) {
+        return true;
+      }
+      active = active.shadowRoot?.activeElement ?? null;
+    }
+    return false;
   }
 
   private releaseScroll(): void {

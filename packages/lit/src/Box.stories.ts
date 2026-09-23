@@ -3,7 +3,8 @@ import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Box.js';
 import './Text.js';
-import type { BoxElement, BoxInset, BoxRadius, BoxSurface } from './Box.js';
+import type { TokenRef } from '@design-schema/tokens';
+import type { BoxElement, BoxInset, BoxOverridableBinding, BoxRadius, BoxSurface } from './Box.js';
 
 interface BoxArgs {
   /** Slotted as text inside a `<ds-text>`; not an element property. */
@@ -15,6 +16,7 @@ interface BoxArgs {
   border: boolean;
   radius: BoxRadius;
   element: BoxElement;
+  overrides?: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
 const INSETS: BoxInset[] = ['none', 'sm', 'md', 'lg', 'xl'];
@@ -35,6 +37,7 @@ const meta: Meta<BoxArgs> = {
     border: { control: 'boolean' },
     radius: { control: 'select', options: RADII },
     element: { control: 'select', options: ELEMENTS },
+    overrides: { control: 'object' },
   },
   args: {
     children: 'Box content',
@@ -56,6 +59,7 @@ const meta: Meta<BoxArgs> = {
       ?border=${args.border}
       radius=${args.radius}
       element=${args.element}
+      .overrides=${args.overrides}
     >
       <ds-text>${args.children}</ds-text>
     </ds-box>
@@ -101,6 +105,20 @@ export const SurfaceStrong: Story = { args: { ...Default.args, surface: 'strong'
 
 /* border */
 export const Border: Story = { args: { ...Default.args, border: true } };
+
+/* overrides — a border so the colour and width overrides are in effect, and a radius that is not none */
+export const WithOverrides: Story = {
+  args: {
+    ...Default.args,
+    border: true,
+    overrides: {
+      paddingBlock: 'layout.inset.lg',
+      border: 'color.border.focus',
+      borderWidth: 'border.width.focus',
+      radius: 'radius.lg',
+    },
+  },
+};
 
 /* radius */
 export const RadiusNone: Story = { args: { ...Default.args, radius: 'none' } };

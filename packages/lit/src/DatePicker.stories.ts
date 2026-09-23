@@ -95,6 +95,20 @@ export const AppointmentWithWeekNumbers: Story = {
 
 export const CompactCellEditor: Story = { args: { label: 'Due date', name: 'due', size: 'sm', hideLabel: true } };
 
+export const WithAValue: Story = { args: { label: 'Due date', name: 'due', defaultValue: '2026-09-10' } };
+
+export const RangeWithDates: Story = {
+  args: { label: 'Stay', name: 'stay', range: true, defaultValue: { start: '2026-09-10', end: '2026-09-14' } },
+};
+
+export const WithAnError: Story = {
+  args: { label: 'Due date', name: 'due', defaultValue: '2026-09-10', error: 'Choose a date at least two days from now.' },
+};
+
+export const GermanLocale: Story = {
+  args: { label: 'Fälligkeitsdatum', name: 'due', locale: 'de-DE', defaultValue: '2026-09-10' },
+};
+
 /* Notable states. */
 
 export const WithValue: Story = { args: { defaultValue: '2026-09-10' } };

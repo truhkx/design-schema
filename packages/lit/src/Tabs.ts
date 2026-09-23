@@ -75,26 +75,12 @@ type ControlsElement = HTMLElement & { ariaControlsElements?: readonly Element[]
  * reference cannot point into a descendant shadow tree.
  */
 @customElement('ds-tab-panel')
-export class DsTabPanel extends LitElement {
-  static override styles: CSSResult = css`
-    :host {
-      display: block;
-      min-inline-size: 0;
-    }
-
-    :host([hidden]) {
-      display: none;
-    }
-  `;
-
-  override connectedCallback(): void {
-    super.connectedCallback();
-    this.setAttribute('data-ds', 'TabPanel');
-    this.setAttribute('data-part', 'panel');
-  }
-
-  protected override render(): TemplateResult {
-    return html`<slot></slot>`;
+export class DsTabPanel extends HTMLElement {
+  // A plain element: no props besides `id`, no shadow root, no styles of its own.
+  // Its layout and focus ring come from `<ds-tabs>` through `::slotted`.
+  connectedCallback(): void {
+    setAttr(this, 'data-ds', 'TabPanel');
+    setAttr(this, 'data-part', 'panel');
   }
 }
 
@@ -223,7 +209,12 @@ export class DsTabs extends LitElement {
       cursor: pointer;
     }
 
-    /* fill is horizontal only: vertical tabs always span the list's inline size. */
+    /* fill is horizontal only: vertical tabs always span the list's inline size.
+       A fill list does not scroll; tabs that overflow it are squeezed. */
+    :host([fit='fill']:not([orientation='vertical'])) [data-part='tablist'] {
+      overflow: hidden;
+    }
+
     :host([fit='fill']:not([orientation='vertical'])) [data-part='tab'] {
       flex: 1 1 0%;
       justify-content: center;
@@ -269,8 +260,12 @@ export class DsTabs extends LitElement {
     [data-part='indicator'] {
       position: absolute;
       background: var(--ds-tabs-indicator);
-      opacity: 0;
       pointer-events: none;
+    }
+
+    /* Only a move between tabs animates; first placement, a newly appearing
+       selected tab and a resize remeasure snap (data-animate is absent). */
+    [data-part='indicator'][data-animate] {
       transition:
         transform var(--ds-tabs-transition) var(--motion-easing-standard),
         inline-size var(--ds-tabs-transition) var(--motion-easing-standard),
@@ -300,8 +295,15 @@ export class DsTabs extends LitElement {
       min-inline-size: 0;
     }
 
+    /* The panel has no binding of its own: its ring draws from the tab's hooks. */
+    ::slotted([data-part='panel']:focus-visible) {
+      outline: var(--ds-tabs-focus-ring-width) solid var(--ds-tabs-focus-ring);
+      outline-offset: calc(-1 * var(--ds-tabs-focus-ring-width));
+      border-radius: var(--ds-tabs-radius);
+    }
+
     @media (prefers-reduced-motion: reduce) {
-      [data-part='indicator'] {
+      [data-part='indicator'][data-animate] {
         transition: none;
       }
     }
@@ -349,6 +351,8 @@ export class DsTabs extends LitElement {
 
   private resizeObserver: ResizeObserver | undefined;
   private lastScrolledId: string | null = null;
+  /** The tab the indicator last sat under; `null` when it was at zero size (or never placed). */
+  private indicatorId: string | null = null;
   private readonly warned = new Set<string>();
 
   /** The selected tab id, controlled or not. */
@@ -369,7 +373,8 @@ export class DsTabs extends LitElement {
 
   protected override firstUpdated(): void {
     if (this.tablistEl && typeof ResizeObserver !== 'undefined') {
-      this.resizeObserver = new ResizeObserver(() => this.updateIndicator());
+      // A resize remeasure never animates.
+      this.resizeObserver = new ResizeObserver(() => this.updateIndicator(false));
       this.resizeObserver.observe(this.tablistEl);
     }
   }
@@ -385,7 +390,7 @@ export class DsTabs extends LitElement {
 
   protected override updated(): void {
     this.syncPanels();
-    this.updateIndicator();
+    this.updateIndicator(true);
     this.scrollSelectedIntoView();
     this.warnInDev();
   }
@@ -479,6 +484,15 @@ export class DsTabs extends LitElement {
     } else if (event.key === 'End') {
       event.preventDefault();
       this.focusEdge('last');
+    } else if ((event.key === 'Enter' || event.key === ' ') && this.activation === 'manual') {
+      // Under automatic the focused tab is already selected and the native
+      // button click takes the same path; only manual needs its own handler.
+      const id = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-part=tab]')?.dataset['id'];
+      const tab = this.tabs.find((candidate) => candidate.id === id);
+      if (tab) {
+        event.preventDefault();
+        this.handleTabClick(tab);
+      }
     }
   };
 
@@ -592,22 +606,38 @@ export class DsTabs extends LitElement {
     }
   }
 
-  private updateIndicator(): void {
+  /**
+   * Places the indicator under the selected tab. It snaps on first placement,
+   * when the selected tab first appears and on every resize remeasure
+   * (`mayAnimate` false); only a move between two tabs sets `data-animate`.
+   * With a selection that matches no tab it collapses to zero size.
+   */
+  private updateIndicator(mayAnimate: boolean): void {
     const indicator = this.indicatorEl;
     if (!indicator) {
       return;
     }
     const selected = this.currentValue;
     const tabEl = selected !== null ? this.tabElement(selected) : null;
-    if (!tabEl) {
-      indicator.style.opacity = '0';
+    const vertical = this.orientation === 'vertical';
+    if (!tabEl || selected === null) {
+      indicator.removeAttribute('data-animate');
+      indicator.style.transform = '';
+      indicator.style.inlineSize = vertical ? '' : '0';
+      indicator.style.blockSize = vertical ? '0' : '';
+      this.indicatorId = null;
       return;
     }
-    // The first placement is instant; only movement between tabs animates.
-    const first = indicator.style.opacity !== '1';
-    if (first) indicator.style.transition = 'none';
-    indicator.style.opacity = '1';
-    if (this.orientation === 'vertical') {
+    const animate = mayAnimate && this.indicatorId !== null && this.indicatorId !== selected;
+    if (animate) {
+      indicator.setAttribute('data-animate', '');
+    } else if (this.indicatorId !== selected || !mayAnimate) {
+      indicator.removeAttribute('data-animate');
+    }
+    this.indicatorId = selected;
+    // Anchored at the list's physical left and moved by offsetLeft/offsetTop,
+    // which measure from that same edge, so one measurement serves LTR and RTL.
+    if (vertical) {
       indicator.style.transform = `translateY(${tabEl.offsetTop}px)`;
       indicator.style.blockSize = `${tabEl.offsetHeight}px`;
       indicator.style.inlineSize = '';
@@ -616,33 +646,43 @@ export class DsTabs extends LitElement {
       indicator.style.inlineSize = `${tabEl.offsetWidth}px`;
       indicator.style.blockSize = '';
     }
-    if (first) {
-      void indicator.offsetWidth;
-      indicator.style.transition = '';
-    }
   }
 
-  /** Keeps the selected tab visible when the list overflows, scrolling the list only (never the page). */
+  /**
+   * Keeps the selected tab visible when the list overflows, scrolling the list
+   * only (never the page, so no scrollIntoView). Measured from the tab's box
+   * within the list's client box, not from scrollLeft, so it holds in RTL
+   * where scrollLeft is negative. A `fill` list does not scroll.
+   */
   private scrollSelectedIntoView(): void {
     const selected = this.currentValue;
     const list = this.tablistEl;
     if (selected === null || selected === this.lastScrolledId || !list) {
       return;
     }
-    this.lastScrolledId = selected;
     const tabEl = this.tabElement(selected);
     if (!tabEl) {
       return;
     }
-    if (this.orientation === 'vertical') {
-      const end = tabEl.offsetTop + tabEl.offsetHeight;
-      if (tabEl.offsetTop < list.scrollTop) list.scrollTop = tabEl.offsetTop;
-      else if (end > list.scrollTop + list.clientHeight) list.scrollTop = end - list.clientHeight;
-    } else {
-      const end = tabEl.offsetLeft + tabEl.offsetWidth;
-      if (tabEl.offsetLeft < list.scrollLeft) list.scrollLeft = tabEl.offsetLeft;
-      else if (end > list.scrollLeft + list.clientWidth) list.scrollLeft = end - list.clientWidth;
+    this.lastScrolledId = selected;
+    const vertical = this.orientation === 'vertical';
+    if (this.fit === 'fill' && !vertical) {
+      return;
     }
+    const listBox = list.getBoundingClientRect();
+    const tabBox = tabEl.getBoundingClientRect();
+    const start = vertical ? tabBox.top - listBox.top - list.clientTop : tabBox.left - listBox.left - list.clientLeft;
+    const size = vertical ? tabBox.height : tabBox.width;
+    const client = vertical ? list.clientHeight : list.clientWidth;
+    let delta = 0;
+    if (start < 0) delta = start;
+    else if (start + size > client) delta = start + size - client;
+    if (delta === 0) {
+      return;
+    }
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const behavior: ScrollBehavior = reduced ? 'auto' : 'smooth';
+    list.scrollBy(vertical ? { top: delta, behavior } : { left: delta, behavior });
   }
 
   private applyOverrides(): void {

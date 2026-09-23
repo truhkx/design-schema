@@ -25,6 +25,12 @@ async function setup(given: Given = {}) {
   return { el };
 }
 
+/** A `renders` scenario on Lit: the host is connected and its shadow root holds the slot. */
+function expectRenders(el: DsBox): void {
+  expect(el.isConnected).toBe(true);
+  expect(el.shadowRoot!.querySelector('slot')).not.toBeNull();
+}
+
 beforeEach(() => {
   document.body.replaceChildren();
 });
@@ -43,172 +49,172 @@ describe('ds-box', () => {
   /* derived: a11y.role */
   it('renders', async () => {
     const { el } = await setup();
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   /* derived: props.inset */
   it('renders-inset-none', async () => {
     const { el } = await setup({ inset: 'none' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-inset-sm', async () => {
     const { el } = await setup({ inset: 'sm' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-inset-md', async () => {
     const { el } = await setup({ inset: 'md' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-inset-lg', async () => {
     const { el } = await setup({ inset: 'lg' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-inset-xl', async () => {
     const { el } = await setup({ inset: 'xl' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   /* derived: props.insetBlock */
   it('renders-inset-block-none', async () => {
     const { el } = await setup({ insetBlock: 'none' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-inset-block-sm', async () => {
     const { el } = await setup({ insetBlock: 'sm' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-inset-block-md', async () => {
     const { el } = await setup({ insetBlock: 'md' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-inset-block-lg', async () => {
     const { el } = await setup({ insetBlock: 'lg' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-inset-block-xl', async () => {
     const { el } = await setup({ insetBlock: 'xl' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   /* derived: props.insetInline */
   it('renders-inset-inline-none', async () => {
     const { el } = await setup({ insetInline: 'none' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-inset-inline-sm', async () => {
     const { el } = await setup({ insetInline: 'sm' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-inset-inline-md', async () => {
     const { el } = await setup({ insetInline: 'md' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-inset-inline-lg', async () => {
     const { el } = await setup({ insetInline: 'lg' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-inset-inline-xl', async () => {
     const { el } = await setup({ insetInline: 'xl' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   /* derived: props.surface */
   it('renders-surface-none', async () => {
     const { el } = await setup({ surface: 'none' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-surface-default', async () => {
     const { el } = await setup({ surface: 'default' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-surface-subtle', async () => {
     const { el } = await setup({ surface: 'subtle' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-surface-strong', async () => {
     const { el } = await setup({ surface: 'strong' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   /* derived: props.radius */
   it('renders-radius-none', async () => {
     const { el } = await setup({ radius: 'none' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-radius-sm', async () => {
     const { el } = await setup({ radius: 'sm' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-radius-md', async () => {
     const { el } = await setup({ radius: 'md' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-radius-lg', async () => {
     const { el } = await setup({ radius: 'lg' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-radius-full', async () => {
     const { el } = await setup({ radius: 'full' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   /* derived: props.element */
   it('renders-element-div', async () => {
     const { el } = await setup({ element: 'div' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-element-section', async () => {
     const { el } = await setup({ element: 'section' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-element-article', async () => {
     const { el } = await setup({ element: 'article' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-element-aside', async () => {
     const { el } = await setup({ element: 'aside' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-element-header', async () => {
     const { el } = await setup({ element: 'header' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-element-footer', async () => {
     const { el } = await setup({ element: 'footer' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-element-main', async () => {
     const { el } = await setup({ element: 'main' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 
   it('renders-element-nav', async () => {
     const { el } = await setup({ element: 'nav' });
-    expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    expectRenders(el);
   });
 });

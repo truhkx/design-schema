@@ -345,7 +345,8 @@ function isFocusCandidate(el: HTMLElement): boolean {
   const tabindex = el.getAttribute('tabindex');
   if (tabindex !== null && Number(tabindex) < 0) return false;
   if (el.matches(':disabled')) return false;
-  if (!el.checkVisibility()) return false;
+  // `hidden` / `display: none` on the element or an ancestor, or computed `visibility: hidden`; no size check.
+  if (!el.checkVisibility({ visibilityProperty: true })) return false;
   for (let node: Node | null = el; node; node = node.parentNode ?? (node instanceof ShadowRoot ? node.host : null)) {
     if (node instanceof HTMLElement && node.inert) return false;
   }

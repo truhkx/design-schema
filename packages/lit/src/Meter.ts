@@ -90,6 +90,23 @@ export class DsMeter extends LitElement {
       --ds-meter-part-gap: var(--space-1);
       --ds-meter-label-gap: var(--space-2);
       --ds-meter-transition: var(--motion-duration-base);
+      /* Locked: out of the overrides type, but still themeable from document CSS. */
+      --ds-meter-track: var(--color-background-strong);
+      --ds-meter-fill: var(--color-status-info-icon);
+      /* locked labelColor / valueColor: declared for the CSS escape hatch and the naming codemod; the
+         colours come from the composed Texts' tone="default" / tone="muted" (same tokens), so no rule
+         restyles the children */
+      --ds-meter-label-color: var(--color-foreground);
+      --ds-meter-value-color: var(--color-foreground-muted);
+    }
+    :host([tone='success']) {
+      --ds-meter-fill: var(--color-status-success-icon);
+    }
+    :host([tone='warning']) {
+      --ds-meter-fill: var(--color-status-warning-icon);
+    }
+    :host([tone='danger']) {
+      --ds-meter-fill: var(--color-status-danger-icon);
     }
 
     :host([hidden]) {
@@ -115,29 +132,29 @@ export class DsMeter extends LitElement {
       gap: var(--ds-meter-label-gap);
     }
 
+    /* Meter-owned wrappers around the composed Texts: the long label wraps, the value never does. */
+    [data-part='label'] {
+      flex-shrink: 1;
+      min-inline-size: 0;
+    }
+    [data-part='valueText'] {
+      flex-shrink: 0;
+    }
+
     /* track: color.background.strong, locked. Deliberately low-contrast; the text identifies the meter. */
     [data-part='track'] {
       overflow: hidden;
       inline-size: 100%;
       block-size: var(--ds-meter-track-height);
       border-radius: var(--ds-meter-radius);
-      background-color: var(--color-background-strong);
+      background-color: var(--ds-meter-track);
     }
 
     /* fill: color.status.{tone}.icon, locked — the step guaranteed 3:1 against the page background. */
     [data-part='fill'] {
       block-size: 100%;
       border-radius: var(--ds-meter-radius);
-      background-color: var(--color-status-info-icon);
-    }
-    :host([tone='success']) [data-part='fill'] {
-      background-color: var(--color-status-success-icon);
-    }
-    :host([tone='warning']) [data-part='fill'] {
-      background-color: var(--color-status-warning-icon);
-    }
-    :host([tone='danger']) [data-part='fill'] {
-      background-color: var(--color-status-danger-icon);
+      background-color: var(--ds-meter-fill);
     }
 
     /* transition: fill width change, with motion.easing.standard; instant under reduced motion. */
@@ -230,36 +247,36 @@ export class DsMeter extends LitElement {
     return html`
       <div part="container" data-part="container">
         <div part="header" data-part="header">
-          <ds-text
-            id="label"
-            part="label"
-            data-part="label"
-            element="span"
-            size="sm"
-            weight="medium"
-            tone="default"
-            .overrides=${compact({
-              fontSize: o?.labelSize,
-              fontWeight: o?.labelWeight,
-              fontFamily: o?.fontFamily,
-              lineHeight: o?.lineHeight,
-            })}
-            >${this.label}</ds-text
+          <span part="label" data-part="label"
+            ><ds-text
+              id="label"
+              element="span"
+              size="sm"
+              weight="medium"
+              tone="default"
+              .overrides=${compact({
+                fontSize: o?.labelSize,
+                fontWeight: o?.labelWeight,
+                fontFamily: o?.fontFamily,
+                lineHeight: o?.lineHeight,
+              })}
+              >${this.label}</ds-text
+            ></span
           >
           ${this.hideValue
             ? nothing
-            : html`<ds-text
-                part="valueText"
-                data-part="valueText"
-                element="span"
-                size="sm"
-                tone="muted"
-                .overrides=${compact({
-                  fontSize: o?.valueSize,
-                  fontFamily: o?.fontFamily,
-                  lineHeight: o?.lineHeight,
-                })}
-                >${displayed}</ds-text
+            : html`<span part="valueText" data-part="valueText"
+                ><ds-text
+                  element="span"
+                  size="sm"
+                  tone="muted"
+                  .overrides=${compact({
+                    fontSize: o?.valueSize,
+                    fontFamily: o?.fontFamily,
+                    lineHeight: o?.lineHeight,
+                  })}
+                  >${displayed}</ds-text
+                ></span
               >`}
         </div>
         <div

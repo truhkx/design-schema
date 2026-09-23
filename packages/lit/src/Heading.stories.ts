@@ -8,7 +8,7 @@ import type { TextAlign } from './Text.js';
 interface HeadingArgs {
   level: HeadingLevel;
   size?: HeadingSize | undefined;
-  align: TextAlign;
+  align?: TextAlign | undefined;
   children: string;
 }
 
@@ -22,12 +22,10 @@ const meta: Meta<HeadingArgs> = {
   },
   args: {
     level: '2',
-    size: undefined,
-    align: 'start',
     children: 'Account settings',
   },
   render: (args) =>
-    html`<ds-heading level=${args.level} size=${ifDefined(args.size)} align=${args.align}>${args.children}</ds-heading>`,
+    html`<ds-heading level=${args.level} size=${ifDefined(args.size)} align=${ifDefined(args.align)}>${args.children}</ds-heading>`,
 };
 
 export default meta;

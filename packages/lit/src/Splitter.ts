@@ -47,14 +47,19 @@ const BREAKPOINT_PROPERTY: Record<Exclude<SplitterStackBelow, 'never'>, string> 
  */
 function readBreakpoint(el: Element, stackBelow: Exclude<SplitterStackBelow, 'never'>): number | null {
   const raw = getComputedStyle(el).getPropertyValue(BREAKPOINT_PROPERTY[stackBelow]).trim();
-  const value = Number.parseFloat(raw);
+  // Only px, rem and em are readable; any other unit (ch, vw, a calc()) means the splitter never stacks.
+  const match = /^(\d*\.?\d+)(px|rem|em)$/.exec(raw);
+  if (!match) {
+    return null;
+  }
+  const value = Number.parseFloat(match[1]!);
   if (!Number.isFinite(value) || value <= 0) {
     return null;
   }
-  if (raw.endsWith('rem')) {
+  if (match[2] === 'rem') {
     return value * Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
   }
-  if (raw.endsWith('em')) {
+  if (match[2] === 'em') {
     return value * Number.parseFloat(getComputedStyle(el).fontSize);
   }
   return value;
@@ -80,7 +85,7 @@ const FOCUSABLE_SELECTOR = [
   'select:not([disabled])',
   'textarea:not([disabled])',
   '[contenteditable]:not([contenteditable="false"])',
-  '[tabindex]:not([tabindex="-1"])',
+  '[tabindex]',
 ].join(',');
 
 /** First focusable element among `elements` or their light-DOM descendants, in order. A custom
@@ -89,7 +94,13 @@ function firstFocusable(elements: Element[]): HTMLElement | null {
   for (const root of elements) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
     for (let node: Node | null = root; node; node = walker.nextNode()) {
-      if (!(node instanceof HTMLElement) || node.hasAttribute('disabled') || node.closest('[inert]')) {
+      if (
+        !(node instanceof HTMLElement) ||
+        node.hasAttribute('disabled') ||
+        node.getAttribute('aria-disabled') === 'true' ||
+        (node.hasAttribute('tabindex') && node.tabIndex < 0) ||
+        node.closest('[inert]')
+      ) {
         continue;
       }
       if (node.matches(FOCUSABLE_SELECTOR) || node.shadowRoot?.delegatesFocus) {
@@ -167,6 +178,14 @@ export class DsSplitter extends LitElement {
       --ds-splitter-grip-radius: var(--radius-full);
       --ds-splitter-collapse-button-offset: var(--space-2);
       --ds-splitter-transition: var(--motion-duration-fast);
+      /* Locked bindings: out of the overrides API, still themeable from page CSS. */
+      --ds-splitter-separator-hover: var(--color-border-strong);
+      --ds-splitter-separator-active: var(--color-control-selected-background);
+      --ds-splitter-grip: var(--color-border-strong);
+      --ds-splitter-pane-min-target: var(--size-target-comfortable);
+      --ds-splitter-min-target: var(--size-target-min);
+      --ds-splitter-focus-ring: var(--color-border-focus);
+      --ds-splitter-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -180,18 +199,18 @@ export class DsSplitter extends LitElement {
       block-size: 100%;
       inline-size: 100%;
       grid-template-columns:
-        minmax(var(--size-target-comfortable), var(--ds-splitter-primary-size))
+        minmax(var(--ds-splitter-pane-min-target), var(--ds-splitter-primary-size))
         var(--ds-splitter-separator-size)
-        minmax(var(--size-target-comfortable), 1fr);
+        minmax(var(--ds-splitter-pane-min-target), 1fr);
       grid-template-rows: minmax(0, 1fr);
     }
 
     :host([orientation='vertical']) .container {
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows:
-        minmax(var(--size-target-comfortable), var(--ds-splitter-primary-size))
+        minmax(var(--ds-splitter-pane-min-target), var(--ds-splitter-primary-size))
         var(--ds-splitter-separator-size)
-        minmax(var(--size-target-comfortable), 1fr);
+        minmax(var(--ds-splitter-pane-min-target), 1fr);
     }
 
     /* Collapsed: the primary track drops its floor so collapse reaches zero. */
@@ -199,7 +218,7 @@ export class DsSplitter extends LitElement {
       grid-template-columns:
         minmax(0, var(--ds-splitter-primary-size))
         var(--ds-splitter-separator-size)
-        minmax(var(--size-target-comfortable), 1fr);
+        minmax(var(--ds-splitter-pane-min-target), 1fr);
     }
 
     :host([orientation='vertical']) .container.is-collapsed {
@@ -207,7 +226,7 @@ export class DsSplitter extends LitElement {
       grid-template-rows:
         minmax(0, var(--ds-splitter-primary-size))
         var(--ds-splitter-separator-size)
-        minmax(var(--size-target-comfortable), 1fr);
+        minmax(var(--ds-splitter-pane-min-target), 1fr);
     }
 
     /* Stacked (below stackBelow): one column, both panes in full, in source order; no separator. */
@@ -221,8 +240,10 @@ export class DsSplitter extends LitElement {
       grid-row: 2;
     }
 
-    /* transition: collapse and restore only; dragging and key steps resize instantly. */
-    .container.is-animating {
+    /* transition: collapse and restore only; dragging and key steps resize instantly. The animating
+       state is the container's data-animating, set when the collapsed state changes and cleared by
+       the next size change or pointerdown, so a second toggle animates too. */
+    .container[data-animating] {
       transition: ${unsafeCSS(PRIMARY_SIZE_PROPERTY)} var(--ds-splitter-transition) var(--motion-easing-standard);
     }
 
@@ -288,30 +309,32 @@ export class DsSplitter extends LitElement {
     /* separatorHover: color.border.strong, locked. The grab area is the separator's ::before, so
        the hover state follows the wider hit area, not the thin line. */
     .separator:hover {
-      background-color: var(--color-border-strong);
+      background-color: var(--ds-splitter-separator-hover);
     }
 
     /* separatorActive: color.control.selectedBackground, locked; while dragging or focused. */
     .separator[data-dragging],
     .separator:focus-visible {
-      background-color: var(--color-control-selected-background);
+      background-color: var(--ds-splitter-separator-active);
     }
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
     .separator:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-splitter-focus-ring-width) solid var(--ds-splitter-focus-ring);
+      outline-offset: var(--ds-splitter-focus-ring-width);
     }
 
     /* handle / handleSize: the grab area centered on the line and overlapping both panes, so the
        panes keep their full width; minTarget (size.target.min, locked) is its floor. Drawn as the
        separator's ::before, so it carries no data-part hook. */
+    /* Centering across the line uses physical left + translateX(-50%), which is direction-agnostic;
+       inset-inline-start would anchor the right edge in RTL and shift the element off-centre. */
     .separator::before {
       content: '';
       position: absolute;
       inset-block: 0;
-      inset-inline-start: 50%;
-      inline-size: max(var(--ds-splitter-handle-size), var(--size-target-min));
+      left: 50%;
+      inline-size: max(var(--ds-splitter-handle-size), var(--ds-splitter-min-target));
       transform: translateX(-50%);
     }
 
@@ -320,7 +343,7 @@ export class DsSplitter extends LitElement {
       inset-inline: 0;
       inset-block-start: 50%;
       inline-size: auto;
-      block-size: max(var(--ds-splitter-handle-size), var(--size-target-min));
+      block-size: max(var(--ds-splitter-handle-size), var(--ds-splitter-min-target));
       transform: translateY(-50%);
     }
 
@@ -329,10 +352,10 @@ export class DsSplitter extends LitElement {
     .separator::after {
       content: '';
       position: absolute;
-      inset-block-start: 50%;
-      inset-inline-start: 50%;
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
-      background-color: var(--color-border-strong);
+      background-color: var(--ds-splitter-grip);
       border-radius: var(--ds-splitter-grip-radius);
       inline-size: var(--ds-splitter-separator-size);
       block-size: var(--ds-splitter-grip-length);
@@ -351,12 +374,13 @@ export class DsSplitter extends LitElement {
       z-index: 1;
       display: flex;
       inset-block-start: var(--ds-splitter-collapse-button-offset);
-      inset-inline-start: 50%;
+      left: 50%;
       transform: translateX(-50%);
     }
 
     :host([orientation='vertical']) .collapse-button {
       inset-block-start: 50%;
+      left: auto;
       inset-inline-start: var(--ds-splitter-collapse-button-offset);
       transform: translateY(-50%);
     }
@@ -364,6 +388,7 @@ export class DsSplitter extends LitElement {
     /* While collapsed the primary pane has no size, so the button aligns to the secondary pane's
        start edge instead of hanging outside the container. */
     .container.is-collapsed .collapse-button {
+      left: auto;
       inset-inline-start: 100%;
       transform: none;
     }
@@ -375,7 +400,7 @@ export class DsSplitter extends LitElement {
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .container.is-animating,
+      .container[data-animating],
       .separator {
         transition: none;
       }
@@ -411,7 +436,15 @@ export class DsSplitter extends LitElement {
 
   /** Controlled collapsed state, ignored unless `collapsible`. Reflected when true; an absent
       attribute means uncontrolled, and a controlled `false` is set as a property. */
-  @property({ type: Boolean, reflect: true }) accessor collapsed: boolean | undefined;
+  @property({
+    reflect: true,
+    converter: {
+      // Present = true; absent = uncontrolled (undefined), never a controlled false.
+      fromAttribute: (value: string | null): boolean | undefined => (value === null ? undefined : true),
+      toAttribute: (value: boolean | undefined): string | null => (value ? '' : null),
+    },
+  })
+  accessor collapsed: boolean | undefined;
 
   /** Initial collapsed state when uncontrolled. */
   @property({ type: Boolean, attribute: 'default-collapsed' }) accessor defaultCollapsed: boolean = false;
@@ -457,6 +490,8 @@ export class DsSplitter extends LitElement {
   /** True once a drag has actually changed the size. A press that never moved the separator is not
       a drag and fires nothing, so a stray tap on the separator is silent. */
   private dragMoved = false;
+  /** The last record written under `persistKey`, so an unrelated update does not rewrite it. */
+  private lastPersisted: string | undefined;
 
   @query('.container') private accessor containerEl!: HTMLDivElement | null;
   @query('.track') private accessor trackEl!: HTMLDivElement | null;
@@ -531,6 +566,9 @@ export class DsSplitter extends LitElement {
     // A controlled collapse animates too; the uncontrolled path sets `animating` as it changes.
     if (changed.has('collapsed') && changed.get('collapsed') !== undefined) {
       this.animating = true;
+    } else if (changed.has('size') && this.hasUpdated) {
+      // A controlled size change resizes instantly.
+      this.animating = false;
     }
     // Measured before the first render, so the separator is never rendered and then taken away.
     if (!this.hasUpdated) {
@@ -567,9 +605,9 @@ export class DsSplitter extends LitElement {
           container: true,
           'is-collapsed': collapsed,
           'is-stacked': this.stacked,
-          'is-animating': this.animating,
         })}
         data-part="container"
+        ?data-animating=${this.animating}
         style=${styleMap({ [PRIMARY_SIZE_PROPERTY]: `${collapsed ? 0 : this.currentSize}%` })}
       >
         <div class="pane primary-pane" data-part="primaryPane" id=${this.primaryPaneId} ?inert=${collapsed}>
@@ -626,13 +664,14 @@ export class DsSplitter extends LitElement {
   // ── Pointer ─────────────────────────────────────────────────────────────────
 
   private handlePointerDown(event: PointerEvent): void {
+    // The next pointerdown ends the collapse animation state, even one that starts no drag.
+    this.animating = false;
     if (this.isCollapsed || event.button !== 0 || !this.separatorEl) {
       return;
     }
     event.preventDefault();
     this.separatorEl.focus();
     this.separatorEl.setPointerCapture(event.pointerId);
-    this.animating = false;
     this.dragging = true;
     this.dragSize = this.currentSize;
     this.dragMoved = false;
@@ -836,10 +875,12 @@ export class DsSplitter extends LitElement {
       size did not change (a key press at a bound fires nothing). */
   private changeSize(next: number): number | undefined {
     const clamped = this.clamp(next);
-    this.animating = false;
-    if (clamped === this.currentSize) {
+    // Never repeat the size last reported: during a drag that is the last committed size, which a
+    // controlled splitter whose parent has not re-rendered yet does not show.
+    if (clamped === (this.dragging ? this.dragSize : this.currentSize)) {
       return undefined;
     }
+    this.animating = false;
     if (this.size === undefined) {
       this.internalSize = clamped;
     }
@@ -885,6 +926,7 @@ export class DsSplitter extends LitElement {
   // ── persistKey ──────────────────────────────────────────────────────────────
 
   private loadPersisted(): void {
+    this.lastPersisted = undefined;
     if (!this.persistKey) {
       return;
     }
@@ -913,8 +955,14 @@ export class DsSplitter extends LitElement {
     if (!this.persistKey) {
       return;
     }
+    // Written once on the first render and whenever either value settles, not on every update.
+    const record = JSON.stringify({ size: this.currentSize, collapsed: this.isCollapsed });
+    if (record === this.lastPersisted) {
+      return;
+    }
+    this.lastPersisted = record;
     try {
-      localStorage.setItem(this.persistKey, JSON.stringify({ size: this.currentSize, collapsed: this.isCollapsed }));
+      localStorage.setItem(this.persistKey, record);
     } catch {
       /* storage unavailable (private mode, quota): the size just does not stick */
     }

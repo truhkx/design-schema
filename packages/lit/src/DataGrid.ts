@@ -16,7 +16,7 @@ import './NumberInput.js';
 import './Select.js';
 import './Text.js';
 import type { ButtonOverridableBinding } from './Button.js';
-import type { CheckboxChangeDetail, DsCheckbox } from './Checkbox.js';
+import type { CheckboxChangeDetail, CheckboxOverridableBinding, DsCheckbox } from './Checkbox.js';
 import type { DatePickerOverridableBinding, DsDatePicker } from './DatePicker.js';
 import type { DsInput, InputOverridableBinding } from './Input.js';
 import type { DsNumberInput, NumberInputOverridableBinding } from './NumberInput.js';
@@ -150,12 +150,6 @@ const COPY_LOADING = 'Loading';
 const COPY_EMPTY = 'Nothing to show.';
 const COPY_SCROLL_HINT = 'Scroll sideways to see more columns';
 
-/**
- * The `columnWidth` binding before the probe has been measured (literal-ok: the doc's pixel default, a multiple of
- * space.1). The live value is read from `.probe-column`, so an override of the hook changes it.
- */
-const DEFAULT_COLUMN_WIDTH = 160;
-
 /** Rows rendered before one has been measured; they are positioned from the row-size token (literal-ok: the doc's cap). */
 const UNMEASURED_ROW_CAP = 50;
 
@@ -252,6 +246,10 @@ const SELECT_INSET: Partial<Record<SelectOverridableBinding, TokenRef | undefine
 const DATE_INSET: Partial<Record<DatePickerOverridableBinding, TokenRef | undefined>> = {
   paddingBlock: 'space.0',
   paddingInline: 'space.0',
+};
+/** minTarget (locked), forwarded to the select Checkboxes: a select cell is a full minimum target. */
+const SELECT_CHECKBOX: Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>> = {
+  controlSize: 'size.target.min',
 };
 /** The sort Button's text lines up with the cells; `headerWeight`/`headerSize` reach it through its own hooks. */
 const SORT_BUTTON_INSET: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>> = {
@@ -363,23 +361,40 @@ export class DsDataGrid extends LitElement {
       --ds-data-grid-line-height: var(--font-line-height-tight);
       --ds-data-grid-numeric-font: var(--font-family-mono);
       --ds-data-grid-transition: var(--motion-duration-fast);
-      /* rowHeight (locked); rowHeightComfortable below. Virtualization measures a rendered row instead. */
-      --ds-data-grid-row-size: var(--size-target-min);
-      /*
-       * selectColumnWidth (locked): the selection column's total inline size is the token plus 2 × cellPaddingInline,
-       * and the cell carries no inline padding of its own — the Checkbox is centred in it. Pinned-start offsets add
-       * the same total.
-       */
-      --ds-data-grid-select-column-size: calc(var(--size-target-min) + 2 * var(--ds-data-grid-cell-padding-inline));
+      /* rowHeight / rowHeightComfortable / selectColumnWidth (locked): hooks, read into the internal sizes below */
+      --ds-data-grid-row-height: var(--size-target-min);
+      --ds-data-grid-row-height-comfortable: var(--size-target-comfortable);
+      --ds-data-grid-select-column-width: var(--size-target-min);
+      /* minTarget (locked): the resize floor; the select Checkboxes receive it through their own overrides. */
+      --ds-data-grid-min-target: var(--size-target-min);
+      /* The other locked bindings: themeable from page CSS, never through the overrides property. */
+      --ds-data-grid-surface: var(--color-background);
+      --ds-data-grid-header-surface: var(--color-background-subtle);
+      --ds-data-grid-header-color: var(--color-foreground);
+      --ds-data-grid-row-selected: var(--color-background-subtle);
+      --ds-data-grid-row-selected-border: var(--color-control-selected-background);
+      --ds-data-grid-row-selected-border-width: var(--border-width-focus);
+      --ds-data-grid-cell-color: var(--color-foreground);
+      --ds-data-grid-cell-muted-color: var(--color-foreground-muted);
+      --ds-data-grid-cell-focus-ring: var(--color-border-focus);
+      --ds-data-grid-cell-focus-ring-width: var(--border-width-focus);
+      --ds-data-grid-cell-editing-background: var(--color-control-background);
+      --ds-data-grid-cell-editing-border: var(--color-border-focus);
+      --ds-data-grid-cell-invalid-border: var(--color-border-danger);
+      --ds-data-grid-cell-invalid-background: var(--color-status-danger-background);
+      --ds-data-grid-cell-invalid-foreground: var(--color-status-danger-foreground);
+      --ds-data-grid-range-background: var(--color-background-strong);
+      --ds-data-grid-range-border: var(--color-control-selected-background);
+      --ds-data-grid-range-border-width: var(--border-width-focus);
+      --ds-data-grid-status-bar-surface: var(--color-background-subtle);
+      --ds-data-grid-status-bar-color: var(--color-foreground-muted);
+      --ds-data-grid-focus-ring: var(--color-border-focus);
+      --ds-data-grid-focus-ring-width: var(--border-width-focus);
       font-family: var(--ds-data-grid-font-family);
       font-size: var(--ds-data-grid-font-size);
       line-height: var(--ds-data-grid-line-height);
       /* cellColor (locked) */
-      color: var(--color-foreground);
-    }
-
-    :host([density='comfortable']) {
-      --ds-data-grid-row-size: var(--size-target-comfortable);
+      color: var(--ds-data-grid-cell-color);
     }
 
     :host([hidden]) {
@@ -402,7 +417,23 @@ export class DsDataGrid extends LitElement {
     /* surface (locked) */
     [data-part='container'] {
       position: relative;
-      background: var(--color-background);
+      background: var(--ds-data-grid-surface);
+      /*
+       * Internal sizes the consumer cannot set, resolved from the hooks on :host. The density-selected row height
+       * (virtualization measures a rendered row instead, once one exists); columnWidth doubled, so the hook keeps
+       * the bare token; the selection column's total inline size, selectColumnWidth plus 2 × cellPaddingInline —
+       * the cell carries no inline padding of its own, and pinned-start offsets add the same total.
+       */
+      --ds-data-grid-row-size: var(--ds-data-grid-row-height);
+      --ds-data-grid-column-size: calc(var(--ds-data-grid-column-width) * 2);
+      --ds-data-grid-select-column-size: calc(
+        var(--ds-data-grid-select-column-width) + 2 * var(--ds-data-grid-cell-padding-inline)
+      );
+    }
+    /* A grid with a selection column is comfortable at both densities: a compact row cannot hold a minTarget Checkbox. */
+    :host([density='comfortable']) [data-part='container'],
+    :host([selectable='row']) [data-part='container'] {
+      --ds-data-grid-row-size: var(--ds-data-grid-row-height-comfortable);
     }
     /*
      * viewport and fixed size the whole component; the scroll region takes what the caption and status bar leave,
@@ -422,6 +453,7 @@ export class DsDataGrid extends LitElement {
 
     /* captionSize / captionWeight reach the composed Heading through its documented hooks; captionGap separates it. */
     [data-part='caption'] {
+      display: block;
       padding-block-end: var(--ds-data-grid-caption-gap);
     }
     [data-part='caption'] ds-heading {
@@ -443,8 +475,8 @@ export class DsDataGrid extends LitElement {
     }
     /* focusRing / focusRingWidth (locked): the grid is the tab stop */
     [data-part='scrollRegion']:has([data-part='grid']:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-data-grid-focus-ring-width) solid var(--ds-data-grid-focus-ring);
+      outline-offset: calc(-1 * var(--ds-data-grid-focus-ring-width));
     }
 
     [data-part='grid'] {
@@ -452,21 +484,26 @@ export class DsDataGrid extends LitElement {
       outline: none;
     }
 
+    /*
+     * The header sticks to the grid's own scroll region, never to the page: always when virtualized, and with
+     * height content the region does not scroll vertically, so stickyHeader changes nothing either way.
+     */
     [data-part='header'] {
-      z-index: 3;
-    }
-    [data-part='header'].sticky {
       position: sticky;
       inset-block-start: 0;
+      z-index: 3;
     }
     /* headerShadow: once the body has scrolled */
     [data-part='header'].raised {
       box-shadow: var(--ds-data-grid-header-shadow);
     }
 
+    /* Tracks and the row width are internal variables the grid sets on its grid element from the column model. */
     .row-layout {
       display: grid;
       box-sizing: border-box;
+      grid-template-columns: var(--ds-data-grid-tracks);
+      inline-size: var(--ds-data-grid-row-width);
     }
 
     /* rowHeight / rowHeightComfortable (locked) */
@@ -495,14 +532,15 @@ export class DsDataGrid extends LitElement {
     }
     /* rowSelected (locked) */
     [data-part='row'][aria-selected='true'] {
-      background: var(--color-background-subtle);
+      background: var(--ds-data-grid-row-selected);
     }
     /* rowSelectedBorder / rowSelectedBorderWidth (locked): a start-edge bar, so selection is not fill alone */
     [data-part='row'][aria-selected='true'] > :first-child {
-      box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+      box-shadow: inset var(--ds-data-grid-row-selected-border-width) 0 0 0 var(--ds-data-grid-row-selected-border);
     }
     [data-part='row'][aria-selected='true'] > :first-child:dir(rtl) {
-      box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+      box-shadow: inset calc(-1 * var(--ds-data-grid-row-selected-border-width)) 0 0 0
+        var(--ds-data-grid-row-selected-border);
     }
 
     .cell {
@@ -527,25 +565,29 @@ export class DsDataGrid extends LitElement {
     /* headerSurface / headerColor (locked); headerWeight / headerSize / headerBorder / headerBorderWidth */
     [data-part='columnHeader'],
     .select-all-cell {
-      background: var(--color-background-subtle);
-      color: var(--color-foreground);
+      background: var(--ds-data-grid-header-surface);
+      color: var(--ds-data-grid-header-color);
       font-weight: var(--ds-data-grid-header-weight);
       font-size: var(--ds-data-grid-header-size);
       border-block-end: var(--ds-data-grid-header-border-width) solid var(--ds-data-grid-header-border);
     }
     /* headerWeight / headerSize forwarded to the composed sort Button through its own hooks */
     [data-part='sortButton'] {
+      display: inline-flex;
+      min-inline-size: 0;
+    }
+    [data-part='sortButton'] ds-button {
       --ds-button-font-weight: var(--ds-data-grid-header-weight);
       --ds-button-font-size: var(--ds-data-grid-header-size);
     }
 
     [data-part='rowHeader'],
     [data-part='cell'] {
-      color: var(--color-foreground);
+      color: var(--ds-data-grid-cell-color);
     }
     /* cellMutedColor (locked): existing rows stay while loading, but read as stale */
     .cell.muted {
-      color: var(--color-foreground-muted);
+      color: var(--ds-data-grid-cell-muted-color);
     }
     .cell.numeric {
       font-family: var(--ds-data-grid-numeric-font);
@@ -568,35 +610,42 @@ export class DsDataGrid extends LitElement {
       min-inline-size: var(--ds-data-grid-select-column-size);
     }
     /*
-     * minTarget (locked) answers the target-24px requirement for the composed Checkbox. A compact row is
-     * rowHeight -- size.target.min -- tall, so two neighbouring select Checkboxes sit exactly one minimum
-     * target apart; with Checkbox's own smaller control that leaves no safe clickable space between them,
-     * every selectable grid fails the target-size rule. The grid raises the child's documented controlSize
-     * hook to the minimum instead of restyling its shadow tree, so the control is a full target in its own
-     * right. The hook is set on the ds-checkbox element, not on the cell: an inherited value would lose to
-     * Checkbox's own :host default.
+     * minTarget (locked) is forwarded to each select Checkbox's own overrides.controlSize, which sets the hook on
+     * the ds-checkbox element itself (a declaration on the cell would lose to Checkbox's :host default).
      */
-    [data-part='selectCell'],
-    [data-part='selectAllCell'] {
-      --ds-checkbox-control-size: var(--size-target-min);
-    }
 
     .pinned-start,
     .pinned-end {
       position: sticky;
       z-index: 2;
-      background: var(--color-background);
+      background: var(--ds-data-grid-surface);
     }
     [data-part='columnHeader'].pinned-start,
     [data-part='columnHeader'].pinned-end,
     .select-all-cell.pinned-start {
       z-index: 4;
-      background: var(--color-background-subtle);
+      background: var(--ds-data-grid-header-surface);
+    }
+    /* rowHover over opaque pinned cells (the select cell included), layered on the surface they must keep */
+    [data-part='row']:hover > .pinned-start,
+    [data-part='row']:hover > .pinned-end {
+      background-color: var(--ds-data-grid-surface);
+      background-image: linear-gradient(var(--ds-data-grid-row-hover), var(--ds-data-grid-row-hover));
+    }
+    /* a selected row keeps rowSelected, pinned cells included */
+    [data-part='row'][aria-selected='true'] > .pinned-start,
+    [data-part='row'][aria-selected='true'] > .pinned-end {
+      background: var(--ds-data-grid-row-selected);
     }
     /* pinnedShadow: once the body has scrolled sideways */
     .x-scrolled .pinned-start,
     .x-scrolled .pinned-end {
       box-shadow: var(--ds-data-grid-pinned-shadow);
+    }
+    .x-scrolled [data-part='row'][aria-selected='true'] > .pinned-start:first-child {
+      box-shadow:
+        inset var(--ds-data-grid-row-selected-border-width) 0 0 0 var(--ds-data-grid-row-selected-border),
+        var(--ds-data-grid-pinned-shadow);
     }
 
     /* cellFocusRing / cellFocusRingWidth (locked): inset, so neighbors and the scroll region never clip it */
@@ -605,26 +654,26 @@ export class DsDataGrid extends LitElement {
       position: absolute;
       inset: 0;
       pointer-events: none;
-      box-shadow: inset 0 0 0 var(--border-width-focus) var(--color-border-focus);
+      box-shadow: inset 0 0 0 var(--ds-data-grid-cell-focus-ring-width) var(--ds-data-grid-cell-focus-ring);
     }
 
     /* cellEditingBackground / cellEditingBorder (locked) */
     .cell.editing {
-      background: var(--color-control-background);
-      box-shadow: inset 0 0 0 var(--border-width-focus) var(--color-border-focus);
+      background: var(--ds-data-grid-cell-editing-background);
+      box-shadow: inset 0 0 0 var(--ds-data-grid-cell-focus-ring-width) var(--ds-data-grid-cell-editing-border);
       padding-inline: 0;
       transition: background-color var(--ds-data-grid-transition) var(--motion-easing-standard);
     }
     /* cellInvalidBackground / cellInvalidBorder (locked): the cell holds the untouched editor and nothing else */
     .cell.invalid {
-      background: var(--color-status-danger-background);
-      box-shadow: inset 0 0 0 var(--border-width-focus) var(--color-border-danger);
+      background: var(--ds-data-grid-cell-invalid-background);
+      box-shadow: inset 0 0 0 var(--ds-data-grid-cell-focus-ring-width) var(--ds-data-grid-cell-invalid-border);
     }
     /* cellInvalidForeground (locked): the status-bar message re-scopes the foreground around a default-tone Text */
     .invalid-message {
       display: inline-flex;
-      background: var(--color-status-danger-background);
-      --color-foreground: var(--color-status-danger-foreground);
+      background: var(--ds-data-grid-cell-invalid-background);
+      --color-foreground: var(--ds-data-grid-cell-invalid-foreground);
     }
     .editor-frame {
       display: flex;
@@ -658,15 +707,15 @@ export class DsDataGrid extends LitElement {
       z-index: 0;
       pointer-events: none;
       box-sizing: border-box;
-      background: var(--color-background-strong);
-      border: var(--border-width-focus) solid var(--color-control-selected-background);
+      background: var(--ds-data-grid-range-background);
+      border: var(--ds-data-grid-range-border-width) solid var(--ds-data-grid-range-border);
     }
 
     .empty-row {
       display: flex;
       align-items: center;
       justify-content: center;
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-data-grid-row-size);
       padding-inline: var(--ds-data-grid-cell-padding-inline);
     }
 
@@ -678,7 +727,8 @@ export class DsDataGrid extends LitElement {
       /* statusBarGap: between items; no separator characters */
       gap: var(--ds-data-grid-status-bar-gap);
       padding: var(--ds-data-grid-status-bar-padding);
-      background: var(--color-background-subtle);
+      background: var(--ds-data-grid-status-bar-surface);
+      color: var(--ds-data-grid-status-bar-color);
       border: var(--ds-data-grid-grid-line-width) solid var(--ds-data-grid-grid-line);
       border-block-start: 0;
     }
@@ -686,21 +736,20 @@ export class DsDataGrid extends LitElement {
       --ds-text-font-size: var(--ds-data-grid-status-bar-size);
     }
 
-    /* minTarget (locked) and the overridable resizeStep / columnWidth read as lengths, never as numbers in code. */
+    /*
+     * minTarget (locked) and the overridable resizeStep, measured as lengths from a hidden probe, never hard-coded
+     * as numbers in code, so an override still moves them.
+     */
     .probe {
       position: absolute;
       visibility: hidden;
       pointer-events: none;
-      block-size: var(--size-target-min);
+      block-size: var(--ds-data-grid-min-target);
     }
     .probe-step {
       display: block;
+      block-size: var(--space-0);
       inline-size: var(--ds-data-grid-resize-step);
-    }
-    /* columnWidth: an override replaces the base; the × 2 stays in the rule. */
-    .probe-column {
-      display: block;
-      inline-size: calc(var(--ds-data-grid-column-width) * 2);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -795,7 +844,6 @@ export class DsDataGrid extends LitElement {
   @query('[data-part="grid"]') private accessor gridEl!: HTMLElement | null;
   @query('.probe') private accessor probeEl!: HTMLElement | null;
   @query('.probe-step') private accessor probeStepEl!: HTMLElement | null;
-  @query('.probe-column') private accessor probeColumnEl!: HTMLElement | null;
 
   private sortCache: { data: DataGridRow[]; sort: DataGridSort; rows: DataGridRow[] } | undefined;
   private rowAnchorId: string | undefined;
@@ -815,6 +863,9 @@ export class DsDataGrid extends LitElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    /* An open editor whose grid unmounts drops its draft silently, as if cancelled. */
+    this.editing = undefined;
+    this.selectOpen = false;
     this.resizeObserver?.disconnect();
     this.resizeObserver = undefined;
   }
@@ -830,6 +881,13 @@ export class DsDataGrid extends LitElement {
       const previous = changed.get('data') as DataGridRow[] | undefined;
       if (!previous || this.data.length !== previous.length) {
         this.requestedEnds.clear();
+      }
+      /* An open editor whose row leaves `data` drops its draft silently: no cell-change, as if cancelled. */
+      const editing = this.editing;
+      if (editing && !this.data.some((row) => row.id === editing.rowId)) {
+        this.editing = undefined;
+        this.selectOpen = false;
+        this.message = '';
       }
     }
     if (changed.has('data') || changed.has('columns') || changed.has('selectable')) {
@@ -879,9 +937,9 @@ export class DsDataGrid extends LitElement {
 
     return html`
       <div data-part="container">
-        <div data-part="caption" class=${classMap({ 'visually-hidden': this.hideCaption })}>
+        <span data-part="caption" class=${classMap({ 'visually-hidden': this.hideCaption })}>
           <ds-heading id="caption" level=${this.captionLevel} size="md">${this.caption}</ds-heading>
-        </div>
+        </span>
         <div
           data-part="scrollRegion"
           class=${classMap({ 'x-scrolled': this.scrolledX })}
@@ -891,7 +949,11 @@ export class DsDataGrid extends LitElement {
             data-part="grid"
             role="grid"
             tabindex="0"
-            style=${styleMap({ inlineSize: `max(100%, ${layout.width})` })}
+            style=${styleMap({
+              '--ds-data-grid-tracks': layout.columns,
+              '--ds-data-grid-row-width': layout.width,
+              inlineSize: `max(100%, ${layout.width})`,
+            })}
             aria-labelledby="caption"
             aria-describedby=${ifDefined(
               this.showStatusBar && this.overflowX && !this.scrolledX ? 'scroll-hint' : undefined,
@@ -913,41 +975,28 @@ export class DsDataGrid extends LitElement {
             @pointercancel=${this.handlePointerup}
             @dblclick=${this.handleDblclick}
           >
-            ${this.renderHeader(layout)}
+            ${this.renderHeader()}
             <div role="rowgroup" data-part="body" style=${styleMap(bodyStyle)}>
               ${rows.length === 0 && !this.loading ? this.renderEmpty() : nothing} ${this.renderRangeOverlay(rows)}
               ${repeat(
                 this.windowIndexes(rows.length),
                 (index) => rows[index]!.id,
-                (index) => this.renderRow(rows[index]!, index, layout),
+                (index) => this.renderRow(rows[index]!, index),
               )}
             </div>
           </div>
         </div>
         ${this.renderStatusBar(rows, total)}
-        <span class="probe" aria-hidden="true">
-          <span class="probe-step"></span><span class="probe-column"></span>
-        </span>
+        <span class="probe" aria-hidden="true"><span class="probe-step"></span></span>
       </div>
     `;
   }
 
   /* ---------- rendering ---------- */
 
-  private renderHeader(layout: { columns: string; width: string }): TemplateResult {
-    const sticky = this.stickyHeader || this.height !== 'content';
-    return html`<div
-      role="rowgroup"
-      data-part="header"
-      class=${classMap({ sticky, raised: sticky && this.bodyScrollTop > 0 })}
-    >
-      <div
-        role="row"
-        data-part="headerRow"
-        class="row-layout"
-        aria-rowindex="1"
-        style=${styleMap({ gridTemplateColumns: layout.columns, inlineSize: layout.width })}
-      >
+  private renderHeader(): TemplateResult {
+    return html`<div role="rowgroup" data-part="header" class=${classMap({ raised: this.bodyScrollTop > 0 })}>
+      <div role="row" data-part="headerRow" class="row-layout" aria-rowindex="1">
         ${this.hasSelectColumn ? this.renderSelectAllCell() : nothing}
         ${this.columns.map((column, index) => this.renderColumnHeader(column, index + this.colOffset))}
       </div>
@@ -962,6 +1011,7 @@ export class DsDataGrid extends LitElement {
     return html`<div
       role="columnheader"
       id="h-0"
+      data-part="selectAllCell"
       data-row="-1"
       data-col="0"
       tabindex="-1"
@@ -970,10 +1020,10 @@ export class DsDataGrid extends LitElement {
       style=${styleMap({ insetInlineStart: '0' })}
     >
       <ds-checkbox
-        data-part="selectAllCell"
         tabindex="-1"
         label=${COPY_SELECT_ALL}
         hide-label
+        .overrides=${SELECT_CHECKBOX}
         .checked=${live(allSelected)}
         .indeterminate=${live(someSelected)}
         @change=${(event: CustomEvent<CheckboxChangeDetail>) => {
@@ -995,7 +1045,7 @@ export class DsDataGrid extends LitElement {
      * aria-valuenow is set only once the column has a pixel width — an explicit `width` or one the user has
      * resized — and omitted while it sits at the columnWidth token, whose pixel value is not known at render.
      */
-    const pixelWidth = this.columnWidths[column.key] ?? column.width;
+    const pixelWidth = this.pixelWidthOf(column);
     return html`<div
       role="columnheader"
       id="h-${col}"
@@ -1009,8 +1059,7 @@ export class DsDataGrid extends LitElement {
       style=${styleMap(this.pinStyle(column))}
     >
       ${column.sortable
-        ? html`<ds-button
-            data-part="sortButton"
+        ? html`<span data-part="sortButton"><ds-button
             tabindex="-1"
             variant="ghost"
             size="sm"
@@ -1028,7 +1077,7 @@ export class DsDataGrid extends LitElement {
             ${sorted
               ? html`<ds-icon slot="trailing-icon" name=${sorted === 'ascending' ? 'chevron-up' : 'chevron-down'} inline></ds-icon>`
               : nothing}
-          </ds-button>`
+          </ds-button></span>`
         : column.abbr
           ? // The visible header is aria-hidden beside the spoken `abbr`.
             html`<span data-part="cellContent" aria-hidden="true">${column.header}</span>
@@ -1039,7 +1088,8 @@ export class DsDataGrid extends LitElement {
             class=${classMap({ 'resize-handle': true, dragging: this.draggingColumn === column.key })}
             role="separator"
             aria-orientation="vertical"
-            aria-valuenow=${ifDefined(pixelWidth === undefined ? undefined : this.widthOf(column))}
+            aria-valuenow=${ifDefined(pixelWidth)}
+            aria-valuemin=${this.minWidthOf(column)}
             aria-label=${COPY_RESIZE(column.header)}
             @pointerdown=${(event: PointerEvent) => this.handleResizeDown(event, column)}
             @pointermove=${this.handleResizeMove}
@@ -1058,7 +1108,7 @@ export class DsDataGrid extends LitElement {
     </div>`;
   }
 
-  private renderRow(row: DataGridRow, index: number, layout: { columns: string; width: string }): TemplateResult {
+  private renderRow(row: DataGridRow, index: number): TemplateResult {
     const rowMode = this.selectable === 'row';
     const isSelected = rowMode && this.currentSelected.includes(row.id);
     const virtual = this.height !== 'content';
@@ -1069,8 +1119,6 @@ export class DsDataGrid extends LitElement {
       aria-rowindex=${index + 2}
       aria-selected=${ifDefined(rowMode ? String(isSelected) : undefined)}
       style=${styleMap({
-        gridTemplateColumns: layout.columns,
-        inlineSize: layout.width,
         /* Until a row has been measured, offsets come from the row-size token. */
         transform: virtual
           ? this.rowHeightPx
@@ -1088,6 +1136,7 @@ export class DsDataGrid extends LitElement {
     return html`<div
       role="gridcell"
       id=${this.cellId(row.id, 0)}
+      data-part="selectCell"
       data-row=${index}
       data-col="0"
       tabindex="-1"
@@ -1096,10 +1145,10 @@ export class DsDataGrid extends LitElement {
       style=${styleMap({ insetInlineStart: '0' })}
     >
       <ds-checkbox
-        data-part="selectCell"
         tabindex="-1"
         label=${COPY_SELECT_ROW(this.rowName(row))}
         hide-label
+        .overrides=${SELECT_CHECKBOX}
         .checked=${live(isSelected)}
         @change=${(event: CustomEvent<CheckboxChangeDetail>) => {
           event.stopPropagation();
@@ -1254,14 +1303,14 @@ export class DsDataGrid extends LitElement {
     if (bottom < top) {
       return nothing;
     }
-    let left = 0;
-    let width = 0;
+    const before: DataGridColumn[] = [];
+    const spanned: DataGridColumn[] = [];
     this.columns.forEach((column, i) => {
       const col = i + this.colOffset;
       if (col < rect.colStart) {
-        left += this.widthOf(column);
+        before.push(column);
       } else if (col <= rect.colEnd) {
-        width += this.widthOf(column);
+        spanned.push(column);
       }
     });
     return html`<div
@@ -1269,8 +1318,8 @@ export class DsDataGrid extends LitElement {
       aria-hidden="true"
       style=${styleMap({
         insetBlockStart: `${top * rowH}px`,
-        insetInlineStart: `${left}px`,
-        inlineSize: `${width}px`,
+        insetInlineStart: this.sumOf(before),
+        inlineSize: this.sumOf(spanned),
         blockSize: `${(bottom - top + 1) * rowH}px`,
       })}
     ></div>`;
@@ -1354,32 +1403,58 @@ export class DsDataGrid extends LitElement {
     return col < this.colOffset ? undefined : this.columns[col - this.colOffset];
   }
 
+  /**
+   * The column's width in pixels once it has one — an explicit `width` or one the user has resized — floored at
+   * its `minWidth`; undefined while it sits at the columnWidth token, whose pixel value is not known at render.
+   */
+  private pixelWidthOf(column: DataGridColumn): number | undefined {
+    const width = this.columnWidths[column.key] ?? column.width;
+    return width === undefined ? undefined : Math.max(width, this.minWidthOf(column));
+  }
+
+  /** The column's rendered width in pixels: its pixel width, else its header cell measured. */
   private widthOf(column: DataGridColumn): number {
-    const width = this.columnWidths[column.key] ?? column.width ?? this.defaultColumnWidth;
-    return Math.max(width, this.minWidthOf(column));
+    const pixel = this.pixelWidthOf(column);
+    if (pixel !== undefined) {
+      return pixel;
+    }
+    const col = this.columns.indexOf(column) + this.colOffset;
+    const header = this.renderRoot.querySelector<HTMLElement>(`#h-${col}`);
+    return Math.max(header?.offsetWidth ?? 0, this.minWidthOf(column));
   }
 
-  /** The `columnWidth` binding as a length, so an override of its hook changes it. */
-  private get defaultColumnWidth(): number {
-    return this.probeColumnEl?.offsetWidth || DEFAULT_COLUMN_WIDTH;
-  }
-
-  /** The floor for both resize paths: never below `size.target.min`, which is also the default. */
+  /** The floor for both resize paths: never below minTarget, which is also the default. */
   private minWidthOf(column: DataGridColumn): number {
     return Math.max(column.minWidth ?? 0, this.probeEl?.offsetHeight ?? 0);
   }
 
-  private rowLayout(): { columns: string; width: string } {
-    const widths = this.columns.map((column) => this.widthOf(column));
-    const sum = widths.reduce((total, width) => total + width, 0);
-    const tracks = widths.map((width) => `${width}px`);
-    if (this.hasSelectColumn) {
-      return {
-        columns: ['var(--ds-data-grid-select-column-size)', ...tracks].join(' '),
-        width: `calc(var(--ds-data-grid-select-column-size) + ${sum}px)`,
-      };
+  /**
+   * The column's track as CSS: its pixel width, else the columnWidth binding (doubled in the internal
+   * `--ds-data-grid-column-size`), never below minTarget or its own `minWidth`.
+   */
+  private trackOf(column: DataGridColumn): string {
+    const width = this.columnWidths[column.key] ?? column.width;
+    const base = width === undefined ? 'var(--ds-data-grid-column-size)' : `${width}px`;
+    const floor = column.minWidth === undefined ? '' : `, ${column.minWidth}px`;
+    return `max(${base}, var(--ds-data-grid-min-target)${floor})`;
+  }
+
+  /** The summed width of `columns` as one CSS length, with `lead` (the selection column) first. */
+  private sumOf(columns: DataGridColumn[], lead?: string): string {
+    const parts = columns.map((column) => this.trackOf(column));
+    if (lead) {
+      parts.unshift(lead);
     }
-    return { columns: tracks.join(' '), width: `${sum}px` };
+    return parts.length === 0 ? 'var(--space-0)' : `calc(${parts.join(' + ')})`;
+  }
+
+  private rowLayout(): { columns: string; width: string } {
+    const lead = this.hasSelectColumn ? 'var(--ds-data-grid-select-column-size)' : undefined;
+    const tracks = this.columns.map((column) => this.trackOf(column));
+    return {
+      columns: (lead ? [lead, ...tracks] : tracks).join(' '),
+      width: this.sumOf(this.columns, lead),
+    };
   }
 
   private cellClasses(column: DataGridColumn): Record<string, boolean> {
@@ -1396,28 +1471,13 @@ export class DsDataGrid extends LitElement {
   private pinStyle(column: DataGridColumn): Record<string, string> {
     const index = this.columns.indexOf(column);
     if (column.pinned === 'start') {
-      let offset = 0;
-      for (let i = 0; i < index; i += 1) {
-        const other = this.columns[i]!;
-        if (other.pinned === 'start') {
-          offset += this.widthOf(other);
-        }
-      }
-      return {
-        insetInlineStart: this.hasSelectColumn
-          ? `calc(var(--ds-data-grid-select-column-size) + ${offset}px)`
-          : `${offset}px`,
-      };
+      const before = this.columns.slice(0, index).filter((other) => other.pinned === 'start');
+      const lead = this.hasSelectColumn ? 'var(--ds-data-grid-select-column-size)' : undefined;
+      return { insetInlineStart: this.sumOf(before, lead) };
     }
     if (column.pinned === 'end') {
-      let offset = 0;
-      for (let i = index + 1; i < this.columns.length; i += 1) {
-        const other = this.columns[i]!;
-        if (other.pinned === 'end') {
-          offset += this.widthOf(other);
-        }
-      }
-      return { insetInlineEnd: `${offset}px` };
+      const after = this.columns.slice(index + 1).filter((other) => other.pinned === 'end');
+      return { insetInlineEnd: this.sumOf(after) };
     }
     return {};
   }
@@ -1451,14 +1511,17 @@ export class DsDataGrid extends LitElement {
     return id ? this.renderRoot.querySelector<HTMLElement>(`#${id}`) : null;
   }
 
-  /** Visible rows per page, excluding the sticky header. */
+  /**
+   * rowsPerPage: floor(the scroll region's height ÷ the row height) − 1, the sticky header's row left out, so a
+   * paged move or request keeps one row of context.
+   */
   private pageRows(): number {
     const rowH = this.rowHeightPx;
     if (!rowH) {
       return 1;
     }
-    const space = this.height === 'content' ? window.innerHeight : this.viewportHeight - this.headerHeight;
-    return Math.max(1, Math.floor(space / rowH));
+    const space = this.height === 'content' ? window.innerHeight : this.viewportHeight;
+    return Math.max(1, Math.floor(space / rowH) - 1);
   }
 
   /** Rendered row indexes: the visible window plus one page of overscan each way, and the active row. */

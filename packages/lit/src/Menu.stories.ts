@@ -92,11 +92,11 @@ export const TriggerIconEllipsis: Story = { args: { triggerIcon: 'ellipsis' } };
 export const TriggerIconChevronDown: Story = { args: { triggerIcon: 'chevron-down' } };
 export const TriggerIconNone: Story = { args: { triggerIcon: 'none' } };
 
-/* placement */
-export const PlacementBottomStart: Story = { args: { placement: 'bottom-start' } };
-export const PlacementBottomEnd: Story = { args: { placement: 'bottom-end' } };
-export const PlacementTopStart: Story = { args: { placement: 'top-start' } };
-export const PlacementTopEnd: Story = { args: { placement: 'top-end' } };
+/* placement: rendered open, through the controlled consumer, since a closed story shows no placement */
+export const PlacementBottomStart: Story = { args: { placement: 'bottom-start', open: true } };
+export const PlacementBottomEnd: Story = { args: { placement: 'bottom-end', open: true } };
+export const PlacementTopStart: Story = { args: { placement: 'top-start', open: true } };
+export const PlacementTopEnd: Story = { args: { placement: 'top-end', open: true } };
 
 /* notable states */
 export const IconOnly: Story = { args: { iconOnly: true, triggerIcon: 'ellipsis' } };

@@ -11,6 +11,8 @@ import { renderToString } from 'react-dom/server';
 import { ActionSheet } from './ActionSheet';
 import { Button } from './Button';
 import { SidePanel } from './SidePanel';
+import { ToastRegion } from './Toast';
+import { Tooltip } from './Tooltip';
 
 let root: Root | null = null;
 let host: HTMLElement | null = null;
@@ -71,5 +73,24 @@ describe('hydration', () => {
       expect(errors).toEqual([]);
       expect(document.querySelector('[data-ds="ActionSheet"]') !== null).toBe(open);
     });
+
+    it(`Tooltip (open: ${open}) hydrates without a mismatch and portals afterwards`, async () => {
+      const errors = await hydrate(
+        <Tooltip content="Includes archived items" open={open}>
+          <Button label="Items" variant="secondary" />
+        </Tooltip>,
+      );
+      expect(errors).toEqual([]);
+      expect(document.querySelector('[data-ds="Tooltip"]')).not.toBeNull();
+      expect(document.querySelector('[data-part="popup"]') !== null).toBe(open);
+    });
   }
+
+  it('ToastRegion hydrates without a mismatch and portals the live region afterwards', async () => {
+    const errors = await hydrate(<ToastRegion />);
+    expect(errors).toEqual([]);
+    const region = document.querySelector('[data-ds="ToastRegion"]');
+    expect(region).not.toBeNull();
+    expect(region).toHaveAttribute('aria-live', 'polite');
+  });
 });

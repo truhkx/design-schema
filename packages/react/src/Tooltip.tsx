@@ -7,6 +7,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type Attributes,
   type CSSProperties,
   type FocusEvent as ReactFocusEvent,
@@ -88,6 +89,16 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
 
 /** Shared "warm until" timestamp: a toolbar's tooltips show instantly while one has just hidden. */
 let warmUntil = 0;
+
+const subscribeNothing = (): (() => void) => () => {};
+/** False on the server and through hydration, true on a client-only mount: gates the portal. */
+function useHydrated(): boolean {
+  return useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
+}
 
 function matches(query: string): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' ? window.matchMedia(query).matches : false;
@@ -198,20 +209,24 @@ export interface TooltipProps {
    * `true`: the tooltip is supplementary and becomes the child's accessible description
    * (aria-describedby). `false`: the tooltip IS the child's name (an icon-only button whose label
    * equals the tooltip) and is linked as aria-labelledby instead — set this when the child has no
-   * visible text and its `label` equals `content`, to avoid announcing it twice.
+   * visible text and its `label` equals `content`, to avoid announcing it twice. When they differ
+   * anyway, the tooltip text wins and the child's visible label is no longer its accessible name.
    */
   describes?: boolean | undefined;
   /**
    * Controlled visibility, for stories and tests only (the Keyboard story renders the tooltip open
    * with it). Product code never sets it: a tooltip is hover and focus driven. There is no change
    * event: Escape still hides a tooltip rendered with `open: true`, and it stays hidden until the
-   * `open` prop next changes.
+   * `open` prop next changes. While `open` is set, only Escape and changes to `open` affect
+   * visibility; hover, focus, blur and long-press do not.
    */
   open?: boolean | undefined;
   /**
    * Hover delay before showing: `default` uses `motion.duration.base` × 3 (roughly 600ms, so casual
    * mouse movement does not flash tooltips); `none` for toolbars where a sibling tooltip is already open.
-   * After any tooltip hides, siblings show with no delay for one `motion.duration.base` (the warm window).
+   * After any tooltip hides, siblings show with no delay for one `motion.duration.base` (the warm window),
+   * which skips the delay for `default` tooltips too; `none` is always instant. The pointer may cross to
+   * the tooltip within one `motion.duration.fast` before it hides.
    */
   delay?: TooltipDelay | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
@@ -245,16 +260,18 @@ export function Tooltip({
   container,
 }: TooltipProps): ReactElement {
   const tooltipId = useId();
+  const hydrated = useHydrated();
 
   const [internalOpen, setInternalOpen] = useState(false);
   // Escape hides the tooltip until the trigger loses hover and focus, or the `open` prop changes.
   const [dismissed, setDismissed] = useState(false);
   const isOpen = !dismissed && (open ?? internalOpen);
 
-  // Mounted while open and while the exit fade runs; `entered` drives the fade.
+  // Mounted while open and while the exit fade runs; `visible` follows the DOM and drives the fade.
   const [present, setPresent] = useState(isOpen);
   if (isOpen && !present) setPresent(true);
-  const [entered, setEntered] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const shown = visible && isOpen;
   const [position, setPosition] = useState<CSSProperties>();
   const [side, setSide] = useState<TooltipPlacement>(placement);
 
@@ -317,7 +334,7 @@ export function Tooltip({
 
   // Position from the trigger rect before paint, and follow scroll and resize.
   useLayoutEffect(() => {
-    if (!present) return undefined;
+    if (!present || !hydrated) return undefined;
     const trigger = triggerRef.current;
     const popup = popupRef.current;
     if (!trigger || !popup) return undefined;
@@ -335,24 +352,25 @@ export function Tooltip({
       window.removeEventListener('scroll', reposition, true);
       window.removeEventListener('resize', reposition);
     };
-  }, [present, placement, content]);
+  }, [present, hydrated, placement, content]);
 
-  // Enter on the next frame so the fade runs; on hide, fade out for `exit`, then unmount and warm siblings.
-  useEffect(() => {
-    if (!present) return undefined;
+  // Enter on the frame after the bubble is in the DOM so the fade runs; on hide, fade out for `exit`,
+  // then unmount and warm siblings.
+  useLayoutEffect(() => {
+    if (!present || !hydrated) return undefined;
     const popup = popupRef.current;
     if (isOpen) {
-      const frame = requestAnimationFrame(() => setEntered(true));
+      const frame = requestAnimationFrame(() => setVisible(true));
       return () => cancelAnimationFrame(frame);
     }
-    setEntered(false);
+    setVisible(false);
     const host = popup ?? portalTarget();
     warmUntil = Date.now() + resolveMs(host, WARM_WINDOW);
     const exit = matches('(prefers-reduced-motion: reduce)') ? 0 : resolveMs(host, 'var(--ds-tooltip-exit)');
     const timer = setTimeout(() => setPresent(false), exit);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, present]);
+  }, [isOpen, present, hydrated]);
 
   // Escape hides a visible tooltip without moving focus. It is consumed in the capture phase with both
   // stopPropagation and preventDefault, because a native <dialog> closes on an Escape that is not
@@ -377,10 +395,6 @@ export function Tooltip({
     if (!trigger) console.warn('Tooltip: the child must forward `ref` to its focusable element.');
     else if (trigger.tabIndex < 0) console.warn('Tooltip: the child must be focusable, or keyboard users can never see the tooltip.');
   }, [content]);
-
-  if (isDev && Children.count(children) !== 1) {
-    console.warn('Tooltip: `children` must be exactly one focusable element.');
-  }
 
   const child = Children.only(children) as ReactElement<TriggerProps>;
   const childRef = child.props.ref;
@@ -429,7 +443,7 @@ export function Tooltip({
     textOverrides[binding] = overrides?.[binding] ?? TEXT_DEFAULT[binding];
   }
 
-  const classes = ['ds-tooltip', entered ? 'ds-tooltip--entered' : null].filter(Boolean).join(' ');
+  const classes = ['ds-tooltip', shown ? 'ds-tooltip--visible' : null].filter(Boolean).join(' ');
 
   return (
     <>
@@ -437,7 +451,7 @@ export function Tooltip({
       <span id={tooltipId} role="tooltip" data-ds="Tooltip" className="ds-tooltip__description">
         {content}
       </span>
-      {present
+      {present && hydrated
         ? createPortal(
             <div
               ref={popupRef}

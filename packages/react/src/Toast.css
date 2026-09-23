@@ -1,10 +1,13 @@
 /* Toast — styled only through Design Schema token custom properties. */
 
 .ds-toast {
-  /* locked: surface, text, minTarget */
+  /* locked: surface, text, minTarget, actionColor, dismissColor, focusRingInverse */
   --ds-toast-surface: var(--color-inverse-surface);
   --ds-toast-text: var(--color-inverse-foreground);
   --ds-toast-min-target: var(--size-target-min);
+  --ds-toast-action-color: var(--color-inverse-link);
+  --ds-toast-dismiss-color: var(--color-inverse-link);
+  --ds-toast-focus-ring-inverse: var(--color-inverse-focus);
   --ds-toast-radius: var(--radius-md);
   --ds-toast-shadow: var(--shadow-overlay);
   --ds-toast-padding-block: var(--space-sm);
@@ -60,6 +63,22 @@
 .ds-toast__dismiss {
   display: inline-flex;
   flex: none;
+}
+
+/* actionColor / dismissColor / focusRingInverse: the ghost + inverse Buttons read color.inverse.link
+   and color.inverse.focus, re-scoped on the part wrappers the toast owns (a child of the element that
+   declares the hook, so no custom-property cycle) — each hook reaches its Button without restyling it. */
+.ds-toast__action,
+.ds-toast__dismiss {
+  --color-inverse-focus: var(--ds-toast-focus-ring-inverse);
+}
+
+.ds-toast__action {
+  --color-inverse-link: var(--ds-toast-action-color);
+}
+
+.ds-toast__dismiss {
+  --color-inverse-link: var(--ds-toast-dismiss-color);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,5 +1,6 @@
 import { useEffect, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Button } from './Button';
 import { Toast, ToastRegion, dismiss, toast } from './Toast';
 
 const meta: Meta<typeof Toast> = {
@@ -56,19 +57,32 @@ export const NotDismissible: Story = { args: { dismissible: false } };
  * dismisses the toast holding focus and only that one, which a `getByRole('status')` locator can
  * only observe when no other status toast is left to take its place.
  */
+function showKeyboardToasts(): void {
+  void toast({ toastId: 'keyboard-undo', message: '3 files moved to Archive', actionLabel: 'Undo', duration: 'persistent' });
+  void toast({
+    toastId: 'keyboard-retry',
+    message: 'Upload failed',
+    tone: 'danger',
+    actionLabel: 'Retry',
+    duration: 'persistent',
+  });
+}
+
+/*
+ * The region is mounted here (so `toast()` never auto-mounts from the effect) and the toasts are
+ * shown present; the trigger shows them again (same toastIds, so they replace rather than stack).
+ */
 function ToastKeyboardHarness(): ReactElement {
   useEffect(() => {
-    void toast({ toastId: 'keyboard-undo', message: '3 files moved to Archive', actionLabel: 'Undo', duration: 'persistent' });
-    void toast({
-      toastId: 'keyboard-retry',
-      message: 'Upload failed',
-      tone: 'danger',
-      actionLabel: 'Retry',
-      duration: 'persistent',
-    });
+    showKeyboardToasts();
     return () => dismiss();
   }, []);
-  return <ToastRegion />;
+  return (
+    <>
+      <Button label="Show notifications" variant="secondary" onClick={showKeyboardToasts} />
+      <ToastRegion />
+    </>
+  );
 }
 
 export const Keyboard: Story = {

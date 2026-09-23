@@ -93,24 +93,26 @@ function isExcludedSubtree(element: Element): boolean {
   return element.hasAttribute('inert') || element.getAttribute('aria-hidden') === 'true';
 }
 
-/** Walks DOM order including open shadow roots and assigned slot nodes. Visibility is not tested. */
+/**
+ * Walks the flat tree in DOM order: a shadow host contributes its open shadow root (whose slots
+ * bring in the host's assigned light children, so they are visited once, in rendered order), and
+ * a slot with nothing assigned contributes its fallback content. Visibility is not tested.
+ */
 function collectFocusable(root: Element | ShadowRoot, results: HTMLElement[] = []): HTMLElement[] {
-  for (const child of Array.from(root.children)) {
-    if (isExcludedSubtree(child)) continue;
-    if (child instanceof HTMLSlotElement) {
-      for (const assigned of child.assignedElements({ flatten: true })) {
-        if (isExcludedSubtree(assigned)) continue;
-        if (isFocusable(assigned)) results.push(assigned);
-        if (assigned.shadowRoot) collectFocusable(assigned.shadowRoot, results);
-        collectFocusable(assigned, results);
-      }
-      continue;
-    }
-    if (isFocusable(child)) results.push(child);
-    if (child.shadowRoot) collectFocusable(child.shadowRoot, results);
-    collectFocusable(child, results);
-  }
+  for (const child of Array.from(root.children)) visitFocusable(child, results);
   return results;
+}
+
+function visitFocusable(element: Element, results: HTMLElement[]): void {
+  if (isExcludedSubtree(element)) return;
+  if (element instanceof HTMLSlotElement) {
+    const assigned = element.assignedElements({ flatten: true });
+    if (assigned.length === 0) collectFocusable(element, results);
+    else for (const node of assigned) visitFocusable(node, results);
+    return;
+  }
+  if (isFocusable(element)) results.push(element);
+  collectFocusable(element.shadowRoot ?? element, results);
 }
 
 /** The focused element, descending into open shadow roots. */

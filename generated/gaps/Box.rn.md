@@ -100,3 +100,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Box: the doc asks for one story per enum value but doesn't say whether that story's args are exactly the enum value. At the defaults (surface none, inset none) a Box draws nothing, so the existing stories add `surface: 'subtle'` / `inset: 'md'` (and the other padding axis `md` for the insetBlock/insetInline stories) to make the value visible. The doc should confirm or forbid these companion args.
 - Box: the WithOverrides story's content isn't specified. The existing one overrides paddingBlock (layout.inset.xl), radius (radius.lg) and border (color.border.strong) on a bordered `radius: sm` box. The doc could name the override example it wants.
 - Box: overrides are resolved with `resolveToken` and cast to the binding's type (number for padding/width/radius, string for border) as the rn note says. Nothing stops a caller passing a colour token to `paddingBlock`; the TokenRef type isn't narrowed per binding.
+
+## 2026-09-23 18:53 — round 1
+
+- Box: the spec allows meta args of schema defaults but the existing meta also sets `children: 'Box content'`, which is not a default; the Default story and tests override it, so I left it, but the doc could say whether meta may carry placeholder children.
+- Box: the rn behavior scenarios are all `renders: true`, so nothing checks the resolved styles (padding axis precedence, transparent for none, border only when `border`, override ignored at radius none); the doc could add scenarios with expectations that a native test can assert.

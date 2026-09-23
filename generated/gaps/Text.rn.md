@@ -85,3 +85,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Text: all 18 behavior scenarios are `renders: true` only, so nothing tests truncate, the TextStyleContext value, TextForegroundContext precedence or override resolution on RN; the one truncation scenario is web/lit-only because RN has no title.
 - Text: the spec doesn't say whether TextForegroundContext should also feed the `color` in TextStyleContext; I used the resolved color (surface color when tone is default), so nested Icon/Link match what is actually painted.
 - Text: toTextAlign is exported from the package index (existing file) though the spec doesn't name it; kept as is, since other components may import it.
+
+## 2026-09-23 18:50 — round 1
+
+- Text: the `inline-error-wording` example is limited to web and Lit, but the spec also says `ToneDanger` uses its children verbatim on every platform. I kept the ToneDanger story on that string and added no separate rn example story.
+- Text: the spec asks for no `Keyboard` story and none for `title`, which fits Text having no keyboard block. `truncate` on native has no sighted way to reach the clipped text, and the doc already says so.
+- Text: the doc describes `TextForegroundContext` as read only while `tone` is `default`. It does not say whether an `onAction` or `danger` tone inside an inverse surface should win. I kept the existing behaviour, where the non-default tone wins.

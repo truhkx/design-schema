@@ -82,3 +82,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Heading: the generic rule says `accessible-name` → `accessibilityLabel` and to mirror accessibility props as `aria-*`, but Heading's children are its accessible name and it sets no label or state. So there is nothing to mirror, and `accessibilityRole` itself has no `aria-*` counterpart listed. I added none.
 - Heading: the doc says the Default story has 'no other args', but the rules also ask for one story per enum value built from the Default args. `align` therefore stays unset in the story args and falls back to the component default `start`, so the `AlignStart` story repeats Default.
 - Heading: the overrides for `fontWeight` and `lineHeight` take any `TokenRef`, and the component casts the resolved value to a number. A mistyped ref such as `fontWeight: 'color.foreground'` is not caught at compile time; the doc doesn't say whether `TokenRef` should be narrowed per binding.
+
+## 2026-09-23 18:51 — round 1
+
+- Heading: the spec covers everything I needed, so I made no changes. One small ambiguity: 'once per element for its lifetime' could be read as per mount or per instance, and I read it as per mounted instance, using a ref guard inside an effect.
+- Heading: `overrides.fontSize`, `overrides.lineHeight` and `overrides.fontWeight` are resolved with `resolveToken` and cast to `number`. The spec doesn't say what to do if an override names a token of another type (for example a colour), so I did not guard against it.

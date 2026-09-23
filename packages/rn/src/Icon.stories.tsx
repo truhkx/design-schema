@@ -85,7 +85,7 @@ export const DecorativeBesideALabel: Story = {
 export const InlineInRunningText: Story = {
   args: { name: 'external', inline: true },
   render: (args) => (
-    <Text size="lg">
+    <Text>
       Read the release notes <Icon {...args} />
     </Text>
   ),

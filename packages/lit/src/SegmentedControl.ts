@@ -3,7 +3,7 @@ import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Icon.js';
-import type { IconName } from './Icon.js';
+import type { IconName, IconOverridableBinding } from './Icon.js';
 import './Tooltip.js';
 
 export type SegmentedControlSize = 'sm' | 'md';
@@ -58,6 +58,10 @@ const HOOKS: Record<SegmentedControlOverridableBinding, string> = {
   transition: '--ds-segmented-control-transition',
   disabledOpacity: '--ds-segmented-control-disabled-opacity',
 };
+
+/** The icon takes its segment's colour (segmentColor / segmentSelectedColor) through its own `overrides.color`. */
+const ICON_OVERRIDES: Partial<Record<IconOverridableBinding, TokenRef>> = { color: 'color.foreground.muted' };
+const SELECTED_ICON_OVERRIDES: Partial<Record<IconOverridableBinding, TokenRef>> = { color: 'color.foreground.strong' };
 
 /** The selected segment's box inside the group, in physical pixels, as the pill is drawn. */
 interface IndicatorRect {
@@ -115,6 +119,14 @@ export class DsSegmentedControl extends LitElement {
     :host {
       display: inline-flex;
       max-inline-size: 100%;
+      /* Locked: not in the overrides type, but still themeable from page CSS. */
+      --ds-segmented-control-group-background: var(--color-background-strong);
+      --ds-segmented-control-segment-color: var(--color-foreground-muted);
+      --ds-segmented-control-segment-selected-color: var(--color-foreground-strong);
+      --ds-segmented-control-segment-selected-background: var(--color-background);
+      --ds-segmented-control-min-target: var(--size-target-min);
+      --ds-segmented-control-focus-ring: var(--color-border-focus);
+      --ds-segmented-control-focus-ring-width: var(--border-width-focus);
       --ds-segmented-control-group-padding: var(--space-1);
       --ds-segmented-control-group-radius: var(--radius-md);
       --ds-segmented-control-segment-shadow: var(--shadow-raised);
@@ -159,7 +171,7 @@ export class DsSegmentedControl extends LitElement {
       gap: var(--ds-segmented-control-segment-spacing);
       padding: var(--ds-segmented-control-group-padding);
       border-radius: var(--ds-segmented-control-group-radius);
-      background: var(--color-background-strong);
+      background: var(--ds-segmented-control-group-background);
     }
 
     [data-part='segment'] {
@@ -171,8 +183,8 @@ export class DsSegmentedControl extends LitElement {
       justify-content: center;
       gap: var(--ds-segmented-control-segment-gap);
       /* minTarget: size.target.min, locked */
-      min-inline-size: var(--size-target-min);
-      min-block-size: var(--size-target-min);
+      min-inline-size: var(--ds-segmented-control-min-target);
+      min-block-size: var(--ds-segmented-control-min-target);
       margin: 0;
       padding-inline: var(--ds-segmented-control-segment-padding-inline);
       padding-block: var(--ds-segmented-control-segment-padding-block);
@@ -184,7 +196,7 @@ export class DsSegmentedControl extends LitElement {
       font-weight: var(--ds-segmented-control-font-weight);
       line-height: var(--ds-segmented-control-line-height);
       /* segmentColor: color.foreground.muted, locked */
-      color: var(--color-foreground-muted);
+      color: var(--ds-segmented-control-segment-color);
       white-space: nowrap;
       cursor: pointer;
       appearance: none;
@@ -204,14 +216,14 @@ export class DsSegmentedControl extends LitElement {
     /* segmentSelectedColor: color.foreground.strong, locked. Selection is the text pair plus the
        checked state plus the pill — never color alone (1.4.1). */
     [data-part='segment'][aria-checked='true'] {
-      color: var(--color-foreground-strong);
+      color: var(--ds-segmented-control-segment-selected-color);
       font-weight: var(--ds-segmented-control-selected-weight);
     }
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked. Never removed. */
     [data-part='segment']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-segmented-control-focus-ring-width) solid var(--ds-segmented-control-focus-ring);
+      outline-offset: calc(-1 * var(--ds-segmented-control-focus-ring-width));
     }
 
     [data-part='segment'][aria-disabled='true'] {
@@ -235,7 +247,7 @@ export class DsSegmentedControl extends LitElement {
       position: absolute;
       z-index: 0;
       box-sizing: border-box;
-      background: var(--color-background);
+      background: var(--ds-segmented-control-segment-selected-background);
       border-radius: var(--ds-segmented-control-segment-radius);
       box-shadow: var(--ds-segmented-control-segment-shadow);
       pointer-events: none;
@@ -375,7 +387,13 @@ export class DsSegmentedControl extends LitElement {
         @click=${() => this.handleSegmentClick(option)}
       >
         ${option.icon
-          ? html`<ds-icon data-part="segmentIcon" part="segmentIcon" name=${option.icon} size=${this.size}></ds-icon>`
+          ? html`<ds-icon
+              data-part="segmentIcon"
+              part="segmentIcon"
+              name=${option.icon}
+              size=${this.size}
+              .overrides=${selected ? SELECTED_ICON_OVERRIDES : ICON_OVERRIDES}
+            ></ds-icon>`
           : nothing}
         ${iconOnly ? nothing : html`<span data-part="segmentLabel" part="segmentLabel">${option.label}</span>`}
       </button>
@@ -421,28 +439,40 @@ export class DsSegmentedControl extends LitElement {
         return;
     }
 
-    // Movement starts at the focused segment, and at the tab stop only when no segment has focus.
-    const origin = enabled.findIndex((option) => option.value === (this.focusedValue() ?? this.tabStopValue()));
     // Inside a toolbar the arrows do not wrap, and Home/End belong to the toolbar: leaving the key
     // unhandled lets the toolbar move focus to the neighbouring control.
     const inToolbar = this.insideToolbar();
 
-    let position: number;
+    let target: SegmentedControlOption | undefined;
     if (step === 'first' || step === 'last') {
       if (inToolbar) return;
-      position = step === 'first' ? 0 : enabled.length - 1;
-    } else if (origin < 0) {
-      // Focus is on no enabled segment: an outward arrow moves inside the control instead.
-      position = step === 1 ? 0 : enabled.length - 1;
+      target = step === 'first' ? enabled[0] : enabled[enabled.length - 1];
     } else {
-      position = origin + step;
-      if (position < 0 || position >= enabled.length) {
-        if (inToolbar) return;
-        position = (position + enabled.length) % enabled.length;
+      // Movement starts at the focused segment (a disabled one included), and at the tab stop only
+      // when no segment has focus.
+      const focused = this.focusedValue();
+      const count = this.options.length;
+      const origin = this.options.findIndex((option) => option.value === (focused ?? this.tabStopValue()));
+      if (origin < 0) {
+        target = step === 1 ? enabled[0] : enabled[enabled.length - 1];
+      } else {
+        let wrapped = false;
+        for (let offset = 1; offset <= count; offset++) {
+          const raw = origin + step * offset;
+          if (raw < 0 || raw >= count) wrapped = true;
+          const candidate = this.options[(raw + count * 2) % count];
+          if (candidate !== undefined && candidate.disabled !== true) {
+            target = candidate;
+            break;
+          }
+        }
+        // Only a move that would wrap out of a genuinely focused, enabled end segment is left to
+        // the toolbar; focus on no enabled segment still moves inside the control.
+        const focusedEnabled = enabled.some((option) => option.value === focused);
+        if (wrapped && inToolbar && focusedEnabled) return;
       }
     }
 
-    const target = enabled[position];
     if (target === undefined) {
       return;
     }
@@ -451,9 +481,15 @@ export class DsSegmentedControl extends LitElement {
     this.select(target.value);
   };
 
-  /** Whether a `role="toolbar"` ancestor contains this element, walking host ancestors across shadow roots. */
+  /**
+   * Whether a `role="toolbar"` ancestor contains the group, walking `parentElement` and crossing
+   * shadow roots through each root's host. Starts at the group's parent, so the group never matches
+   * itself.
+   */
   private insideToolbar(): boolean {
-    let node: Element | null = this.parentElement ?? this.hostOf(this);
+    const group = this.groupEl;
+    if (!group) return false;
+    let node: Element | null = group.parentElement ?? this.hostOf(group);
     while (node) {
       if (node.getAttribute('role') === 'toolbar') return true;
       node = node.parentElement ?? this.hostOf(node);

@@ -8,7 +8,6 @@ import './Button.js';
 import './Icon.js';
 import './Listbox.js';
 import './Text.js';
-import type { IconOverridableBinding } from './Icon.js';
 import type {
   DsListbox,
   ListboxActiveChangeDetail,
@@ -43,7 +42,8 @@ export interface ComboboxOpenChangeDetail {
  * Overridable style hooks; see the `overrides` property. `fieldBackground`,
  * `fieldBorder`, `fieldBorderFocus`, `inputColor`, `placeholderColor`,
  * `chipBackground`, `chipColor`, `iconColor`, `descriptionText`, `errorText`,
- * `minTarget` and `focusRingWidth` are locked and excluded.
+ * `minTarget`, `inputMinTarget` and `focusRingWidth` are locked and excluded
+ * (their `--ds-combobox-*` hooks stay themeable from page CSS).
  */
 export type ComboboxOverridableBinding =
   | 'fieldBorderInvalid'
@@ -73,7 +73,11 @@ export type ComboboxOverridableBinding =
   | 'disabledOpacity'
   | 'enter';
 
-const HOOKS: Record<ComboboxOverridableBinding, string> = {
+/**
+ * The combobox's own hooks. `labelWeight` and `helperSize` have none: they are forwarded to the
+ * composed Text's `overrides` (`fontWeight` / `fontSize`), which carries them.
+ */
+const HOOKS: Record<Exclude<ComboboxOverridableBinding, 'labelWeight' | 'helperSize'>, string> = {
   fieldBorderInvalid: '--ds-combobox-field-border-invalid',
   fieldBorderWidth: '--ds-combobox-field-border-width',
   fieldRadius: '--ds-combobox-field-radius',
@@ -85,8 +89,6 @@ const HOOKS: Record<ComboboxOverridableBinding, string> = {
   chipPaddingBlock: '--ds-combobox-chip-padding-block',
   chipGap: '--ds-combobox-chip-gap',
   partGap: '--ds-combobox-part-gap',
-  labelWeight: '--ds-combobox-label-weight',
-  helperSize: '--ds-combobox-helper-size',
   popupSurface: '--ds-combobox-popup-surface',
   popupBorder: '--ds-combobox-popup-border',
   popupBorderWidth: '--ds-combobox-popup-border-width',
@@ -130,11 +132,6 @@ const COPY_REQUIRED_INDICATOR = ' (required)';
 
 /** constant `statusDebounce`: `motion.duration.base` × 2, read from the token at run time. */
 const STATUS_DEBOUNCE = { token: '--motion-duration-base', multiply: 2 } as const;
-
-/** iconColor (locked): color.foreground.muted, forwarded to each composed Icon's `color` binding. */
-const ICON_OVERRIDES: Partial<Record<IconOverridableBinding, TokenRef | undefined>> = {
-  color: 'color.foreground.muted',
-};
 
 /**
  * Value of the synthetic `copy.addCustom` row given to the Listbox. Namespaced so it cannot be
@@ -261,6 +258,20 @@ export class DsCombobox extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
+      /* Locked bindings: not in overrides, but the hook stays so page CSS can re-theme them. */
+      --ds-combobox-field-background: var(--color-background);
+      --ds-combobox-field-border: var(--color-border-strong);
+      --ds-combobox-field-border-focus: var(--color-border-focus);
+      --ds-combobox-input-color: var(--color-foreground);
+      --ds-combobox-placeholder-color: var(--color-foreground-muted);
+      --ds-combobox-chip-background: var(--color-background-strong);
+      --ds-combobox-chip-color: var(--color-foreground);
+      --ds-combobox-description-text: var(--color-foreground-muted);
+      --ds-combobox-error-text: var(--color-foreground-danger);
+      --ds-combobox-min-target: var(--size-target-comfortable);
+      --ds-combobox-input-min-target: var(--size-target-min);
+      --ds-combobox-focus-ring-width: var(--border-width-focus);
+      --ds-combobox-icon-color: var(--color-foreground-muted);
       --ds-combobox-field-border-invalid: var(--color-border-danger);
       --ds-combobox-field-border-width: var(--border-width-thin);
       --ds-combobox-field-radius: var(--radius-md);
@@ -272,8 +283,6 @@ export class DsCombobox extends LitElement {
       --ds-combobox-chip-padding-block: var(--space-0);
       --ds-combobox-chip-gap: var(--layout-gap-tight);
       --ds-combobox-part-gap: var(--space-1);
-      --ds-combobox-label-weight: var(--font-weight-medium);
-      --ds-combobox-helper-size: var(--font-size-sm);
       --ds-combobox-popup-surface: var(--color-overlay-surface);
       --ds-combobox-popup-border: var(--color-border);
       --ds-combobox-popup-border-width: var(--border-width-thin);
@@ -321,6 +330,25 @@ export class DsCombobox extends LitElement {
       display: block;
     }
 
+    /*
+     * descriptionText / errorText (locked): the composed Text keeps its muted / danger tone;
+     * the parent hook only sets Text's own documented --ds-text-color hook on its host.
+     */
+    [data-part='description'] {
+      --ds-text-color: var(--ds-combobox-description-text);
+    }
+    [data-part='errorMessage'] {
+      --ds-text-color: var(--ds-combobox-error-text);
+    }
+
+    /*
+     * iconColor (locked): the toggle chevron, clear and chip-remove glyphs. The parent hook only sets
+     * Icon's own documented --ds-icon-color hook on each ds-icon host, never Icon's shadow tree.
+     */
+    ds-icon {
+      --ds-icon-color: var(--ds-combobox-icon-color);
+    }
+
     /* fieldBackground / fieldBorder: color.background / color.border.strong, locked */
     [data-part='field'] {
       box-sizing: border-box;
@@ -329,14 +357,14 @@ export class DsCombobox extends LitElement {
       gap: var(--ds-combobox-field-gap);
       inline-size: 100%;
       /* minTarget: size.target.comfortable, locked */
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-combobox-min-target);
       padding-block: var(--ds-combobox-field-padding-block);
       padding-inline: var(--ds-combobox-field-padding-inline);
       border-style: solid;
       border-width: var(--ds-combobox-field-border-width);
-      border-color: var(--color-border-strong);
+      border-color: var(--ds-combobox-field-border);
       border-radius: var(--ds-combobox-field-radius);
-      background: var(--color-background);
+      background: var(--ds-combobox-field-background);
       font-size: var(--ds-combobox-font-size);
       line-height: var(--ds-combobox-line-height);
       /* enter: the field border-color transition */
@@ -346,13 +374,15 @@ export class DsCombobox extends LitElement {
     /* fieldBorderFocus + focusRingWidth (locked): the focus width replaces the border width; padding shrinks by the difference.
        Tracks the input only, so a focused clear or chip-remove Button shows just its own ring. */
     [data-part='field']:has([data-part='input']:focus-visible) {
-      border-color: var(--color-border-focus);
-      border-width: var(--border-width-focus);
+      border-color: var(--ds-combobox-field-border-focus);
+      border-width: var(--ds-combobox-focus-ring-width);
       padding-block: calc(
-        var(--ds-combobox-field-padding-block) - (var(--border-width-focus) - var(--ds-combobox-field-border-width))
+        var(--ds-combobox-field-padding-block) -
+          max(0px, var(--ds-combobox-focus-ring-width) - var(--ds-combobox-field-border-width))
       );
       padding-inline: calc(
-        var(--ds-combobox-field-padding-inline) - (var(--border-width-focus) - var(--ds-combobox-field-border-width))
+        var(--ds-combobox-field-padding-inline) -
+          max(0px, var(--ds-combobox-focus-ring-width) - var(--ds-combobox-field-border-width))
       );
     }
 
@@ -385,8 +415,8 @@ export class DsCombobox extends LitElement {
       padding-block: var(--ds-combobox-chip-padding-block);
       padding-inline: var(--ds-combobox-chip-padding-inline);
       border-radius: var(--ds-combobox-chip-radius);
-      background: var(--color-background-strong);
-      color: var(--color-foreground);
+      background: var(--ds-combobox-chip-background);
+      color: var(--ds-combobox-chip-color);
       font-size: var(--ds-combobox-chip-size);
     }
 
@@ -403,18 +433,20 @@ export class DsCombobox extends LitElement {
       flex: 1;
       box-sizing: border-box;
       min-inline-size: calc(var(--ds-combobox-font-size) * 4);
+      /* inputMinTarget: size.target.min, locked — the input's own floor when chips wrap to several rows */
+      min-block-size: var(--ds-combobox-input-min-target);
       margin: 0;
       padding: 0;
       border: 0;
       outline: none;
       background: transparent;
-      color: var(--color-foreground);
+      color: var(--ds-combobox-input-color);
       font: inherit;
     }
 
     /* placeholderColor: color.foreground.muted, locked */
     [data-part='input']::placeholder {
-      color: var(--color-foreground-muted);
+      color: var(--ds-combobox-placeholder-color);
       opacity: 1;
     }
 
@@ -432,7 +464,9 @@ export class DsCombobox extends LitElement {
       position: fixed;
       inset: auto;
       box-sizing: border-box;
+      /* popupOffset: the block margin of the fixed popup; only the side facing the field shows */
       margin: 0;
+      margin-block: var(--ds-combobox-popup-offset);
       padding: 0;
       overflow: hidden;
       border-style: solid;
@@ -767,6 +801,9 @@ export class DsCombobox extends LitElement {
     if (isOpen && !this.shown) {
       this.shown = true;
       this.showPopup();
+      if (changed.has('open') && this.open === true) {
+        this.claimFocus();
+      }
     } else if (!isOpen && this.shown) {
       this.shown = false;
       this.hidePopup();
@@ -871,7 +908,7 @@ export class DsCombobox extends LitElement {
                 label=${COPY_CLEAR_LABEL}
                 ?disabled=${isDisabled}
                 @press=${this.handleClearPress}
-                ><ds-icon slot="leading-icon" name="close" .overrides=${ICON_OVERRIDES}></ds-icon
+                ><ds-icon slot="leading-icon" name="close"></ds-icon
               ></ds-button>`
             : nothing}
           <ds-button
@@ -883,7 +920,7 @@ export class DsCombobox extends LitElement {
             label=${COPY_TOGGLE_LABEL}
             ?disabled=${isDisabled}
             @press=${this.handleTogglePress}
-            ><ds-icon slot="leading-icon" name="chevron-down" .overrides=${ICON_OVERRIDES}></ds-icon
+            ><ds-icon slot="leading-icon" name="chevron-down"></ds-icon
           ></ds-button>
         </div>
         <span id="active-option" class="visually-hidden" aria-live="polite">${activeLabel ? COPY_ACTIVE_OPTION(activeLabel) : ''}</span>
@@ -938,8 +975,22 @@ export class DsCombobox extends LitElement {
         label=${COPY_REMOVE_CHIP(label)}
         ?disabled=${this.isDisabled}
         @press=${(event: Event) => this.handleChipRemove(event, entry)}
-        ><ds-icon slot="leading-icon" name="close" .overrides=${ICON_OVERRIDES}></ds-icon></ds-button
+        ><ds-icon slot="leading-icon" name="close"></ds-icon></ds-button
     ></span>`;
+  }
+
+  /**
+   * Opening through the `open` property moves DOM focus to the input — `copy.activeOption` and the
+   * status region announce nothing otherwise — unless focus is already inside the field, so a
+   * focused clear or chip-remove Button keeps it.
+   */
+  private claimFocus(): void {
+    const input = this.inputEl;
+    const active = this.shadowRoot?.activeElement ?? null;
+    if (!input || (active !== null && this.fieldEl?.contains(active))) {
+      return;
+    }
+    input.focus({ preventScroll: true });
   }
 
   private labelFor(entry: string | undefined): string {
@@ -978,11 +1029,12 @@ export class DsCombobox extends LitElement {
     this.requestOpen(true, this.filter === 'none' ? 'typeahead' : 'none');
   };
 
-  /** A click in the input opens the list with the selected option active, else the first. */
+  /** A click in the input opens the full list, as the toggle does, with the selected option active, else the first. */
   private readonly handleInputClick = (): void => {
     if (this.isDisabled || this.currentOpen) {
       return;
     }
+    this.showAll = true;
     this.requestOpen(true, 'selectedOrFirst');
   };
 
@@ -1315,11 +1367,12 @@ export class DsCombobox extends LitElement {
     const fieldRect = field.getBoundingClientRect();
     const popupHeight = popup.getBoundingClientRect().height;
     const viewportHeight = document.documentElement.clientHeight;
-    const offset = parseFloat(getComputedStyle(this).getPropertyValue(HOOKS.popupOffset)) || 0;
+    // popupOffset is the popup's block margin: the resolved length, so the flip test counts it.
+    const offset = parseFloat(getComputedStyle(popup).marginBlockStart) || 0;
     const above = fieldRect.bottom + offset + popupHeight > viewportHeight && fieldRect.top - offset - popupHeight >= 0;
 
-    popup.style.top = above ? 'auto' : `${fieldRect.bottom + offset}px`;
-    popup.style.bottom = above ? `${viewportHeight - fieldRect.top + offset}px` : 'auto';
+    popup.style.top = above ? 'auto' : `${fieldRect.bottom}px`;
+    popup.style.bottom = above ? `${viewportHeight - fieldRect.top}px` : 'auto';
     popup.style.left = `${fieldRect.left}px`;
     popup.style.minInlineSize = `${fieldRect.width}px`;
   }
@@ -1401,7 +1454,7 @@ export class DsCombobox extends LitElement {
   }
 
   private applyOverrides(): void {
-    for (const binding of Object.keys(HOOKS) as ComboboxOverridableBinding[]) {
+    for (const binding of Object.keys(HOOKS) as (keyof typeof HOOKS)[]) {
       const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
       if (ref === undefined) {

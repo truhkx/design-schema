@@ -1,18 +1,18 @@
 {
   "Accordion.lit": {
-    "hash": "f3a210201a5dd142",
-    "lastAttemptHash": "f3a210201a5dd142",
-    "generatedAt": "2026-09-21T18:31:22+00:00",
+    "hash": "358661345b2e8218",
+    "lastAttemptHash": "358661345b2e8218",
+    "generatedAt": "2026-09-23T19:09:33+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 3.6295,
+    "rounds": 2,
+    "costUsd": 2.057,
     "files": [
       "packages/lit/src/Accordion.stories.ts",
       "packages/lit/src/Accordion.test.ts",
       "packages/lit/src/Accordion.ts"
     ],
-    "gaps": 10,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -20,6 +20,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -289,18 +290,20 @@
     }
   },
   "Combobox.lit": {
-    "hash": "eb7cfa91916ac82c",
-    "lastAttemptHash": "eb7cfa91916ac82c",
-    "generatedAt": "2026-09-21T18:05:07+00:00",
+    "hash": "67ee88281b1b6338",
+    "lastAttemptHash": "67ee88281b1b6338",
+    "generatedAt": "2026-09-23T19:06:42+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 5.1883,
+    "rounds": 2,
+    "costUsd": 3.2266,
     "files": [
       "packages/lit/src/Combobox.stories.ts",
-      "packages/lit/src/Combobox.ts"
+      "packages/lit/src/Combobox.test.ts",
+      "packages/lit/src/Combobox.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 12,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -308,6 +311,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -708,19 +712,18 @@
     }
   },
   "Listbox.lit": {
-    "hash": "778eac5c73187345",
-    "lastAttemptHash": "778eac5c73187345",
-    "generatedAt": "2026-09-21T16:57:28+00:00",
+    "hash": "eadc1c2c57acff98",
+    "lastAttemptHash": "eadc1c2c57acff98",
+    "generatedAt": "2026-09-23T18:58:29+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 5.3514,
+    "rounds": 2,
+    "costUsd": 3.1785,
     "files": [
       "packages/lit/src/Listbox.stories.ts",
-      "packages/lit/src/Listbox.test.ts",
       "packages/lit/src/Listbox.ts"
     ],
-    "gaps": 18,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -728,6 +731,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -945,19 +949,20 @@
     }
   },
   "SegmentedControl.lit": {
-    "hash": "952cd3800e0a6eb3",
-    "lastAttemptHash": "952cd3800e0a6eb3",
-    "generatedAt": "2026-09-21T16:11:09+00:00",
+    "hash": "1e34f4096a6b6f1f",
+    "lastAttemptHash": "1e34f4096a6b6f1f",
+    "generatedAt": "2026-09-23T18:54:13+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.571,
+    "costUsd": 0.8591,
     "files": [
       "packages/lit/src/SegmentedControl.stories.ts",
       "packages/lit/src/SegmentedControl.test.ts",
-      "packages/lit/src/SegmentedControl.ts"
+      "packages/lit/src/SegmentedControl.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -965,24 +970,25 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
     }
   },
   "Select.lit": {
-    "hash": "59b714aa8188807c",
-    "lastAttemptHash": "59b714aa8188807c",
-    "generatedAt": "2026-09-21T17:33:19+00:00",
+    "hash": "a1ec2e87bec5d4cb",
+    "lastAttemptHash": "a1ec2e87bec5d4cb",
+    "generatedAt": "2026-09-23T19:01:35+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 7.0442,
+    "rounds": 2,
+    "costUsd": 2.2192,
     "files": [
-      "packages/lit/src/Select.stories.ts",
+      "packages/lit/src/Select.test.ts",
       "packages/lit/src/Select.ts"
     ],
-    "gaps": 12,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -990,6 +996,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -1171,18 +1178,20 @@
     }
   },
   "Tabs.lit": {
-    "hash": "682dd57f2bca3a51",
-    "lastAttemptHash": "682dd57f2bca3a51",
-    "generatedAt": "2026-09-21T15:50:00+00:00",
+    "hash": "a9a0869f8d090158",
+    "lastAttemptHash": "a9a0869f8d090158",
+    "generatedAt": "2026-09-23T18:52:18+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 4.8008,
+    "costUsd": 1.0277,
     "files": [
       "packages/lit/src/Tabs.stories.ts",
-      "packages/lit/src/Tabs.ts"
+      "packages/lit/src/Tabs.test.ts",
+      "packages/lit/src/Tabs.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1190,6 +1199,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true

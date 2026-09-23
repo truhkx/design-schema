@@ -181,6 +181,47 @@ describe('ds-accordion', () => {
   }
 });
 
+describe('ds-accordion contracts', () => {
+  it('renders items as full-width disclosures', async () => {
+    const s = await setup();
+    expect(s.disclosures().every((disclosure) => disclosure.fullWidth)).toBe(true);
+  });
+
+  it('warns once per distinct id list when exclusive holds several ids', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const s = await setup({ exclusive: true, defaultValue: ['cancel', 'plans'] });
+      expect(warn).toHaveBeenCalledTimes(1);
+      s.el.value = ['plans', 'refunds'];
+      await s.settle();
+      expect(warn).toHaveBeenCalledTimes(2);
+      s.el.value = ['plans', 'refunds'];
+      await s.settle();
+      s.el.value = ['plans', 'refunds'].slice();
+      await s.settle();
+      expect(warn).toHaveBeenCalledTimes(2);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('never warns for the trim of sections a user opened while uncontrolled', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const s = await setup();
+      await userEvent.click(s.trigger(0));
+      await userEvent.click(s.trigger(1));
+      s.el.exclusive = true;
+      await s.settle();
+      expect(warn).not.toHaveBeenCalled();
+      expect(s.trigger(0)).toHaveAttribute('aria-expanded', 'true');
+      expect(s.trigger(1)).toHaveAttribute('aria-expanded', 'false');
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
 /**
  * The `keyboard` block, against the `Keyboard` story's shape (the meta's three enabled sections,
  * nothing open) — the model the generated Playwright gate drives through Storybook.

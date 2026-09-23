@@ -17,6 +17,7 @@ interface ListboxArgs {
   error?: string | undefined;
   embedded: boolean;
   initialActiveValue?: string | undefined;
+  activeValue?: string | null | undefined;
   loading: boolean;
   disabled: boolean;
   name?: string | undefined;
@@ -30,6 +31,13 @@ const FRUITS: ListboxOption[] = [
   { value: 'cherry', label: 'Cherry' },
   { value: 'date', label: 'Date' },
   { value: 'elderberry', label: 'Elderberry' },
+];
+
+/** The `single-picker` example, which is the Default story's args. */
+const SINGLE_PICKER: ListboxOption[] = [
+  { value: 'apple', label: 'Apple' },
+  { value: 'banana', label: 'Banana' },
+  { value: 'cherry', label: 'Cherry' },
 ];
 
 const MANY_FRUITS: ListboxItem[] = [
@@ -63,7 +71,7 @@ const meta: Meta<ListboxArgs> = {
   },
   args: {
     label: 'Fruit',
-    options: FRUITS,
+    options: SINGLE_PICKER,
     multiple: false,
     selectionFollowsFocus: true,
     required: false,
@@ -87,6 +95,7 @@ const meta: Meta<ListboxArgs> = {
       .error=${args.error}
       ?embedded=${args.embedded}
       initial-active-value=${ifDefined(args.initialActiveValue)}
+      .activeValue=${args.activeValue}
       ?loading=${args.loading}
       ?disabled=${args.disabled}
       name=${ifDefined(args.name)}
@@ -198,6 +207,7 @@ export const LabelledBy: Story = {
         .error=${args.error}
         ?embedded=${args.embedded}
         initial-active-value=${ifDefined(args.initialActiveValue)}
+        .activeValue=${args.activeValue}
         ?loading=${args.loading}
         ?disabled=${args.disabled}
         name=${ifDefined(args.name)}

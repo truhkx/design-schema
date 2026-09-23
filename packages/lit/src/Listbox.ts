@@ -5,6 +5,7 @@ import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Icon.js';
 import './Text.js';
 import type { IconName, IconOverridableBinding } from './Icon.js';
+import type { TextOverridableBinding } from './Text.js';
 
 export type ListboxMaxVisible = '5' | '8' | '12' | 'all';
 
@@ -56,6 +57,11 @@ export const LISTBOX_COPY_SELECTED_COUNT = (count: number): string => `${count} 
 /** optionSelectedCheck (locked) forwarded to the composed Icon's `color` binding. */
 const CHECK_OVERRIDES: Partial<Record<IconOverridableBinding, TokenRef | undefined>> = {
   color: 'color.control.selectedBackground',
+};
+
+/** optionColor (locked) forwarded to the option icon's `color`, so it matches its row's label. */
+const ICON_OVERRIDES: Partial<Record<IconOverridableBinding, TokenRef | undefined>> = {
+  color: 'color.foreground',
 };
 
 /** Overridable style hooks; see the `overrides` property. Locked bindings are excluded. */
@@ -170,8 +176,10 @@ function flattenItems(items: ListboxItem[]): ListboxOption[] {
  * `data-ds-field` for `<ds-form>`.
  *
  * `handleKey(event)` and `activeValue` are public so `<ds-select>`,
- * `<ds-combobox>` and `<ds-search>` can forward their own keydowns and keep
- * their activedescendant in sync.
+ * `<ds-combobox>` and `<ds-search>` can forward their own keydowns and drive
+ * the active option: while `activeValue` is set (a string, or `null` for no
+ * active option), forwarded keys move nothing on their own and only report
+ * the option they would make active through `active-change`.
  *
  * ## When to use
  *
@@ -220,6 +228,22 @@ export class DsListbox extends LitElement {
       --ds-listbox-line-height: var(--font-line-height-normal);
       --ds-listbox-disabled-opacity: var(--opacity-disabled);
       --ds-listbox-typeahead-reset: var(--motion-duration-loop);
+      /* Locked bindings: out of the overrides API, still hooks for page CSS and the naming codemod. */
+      --ds-listbox-surface: var(--color-background);
+      --ds-listbox-option-color: var(--color-foreground);
+      --ds-listbox-option-description-color: var(--color-foreground-muted);
+      --ds-listbox-option-active-background: var(--color-background-subtle);
+      --ds-listbox-option-selected-check: var(--color-control-selected-background);
+      --ds-listbox-group-label-color: var(--color-foreground-muted);
+      --ds-listbox-min-target: var(--size-target-min);
+      --ds-listbox-focus-ring: var(--color-border-focus);
+      --ds-listbox-focus-ring-width: var(--border-width-focus);
+      /*
+       * errorText and emptyColor are realised by the composed Text's tone (danger / muted);
+       * these hooks are declared for the hook gate and naming codemod, not read here.
+       */
+      --ds-listbox-error-text: var(--color-foreground-danger);
+      --ds-listbox-empty-color: var(--color-foreground-muted);
     }
 
     :host([hidden]) {
@@ -237,7 +261,7 @@ export class DsListbox extends LitElement {
       --ds-listbox-frame: var(--ds-listbox-border-width);
       /* Row height from Behavior: max(minTarget, fontSize × lineHeight + 2 × optionPaddingBlock), never measured. */
       --ds-listbox-row-size: max(
-        var(--size-target-min),
+        var(--ds-listbox-min-target),
         calc(var(--ds-listbox-font-size) * var(--ds-listbox-line-height) + 2 * var(--ds-listbox-option-padding-block))
       );
       box-sizing: border-box;
@@ -249,7 +273,7 @@ export class DsListbox extends LitElement {
       border-color: var(--ds-listbox-border);
       border-radius: var(--ds-listbox-radius);
       /* surface: color.background, locked */
-      background: var(--color-background);
+      background: var(--ds-listbox-surface);
       font-family: var(--ds-listbox-font-family);
       font-size: var(--ds-listbox-font-size);
       line-height: var(--ds-listbox-line-height);
@@ -291,8 +315,8 @@ export class DsListbox extends LitElement {
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
     [data-part='list']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-listbox-focus-ring-width) solid var(--ds-listbox-focus-ring);
+      outline-offset: calc(-1 * var(--ds-listbox-focus-ring-width));
     }
 
     /*
@@ -317,7 +341,7 @@ export class DsListbox extends LitElement {
       font-size: var(--ds-listbox-group-label-size);
       font-weight: var(--ds-listbox-group-label-weight);
       /* groupLabelColor: color.foreground.muted, locked */
-      color: var(--color-foreground-muted);
+      color: var(--ds-listbox-group-label-color);
     }
 
     [data-part='option'] {
@@ -326,19 +350,19 @@ export class DsListbox extends LitElement {
       align-items: center;
       gap: var(--ds-listbox-option-gap);
       /* minTarget: size.target.min, locked */
-      min-block-size: var(--size-target-min);
+      min-block-size: var(--ds-listbox-min-target);
       padding-block: var(--ds-listbox-option-padding-block);
       padding-inline: var(--ds-listbox-option-padding-inline);
       border-radius: var(--ds-listbox-option-radius);
       /* optionColor: color.foreground, locked */
-      color: var(--color-foreground);
+      color: var(--ds-listbox-option-color);
       cursor: pointer;
       user-select: none;
     }
 
     /* optionActiveBackground: color.background.subtle, locked — keyboard and hover share it */
     [data-part='option'][data-active] {
-      background: var(--color-background-subtle);
+      background: var(--ds-listbox-option-active-background);
     }
 
     /* optionWeight is the base row weight; the selected rule below is more specific and wins. */
@@ -382,7 +406,7 @@ export class DsListbox extends LitElement {
     [data-part='optionDescription'] {
       font-size: var(--ds-listbox-option-description-size);
       /* optionDescriptionColor: color.foreground.muted, locked */
-      color: var(--color-foreground-muted);
+      color: var(--ds-listbox-option-description-color);
     }
 
     /* The empty/loading row lines up with the rows it replaces. */
@@ -483,8 +507,21 @@ export class DsListbox extends LitElement {
   /** Uncontrolled selection, seeded from `defaultValue`. */
   @state() private accessor internalValue: ListboxValue | undefined;
 
-  /** The option carrying `aria-activedescendant`; public so composing popups can read and set it. */
-  @state() accessor activeValue: string | null = null;
+  /**
+   * Controlled active option, for a host that keeps focus on its own trigger or
+   * input (Select, Combobox, Search). Set, it wins over `initialActiveValue`;
+   * `null` means no option is active. Omit (undefined) to let the list own it.
+   */
+  @property({ attribute: false }) accessor activeValue: string | null | undefined;
+
+  /** Uncontrolled active option, used while `activeValue` is undefined. */
+  @state() private accessor internalActive: string | null = null;
+
+  /** Text overrides forwarded to the emptyState and errorMessage Texts: the root typeface and line height. */
+  private textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
+    fontFamily: 'font.family.body', // literal-ok: a TokenRef path, not a font stack
+    lineHeight: 'font.lineHeight.normal',
+  };
 
   /** Disabled by an owning native form or fieldset. */
   @state() private accessor formDisabled = false;
@@ -520,10 +557,18 @@ export class DsListbox extends LitElement {
   get currentValue(): ListboxValue | null {
     const value = this.value !== undefined ? this.value : this.internalValue;
     if (this.multiple) {
+      // A bare string is read as a one-entry array.
       const list = Array.isArray(value) ? value : typeof value === 'string' && value !== '' ? [value] : [];
       return list.length > 0 ? list : null;
     }
-    return typeof value === 'string' && value !== '' ? value : null;
+    // Single-select takes an array's first entry.
+    const single = Array.isArray(value) ? value[0] : value;
+    return typeof single === 'string' && single !== '' ? single : null;
+  }
+
+  /** The active option in effect: the controlled `activeValue` when set, else the list's own. */
+  private get currentActive(): string | null {
+    return this.activeValue !== undefined ? this.activeValue : this.internalActive;
   }
 
   /** The owning native form, if any. */
@@ -661,10 +706,19 @@ export class DsListbox extends LitElement {
     if (changed.has('overrides') || changed.has('embedded')) {
       this.applyOverrides();
     }
+    if (changed.has('overrides')) {
+      this.textOverrides = {
+        fontFamily: this.overrides?.fontFamily ?? 'font.family.body',
+        lineHeight: this.overrides?.lineHeight ?? 'font.lineHeight.normal',
+      };
+    }
   }
 
-  protected override updated(): void {
+  protected override updated(changed: PropertyValues): void {
     this.syncInternals();
+    if (changed.has('activeValue') || changed.has('internalActive')) {
+      this.scrollActiveIntoView();
+    }
     if (import.meta.env.DEV && !this.label && !this.warnedMissingLabel) {
       this.warnedMissingLabel = true;
       console.warn('<ds-listbox> requires a `label`; it is the list\'s aria-label even with `labelledBy`.', this);
@@ -675,7 +729,9 @@ export class DsListbox extends LitElement {
     const flat = this.flatOptions;
     const optionIds = new Map<string, string>();
     flat.forEach((option, index) => optionIds.set(option.value, `${this.instanceId}-option-${index}`));
-    const activeId = this.activeValue !== null ? optionIds.get(this.activeValue) : undefined;
+    // A disabled list keeps its active option in state but shows and points at none.
+    const active = this.isDisabled ? null : this.currentActive;
+    const activeId = active !== null ? optionIds.get(active) : undefined;
     const message = this.displayedMessage();
     // The empty/loading row and the error message, in reading order.
     const describedBy =
@@ -700,7 +756,7 @@ export class DsListbox extends LitElement {
           @focus=${this.handleListFocus}
           @blur=${this.handleListBlur}
         >
-          ${flat.length === 0 ? this.renderEmpty() : this.renderItems(optionIds)}
+          ${flat.length === 0 ? this.renderEmpty() : this.renderItems(optionIds, active)}
         </div>
         ${message
           ? html`<ds-text
@@ -710,6 +766,7 @@ export class DsListbox extends LitElement {
               element="p"
               size="sm"
               tone="danger"
+              .overrides=${this.textOverrides}
               >${message}</ds-text
             >`
           : nothing}
@@ -725,17 +782,17 @@ export class DsListbox extends LitElement {
    */
   private renderEmpty(): TemplateResult {
     return html`<div class="empty" id=${this.emptyId} aria-hidden="true">
-      <ds-text data-part="emptyState" part="emptyState" element="p" tone="muted"
+      <ds-text data-part="emptyState" part="emptyState" element="p" tone="muted" .overrides=${this.textOverrides}
         >${this.loading ? COPY_LOADING : this.emptyMessage || COPY_EMPTY}</ds-text
       >
     </div>`;
   }
 
-  private renderItems(optionIds: Map<string, string>): unknown[] {
+  private renderItems(optionIds: Map<string, string>, active: string | null): unknown[] {
     let groupCounter = 0;
     return this.options.map((item) => {
       if (!isGroup(item)) {
-        return this.renderOption(item, optionIds.get(item.value)!);
+        return this.renderOption(item, optionIds.get(item.value)!, active);
       }
       // Empty groups are omitted.
       if (item.options.length === 0) {
@@ -745,13 +802,13 @@ export class DsListbox extends LitElement {
       return html`
         <div data-part="group" part="group" role="group" aria-labelledby=${labelId}>
           <div data-part="groupLabel" part="groupLabel" id=${labelId}>${item.group}</div>
-          ${item.options.map((option) => this.renderOption(option, optionIds.get(option.value)!))}
+          ${item.options.map((option) => this.renderOption(option, optionIds.get(option.value)!, active))}
         </div>
       `;
     });
   }
 
-  private renderOption(option: ListboxOption, id: string): TemplateResult {
+  private renderOption(option: ListboxOption, id: string, active: string | null): TemplateResult {
     const disabled = this.isDisabled || option.disabled === true;
     const selected = this.selectedSet.has(option.value);
     const descriptionId = option.description ? `${id}-description` : undefined;
@@ -762,7 +819,7 @@ export class DsListbox extends LitElement {
         part="option"
         role="option"
         data-value=${option.value}
-        ?data-active=${this.activeValue === option.value}
+        ?data-active=${active === option.value}
         aria-selected=${selected ? 'true' : 'false'}
         aria-disabled=${ifDefined(disabled ? 'true' : undefined)}
         aria-describedby=${ifDefined(descriptionId)}
@@ -779,7 +836,13 @@ export class DsListbox extends LitElement {
             ></ds-icon>`
           : nothing}
         ${option.icon
-          ? html`<ds-icon data-part="optionIcon" part="optionIcon" name=${option.icon} size="sm"></ds-icon>`
+          ? html`<ds-icon
+              data-part="optionIcon"
+              part="optionIcon"
+              name=${option.icon}
+              size="sm"
+              .overrides=${ICON_OVERRIDES}
+            ></ds-icon>`
           : nothing}
         <span class="option-text">
           <span data-part="optionLabel" part="optionLabel">${option.label}</span>
@@ -823,25 +886,36 @@ export class DsListbox extends LitElement {
    */
   private followInitialActiveValue(): void {
     const next = this.initialActiveValue;
-    if (next === undefined || next === this.activeValue || this.listHasFocus) {
+    if (next === undefined || next === this.internalActive || this.listHasFocus) {
       return;
     }
+    // Kept in state even while disabled, so enabling the list picks up where it would have been.
     if (this.enabledOptions.some((option) => option.value === next)) {
-      this.activeValue = next;
+      this.internalActive = next;
     }
   }
 
+  /**
+   * Real focus on the list: the active option (kept when it names an enabled
+   * option, else the resolved initial option) is reported every time, even when
+   * its value has not changed, so a host always learns where focus went.
+   */
   private readonly handleListFocus = (): void => {
-    if (this.isDisabled || this.activeValue !== null) {
+    if (this.isDisabled) {
       return;
     }
-    const target = this.initialOption();
+    const current = this.currentActive;
+    const target =
+      this.enabledOptions.find((option) => option.value === current) ?? this.initialOption();
     if (target) {
-      this.setActive(target.value);
+      this.setActive(target.value, true);
     }
   };
 
   private readonly handleListBlur = (): void => {
+    if (this.isDisabled || this.currentActive === null) {
+      return;
+    }
     this.setActive(null);
   };
 
@@ -861,9 +935,8 @@ export class DsListbox extends LitElement {
   }
 
   private activeIndex(): number {
-    return this.activeValue === null
-      ? -1
-      : this.enabledOptions.findIndex((option) => option.value === this.activeValue);
+    const active = this.currentActive;
+    return active === null ? -1 : this.enabledOptions.findIndex((option) => option.value === active);
   }
 
   /** Arrows and Page keys: clamp at the first and last enabled option, never wrap. */
@@ -954,17 +1027,23 @@ export class DsListbox extends LitElement {
       const index = (from + offset) % options.length;
       if (options[index]!.label.toLowerCase().startsWith(query)) {
         this.moveToIndex(index);
-        return;
+        break;
       }
+    }
+    // An unreadable reset (no token stylesheet) clears at once: single-character typeahead only.
+    if (reset <= 0) {
+      clearTimeout(this.typeaheadTimer);
+      this.typeaheadQuery = '';
     }
   }
 
   /** Space/Enter: act on the active option, or the resolved initial option when none is active yet. */
   private selectActive(): void {
+    const active = this.currentActive;
     const option =
-      this.activeValue === null
+      active === null
         ? this.initialOption()
-        : this.enabledOptions.find((candidate) => candidate.value === this.activeValue);
+        : this.enabledOptions.find((candidate) => candidate.value === active);
     if (!option) {
       return;
     }
@@ -994,11 +1073,18 @@ export class DsListbox extends LitElement {
     return [...known.filter((value) => set.has(value)), ...[...set].filter((value) => !known.includes(value))];
   }
 
-  private setActive(value: string | null): void {
-    if (this.activeValue === value) {
+  /**
+   * Makes `value` active and reports it. Controlled (`activeValue` set), the
+   * list only reports; the host passes the value back. `always` reports an
+   * unchanged value too (real focus); every other source is deduped.
+   */
+  private setActive(value: string | null, always = false): void {
+    if (!always && this.currentActive === value) {
       return;
     }
-    this.activeValue = value;
+    if (this.activeValue === undefined) {
+      this.internalActive = value;
+    }
     this.dispatchEvent(
       new CustomEvent<ListboxActiveChangeDetail>('active-change', {
         detail: { value },
@@ -1006,16 +1092,15 @@ export class DsListbox extends LitElement {
         composed: true,
       }),
     );
-    void this.scrollActiveIntoView();
   }
 
-  private async scrollActiveIntoView(): Promise<void> {
-    await this.updateComplete;
-    if (this.activeValue === null) {
+  private scrollActiveIntoView(): void {
+    const active = this.currentActive;
+    if (active === null || this.isDisabled) {
       return;
     }
     this.renderRoot
-      .querySelector(`[data-part=option][data-value="${CSS.escape(this.activeValue)}"]`)
+      .querySelector(`[data-part=option][data-value="${CSS.escape(active)}"]`)
       ?.scrollIntoView({ block: 'nearest' });
   }
 

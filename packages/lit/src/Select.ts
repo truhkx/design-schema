@@ -67,7 +67,13 @@ export type SelectOverridableBinding =
   | 'disabledOpacity'
   | 'enter';
 
-const HOOKS: Record<SelectOverridableBinding, string> = {
+/**
+ * The bindings with a `:host` hook. `labelWeight` and `helperSize` reach the
+ * composed Texts only through their `overrides`, so they declare none.
+ */
+type HookedBinding = Exclude<SelectOverridableBinding, 'labelWeight' | 'helperSize'>;
+
+const HOOKS: Record<HookedBinding, string> = {
   triggerBorderInvalid: '--ds-select-trigger-border-invalid',
   triggerBorderWidth: '--ds-select-trigger-border-width',
   triggerRadius: '--ds-select-trigger-radius',
@@ -76,8 +82,6 @@ const HOOKS: Record<SelectOverridableBinding, string> = {
   triggerGap: '--ds-select-trigger-gap',
   chevronReserve: '--ds-select-chevron-reserve',
   partGap: '--ds-select-part-gap',
-  labelWeight: '--ds-select-label-weight',
-  helperSize: '--ds-select-helper-size',
   popupSurface: '--ds-select-popup-surface',
   popupBorder: '--ds-select-popup-border',
   popupBorderWidth: '--ds-select-popup-border-width',
@@ -219,8 +223,6 @@ export class DsSelect extends LitElement {
       --ds-select-trigger-gap: var(--layout-gap-normal);
       --ds-select-chevron-reserve: var(--font-size-sm);
       --ds-select-part-gap: var(--space-1);
-      --ds-select-label-weight: var(--font-weight-medium);
-      --ds-select-helper-size: var(--font-size-sm);
       --ds-select-popup-surface: var(--color-overlay-surface);
       --ds-select-popup-border: var(--color-border);
       --ds-select-popup-border-width: var(--border-width-thin);
@@ -234,6 +236,19 @@ export class DsSelect extends LitElement {
       --ds-select-line-height: var(--font-line-height-normal);
       --ds-select-disabled-opacity: var(--opacity-disabled);
       --ds-select-enter: var(--motion-duration-fast);
+      /* Locked bindings: out of the overrides type, but still themeable from page CSS. */
+      --ds-select-trigger-background: var(--color-background);
+      --ds-select-trigger-border: var(--color-border-strong);
+      --ds-select-trigger-border-focus: var(--color-border-focus);
+      --ds-select-min-target: var(--size-target-comfortable);
+      --ds-select-min-target-sm: var(--size-target-min);
+      --ds-select-focus-ring-width: var(--border-width-focus);
+      /* Realised by the composed Texts' tones (default / muted / muted / danger); declared for the
+         naming codemod, not read here, since a hook cannot reach a child's shadow tree. */
+      --ds-select-value-color: var(--color-foreground);
+      --ds-select-placeholder-color: var(--color-foreground-muted);
+      --ds-select-description-text: var(--color-foreground-muted);
+      --ds-select-error-text: var(--color-foreground-danger);
       font-family: var(--ds-select-font-family);
     }
 
@@ -283,15 +298,15 @@ export class DsSelect extends LitElement {
       gap: var(--ds-select-trigger-gap);
       inline-size: 100%;
       /* minTarget: size.target.comfortable, locked */
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-select-min-target);
       margin: 0;
       padding-block: var(--ds-select-trigger-padding-block);
       padding-inline: var(--ds-select-trigger-padding-inline);
       border-style: solid;
       border-width: var(--ds-select-trigger-border-width);
-      border-color: var(--color-border-strong);
+      border-color: var(--ds-select-trigger-border);
       border-radius: var(--ds-select-trigger-radius);
-      background: var(--color-background);
+      background: var(--ds-select-trigger-background);
       color: var(--color-foreground);
       font-family: var(--ds-select-font-family);
       font-size: var(--ds-select-font-size);
@@ -303,26 +318,21 @@ export class DsSelect extends LitElement {
 
     /* minTargetSm: size.target.min, locked — the trigger floor at sm */
     :host([size='sm']) [data-part='trigger'] {
-      min-block-size: var(--size-target-min);
+      min-block-size: var(--ds-select-min-target-sm);
     }
 
-    /* triggerBorderFocus + focusRingWidth (locked): the focus width replaces the border width; padding shrinks by the difference */
+    /* triggerBorderFocus + focusRingWidth (locked): the focus width replaces the border width; padding
+       shrinks by the difference, unclamped, so the trigger does not shift */
     [data-part='trigger']:focus-visible {
       outline: none;
-      border-color: var(--color-border-focus);
-      border-width: var(--border-width-focus);
-      padding-block: max(
-        0px,
-        calc(
-          var(--ds-select-trigger-padding-block) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
-        )
-      ); /* literal-ok: the doc's clamp at zero, so the trigger never takes a negative padding */
-      padding-inline: max(
-        0px,
-        calc(
-          var(--ds-select-trigger-padding-inline) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
-        )
-      ); /* literal-ok: the doc's clamp at zero */
+      border-color: var(--ds-select-trigger-border-focus);
+      border-width: var(--ds-select-focus-ring-width);
+      padding-block: calc(
+        var(--ds-select-trigger-padding-block) - (var(--ds-select-focus-ring-width) - var(--ds-select-trigger-border-width))
+      );
+      padding-inline: calc(
+        var(--ds-select-trigger-padding-inline) - (var(--ds-select-focus-ring-width) - var(--ds-select-trigger-border-width))
+      );
     }
 
     :host([invalid]) [data-part='trigger'],
@@ -396,6 +406,13 @@ export class DsSelect extends LitElement {
     :host(:not([multiple])) .native [data-part='trigger'] {
       padding-inline-end: calc(
         var(--ds-select-trigger-padding-inline) + var(--ds-select-trigger-gap) + var(--ds-select-chevron-reserve)
+      );
+    }
+
+    :host(:not([multiple])) .native [data-part='trigger']:focus-visible {
+      padding-inline-end: calc(
+        var(--ds-select-trigger-padding-inline) + var(--ds-select-trigger-gap) + var(--ds-select-chevron-reserve) -
+          (var(--ds-select-focus-ring-width) - var(--ds-select-trigger-border-width))
       );
     }
 
@@ -689,19 +706,19 @@ export class DsSelect extends LitElement {
         ${this.usesPopup
           ? this.renderPopupField(isDisabled, describedBy, fontSize)
           : this.renderNativeField(isDisabled, describedBy)}
-        <div id="error" role="alert" ?hidden=${!message}>
-          ${message
-            ? html`<ds-text
-                data-part="errorMessage"
-                part="errorMessage"
-                element="span"
-                size="sm"
-                tone="danger"
-                .overrides=${helperOverrides}
-                >${message}</ds-text
-              >`
-            : nothing}
-        </div>
+        ${message
+          ? html`<ds-text
+              id="error"
+              role="alert"
+              data-part="errorMessage"
+              part="errorMessage"
+              element="span"
+              size="sm"
+              tone="danger"
+              .overrides=${helperOverrides}
+              >${message}</ds-text
+            >`
+          : nothing}
       </div>
     `;
   }
@@ -1134,7 +1151,7 @@ export class DsSelect extends LitElement {
   }
 
   private applyOverrides(): void {
-    for (const binding of Object.keys(HOOKS) as SelectOverridableBinding[]) {
+    for (const binding of Object.keys(HOOKS) as HookedBinding[]) {
       const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
       if (ref === undefined) {

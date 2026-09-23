@@ -109,7 +109,7 @@ export type {
   PopoverProps,
 } from './Popover';
 
-export { Toast, ToastProvider, useToast, toast } from './Toast';
+export { Toast, ToastProvider, useToast, toast, dismiss } from './Toast';
 export type {
   ToastContextValue,
   ToastDismissReason,

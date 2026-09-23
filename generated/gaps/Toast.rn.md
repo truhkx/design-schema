@@ -105,3 +105,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toast: onDismiss now fires when the exit starts, but the spec only says 'removed once the transition ends' for a toast inside the region. For a Toast rendered on its own on native, the code renders null after the exit. The doc should say so.
 - Toast: the rn notes don't say to write `aria-live` alongside `accessibilityLiveRegion`. The code writes both, under the package rule to mirror every accessibility prop as aria-*; the doc should state it.
 - Toast: `styles.text` says the foreground is re-scoped on the `toast` container, but the rn notes say the message part. The code wraps the whole toast, following styles.text; the rn notes should match.
+
+## 2026-09-23 19:06 — round 1
+
+- Toast: the spec says `dismiss(toastId?)` is exported beside `toast()`, but its own RN platform notes name only `useToast()` / `toast()` in the API line, and the props/events tables say nothing about a module-level export. I exported `dismiss` from the package next to `toast`.
+- Toast: the `Keyboard` story rule (trigger button plus two persistent action toasts, the second danger) is written for the web/Lit region. The RN spec does not say whether the toasts should render through `ToastProvider` or directly as `<Toast>`. I render them directly, so the story needs no provider.
+- Toast: the spec does not say which element carries `aria-live` and `aria-label` on the RN toast root, since `accessibilityRole` has no `status` value. I mirrored `accessibilityLiveRegion` as `aria-live` and `accessibilityLabel` (the message) as `aria-label` on the root, and added `aria-hidden` on the icon wrapper.
+- Toast: it is unclear whether a standalone `<Toast>` should forward the region-only overrides (`stackGap`, `regionInset`, `layer`). The spec says a standalone Toast accepts them and they do nothing. I kept them in `ToastOverridableBinding` and ignore them on the toast itself.
+- Toast: the spec gives no fallback if `AppState.currentState` is null or undefined in the test environment. I treat it as active.

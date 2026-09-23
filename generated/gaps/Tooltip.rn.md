@@ -75,3 +75,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tooltip: the WarmToolbar example cannot show a warm sibling as args; rendered its single trigger inside `Toolbar label="View"` via `render`, with `delay: 'none'`.
 - Tooltip: all 7 behavior scenarios are `renders` checks only; the Escape keyboard rule and the long-press/hover visibility rules have no rn scenario, so they are untested by the generated test file.
 - Tooltip: Escape is react-native-web only (a capture-phase `keydown` listener on `window`); native hardware keyboards get no dismiss because the bubble only exists during a press. The spec implies this but doesn't state it for native hardware keyboards.
+
+## 2026-09-23 19:05 — round 1
+
+- Tooltip: the spec says a non-focusable child is an error, but native exposes no way to read focusability from an element, so the __DEV__ warning fires only when children is not exactly one element; the doc should state that limit for rn.
+- Tooltip: the seven behavior scenarios are all renders:true, so hover delay, warm window, pointerGrace, long-press and Escape dismissal have no scenario and no test on rn; the doc could declare click/hover/press scenarios so they are covered.

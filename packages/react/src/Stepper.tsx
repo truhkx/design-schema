@@ -1,4 +1,4 @@
-import { useId, type ComponentPropsWithoutRef, type CSSProperties, type Ref, type ReactElement } from 'react';
+import { useEffect, useId, type ComponentPropsWithoutRef, type CSSProperties, type Ref, type ReactElement } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text, type TextOverridableBinding } from './Text';
 import { Icon, type IconOverridableBinding } from './Icon';
@@ -242,12 +242,16 @@ export function Stepper({
 }: StepperProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const baseId = useId();
   const currentIndex = steps.findIndex((step) => step.id === current);
+  // Compact reveals the id match, or the first step when nothing matches, so it is never label-less.
+  const revealIndex = Math.max(currentIndex, 0);
   const resolved = resolveOverrides(overrides);
 
   // An empty `current` is "not yet set", not a mistake, so it does not warn.
-  if (isDev && current !== '' && currentIndex === -1) {
-    console.warn(`Stepper: current "${current}" matches no step id — nothing is selected.`);
-  }
+  useEffect(() => {
+    if (isDev && current !== '' && currentIndex === -1) {
+      console.warn(`Stepper: current "${current}" matches no step id; nothing is selected.`);
+    }
+  }, [current, currentIndex]);
 
   const classes = [
     'ds-stepper',
@@ -258,7 +262,7 @@ export function Stepper({
     .join(' ');
 
   const stepOf = COPY.stepOf
-    .replace('{current}', String(Math.max(currentIndex, 0) + 1))
+    .replace('{current}', String(revealIndex + 1))
     .replace('{total}', String(steps.length));
 
   return (
@@ -335,6 +339,7 @@ export function Stepper({
                 'ds-stepper__step',
                 `ds-stepper__step--${status}`,
                 isCurrent ? 'ds-stepper__step--selected' : null,
+                index === revealIndex ? 'ds-stepper__step--revealed' : null,
               ]
                 .filter(Boolean)
                 .join(' ')}

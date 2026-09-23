@@ -36,6 +36,7 @@ export type ProgressBarOverridableBinding =
   | 'labelGap'
   | 'transition'
   | 'indeterminateLoop'
+  | 'indeterminateReducedOpacity'
   | 'sweepEasing';
 
 /** Bindings realised as hooks on the root. The rest are forwarded to the composed Texts' `overrides`. */
@@ -47,6 +48,7 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<ProgressBarOverridableBinding, string>>
   labelGap: '--ds-progress-bar-label-gap',
   transition: '--ds-progress-bar-transition',
   indeterminateLoop: '--ds-progress-bar-indeterminate-loop',
+  indeterminateReducedOpacity: '--ds-progress-bar-indeterminate-reduced-opacity',
   sweepEasing: '--ds-progress-bar-sweep-easing',
 };
 
@@ -95,9 +97,9 @@ export interface ProgressBarProps
    * without a custom formatter — rounded to a whole number in the runtime's default locale (there is no locale
    * prop), so 99.5% of the way shows "100%" before completion; completion is only the clamped value reaching
    * `max`. Called with the clamped value. Rounding is for the text only; the fill uses the exact fraction.
-   * A `max` at or below `min` is not a range: the bar renders empty, exposes `min` as its value with the given
-   * bounds, shows and exposes "0%" unless a custom formatter says otherwise, makes no progress or completion
-   * announcements, and warns in development.
+   * Not called while indeterminate. A `max` at or below `min` is not a range: the bar renders empty, exposes
+   * `min` as its value with the bounds exactly as given, exposes (and, with `showValue`, shows) "0%", makes no
+   * progress or completion announcements, and warns in development once per distinct min/max pair.
    */
   formatValue?: ((value: number, min: number, max: number) => string) | undefined;
   /** Show the value text at the end of the label row. Ignored when indeterminate. */
@@ -204,7 +206,12 @@ export function ProgressBar({
   const clamped = validRange ? Math.min(Math.max(safeValue, safeMin), safeMax) : safeMin;
   // The fill uses the exact fraction; rounding is for the text only.
   const fraction = validRange ? (clamped - safeMin) / (safeMax - safeMin) : 0;
-  const valueText = indeterminate ? undefined : (formatValue ?? defaultFormatValue)(clamped, safeMin, safeMax);
+  // An invalid range exposes and shows "0%" whatever the formatter, since there is no progress to describe.
+  const valueText = indeterminate
+    ? undefined
+    : validRange
+      ? (formatValue ?? defaultFormatValue)(clamped, safeMin, safeMax)
+      : defaultFormatValue(clamped, safeMin, safeMax);
   // 74.6% is tier 2, 75% is tier 3; tier 4 is `max`.
   const tier = Math.floor(fraction * 4);
   const complete = validRange && clamped >= safeMax;
@@ -328,11 +335,22 @@ export function ProgressBar({
       style={overrides ? rootStyle(overrides) : undefined}
     >
       <div className={headerClass} data-part="header">
-        {hideLabel && showValueText ? <span className="ds-progress-bar__visually-hidden">{labelText}</span> : labelText}
+        {/* The wrapper carries the label's layout (and the visually-hidden clip), so the part stays a plain Text. */}
+        <span
+          className={
+            hideLabel && showValueText
+              ? 'ds-progress-bar__label ds-progress-bar__visually-hidden'
+              : 'ds-progress-bar__label'
+          }
+        >
+          {labelText}
+        </span>
         {showValueText ? (
-          <Text element="span" size="sm" tone="muted" data-part="valueText" overrides={valueOverrides}>
-            {valueText}
-          </Text>
+          <span className="ds-progress-bar__value">
+            <Text element="span" size="sm" tone="muted" data-part="valueText" overrides={valueOverrides}>
+              {valueText}
+            </Text>
+          </span>
         ) : null}
       </div>
       <div

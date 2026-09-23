@@ -78,3 +78,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Search: nothing says what the live region holds once the list closes. Cleared it, so the count/loading/no-suggestions string is announced only while the list is open.
 - Search: the Icon size mapping (sm at size md, md at size lg) appears only in the platform notes, not as a style binding, so it is hard-coded and not overridable unlike every other visual value. Confirm it should not be a binding.
 - Search: the Keyboard story's contents are described in prose ('a query and suggestions') but, unlike the examples, it carries no `given` args block, so the exact args are a guess — used `defaultValue: 'invoices'` plus the three-row suggestion list.
+
+## 2026-09-23 16:16 — round 1
+
+- Search: `loading` is announced 'whenever suggestions is set and this is true, list open or not', but Behavior says 'the live region is emptied when the list closes'. Closing while loading can't do both; I let loading win, so the region keeps `copy.loading` after a close until loading ends.
+- Search: the label composition puts data-part on ds-text for Lit, but web doesn't say where `data-part="label"` goes. I put it on the `<label>` wrapper, because Text renders no data-part of its own and the whole label is the part.
+- Search: Icon always renders its own `data-part="glyph"`, so the `icon` part can't sit on the composed Icon. It is on a wrapping span. The doc should say that, as it does for the Button parts.
+- Search: the spec says the combobox wiring works 'exactly as Combobox does', but Combobox drives the highlight through Listbox's controlled `activeValue`, while Search's wiring list names only a remount key and onActiveChange. I followed Search's list: an uncontrolled Listbox reset by a key, with ArrowDown/ArrowUp forwarded as synthetic keydowns. The first ArrowDown is queued until the list mounts.
+- Search: 'ArrowDown opens suggestions and highlights the first' depends on Listbox moving an uncontrolled, empty highlight to the first option on ArrowDown. That isn't stated in Search's doc; I relied on Listbox's own behavior.
+- Search: suggestionsOffset has to be 'folded into the fixed popup's own position calculation — exactly the mechanism ds-combobox uses', but React's Combobox applies its offset as a margin. I wrote the measured field edge to an inline `--ds-search-anchor` and set `top`/`bottom: calc(anchor + offset)` in CSS. The flip decision doesn't include the offset.
+- Search: `emptyMessage` should be passed 'while empty'. I always pass it (loading ? copy.loading : copy.noSuggestions), assuming Listbox only shows it when there are no options.
+- Search: 'no event fires' while disabled, but consumer `onKeyDown` on the input still runs, because it's passed through rest like other fields. Only Search's own events are suppressed.
+- Search: the rule to add portaled overlays to hydration.test.tsx names only new overlays; Search was missing, so I added it. SSR output is unaffected either way, because the list never opens before an interaction.

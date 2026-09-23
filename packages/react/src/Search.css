@@ -159,12 +159,16 @@
   box-shadow: var(--ds-search-popup-shadow);
 }
 
+/*
+ * suggestionsOffset is folded into the fixed position itself: `--ds-search-anchor` is the field edge
+ * the popup hangs from (measured in Search.tsx), and the offset is added here, never as a margin.
+ */
 .ds-search__suggestions[data-vertical='bottom'] {
-  margin-block-start: var(--ds-search-suggestions-offset);
+  top: calc(var(--ds-search-anchor) + var(--ds-search-suggestions-offset));
 }
 
 .ds-search__suggestions[data-vertical='top'] {
-  margin-block-end: var(--ds-search-suggestions-offset);
+  bottom: calc(var(--ds-search-anchor) + var(--ds-search-suggestions-offset));
 }
 
 @media (prefers-reduced-motion: reduce) {

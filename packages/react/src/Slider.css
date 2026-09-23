@@ -18,6 +18,10 @@
   --ds-slider-mark: var(--color-border-strong);
   --ds-slider-mark-size: var(--space-2);
   --ds-slider-mark-label-gap: var(--space-1);
+  --ds-slider-mark-label-color: var(--color-foreground-muted);
+  --ds-slider-value-color: var(--color-foreground);
+  --ds-slider-description-text: var(--color-foreground-muted);
+  --ds-slider-error-text: var(--color-foreground-danger);
   --ds-slider-bubble-surface: var(--color-inverse-surface);
   --ds-slider-bubble-text: var(--color-inverse-foreground);
   --ds-slider-bubble-padding-block: var(--space-1);
@@ -47,6 +51,25 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--ds-slider-label-gap);
+}
+
+/* Locked text colours (valueColor, markLabelColor, descriptionText, errorText) are the composed Texts'
+   tones. Their hooks re-scope the tone token on an unparted wrapper, so page CSS and the naming codemod
+   reach them without restyling the Text. */
+.ds-slider__value {
+  --color-foreground: var(--ds-slider-value-color);
+}
+
+.ds-slider__mark-label {
+  --color-foreground-muted: var(--ds-slider-mark-label-color);
+}
+
+.ds-slider__description {
+  --color-foreground-muted: var(--ds-slider-description-text);
+}
+
+.ds-slider__error {
+  --color-foreground-danger: var(--ds-slider-error-text);
 }
 
 /* control: the track area and the mark label row, separated by markLabelGap — partGap does not apply

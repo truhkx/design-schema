@@ -13,9 +13,11 @@ import { AlertDialog } from './AlertDialog';
 import { BottomSheet } from './BottomSheet';
 import { Button } from './Button';
 import { Combobox } from './Combobox';
+import { DatePicker } from './DatePicker';
 import { Dialog } from './Dialog';
 import { Menu } from './Menu';
 import { Popover } from './Popover';
+import { Search } from './Search';
 import { Select } from './Select';
 import { SidePanel } from './SidePanel';
 import { ToastRegion } from './Toast';
@@ -159,7 +161,30 @@ describe('hydration', () => {
       expect(document.querySelector('[data-ds="Combobox"]')).not.toBeNull();
       expect(document.querySelector('[role="listbox"]') !== null).toBe(open);
     });
+
+    it(`DatePicker (open: ${open}) hydrates without a mismatch and portals afterwards`, async () => {
+      const errors = await hydrate(<DatePicker label="Due date" name="due" open={open} defaultValue="2026-09-10" />);
+      expect(errors).toEqual([]);
+      expect(document.querySelector('[data-ds="DatePicker"]')).not.toBeNull();
+      expect(document.querySelector('[role="grid"]') !== null).toBe(open);
+    });
   }
+
+  it('Search with suggestions hydrates without a mismatch and opens its portaled list afterwards', async () => {
+    const errors = await hydrate(
+      <Search label="Search products" defaultValue="inv" suggestions={[{ value: 'invoices', label: 'Invoices' }]} />,
+    );
+    expect(errors).toEqual([]);
+    const input = document.querySelector<HTMLInputElement>('[data-ds="Search"] input[type="search"]')!;
+    expect(input).toHaveAttribute('role', 'combobox');
+    expect(input).not.toHaveAttribute('aria-controls');
+    act(() => input.focus());
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    });
+    expect(document.querySelector('[role="listbox"]')).not.toBeNull();
+    expect(input).toHaveAttribute('aria-controls', document.querySelector('[role="listbox"]')!.id);
+  });
 
   it('ToastRegion hydrates without a mismatch and portals the live region afterwards', async () => {
     const errors = await hydrate(<ToastRegion />);

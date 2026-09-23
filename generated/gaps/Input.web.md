@@ -213,3 +213,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Input: the spec never says when the web field itself calls the Form's validateField. Chose the Form context's modes: on change for `change`, on blur for `blur`/`change`, and on both after a failed submit.
 - Input: the zero in the focus-ring padding clamp needs a unit (`max(0px, …)`). It passes the literal lint, but the doc could name it as a sanctioned literal.
 - Input: the web notes never say whether native input attributes outside the schema (pattern, minLength, inputMode) are public. Chose to pass every remaining native input prop through to the <input>, apart from className, style, size and autoComplete.
+
+## 2026-09-23 18:42 — round 1
+
+- Input: the focusRingWidth padding compensation is clamped at zero, which on web needs a `max(0px, …)` literal inside calc(). The doc requires the clamp but does not list it as a sanctioned literal exception; it passes lint_literals today, so I kept it as-is.
+- Input: the form block (discovery: context) does not mention the context members the web field relies on: `form.idBase` for the field id, `form.errors[name]` as the Form's invalid mark, `form.disabled` for a disabled Form, and `isDisabled()` on the registration. They appear only in the platform notes and Behavior prose; I kept the existing wiring.
+- Input: the Default story's args are not stated (label, name are required). I kept `label: 'Email address', name: 'email'`, which the scenarios build on.
+- Input: the `focus-is-reported` scenario says `focus: field` without saying whether that means Tab or programmatic focus. The test tabs into the field.
+
+## 2026-09-23 18:43 — round 2
+
+- Input: styles.errorText and styles.descriptionText say 'no --ds-input-* hook, since a hook could not reach the child', but the hooks gate (tools/check_hooks.ts) and the web conventions require a hook for every locked binding unless the doc lists it under composition.<part>.forwards, and Input has no composition block. I followed the sibling fields (Select, Combobox, NumberInput) and declared --ds-input-description-text and --ds-input-error-text on the root with their tokens. Nothing reads them yet, because the composed Text draws the color from its tone, so setting either hook from page CSS does nothing. The doc should either drop the 'no hook' wording or add a composition entry (description/errorMessage → Text) that makes the exemption explicit, and it should say whether these hooks are expected to actually re-theme the helper text.

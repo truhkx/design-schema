@@ -1,8 +1,12 @@
 /* Input — styled only through Design Schema token custom properties. */
 
 .ds-input {
-  /* descriptionText and errorText are the composed Text's `muted` and `danger` tones; helperSize
-     is forwarded to those Text elements' `fontSize` override, so none of the three has a hook here. */
+  /* descriptionText and errorText are drawn by the composed Text's `muted` and `danger` tones,
+     which the input never restyles. The hooks are declared so the locked bindings stay themeable
+     from page CSS and renameable by the naming codemod, as Select's and Combobox's are. helperSize
+     is forwarded to those Text elements' `fontSize` override, so it has no hook here. */
+  --ds-input-description-text: var(--color-foreground-muted);
+  --ds-input-error-text: var(--color-foreground-danger);
   --ds-input-background: var(--color-background);
   --ds-input-foreground: var(--color-foreground);
   --ds-input-placeholder: var(--color-foreground-muted);

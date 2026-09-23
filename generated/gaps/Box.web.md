@@ -101,3 +101,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-23 13:51 — round 3
 
 - Box: rounds 2 and 3 failed typecheck on a half-written DataGrid.tsx from a concurrent edit, never on a Box file. A rerun now passes with no Box changes. The gate runs package-wide `tsc`, so a job on one component fails while a sibling file is mid-edit; scoping the gate or running the jobs one after another would stop it failing unrelated targets.
+
+## 2026-09-23 18:41 — round 1
+
+- Box: the `children` prop description mixes the prop's meaning with instructions for writing stories and tests (Text wrapping, meta args, React Native render), so a generator has to guess where the JSDoc should stop; I kept only the first two sentences as the prop's JSDoc.
+- Box: the `highlighted-panel` example has to be both the Default story and the HighlightedPanel story, so the two are identical; the doc doesn't say whether that duplicate is intended or whether Default should reuse the example story. I kept both.
+- Box: the doc asks for a `WithOverrides` story but doesn't say which overrides to show or whether it should turn `border` on (the border overrides do nothing without it). The existing story sets border: true and overrides paddingBlock, border (color.border.strong) and radius (radius.sm).
+- Box: the doc doesn't say whether the behavior tests render through the meta render on web (it only says so for React Native), so on web the test renders <Box> directly with a bare string child. That is harmless because the tests check only rendering and roles.

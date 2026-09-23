@@ -4,6 +4,7 @@ Read generated/gaps/SUMMARY.md first (DOC lines are grouped per component with t
 
 1. Read the component doc and the gap lines. Decide the answer to each question the way the existing docs decide things. The rules that decide most of them:
    - Overrides change values, never presence; a composite forwards an override to the child's own `overrides` (Fieldset → Stack `gap`, Alert → Icon `color`), never styles the child.
+   - `locked` closes the override API, not the styling hook: a locked binding is absent from the `overrides` type but still declares its `--ds-<component>-<binding>` hook on web and Lit, so it stays themeable from product CSS and renameable to a brand prefix by the naming codemod. Only a binding forwarded to a composed child's `overrides` declares no hook of its own.
    - Composition uses the system component for anything it provides (Icon for every glyph, Text for text, Button for buttons); the doc names the component and the props.
    - Prop names must be attribute-safe on every platform (no `id`, `title`, `style`, `class`; positive booleans defaulting to false where possible).
    - Every anatomy part named in the schema must have a home on every platform, or the doc says which platform lacks it and why.

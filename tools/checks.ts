@@ -16,6 +16,7 @@
  *   typecheck  pnpm --filter <pkg> typecheck     the real TypeScript typings (needs node_modules)
  *   deps       tools/check_deps.ts               the package gained no runtime dependency outside the allowed set
  *   modules    tools/check_modules.ts            every module an extension declares exists, exports its name and matches its signature stub
+ *   hooks      tools/check_hooks.ts              every locked binding still declares its `--ds-<component>-<binding>` CSS hook (web and lit)
  *   keyboard   tools/keyboard_tests.ts + Playwright   every `keyboard` rule with an `expect`, against the Keyboard story  (--with keyboard)
  *   axe        tests/gates/axe.spec.ts + Playwright   axe over every story, light and dark                                (--with axe)
  *   behavior   tools/behavior_tests.ts + pnpm test    every `behavior` scenario, against the real component module        (--with behavior)
@@ -95,6 +96,15 @@ export function gatesFor(
       gate('deps', tool('check_deps.ts', '--platform', platform)),
       gate('modules', tool('check_modules.ts', '--platform', platform)),
     );
+  }
+  if (platform === 'web' || platform === 'lit') {
+    // `locked` closes a binding's override API, not its CSS hook: the hook is how product CSS re-themes
+    // it and how tools/naming.ts renames it to a brand prefix. Web and Lit spell the hook identically;
+    // rn and swiftui have no custom properties, so there is nothing to check there. Scoped to the
+    // component being generated for the same reason the browser gates are — during a phased
+    // regeneration a target must not fail on hook debt owned by components it may not edit.
+    const only = component ? ['--component', component] : [];
+    allGates.push(gate('hooks', tool('check_hooks.ts', '--platform', platform, ...only)));
   }
   if (extra.has('keyboard') && (platform === 'web' || platform === 'lit')) {
     allGates.push(gate('keyboard', tool('keyboard_tests.ts')));

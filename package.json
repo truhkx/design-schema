@@ -34,6 +34,7 @@
     "mcp": "node --disable-warning=ExperimentalWarning --import tsx mcp/server.ts",
     "gates": "node --import tsx tools/checks.ts --platform web && node --import tsx tools/checks.ts --platform lit && node --import tsx tools/checks.ts --platform rn",
     "lint:literals": "node --import tsx tools/lint_literals.ts",
+    "gates:hooks": "node --import tsx tools/check_hooks.ts",
     "generate": "node --import tsx tools/parse.ts && node --import tsx tools/generate.ts",
     "regen": "node --import tsx tools/regen.ts",
     "generate:check": "node --import tsx tools/generate.ts --check",

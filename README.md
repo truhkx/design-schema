@@ -27,6 +27,7 @@ tools/keyboard_tests.ts                `keyboard` block → generated/keyboard/*
 tools/behavior_tests.ts                `behavior` scenarios → generated/behavior/*.test.ts(x) (TypeScript)
 prompts/conventions/                   one-page package digests the generator reads instead of the whole package
 tools/check_deps.ts + check_modules.ts build gates: no new runtime dependency; every declared extension module matches its stub
+tools/check_hooks.ts                   build gate: a locked binding keeps its `--ds-*` CSS hook on web and lit (`pnpm gates:hooks`)
 tools/gap_digest.ts                    generated/gaps/*.md → SUMMARY.md between regen phases (DOC gaps first)
 mcp/                                   MCP server (@modelcontextprotocol/sdk) + the local vector index it searches
 tools/__tests__ + mcp/__tests__        the Vitest suite for everything above (`pnpm test:tools`)

@@ -21,9 +21,11 @@ const gate = (name: string, argv: string[]): Gate => ({ name, argv, cwd: checks.
 const nodeGate = (code: string): Gate => gate('probe', [process.execPath, '-e', code]);
 
 describe('the gate table', () => {
-  test('every platform runs the six cheap gates in order', () => {
+  test('every platform runs the six cheap gates in order; web and lit add the hook gate', () => {
+    const six = ['parse', 'contrast', 'literals', 'typecheck', 'deps', 'modules'];
     for (const platform of ['web', 'lit', 'rn']) {
-      expect(names(platform)).toEqual(['parse', 'contrast', 'literals', 'typecheck', 'deps', 'modules']);
+      // `hooks` reads CSS custom properties, which only the two web platforms have.
+      expect(names(platform)).toEqual(platform === 'rn' ? six : [...six, 'hooks']);
     }
   });
 
@@ -35,7 +37,7 @@ describe('the gate table', () => {
   });
 
   test('--skip removes a gate by name', () => {
-    expect(names('web', ['typecheck', 'deps'])).toEqual(['parse', 'contrast', 'literals', 'modules']);
+    expect(names('web', ['typecheck', 'deps'])).toEqual(['parse', 'contrast', 'literals', 'modules', 'hooks']);
   });
 
   test('the browser gates are opt-in and keyboard is web/lit only', () => {
@@ -96,6 +98,16 @@ describe('the gate table', () => {
       expect(g.argv.slice(-2)).toEqual(['--platform', 'lit']);
     }
   });
+
+  test('the hook gate is web/lit only and scopes to the component being generated', () => {
+    expect(names('rn')).not.toContain('hooks'); // no CSS custom properties on native
+    expect(names('swiftui')).not.toContain('hooks');
+    const wide = checks.gatesFor('web').find((g) => g.name === 'hooks') as Gate;
+    expect(wide.argv[3]?.replaceAll('\\', '/')).toMatch(/tools\/check_hooks\.ts$/);
+    expect(wide.argv.slice(-2)).toEqual(['--platform', 'web']);
+    const scoped = checks.gatesFor('lit', new Set(), new Set(), 'Link').find((g) => g.name === 'hooks') as Gate;
+    expect(scoped.argv.slice(-4)).toEqual(['--platform', 'lit', '--component', 'Link']);
+  });
 });
 
 describe('runGate', () => {
@@ -123,7 +135,7 @@ describe('runGate', () => {
 
 describe('runAll', () => {
   test('skipping everything runs nothing and prints nothing', () => {
-    const skip = ['parse', 'contrast', 'literals', 'typecheck', 'deps', 'modules'];
+    const skip = ['parse', 'contrast', 'literals', 'typecheck', 'deps', 'modules', 'hooks'];
     expect(checks.runAll('web', new Set(skip))).toEqual([]);
     expect(std.out()).toBe('');
   });

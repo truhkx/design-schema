@@ -59,7 +59,13 @@ export type SearchOverridableBinding =
   | 'labelWeight'
   | 'disabledOpacity';
 
-const HOOKS: Record<SearchOverridableBinding, string> = {
+/**
+ * `labelWeight` is forwarded to the label Text's `fontWeight` override and has
+ * no `--ds-search-*` hook: an unread custom property would look like a working one.
+ */
+type HookedBinding = Exclude<SearchOverridableBinding, 'labelWeight'>;
+
+const HOOKS: Record<HookedBinding, string> = {
   borderWidth: '--ds-search-border-width',
   radius: '--ds-search-radius',
   paddingInline: '--ds-search-padding-inline',
@@ -76,12 +82,11 @@ const HOOKS: Record<SearchOverridableBinding, string> = {
   popupShadow: '--ds-search-popup-shadow',
   layer: '--ds-search-layer',
   partGap: '--ds-search-part-gap',
-  labelWeight: '--ds-search-label-weight',
   disabledOpacity: '--ds-search-disabled-opacity',
 };
 
 /** Bindings drawn by the suggestions popup; no-ops while `suggestions` is undefined. */
-const POPUP_BINDINGS: ReadonlySet<SearchOverridableBinding> = new Set([
+const POPUP_BINDINGS: ReadonlySet<HookedBinding> = new Set<HookedBinding>([
   'suggestionsOffset',
   'popupSurface',
   'popupBorder',
@@ -210,8 +215,15 @@ export class DsSearch extends LitElement {
       --ds-search-popup-shadow: var(--shadow-overlay);
       --ds-search-layer: var(--layer-dropdown);
       --ds-search-part-gap: var(--space-1);
-      --ds-search-label-weight: var(--font-weight-medium);
       --ds-search-disabled-opacity: var(--opacity-disabled);
+      /* Locked bindings: out of the overrides type, but still hooks for page CSS. */
+      --ds-search-background: var(--color-control-background);
+      --ds-search-foreground: var(--color-foreground);
+      --ds-search-placeholder: var(--color-foreground-muted);
+      --ds-search-border: var(--color-border-strong);
+      --ds-search-border-focus: var(--color-border-focus);
+      --ds-search-min-target: var(--size-target-comfortable);
+      --ds-search-focus-ring-width: var(--border-width-focus);
       font-family: var(--ds-search-font-family);
       font-size: var(--ds-search-font-size);
       line-height: var(--ds-search-line-height);
@@ -268,24 +280,26 @@ export class DsSearch extends LitElement {
       gap: var(--ds-search-affix-gap);
       inline-size: 100%;
       /* minTarget (locked): size.target.comfortable */
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-search-min-target);
       padding-block: var(--ds-search-padding-block);
       padding-inline: var(--ds-search-padding-inline);
       border-style: solid;
       border-width: var(--ds-search-border-width);
-      border-color: var(--color-border-strong);
+      border-color: var(--ds-search-border);
       border-radius: var(--ds-search-radius);
-      background: var(--color-control-background);
+      background: var(--ds-search-background);
       transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
     }
 
     /* borderFocus + focusRingWidth (locked): only while the input itself is focused; the focus width replaces the border width and padding shrinks by the difference */
     [data-part='field']:has([data-part='input']:focus-visible) {
-      border-color: var(--color-border-focus);
-      border-width: var(--border-width-focus);
-      padding-block: calc(var(--ds-search-padding-block) - (var(--border-width-focus) - var(--ds-search-border-width)));
+      border-color: var(--ds-search-border-focus);
+      border-width: var(--ds-search-focus-ring-width);
+      padding-block: calc(
+        var(--ds-search-padding-block) - (var(--ds-search-focus-ring-width) - var(--ds-search-border-width))
+      );
       padding-inline: calc(
-        var(--ds-search-padding-inline) - (var(--border-width-focus) - var(--ds-search-border-width))
+        var(--ds-search-padding-inline) - (var(--ds-search-focus-ring-width) - var(--ds-search-border-width))
       );
     }
 
@@ -305,7 +319,7 @@ export class DsSearch extends LitElement {
       border: 0;
       outline: none;
       background: transparent;
-      color: var(--color-foreground);
+      color: var(--ds-search-foreground);
       font: inherit;
       appearance: none;
     }
@@ -316,7 +330,7 @@ export class DsSearch extends LitElement {
 
     /* placeholder (locked): color.foreground.muted */
     [data-part='input']::placeholder {
-      color: var(--color-foreground-muted);
+      color: var(--ds-search-placeholder);
       opacity: 1;
     }
 
@@ -338,7 +352,7 @@ export class DsSearch extends LitElement {
       border-radius: var(--ds-search-popup-radius);
       background: var(--ds-search-popup-surface);
       box-shadow: var(--ds-search-popup-shadow);
-      color: var(--color-foreground);
+      color: var(--ds-search-foreground);
       z-index: var(--ds-search-layer);
       opacity: 1;
       transition: opacity var(--motion-duration-fast) var(--motion-easing-standard);
@@ -593,6 +607,7 @@ export class DsSearch extends LitElement {
         data-part="form"
         part="form"
         role=${ifDefined(this.landmark ? 'search' : undefined)}
+        aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
         @submit=${this.handleFormSubmit}
         @focusout=${this.handleFocusOut}
       >
@@ -619,7 +634,7 @@ export class DsSearch extends LitElement {
             role=${combobox ? 'combobox' : 'searchbox'}
             aria-autocomplete=${ifDefined(combobox ? 'list' : undefined)}
             aria-expanded=${ifDefined(combobox ? String(this.open) : undefined)}
-            aria-controls=${ifDefined(combobox ? 'suggestions' : undefined)}
+            aria-controls=${ifDefined(combobox && this.open ? 'suggestions' : undefined)}
             aria-describedby=${ifDefined(activeLabel ? 'active-option' : undefined)}
             aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
             placeholder=${ifDefined(this.placeholder)}
@@ -659,13 +674,14 @@ export class DsSearch extends LitElement {
         </div>
         ${combobox
           ? html`<div
-              id="suggestions"
               data-part="suggestions"
               part="suggestions"
               popover=${ifDefined(POPOVER_SUPPORTED ? 'manual' : undefined)}
               ?hidden=${!POPOVER_SUPPORTED && !this.open}
+              @mousedown=${this.handlePopupMouseDown}
             >
               <ds-listbox
+                id="suggestions"
                 data-part="listbox"
                 label=${this.label}
                 embedded
@@ -796,6 +812,11 @@ export class DsSearch extends LitElement {
     }
   };
 
+  /** A press on a suggestion keeps focus in the input: focus moves by one route only (clear). */
+  private readonly handlePopupMouseDown = (event: MouseEvent): void => {
+    event.preventDefault();
+  };
+
   private readonly stopInternalEvent = (event: Event): void => {
     event.stopPropagation();
   };
@@ -833,8 +854,8 @@ export class DsSearch extends LitElement {
     if (this.value === undefined) {
       this.internalValue = item.label;
     }
+    // Focus stays where it is after a choice.
     this.open = false;
-    this.inputEl?.focus();
     this.emitChange(item.label);
     this.submitQuery(item.label);
   }
@@ -892,21 +913,39 @@ export class DsSearch extends LitElement {
     form.submit();
   }
 
-  /** Loading, no suggestions, or the plural count, while the list is open. */
+  /**
+   * Loading whenever `suggestions` is set and `loading` is true, list open or
+   * not (a fetch the user triggered is worth hearing about); no suggestions or
+   * the plural count only while the list is open.
+   */
   private statusText(): string {
+    if (this.isCombobox && this.loading && !this.disabled) {
+      return COPY_LOADING;
+    }
     if (!this.open) {
       return '';
-    }
-    if (this.loading) {
-      return COPY_LOADING;
     }
     const count = this.listOptions.length;
     if (count === 0) {
       return COPY_NO_SUGGESTIONS;
     }
-    const locale = this.closest('[lang]')?.getAttribute('lang') || navigator.language;
+    const locale = this.nearestLang() || navigator.language;
     const form = new Intl.PluralRules(locale).select(count) === 'one' ? 'one' : 'other';
     return COPY_SUGGESTIONS_COUNT[form].replace('{count}', String(count));
+  }
+
+  /** The `lang` of the nearest ancestor that sets one, crossing shadow roots. */
+  private nearestLang(): string {
+    let node: Element | null = this;
+    while (node) {
+      const lang = node.closest('[lang]')?.getAttribute('lang');
+      if (lang) {
+        return lang;
+      }
+      const root = node.getRootNode();
+      node = root instanceof ShadowRoot ? root.host : null;
+    }
+    return '';
   }
 
   /** Writes the status region `statusDebounce` after the wanted text last changed; clears it at once. */
@@ -970,18 +1009,25 @@ export class DsSearch extends LitElement {
     const fieldRect = field.getBoundingClientRect();
     const popupHeight = popup.getBoundingClientRect().height;
     const viewportHeight = document.documentElement.clientHeight;
-    const offset = parseFloat(getComputedStyle(this).getPropertyValue(HOOKS.suggestionsOffset)) || 0;
+    // suggestionsOffset is folded into the popup's own position (never a margin
+    // applied afterwards): place it below first, then read the resolved offset back.
+    const offsetRef = `var(${HOOKS.suggestionsOffset})`;
+    popup.style.bottom = 'auto';
+    popup.style.top = `calc(${fieldRect.bottom}px + ${offsetRef})`;
+    const offset = Math.max(0, parseFloat(getComputedStyle(popup).top) - fieldRect.bottom) || 0;
     const above = fieldRect.bottom + offset + popupHeight > viewportHeight && fieldRect.top - offset - popupHeight >= 0;
 
-    popup.style.top = above ? 'auto' : `${fieldRect.bottom + offset}px`;
-    popup.style.bottom = above ? `${viewportHeight - fieldRect.top + offset}px` : 'auto';
+    if (above) {
+      popup.style.top = 'auto';
+      popup.style.bottom = `calc(${viewportHeight - fieldRect.top}px + ${offsetRef})`;
+    }
     popup.style.left = `${fieldRect.left}px`;
     popup.style.minInlineSize = `${fieldRect.width}px`;
   }
 
   /** Sets each overridden hook; popup bindings apply only while the popup exists. */
   private applyOverrides(): void {
-    for (const binding of Object.keys(HOOKS) as SearchOverridableBinding[]) {
+    for (const binding of Object.keys(HOOKS) as HookedBinding[]) {
       const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
       if (ref === undefined || (!this.isCombobox && POPUP_BINDINGS.has(binding))) {

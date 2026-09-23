@@ -57,3 +57,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Search: in controlled mode, choosing a suggestion is under-specified. The doc says the choice fills the query with the suggestion's `label` and submits it, but a controlled element must not change its own text — so `change(label)` fires, the field still shows the caller's `value`, and `submit` carries the label the user never saw applied. I submit the trimmed `label` per the `onSubmit` payload description. The controlled-state section should name this ordering.
 - Search: a11y.role is `searchbox`, and the web notes say the input takes `role="combobox"` once `suggestions` is set, but nothing says what the input carries without suggestions — `<input type="search">` already maps to searchbox implicitly. I set `role` explicitly in both cases so the role is observable to the name/role tests rather than implied.
 - Search: the popup's inline size is not a binding. I set `min-inline-size` to the field's width (as ds-combobox does) so the list is never narrower than the field, and let a long suggestion label widen it. If the list should be pinned to the field width exactly, that needs to be said.
+
+## 2026-09-23 15:22 — round 1
+
+- Search: Guidance says the Keyboard story uses the with-suggestions example's two suggestions, but the React Keyboard story passes a three-item list (it adds 'Overdue invoices'). The story-parity rule and the guidance disagree; Lit follows the guidance, so the two Keyboard stories' args now differ.
+- Search: `loading` says it is announced 'list open or not', but Behavior says 'the live region is emptied when the list closes'. Lit keeps copy.loading in the status region while closed and empties only the count and no-suggestions text on close.
+- Search: disabled says `aria-disabled="true"` goes on 'the dimmed root'. In Lit the host has no role, so it went on the shadow <form> (the landmark/form part). The doc doesn't say which element counts as the root on Lit.
+- Search: disabled says a Form-level disabled unregisters Search the same way as its own `disabled`, but the Lit notes only cover ds-form skipping a disabled field. Search does not track the enclosing ds-form's disabled; it relies on ds-form to skip its fields.
+- Search: 'After choosing a suggestion, focus stays where it is' doesn't say what happens when a pointer press on an option would move focus into ds-listbox's shadow tabindex=0 listbox, which is then hidden. Lit cancels mousedown on the popup so focus stays in the input; the doc should say so.
+- Search: the `aria-controls` target is 'an id' passed to Listbox, but the role=listbox element sits inside ds-listbox's own shadow root. Lit points aria-controls at the ds-listbox host (id=suggestions); whether that satisfies aria-controls is unspecified.
+- Search: `submit` is a native event name (HTMLFormElement's), and the package rule forbids a CustomEvent with a native event's name. The schema maps onSubmit to lit `submit`, so Lit dispatches a composed CustomEvent('submit'). The shadow form's native submit does not cross the shadow boundary, and the light-DOM navigation form is submitted with form.submit(), which fires no event.
+
+## 2026-09-23 15:23 — round 2
+
+- Search: the foreground binding (color.foreground) has no `part`, so the doc doesn't say whether it also colors the suggestions popup. Lit uses --ds-search-foreground for both the input text and the popup wrapper, so restyling the foreground hook also restyles the popup text around the embedded ds-listbox.

@@ -212,6 +212,18 @@ export class DsNumberInput extends LitElement {
       --ds-number-input-font-size: var(--font-size-md);
       --ds-number-input-line-height: var(--font-line-height-normal);
       --ds-number-input-disabled-opacity: var(--opacity-disabled);
+      /* Locked bindings: out of the overrides API, still themeable from page CSS. */
+      --ds-number-input-background: var(--color-background);
+      --ds-number-input-foreground: var(--color-foreground);
+      --ds-number-input-placeholder: var(--color-foreground-muted);
+      --ds-number-input-border: var(--color-border-strong);
+      --ds-number-input-border-focus: var(--color-border-focus);
+      --ds-number-input-affix-color: var(--color-foreground-muted);
+      --ds-number-input-description-text: var(--color-foreground-muted);
+      --ds-number-input-error-text: var(--color-foreground-danger);
+      --ds-number-input-min-target: var(--size-target-comfortable);
+      --ds-number-input-min-target-sm: var(--size-target-min);
+      --ds-number-input-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -272,7 +284,12 @@ export class DsNumberInput extends LitElement {
       font-size: var(--ds-number-input-font-size);
       font-weight: var(--ds-number-input-label-weight);
       line-height: var(--ds-number-input-line-height);
-      color: var(--color-foreground);
+      color: var(--ds-number-input-foreground);
+    }
+
+    /* descriptionText (locked): the wrapper's colour; the composed Text draws its own muted tone. */
+    [data-part='description'] {
+      color: var(--ds-number-input-description-text);
     }
 
     /*
@@ -288,12 +305,12 @@ export class DsNumberInput extends LitElement {
       display: flex;
       align-items: stretch;
       inline-size: 100%;
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-number-input-min-target);
       padding-inline: calc(var(--ds-number-input-padding-inline) - var(--field-ring-delta));
       gap: var(--ds-number-input-affix-gap);
-      border: var(--field-border) solid var(--color-border-strong);
+      border: var(--field-border) solid var(--ds-number-input-border);
       border-radius: var(--ds-number-input-radius);
-      background: var(--color-background);
+      background: var(--ds-number-input-background);
       transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
     }
 
@@ -305,7 +322,7 @@ export class DsNumberInput extends LitElement {
 
     /* minTargetSm: the field height floor at size sm */
     :host([size='sm']) [data-part='field'] {
-      min-block-size: var(--size-target-min);
+      min-block-size: var(--ds-number-input-min-target-sm);
     }
 
     /* The steppers sit flush at the end of the field. */
@@ -318,8 +335,8 @@ export class DsNumberInput extends LitElement {
      * drawn while the input matches :focus-visible — no outline, as Input.
      */
     [data-part='field']:has([data-part='input']:focus-visible) {
-      --field-border: var(--border-width-focus);
-      border-color: var(--color-border-focus);
+      --field-border: var(--ds-number-input-focus-ring-width);
+      border-color: var(--ds-number-input-border-focus);
     }
 
     /* borderInvalid */
@@ -343,14 +360,14 @@ export class DsNumberInput extends LitElement {
       font-family: var(--ds-number-input-font-family);
       font-size: var(--ds-number-input-font-size);
       line-height: var(--ds-number-input-line-height);
-      color: var(--color-foreground);
+      color: var(--ds-number-input-foreground);
       appearance: none;
       -webkit-appearance: none;
     }
 
     /* placeholder: color.foreground.muted (locked) */
     [data-part='input']::placeholder {
-      color: var(--color-foreground-muted);
+      color: var(--ds-number-input-placeholder);
       opacity: 1;
     }
 
@@ -363,7 +380,7 @@ export class DsNumberInput extends LitElement {
     [data-part='suffix'] {
       display: inline-flex;
       align-items: center;
-      color: var(--color-foreground-muted);
+      color: var(--ds-number-input-affix-color);
       font-family: var(--ds-number-input-font-family);
       font-size: var(--ds-number-input-font-size);
       line-height: var(--ds-number-input-line-height);
@@ -663,6 +680,7 @@ export class DsNumberInput extends LitElement {
                   part="decrementButton"
                   data-part="decrementButton"
                   @pointerdown=${(event: PointerEvent) => this.handleStepperPointerDown(event, -1)}
+                  @mousedown=${this.keepFocus}
                   @pointerup=${this.stopRepeat}
                   @pointerleave=${this.endPointerStep}
                   @pointercancel=${this.endPointerStep}
@@ -681,6 +699,7 @@ export class DsNumberInput extends LitElement {
                   part="incrementButton"
                   data-part="incrementButton"
                   @pointerdown=${(event: PointerEvent) => this.handleStepperPointerDown(event, 1)}
+                  @mousedown=${this.keepFocus}
                   @pointerup=${this.stopRepeat}
                   @pointerleave=${this.endPointerStep}
                   @pointercancel=${this.endPointerStep}
@@ -770,16 +789,20 @@ export class DsNumberInput extends LitElement {
     return new Intl.NumberFormat(undefined, base).format(num);
   }
 
-  /** Reformat whenever the committed value or its formatting changes, except for the echo of the user's own typing. */
+  /**
+   * Reformat whenever the committed value or its formatting changes, except where the typed text wins:
+   * the echo of the user's own typing, a controlled change to `null` mid-typing (kept until blur/Enter),
+   * and committed non-numeric text, which stays as typed until the next edit.
+   */
   private syncText(): void {
     const committed = this.valueAsNumber;
     const formatKey = `${this.format}|${this.digits}|${this.currency ?? ''}|${this.unit ?? ''}`;
     const prev = this.lastSynced;
     if (prev && Object.is(prev.value, committed) && prev.formatKey === formatKey) return;
     this.lastSynced = { value: committed, formatKey };
-    if (prev && this.typing && prev.formatKey === formatKey) {
+    if (prev && (this.typing || this.textInvalid) && prev.formatKey === formatKey) {
       const typed = parseTyped(this.text);
-      if (Object.is(typed.kind === 'number' ? typed.value : undefined, committed)) return;
+      if (committed === undefined || Object.is(typed.kind === 'number' ? typed.value : undefined, committed)) return;
     }
     this.typing = false;
     this.text = committed === undefined ? '' : this.display(committed);
@@ -795,12 +818,18 @@ export class DsNumberInput extends LitElement {
     return this.rangeMessage;
   }
 
-  /** The error text shown: every message except a required miss the user has not been told about yet. */
+  /**
+   * The error text drawn, as Input: `error`; else, while invalid, copy.required for an empty required
+   * field or copy.invalid for committed text with no number; plus a reported clamp. `invalid` over a
+   * valid number draws nothing (aria-invalid and the border carry it), and an empty required field is
+   * not flagged until something marks it invalid.
+   */
   private get displayedMessage(): string | undefined {
-    const message = this.message;
-    if (message === undefined) return undefined;
-    if (this.error || this.invalid || this.textInvalid || this.rangeMessage) return message;
-    return undefined;
+    const withLabel = (copy: string): string => copy.replace('{label}', this.label);
+    if (this.error) return this.error;
+    if (this.textInvalid) return withLabel(COPY.invalid);
+    if (this.invalid && this.required && this.valueAsNumber === undefined) return withLabel(COPY.required);
+    return this.rangeMessage;
   }
 
   private rangeCopy(): string {
@@ -884,10 +913,11 @@ export class DsNumberInput extends LitElement {
     this.typing = true;
     this.text = raw;
     this.rangeMessage = undefined;
+    // Any edit clears the committed-invalid state; it is judged again on the next commit.
+    this.textInvalid = false;
     const parsed = parseTyped(raw);
     // Keystrokes that do not yet form a number ("-", ".") are left alone until blur.
     if (parsed.kind === 'invalid') return;
-    this.textInvalid = false;
     this.report(parsed.kind === 'number' ? parsed.value : undefined);
   }
 
@@ -943,6 +973,11 @@ export class DsNumberInput extends LitElement {
   private readonly stopInnerPress = (event: Event): void => {
     // The steppers are internal; the composite reports `change`, not the Buttons' `press`.
     event.stopPropagation();
+  };
+
+  /** A stepper press leaves focus where it is (the input, or nowhere), so it never triggers a blur commit. */
+  private readonly keepFocus = (event: MouseEvent): void => {
+    event.preventDefault();
   };
 
   private readonly stopRepeat = (): void => {

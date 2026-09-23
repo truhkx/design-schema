@@ -100,3 +100,80 @@ describe('ds-progress-bar', () => {
     expect(s.bar()).toHaveAccessibleName(s.props.label);
   });
 });
+
+/* Package-level coverage the doc assigns here: host values and the announcement state machine. */
+describe('ds-progress-bar values', () => {
+  it('reports the clamped value and range on the host', async () => {
+    const s = await setup({ value: 42 });
+    expect(s.el).toHaveAttribute('aria-valuenow', '42');
+    expect(s.el).toHaveAttribute('aria-valuemin', '0');
+    expect(s.el).toHaveAttribute('aria-valuemax', '100');
+    expect(s.el.getAttribute('aria-valuetext')).toBe(new Intl.NumberFormat(undefined, { style: 'percent' }).format(0.42));
+  });
+
+  it('is busy with no value while indeterminate', async () => {
+    const s = await setup();
+    s.el.value = undefined;
+    await s.el.updateComplete;
+    expect(s.el).toHaveAttribute('aria-busy', 'true');
+    expect(s.el).not.toHaveAttribute('aria-valuenow');
+    expect(s.el).not.toHaveAttribute('aria-valuetext');
+    expect(s.el).toHaveAttribute('aria-valuemin', '0');
+  });
+
+  it('exposes min and "0%" for an invalid range, bounds as given', async () => {
+    const s = await setup({ min: 10, max: 5, value: 7 });
+    expect(s.el).toHaveAttribute('aria-valuenow', '10');
+    expect(s.el).toHaveAttribute('aria-valuemin', '10');
+    expect(s.el).toHaveAttribute('aria-valuemax', '5');
+    expect(s.el.getAttribute('aria-valuetext')).toBe(new Intl.NumberFormat(undefined, { style: 'percent' }).format(0));
+  });
+
+  it('keeps the header and label when both label and value are hidden', async () => {
+    const s = await setup({ hideLabel: true, showValue: false });
+    expect(s.el).toHaveAttribute('hide-value');
+    expect(s.el.shadowRoot!.querySelector('[data-part=header] [data-part=label]')).not.toBeNull();
+    expect(s.el.shadowRoot!.querySelector('[data-part=valueText]')).toBeNull();
+  });
+});
+
+describe('ds-progress-bar announcements', () => {
+  const live = (el: DsProgressBar) => el.shadowRoot!.querySelector('[role=status]')!.textContent!.trim();
+  const set = async (el: DsProgressBar, value: number | undefined) => {
+    el.value = value;
+    await el.updateComplete;
+  };
+
+  it('records the mounted value silently', async () => {
+    const s = await setup({ value: 60, announce: 'milestones' });
+    expect(live(s.el)).toBe('');
+  });
+
+  it('announces the highest crossed milestone once, then completion', async () => {
+    const s = await setup({ label: 'Importing contacts', value: 10, announce: 'milestones' });
+    await set(s.el, 80);
+    expect(live(s.el)).toBe(`Importing contacts: ${s.el.displayText}`);
+    await set(s.el, 100);
+    expect(live(s.el)).toBe('Importing contacts: complete');
+  });
+
+  it('announces only completion under complete', async () => {
+    const s = await setup({ label: 'Export', value: 10, announce: 'complete' });
+    await set(s.el, 60);
+    expect(live(s.el)).toBe('');
+    await set(s.el, 100);
+    expect(live(s.el)).toBe('Export: complete');
+  });
+
+  it('announces nothing under none', async () => {
+    const s = await setup({ value: 10, announce: 'none' });
+    await set(s.el, 100);
+    expect(live(s.el)).toBe('');
+  });
+
+  it('announces entering the indeterminate state', async () => {
+    const s = await setup({ label: 'Syncing', value: 10 });
+    await set(s.el, undefined);
+    expect(live(s.el)).toBe('Syncing: in progress');
+  });
+});

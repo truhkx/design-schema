@@ -129,5 +129,11 @@ export const SuggestionsFromOnChange: Story = {
  * is no `open` prop — focus alone never opens it.
  */
 export const Keyboard: Story = {
-  args: { defaultValue: 'invoices', suggestions: SUGGESTIONS },
+  args: {
+    defaultValue: 'invoices',
+    suggestions: [
+      { value: 'invoices-march', label: 'Invoices from March' },
+      { value: 'invoices-april', label: 'Invoices from April' },
+    ],
+  },
 };

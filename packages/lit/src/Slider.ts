@@ -213,6 +213,37 @@ export class DsSlider extends LitElement {
       --ds-slider-font-family: var(--font-family-body);
       --ds-slider-disabled-opacity: var(--opacity-disabled);
       --ds-slider-transition: var(--motion-duration-fast);
+      /* locked: out of the overrides API, still themeable from page CSS */
+      --ds-slider-fill: var(--color-control-selected-background);
+      --ds-slider-thumb-border: var(--color-control-selected-background);
+      --ds-slider-thumb-border-width: var(--border-width-focus);
+      --ds-slider-mark-label-color: var(--color-foreground-muted);
+      --ds-slider-value-color: var(--color-foreground);
+      --ds-slider-bubble-surface: var(--color-inverse-surface);
+      --ds-slider-bubble-text: var(--color-inverse-foreground);
+      --ds-slider-description-text: var(--color-foreground-muted);
+      --ds-slider-error-text: var(--color-foreground-danger);
+      --ds-slider-min-target: var(--size-target-comfortable);
+      --ds-slider-focus-ring: var(--color-border-focus);
+      --ds-slider-focus-ring-width: var(--border-width-focus);
+    }
+
+    /*
+     * Text colour bindings are realised by each Text's tone; the hook reaches
+     * the child only through Text's documented --ds-text-color hook, set on the
+     * ds-text host (same token by default), never Text's shadow tree.
+     */
+    [data-part='valueText'] {
+      --ds-text-color: var(--ds-slider-value-color);
+    }
+    [data-part='description'] {
+      --ds-text-color: var(--ds-slider-description-text);
+    }
+    [data-part='errorMessage'] {
+      --ds-text-color: var(--ds-slider-error-text);
+    }
+    .mark-label > ds-text {
+      --ds-text-color: var(--ds-slider-mark-label-color);
     }
 
     :host([hidden]) {
@@ -232,6 +263,17 @@ export class DsSlider extends LitElement {
     }
 
     /* labelGap: between the label and the value text */
+    /*
+     * The label row and the mark label row paint above the thumbs, so a press
+     * where a thumb's hit area (minTarget) overflows the track area lands on
+     * them and moves nothing.
+     */
+    .label-row,
+    .mark-labels {
+      position: relative;
+      z-index: 1;
+    }
+
     .label-row {
       display: flex;
       align-items: baseline;
@@ -269,7 +311,7 @@ export class DsSlider extends LitElement {
       position: absolute;
       inset-block: 0;
       border-radius: var(--ds-slider-track-radius);
-      background: var(--color-control-selected-background);
+      background: var(--ds-slider-fill);
     }
 
     /* tickMarks: a layer on the track centre line */
@@ -291,7 +333,6 @@ export class DsSlider extends LitElement {
 
     /* The slider grows by one label line only when some mark is labelled. */
     .mark-labels {
-      position: relative;
       block-size: calc(var(--ds-slider-mark-label-size) * var(--font-line-height-normal));
     }
 
@@ -312,9 +353,9 @@ export class DsSlider extends LitElement {
     [data-part='thumb'] {
       position: absolute;
       inset-block-start: 50%;
-      margin-block-start: calc(var(--size-target-comfortable) / -2);
-      inline-size: var(--size-target-comfortable);
-      block-size: var(--size-target-comfortable);
+      margin-block-start: calc(var(--ds-slider-min-target) / -2);
+      inline-size: var(--ds-slider-min-target);
+      block-size: var(--ds-slider-min-target);
       outline: none;
       touch-action: none;
     }
@@ -334,7 +375,7 @@ export class DsSlider extends LitElement {
       margin-block-start: calc((var(--ds-slider-thumb-size) + var(--ds-slider-halo-spread) * 2) / -2);
       margin-inline-start: calc((var(--ds-slider-thumb-size) + var(--ds-slider-halo-spread) * 2) / -2);
       border-radius: var(--radius-full);
-      background: var(--color-control-selected-background);
+      background: var(--ds-slider-fill);
       opacity: 0;
       transition: opacity var(--ds-slider-transition) var(--motion-easing-standard);
     }
@@ -354,7 +395,7 @@ export class DsSlider extends LitElement {
       block-size: var(--ds-slider-thumb-size);
       margin-block-start: calc(var(--ds-slider-thumb-size) / -2);
       margin-inline-start: calc(var(--ds-slider-thumb-size) / -2);
-      border: var(--border-width-focus) solid var(--color-control-selected-background);
+      border: var(--ds-slider-thumb-border-width) solid var(--ds-slider-thumb-border);
       border-radius: var(--radius-full);
       background: var(--ds-slider-thumb);
       box-shadow: var(--ds-slider-thumb-shadow);
@@ -362,14 +403,14 @@ export class DsSlider extends LitElement {
 
     /* focusRing / focusRingWidth (locked): a ring around the knob, not the hit area */
     [data-part='thumb']:focus-visible::after {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-slider-focus-ring-width) solid var(--ds-slider-focus-ring);
+      outline-offset: var(--ds-slider-focus-ring-width);
     }
 
     /* bubbleOffset: above the top of the thumb's hit area, centred on the knob */
     .bubble-anchor {
       position: absolute;
-      inset-block-end: calc(50% + var(--size-target-comfortable) / 2 + var(--ds-slider-bubble-offset));
+      inset-block-end: calc(50% + var(--ds-slider-min-target) / 2 + var(--ds-slider-bubble-offset));
       inline-size: 0;
       display: flex;
       justify-content: center;
@@ -387,11 +428,11 @@ export class DsSlider extends LitElement {
      * --color-foreground re-scoped so the Text inside reads as inverse.
      */
     [data-part='bubble'] {
-      --color-foreground: var(--color-inverse-foreground);
+      --color-foreground: var(--ds-slider-bubble-text);
       padding-block: var(--ds-slider-bubble-padding-block);
       padding-inline: var(--ds-slider-bubble-padding-inline);
       border-radius: var(--ds-slider-bubble-radius);
-      background: var(--color-inverse-surface);
+      background: var(--ds-slider-bubble-surface);
       white-space: nowrap;
     }
 
@@ -479,6 +520,9 @@ export class DsSlider extends LitElement {
   private emitted: SliderValue | undefined;
 
   private interactionChanged = false;
+
+  /** Value distance from the pointer to a grabbed thumb, so a drag starts from where it was. */
+  private grabOffset = 0;
 
   /** The value `<ds-form>` collects: the decimal string, or two strings for a range. */
   get currentValue(): string | string[] | null {
@@ -725,7 +769,7 @@ export class DsSlider extends LitElement {
       aria-invalid=${ifDefined(invalid ? 'true' : undefined)}
       aria-required=${ifDefined(this.required ? 'true' : undefined)}
       style=${styleMap({
-        insetInlineStart: `calc(${this.percent(current)}% - var(--size-target-comfortable) / 2)`,
+        insetInlineStart: `calc(${this.percent(current)}% - var(--ds-slider-min-target) / 2)`,
       })}
       @keydown=${(event: KeyboardEvent) => this.handleKeydown(event, index)}
       @keyup=${this.handleKeyup}
@@ -842,8 +886,15 @@ export class DsSlider extends LitElement {
       return best;
     }
     const step = this.stepSize;
+    const digits = decimalsIn(step);
+    // When (max - min) is not a whole number of steps, the last partial step
+    // still snaps to `max`, so drag and click can reach it.
+    const lastGrid = roundTo(this.minValue + Math.floor((this.maxValue - this.minValue) / step) * step, digits);
+    if (clamped > lastGrid) {
+      return clamped - lastGrid >= this.maxValue - clamped ? this.maxValue : lastGrid;
+    }
     const steps = Math.round((clamped - this.minValue) / step);
-    return this.clamp(roundTo(this.minValue + steps * step, decimalsIn(step)));
+    return this.clamp(roundTo(this.minValue + steps * step, digits));
   }
 
   /** The first mark past `from` in `direction`; the bound itself past the last one. */
@@ -979,36 +1030,56 @@ export class DsSlider extends LitElement {
     return target - low <= high - target ? 0 : 1;
   }
 
-  /** Pointer position → a snapped value; logical, so right-to-left mirrors. */
-  private valueFromPointer(clientX: number): number | undefined {
+  /** Pointer position → an unsnapped value; logical, so right-to-left mirrors. */
+  private rawFromPointer(clientX: number): number | undefined {
     const track = this.trackEl;
     if (!track) return undefined;
     const rect = track.getBoundingClientRect();
     if (rect.width === 0) return undefined;
     let ratio = (clientX - rect.left) / rect.width;
     if (getComputedStyle(this).direction === 'rtl') ratio = 1 - ratio;
-    return this.snap(this.minValue + ratio * (this.maxValue - this.minValue));
+    return this.minValue + ratio * (this.maxValue - this.minValue);
   }
 
+  /**
+   * A press on the track area moves the nearest thumb to the press. A press
+   * inside a thumb's own hit area grabs that thumb instead and drags it from its
+   * current value (so a click on the thumb changes nothing); when both range
+   * thumbs share a value, a press before it takes the low thumb, after it the
+   * high thumb, and exactly on it the low thumb.
+   */
   private handlePointerDown(event: PointerEvent): void {
     if (this.isDisabled || !event.isPrimary) return;
-    const target = this.valueFromPointer(event.clientX);
-    if (target === undefined) return;
-    const index = this.nearestThumb(target);
+    const raw = this.rawFromPointer(event.clientX);
+    if (raw === undefined) return;
+    const grabbed = event.composedPath().find(
+      (node): node is HTMLElement => node instanceof HTMLElement && node.dataset['part'] === 'thumb',
+    );
+    let index: 0 | 1;
+    if (grabbed) {
+      const pair = toPair(this.resolvedValue);
+      if (!this.range) index = 0;
+      else if (pair[0] === pair[1]) index = raw > pair[0] ? 1 : 0;
+      else index = grabbed === this.thumbAt(1) ? 1 : 0;
+      this.grabOffset = pair[index] - raw;
+    } else {
+      index = this.nearestThumb(this.snap(raw));
+      this.grabOffset = 0;
+    }
     // Keep the press from selecting text; focus moves to the thumb explicitly.
     event.preventDefault();
     this.pressedIndex = index;
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     this.thumbAt(index)?.focus();
-    this.setThumb(index, target);
+    if (!grabbed) this.setThumb(index, this.snap(raw));
   }
 
   private handlePointerMove(event: PointerEvent): void {
     const index = this.pressedIndex;
     if (index === undefined || this.isDisabled) return;
-    const target = this.valueFromPointer(event.clientX);
-    if (target === undefined) return;
-    this.setThumb(index, target);
+    const raw = this.rawFromPointer(event.clientX);
+    if (raw === undefined) return;
+    this.setThumb(index, this.snap(raw + this.grabOffset));
   }
 
   private handlePointerUp(event: PointerEvent): void {

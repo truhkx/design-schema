@@ -86,3 +86,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - AlertDialog: the dev warning for an empty heading/description/confirmLabel says 'warns once' without saying once per instance or once per app; it is once per mounted instance (a ref).
 - AlertDialog: the rn notes say initial focus goes to the title, while the keyboard rules and Guidance say Cancel on web. The Keyboard story still renders a trigger with only two focusable children in the dialog, which the Guidance says is intended; the Storybook 'at least three focusable children' rule contradicts it and was not followed.
 - AlertDialog: the scrim scenario 'click: scrim' on native fires press on an Animated.View with no handler. RNTL's fireEvent.press on a View without onPress is a silent no-op, so the test passes whatever the component does and cannot fail.
+
+## 2026-09-23 19:08 — round 1
+
+- AlertDialog: the spec says initial accessibility focus goes to the heading wrapper 'after the enter animation' but gives no fallback when findNodeHandle returns null or animation is skipped (reduced motion); I focus immediately in that case and skip focus if there is no node.
+- AlertDialog: the a-scrim-click-does-nothing scenario uses `click: scrim`, but on native the scrim has no handler, so the test fires `press` on a view that ignores it and can only pass trivially; the doc does not say how to assert 'nothing reachable' on native.
+- AlertDialog: the accessible-name scenario is targeted at AlertDialog.surface per the notes, but the derived `has-accessible-name` scenario does not name a part, so the test finds it by label text; the doc should state the part for derived name checks.
+- AlertDialog: the spec says the surface carries accessibilityHint={description} and also that aria-describedby is used; on react-native-web I add aria-describedby via Platform.OS === 'web' because no RN prop covers it, which the doc does not mention.
+- AlertDialog: `layer` is documented as a no-op inside a Modal; I still apply it as zIndex on the centring View as the doc says.

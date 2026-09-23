@@ -156,6 +156,9 @@ export interface SidePanelProps {
 
 const COPY = {
   closeLabel: 'Close',
+  // Carried verbatim with the doc but never rendered here: the trigger Button's `expanded`
+  // sets accessibilityState.expanded, which the platform announces in its own words.
+  expanded: 'Expanded',
 } as const;
 
 /** Schema constants without a token; `dragSlop` (`space.1`) and `edgeZone` (`size.target.comfortable`) have one and are read from the theme. */

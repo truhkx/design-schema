@@ -268,7 +268,9 @@ export function Menu({
   const popupOffset = overrides?.popupOffset ? (resolveToken(t, overrides.popupOffset) as number) : t.space1;
   const maxHeightCap = overrides?.maxHeight ? (resolveToken(t, overrides.maxHeight) as number) : t.layoutMaxWidthProse;
   const gutter = overrides?.gutter ? (resolveToken(t, overrides.gutter) as number) : t.layoutGutter;
-  const minWidth = overrides?.minWidth ? (resolveToken(t, overrides.minWidth) as number) : t.space20 * 2.5; // literal-ok: schema-computed multiplier
+  // An override replaces the base token; the × 2.5 stays in the rule.
+  const minWidthBase = overrides?.minWidth ? (resolveToken(t, overrides.minWidth) as number) : t.space20;
+  const minWidth = minWidthBase * 2.5; // literal-ok: schema-computed multiplier
   const itemPaddingBlock = overrides?.itemPaddingBlock ? (resolveToken(t, overrides.itemPaddingBlock) as number) : t.spaceSm;
   const itemPaddingInline = overrides?.itemPaddingInline ? (resolveToken(t, overrides.itemPaddingInline) as number) : t.spaceMd;
   const itemGap = overrides?.itemGap ? (resolveToken(t, overrides.itemGap) as number) : t.layoutGapNormal;
@@ -630,7 +632,7 @@ function MenuActionRow({
       testID="Menu.item"
     >
       {action.icon !== undefined ? (
-        <View accessibilityElementsHidden importantForAccessibility="no" testID="Menu.itemIcon">
+        <View aria-hidden accessibilityElementsHidden importantForAccessibility="no" testID="Menu.itemIcon">
           <Icon name={action.icon} color={iconColor} />
         </View>
       ) : null}
@@ -638,7 +640,7 @@ function MenuActionRow({
         {action.label}
       </RNText>
       {action.shortcut !== undefined ? (
-        <RNText style={shortcutStyle} accessibilityElementsHidden importantForAccessibility="no" testID="Menu.itemShortcut">
+        <RNText style={shortcutStyle} aria-hidden accessibilityElementsHidden importantForAccessibility="no" testID="Menu.itemShortcut">
           {action.shortcut}
         </RNText>
       ) : null}

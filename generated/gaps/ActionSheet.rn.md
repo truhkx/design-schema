@@ -82,3 +82,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - ActionSheet: the item hover paint has no transition on rn (the spec names one only for web and Lit), so the pressed and hover background switches instantly.
 - ActionSheet: whether a disabled row keeps its focus border and pressed/hover paint is not specified. It keeps the focus border and gets no hover or pressed paint.
 - ActionSheet: the danger-group divider is a role="separator" View; the spec doesn't say whether it needs an orientation or any aria-orientation mirror. None was added.
+
+## 2026-09-23 19:11 — round 1
+
+- ActionSheet: the spec says the composed heading Text gets `element: p`, but rn Text has no element prop; the note covers it and I passed only tone and size.
+- ActionSheet: the item row label is a plain RN Text, not the system Text, because the rows need explicit fontFamily, fontSize, lineHeight and danger color from the sheet's own bindings. The spec does not say whether rows should compose Text.
+- ActionSheet: the `non-dismissible-still-reports-escape` scenario is limited to web and Lit, so on rn Escape is only reachable through `onRequestClose`. I covered it with a `Modal` `onRequestClose` test, but the spec gives no rn scenario for it.
+- ActionSheet: the spec gives no token for the `height: content` cap (90% of the viewport), so I kept a documented `literal-ok` module constant (`contentCap`).
+- ActionSheet: the `Keyboard` story's arrow, Home and End rules describe the web Menu presentation and have no rn implementation. The note says so, but the `keyboard` block still requires the story.

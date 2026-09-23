@@ -84,3 +84,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Popover: the rn notes say the Popover testID is on the panel and 'a closed popover has no testID', but they don't say whether a testID on the wrapper around the trigger is allowed; I would have dropped Popover.trigger
 - Popover: 'Every example is a story … with exactly its given as args' conflicts with the Guidance's rule that each example writes out every prop at its schema default (because meta.args merge in); the Guidance approach is what works in practice
 - Popover: 'the root carries testID=<Name>' conflicts with the phone presentation, where nothing carries it; the rn notes win, but the generic rule should mention the exception
+
+## 2026-09-23 19:09 — round 1
+
+- Popover: the tablet panel's name chain is stated as `accessibleName`, else string `label`, but the phone chain also includes `accessibilityLabel`; I used the phone chain (accessibleName, accessibilityLabel, label) in both presentations so one trigger names both.
+- Popover: 'a controlled consumer sets open false with no reason: focus returns only if it is inside the panel' has no native equivalent (no way to ask whether focus is inside). I restore focus only for the trigger, escape and close-button reasons, and never for an externally driven close.
+- Popover: the panel's exit fade uses motion.easing.exit and `exit` duration, but the spec does not say what happens to an open-again during the exit; I stop the exit animation and re-enter from the current progress.
+- Popover: the arrow before the panel is measured is centered assuming a panel two arrows wide; the spec gives no pre-measure rule, but the panel is opacity 0 then so it is not visible.
+- Popover: the notes contain a duplicated phrase ('The composed parts' the composed parts' testIDs') — a typo in the doc.

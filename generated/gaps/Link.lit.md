@@ -159,3 +159,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Link: `current` has no example and no story (the React package has none either), so no story shows aria-current; I added it as a meta arg defaulting to false and a control, not a `Current` story, to keep parity with React's story list.
 - Link: the web notes say `current: false` writes nothing so a consumer's `aria-current` passed through `...rest` still applies; Lit has no rest spread onto the shadow anchor, so a consumer cannot give the Lit anchor `aria-current="step"`/`"location"` at all. I chose to write only `page` when `current` is true. The doc should say whether Lit supports a non-page aria-current, and how.
 - Link: the `external-link-announces-that-it-leaves` scenario's `copy` check reads the anchor's textContent, which includes the leading space of `copy.externalSuffix`; the test asserts the verbatim suffix string including that space. The doc should confirm the check is verbatim rather than trimmed.
+
+## 2026-09-23 18:56 — round 1
+
+- Link: The Lit platform notes say locked bindings (colours, focus ring) get no `--ds-link-*` hook and their rules read the token directly. The Overrides section and package conventions say locked bindings keep their `:host` hook so page CSS and the naming codemod can still reach them. I kept the hooks (the existing element already had them) and the rules read the hooks; the doc should pick one.
+- Link: `copy.external` ('opens in new tab') is unused on Lit; only `copy.externalSuffix` is rendered. The doc does not say what `copy.external` is for on web or Lit, so I left it unused.
+- Link: The doc says `external` writes a modifier class or attribute 'even though no rule reads it'. The reflected `external` attribute serves as that modifier, and I added no class.
+- Link: The spec does not say whether the `ToneDefault` story should pass explicit `tone` args or rely on the meta defaults. I rely on the meta defaults and override `tone: 'default'` only.

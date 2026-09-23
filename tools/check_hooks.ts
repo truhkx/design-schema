@@ -81,7 +81,9 @@ export function forwardedBindings(component: Dict): Set<string> {
 /** One component on one platform; null when it has no locked bindings or no source file on that platform. */
 export function checkComponent(root: string, platform: string, component: Dict): Finding | null {
   const styles = (component.styles ?? {}) as Dict;
-  const locked = Object.entries(styles).filter(([, s]) => s !== null && typeof s === 'object' && (s as Dict).locked === true);
+  // A binding scoped to other platforms (`platforms: [rn, swiftui]`, e.g. Button's touchTarget) has no rule here to hook.
+  const onPlatform = (s: Dict): boolean => !Array.isArray(s.platforms) || (s.platforms as string[]).includes(platform);
+  const locked = Object.entries(styles).filter(([, s]) => s !== null && typeof s === 'object' && (s as Dict).locked === true && onPlatform(s as Dict));
   if (locked.length === 0) return null;
   const file = styleFile(root, platform, component.name as string);
   if (!existsSync(file)) return null; // not generated for this platform yet — not this gate's business

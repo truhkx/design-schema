@@ -228,3 +228,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Form: 'warns once in development' does not say once per element or once per page. The warning is emitted once per element.
 - Form: there is no keyboard block, but a Keyboard story is kept for parity with React.
 - Form (gate, not spec): the round-3 typecheck failure was in src/Tree.ts, a file this job never touched. Tree.ts was changed concurrently in the same worktree, and the error was gone on rerun. A package-wide typecheck can blame whichever job happens to be running.
+
+## 2026-09-23 18:59 — round 1
+
+- Form: the web note says the locked summary bindings (errorSummaryText, errorSummaryBackground) get no --ds-form-* hook 'on web or Lit', but the Overrides section says locked bindings keep their :host hook. I kept the hooks (including errorSummaryLineHeight, which the note does not list); the doc should pick one.
+- Form: the `Keyboard` story exists but the spec has no `keyboard` block, so it is a harness convenience with no rules to test; the doc should either declare the rules (Tab order, Enter submits) or drop the requirement.
+- Form: the spec does not say what a field with a name but no `id` and no registered host does in the summary Link's href when it is inside a shadow root; I use field.id after assigning `{idBase}-{name}` at submit time.
+- Form: an unnamed form's id base is the `ds-form-<n>` counter, so the id depends on how many forms were created on the page; it is not stable across renders in tests or SSR, and the doc does not say whether that matters.
+- Form: the nesting warning only inspects light-DOM ancestors (parentElement.closest), so a ds-form inside another component's shadow root within a native form is not detected; the doc does not say whether that case should warn.

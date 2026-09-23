@@ -199,3 +199,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Input: carried over from round 1: the Form's DsFormField says currentValue is null when empty, but Input's Lit notes say it is always ''. Followed the Lit notes.
 - Input: carried over from round 1: web notes give the field id as `<form.idBase>-<name>` for error-summary links. On Lit the ids are shadow-scoped ('field', 'description', 'error'), so a light-DOM summary link cannot target them. Kept the shadow ids; the doc should say how ds-form's summary reaches a Lit field.
 - Input: carried over from round 1: overrides.transition is described as a duration-only override but is typed as any TokenRef. Kept TokenRef.
+
+## 2026-09-23 18:57 — round 1
+
+- Input: the notes say the Lit host carries `data-ds-field` while the web notes say the root group carries it and 'never the <input>'; I kept it on the host on Lit, as the Lit notes say.
+- Input: `locked` says a locked binding keeps its `:host` hook, but errorText and descriptionText say they have no --ds-input-* hook; I followed the binding descriptions and declared no hook for those two.
+- Input: `controls.event: onChange` names `defaultValue`, but the Lit attribute is `default-value` and the spec never says whether an initial `value` attribute is also accepted; I kept `value` property-only.
+- Input: the notes say `formResetCallback` restores the uncontrolled value to `defaultValue`; I do that by clearing the edited value so `defaultValue` shows again, which leaves a later `defaultValue` change visible. The doc doesn't say whether the reset should freeze the value.
+
+## 2026-09-23 18:58 — round 2
+
+- Input: the spec says errorText and descriptionText have 'no --ds-input-* hook', but check_hooks requires every locked binding not forwarded through `overrides` to declare one. I declared them on :host without reading them, so page CSS setting them changes nothing. Either the doc should mark them as forwarded/exempt, or the gate should exempt bindings realised by a composed child's tone.
+- Text: check_hooks also reports its locked `--ds-text-color` as having no hook, which the Text doc describes as deliberately absent. It is outside this job and I did not touch it.

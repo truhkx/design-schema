@@ -187,20 +187,20 @@
     }
   },
   "Button.lit": {
-    "hash": "4bada4c0795917e1",
-    "lastAttemptHash": "4bada4c0795917e1",
-    "generatedAt": "2026-09-23T17:51:09+00:00",
-    "model": "opus",
+    "hash": "ce9a0734a4af0170",
+    "lastAttemptHash": "ce9a0734a4af0170",
+    "generatedAt": "2026-09-23T22:56:18+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.0318,
+    "rounds": 1,
+    "costUsd": 0.2851,
     "files": [
       "packages/lit/src/Button.stories.ts",
       "packages/lit/src/Button.test.ts",
       "packages/lit/src/Button.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 11,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -214,17 +214,20 @@
     }
   },
   "Card.lit": {
-    "hash": "eaf6a2c4b7e70eb6",
-    "lastAttemptHash": "eaf6a2c4b7e70eb6",
-    "generatedAt": "2026-09-23T18:01:13+00:00",
-    "model": "opus",
+    "hash": "c7eb3d20995fe95a",
+    "lastAttemptHash": "c7eb3d20995fe95a",
+    "generatedAt": "2026-09-23T23:01:02+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.6732,
+    "costUsd": 0.2504,
     "files": [
-      "packages/lit/src/Card.ts"
+      "packages/lit/src/Card.stories.ts",
+      "packages/lit/src/Card.test.ts",
+      "packages/lit/src/Card.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -321,20 +324,20 @@
     }
   },
   "Container.lit": {
-    "hash": "abb9c13c1c0ae1bb",
-    "lastAttemptHash": "abb9c13c1c0ae1bb",
-    "generatedAt": "2026-09-23T17:59:53+00:00",
-    "model": "opus",
+    "hash": "b355b80dc75a0f94",
+    "lastAttemptHash": "b355b80dc75a0f94",
+    "generatedAt": "2026-09-23T23:00:06+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.496,
+    "costUsd": 0.1914,
     "files": [
       "packages/lit/src/Container.stories.ts",
       "packages/lit/src/Container.test.ts",
       "packages/lit/src/Container.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 3,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -456,20 +459,20 @@
     }
   },
   "Divider.lit": {
-    "hash": "756e4085d88eb6fa",
-    "lastAttemptHash": "756e4085d88eb6fa",
-    "generatedAt": "2026-09-23T18:02:58+00:00",
-    "model": "opus",
+    "hash": "a186b39c60066ce5",
+    "lastAttemptHash": "a186b39c60066ce5",
+    "generatedAt": "2026-09-23T23:01:48+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.1215,
+    "rounds": 1,
+    "costUsd": 0.2355,
     "files": [
       "packages/lit/src/Divider.stories.ts",
       "packages/lit/src/Divider.test.ts",
       "packages/lit/src/Divider.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -566,20 +569,15 @@
     }
   },
   "Form.lit": {
-    "hash": "f3126ce83de4b96f",
-    "lastAttemptHash": "f3126ce83de4b96f",
-    "generatedAt": "2026-09-23T17:58:38+00:00",
-    "model": "opus",
+    "hash": "2db60a533ebb9db8",
+    "lastAttemptHash": "2db60a533ebb9db8",
+    "generatedAt": "2026-09-23T22:59:23+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 2.7214,
-    "files": [
-      "packages/lit/src/Form.stories.ts",
-      "packages/lit/src/Form.test.ts",
-      "packages/lit/src/Form.ts",
-      "packages/lit/src/index.ts"
-    ],
-    "gaps": 18,
+    "rounds": 1,
+    "costUsd": 0.2589,
+    "files": [],
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -647,20 +645,17 @@
     }
   },
   "Input.lit": {
-    "hash": "3bf91610a6ad52a8",
-    "lastAttemptHash": "3bf91610a6ad52a8",
-    "generatedAt": "2026-09-23T17:56:04+00:00",
-    "model": "opus",
+    "hash": "ddf948ed6293de3c",
+    "lastAttemptHash": "ddf948ed6293de3c",
+    "generatedAt": "2026-09-23T22:58:31+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 2,
-    "costUsd": 1.6335,
+    "costUsd": 0.6202,
     "files": [
-      "packages/lit/src/Input.stories.ts",
-      "packages/lit/src/Input.test.ts",
-      "packages/lit/src/Input.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Input.ts"
     ],
-    "gaps": 14,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -701,19 +696,19 @@
     }
   },
   "Link.lit": {
-    "hash": "ae8e6f5f44463619",
-    "lastAttemptHash": "ae8e6f5f44463619",
-    "generatedAt": "2026-09-23T17:53:37+00:00",
-    "model": "opus",
+    "hash": "b468fbb36c40bf58",
+    "lastAttemptHash": "b468fbb36c40bf58",
+    "generatedAt": "2026-09-23T22:56:57+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.7644,
+    "rounds": 1,
+    "costUsd": 0.21,
     "files": [
       "packages/lit/src/Link.stories.ts",
       "packages/lit/src/Link.test.ts",
       "packages/lit/src/Link.ts"
     ],
-    "gaps": 8,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,

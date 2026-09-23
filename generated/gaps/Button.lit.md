@@ -296,3 +296,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Button: the declared contract gives inverseHoverOpacity's computed value as `calc(var(--opacity-disabled) * 0.25)`, a bare opacity, but the binding's description says the color-mix percentage is `calc(var(--ds-button-inverse-hover-opacity) * 0.25 * 100%)`. I kept the description's form, which reads the hook and multiplies it to a percentage.
 - Button: `haspopup` is an enum with no default, so the derived scenarios need one story per value. React exports no Haspopup* stories, while Lit now has HaspopupMenu/Listbox/Tree/Grid/Dialog, so the stories are out of parity in the other direction.
 - Button: when `disabled` and `loading` are both true, the cursor isn't specified: `not-allowed` or `progress`. `loading` wins because its rule comes later in the CSS.
+
+## 2026-09-23 18:55 — round 1
+
+- Button: the lit notes say locked bindings get no `--ds-button-*` hook (the rule reads the token directly), but the Overrides contract and the package conventions say locked bindings keep their `:host` hook. I kept the hooks so page CSS and the naming codemod can still reach them; the notes should be reworded.
+- Button: the accessibility prose names a `touchTarget` binding for rn and swiftui, but it is not among the schema's `styles`. The existing element declares an unused `--ds-button-touch-target` hook for it. I left it in place; either add the binding to the schema or drop the hook.
+- Button: the `icon-only-in-a-toolbar` example gives `leadingIcon: "Icon name=close"` as shorthand. I read it as `<ds-icon slot="leading-icon" name="close" inline>`, which needs the story arg to be the icon name (`'close'`). The doc does not say how the shorthand maps to a story arg.
+- Button: `copy.loading` is not exposed to the element as a value, so I hard-code the string 'Loading' in a module constant. The doc does not say whether the copy should be a token or constant reference.

@@ -70,3 +70,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - FocusScope: the focusin pull-back order ends 'then to the wrapper when autoFocus is container'; on Lit the 'wrapper' is the invisible shadow-root anchor carrying data-part=scope (the host cannot take focus without delegatesFocus), and landing on the anchor is not recorded as a 'last focused descendant'. Worth stating explicitly in the Lit notes.
 - FocusScope: the 'invisible marker node' left beside the opener is not typed; chose a Comment node, which is not slottable but is a childList mutation a MutationObserver in the opener's parent (e.g. ds-toolbar's) will observe on mount and unmount.
 - FocusScope: the escape-attempt event is not declared cancelable, so wrapping always happens after dispatch; the doc could state that preventDefault on escape-attempt has no effect.
+
+## 2026-09-23 19:11 — round 1
+
+- FocusScope: the spec says `data-ds` goes on the host, but the `the-wrapper-is-not-focusable` and `auto-focus-container` scenarios locate the scope via the shadow-root anchor's `data-part`. The doc never says which element carries `data-focus-scope`; I left it off the Lit anchor.
+- FocusScope: the doc says the 'aria-hidden' subtree is excluded from the walker but does not say whether the slotted host's own `aria-hidden` counts. I treated it as excluding that subtree, the same as any element.

@@ -159,7 +159,7 @@ export const Keyboard: Story = {
         delay=${args.delay}
         .open=${args.open}
       >
-        <ds-button label="Bold" variant="secondary"></ds-button>
+        <ds-button label="Bold" variant="secondary" autofocus></ds-button>
       </ds-tooltip>
       <ds-tooltip content="Italic">
         <ds-button label="Italic" variant="secondary"></ds-button>

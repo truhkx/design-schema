@@ -538,20 +538,20 @@
     }
   },
   "FocusScope.lit": {
-    "hash": "f039ba95b9507313",
-    "lastAttemptHash": "f039ba95b9507313",
-    "generatedAt": "2026-09-23T18:22:41+00:00",
-    "model": "opus",
+    "hash": "9b58811adb041630",
+    "lastAttemptHash": "9b58811adb041630",
+    "generatedAt": "2026-09-23T23:12:09+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.6066,
+    "costUsd": 0.2387,
     "files": [
       "packages/lit/src/FocusScope.stories.ts",
       "packages/lit/src/FocusScope.test.ts",
       "packages/lit/src/FocusScope.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1247,18 +1247,20 @@
     }
   },
   "Toast.lit": {
-    "hash": "bf1237503588533d",
-    "lastAttemptHash": "bf1237503588533d",
-    "generatedAt": "2026-09-23T18:27:04+00:00",
-    "model": "opus",
+    "hash": "553b8de213c365b8",
+    "lastAttemptHash": "553b8de213c365b8",
+    "generatedAt": "2026-09-23T23:14:53+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.1665,
+    "rounds": 1,
+    "costUsd": 0.2654,
     "files": [
+      "packages/lit/src/Toast.stories.ts",
       "packages/lit/src/Toast.test.ts",
-      "packages/lit/src/Toast.ts"
+      "packages/lit/src/Toast.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 13,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1301,20 +1303,20 @@
     }
   },
   "Tooltip.lit": {
-    "hash": "7833e7a33f7d92ae",
-    "lastAttemptHash": "7833e7a33f7d92ae",
-    "generatedAt": "2026-09-23T18:23:52+00:00",
-    "model": "opus",
+    "hash": "0d2aa9e87f9d6e09",
+    "lastAttemptHash": "0d2aa9e87f9d6e09",
+    "generatedAt": "2026-09-23T23:14:03+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.6687,
+    "rounds": 2,
+    "costUsd": 0.7184,
     "files": [
       "packages/lit/src/Tooltip.stories.ts",
       "packages/lit/src/Tooltip.test.ts",
       "packages/lit/src/Tooltip.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,

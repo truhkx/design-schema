@@ -80,3 +80,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toast: nothing says whether a toast in its exit transition stays focusable. Chose: `inert` on the toast part while closing.
 - Toast: with two regions, each region's document-level F6 handler would act on the same press. Chose: the first handler calls preventDefault and the others ignore a defaultPrevented F6.
 - Toast: the Keyboard story's 'trigger button' has nothing to trigger with declarative Lit toasts. Chose: Before/After buttons around a static region.
+
+## 2026-09-23 19:14 — round 1
+
+- Toast: the region's wide-screen breakpoint (960px) is written into Toast.ts as a literal-ok media query. The spec says to read it from the default theme's layout.maxWidth.content at generation time, but gives no value, so I kept the existing number.
+- Toast: the spec doesn't say whether `dismissible: false` on a non-persistent toast leaves it with no controls at all. The existing code hides the dismiss button in that case, and only Escape or the timer can close it.
+- Toast: the spec doesn't name the timing fallback (50ms) added to the resolved exit duration when `transitionend` never fires. It is kept as a private constant, not a token.
+- Toast: the spec says F6 is 'from any' focus position and returns focus on a second press, but not what happens with two regions on a page. The existing code lets the first region's handler that acts win the press.

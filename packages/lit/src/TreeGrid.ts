@@ -185,7 +185,7 @@ const DATE_INSET: Partial<Record<DatePickerOverridableBinding, TokenRef | undefi
 const SORT_BUTTON_INSET: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>> = {
   paddingInline: 'space.0',
 };
-/** The expand Button fills the reserved `expandButtonSize` square, so its own inset is zeroed. */
+/** The ghost Button sits centred inside the reserved `expandButtonSize` square, so its own inset is zeroed. */
 const EXPAND_BUTTON_INSET: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>> = {
   paddingBlock: 'space.0',
   paddingInline: 'space.0',
@@ -282,8 +282,9 @@ function descendantsOf(row: TreeGridRow): TreeGridRow[] {
  * `ds-data-grid`'s structure: `div`s with explicit `treegrid`/`rowgroup`/`row`/`columnheader`/`rowheader`/`gridcell`
  * roles, the grid element as the one tab stop pointing `aria-activedescendant` at the current cell, and the body
  * virtualized over the flattened visible rows for `height: viewport` and `fixed`. Each row carries `aria-level`,
- * `aria-setsize`, `aria-posinset`, and `aria-expanded` when it has children. The row header holds the indent (with
- * one guide line per ancestor level), the `aria-hidden` expand `ds-button` and the cell content.
+ * `aria-setsize`, `aria-posinset`, and `aria-expanded` when it has children. The row header holds the indent
+ * spacer, the expand `ds-button` -- exposed and named, never `aria-hidden` -- and the cell content; the guide
+ * lines are drawn on the row itself, one per ancestor level.
  *
  * @fires expand-change - Expansion changed; detail is the bare array of expanded ids.
  * @fires expand - A `children: "lazy"` row opened; detail is its bare id.
@@ -310,6 +311,17 @@ export class DsTreeGrid extends LitElement {
       --ds-tree-grid-transition: var(--motion-duration-fast);
       /* minTarget (locked): the row-height floor. Virtualization measures a rendered row instead. */
       --ds-tree-grid-row-size: var(--size-target-min);
+      /*
+       * Internal, not an override hook: where the row-header column starts inside a row. The row header is
+       * required to come first after the selection column, so this is that column's width or nothing, and it
+       * is the offset the guide lines are measured from.
+       */
+      --ds-tree-grid-guide-start: var(--space-0);
+      /*
+       * Internal, not an override hook: the row hover and editor-open transitions are DataGrid's, at
+       * DataGrid's own token. TreeGrid's own overridable transition is the chevron rotation and nothing else.
+       */
+      --ds-tree-grid-row-transition: var(--motion-duration-fast);
       font-family: var(--font-family-body);
       font-size: var(--font-size-sm);
       line-height: var(--font-line-height-tight);
@@ -318,6 +330,15 @@ export class DsTreeGrid extends LitElement {
 
     :host([density='comfortable']) {
       --ds-tree-grid-row-size: var(--size-target-comfortable);
+    }
+    /*
+     * A grid with a selection column is comfortable at both density values: the select Checkbox is raised to a
+     * full minimum target below, and a compact row -- one minimum target tall -- leaves no space between two
+     * neighbouring ones. The selection column also shifts where the row header, and so the guides, start.
+     */
+    :host([selectable='row']) {
+      --ds-tree-grid-row-size: var(--size-target-comfortable);
+      --ds-tree-grid-guide-start: var(--size-target-min);
     }
 
     :host([hidden]) {
@@ -416,6 +437,40 @@ export class DsTreeGrid extends LitElement {
     [data-part='row'] {
       position: relative;
       z-index: 1;
+      transition: background-color var(--ds-tree-grid-row-transition) var(--motion-easing-standard);
+    }
+    /*
+     * guideLine / guideLineWidth: one vertical line per ancestor level, the full height of every descendant
+     * row, centred on that ancestor's expand button. Decorative, and drawn on the row rather than inside the
+     * row header cell, whose hidden overflow and sticky pinning would each clip it. The strip runs from the
+     * row header's start plus its inline padding to this row's own level, and the repeating gradient puts one
+     * line every indent inside it -- so the count follows --ds-tree-grid-depth with no per-level element.
+     * It is out of flow, so the grid container's tracks are untouched.
+     */
+    [data-part='row'].nested::before {
+      content: '';
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: calc(
+        var(--ds-tree-grid-guide-start) + var(--ds-tree-grid-cell-padding-inline) +
+          (var(--size-target-min) - var(--ds-tree-grid-guide-line-width)) / 2
+      );
+      inline-size: calc(var(--ds-tree-grid-indent) * var(--ds-tree-grid-depth));
+      background-image: repeating-linear-gradient(
+        to right,
+        var(--ds-tree-grid-guide-line) 0 var(--ds-tree-grid-guide-line-width),
+        transparent 0 var(--ds-tree-grid-indent)
+      );
+      pointer-events: none;
+      /* Below the cells, which are transparent, so a pinned column covers the guides rather than the reverse. */
+      z-index: 0;
+    }
+    [data-part='row'].nested:dir(rtl)::before {
+      background-image: repeating-linear-gradient(
+        to left,
+        var(--ds-tree-grid-guide-line) 0 var(--ds-tree-grid-guide-line-width),
+        transparent 0 var(--ds-tree-grid-indent)
+      );
     }
     [data-part='row'].virtual {
       position: absolute;
@@ -489,17 +544,10 @@ export class DsTreeGrid extends LitElement {
       text-align: center;
     }
 
-    /* indent: per level, on the row header's indent part; guide lines hang from it */
+    /* indent: the spacer at the start of the row header, indent x (level - 1) wide; level 1 has none */
     [data-part='indent'] {
       flex: none;
       align-self: stretch;
-    }
-    .guide {
-      position: absolute;
-      inset-block: 0;
-      inline-size: var(--ds-tree-grid-guide-line-width);
-      background: var(--ds-tree-grid-guide-line);
-      pointer-events: none;
     }
 
     /* expandGap: between the expand control and the row header text */
@@ -511,7 +559,11 @@ export class DsTreeGrid extends LitElement {
       block-size: 100%;
     }
 
-    /* expandButtonSize (locked): the reserved square the guide lines align to */
+    /*
+     * expandButtonSize (locked): the wrapper TreeGrid owns is this size on both axes and is the pointer
+     * target; the ghost Button is centred inside it unmodified. Leaves reserve the same inline size so every
+     * row header's text starts at one offset and the guides stay aligned.
+     */
     .expand-chevron,
     .expand-spacer {
       flex: none;
@@ -519,10 +571,7 @@ export class DsTreeGrid extends LitElement {
       align-items: center;
       justify-content: center;
       inline-size: var(--size-target-min);
-    }
-    [data-part='expandButton'] ds-button {
-      inline-size: var(--size-target-min);
-      block-size: var(--size-target-min);
+      min-block-size: var(--size-target-min);
     }
     /* transition: the chevron rotation, on the span around the Button and never on the Icon */
     .expand-chevron {
@@ -554,6 +603,16 @@ export class DsTreeGrid extends LitElement {
       padding-inline: 0;
       min-inline-size: var(--size-target-min);
     }
+    /*
+     * minTarget (locked) answers target-24px for the composed Checkbox, whose own control is smaller than a
+     * minimum target: two select Checkboxes in neighbouring rows would otherwise leave no safe space between
+     * them. The grid raises the child's documented controlSize hook rather than reaching into its shadow
+     * tree, and sets it on the ds-checkbox itself -- an inherited value loses to Checkbox's own :host default.
+     */
+    [data-part='selectCell'],
+    [data-part='selectAllCell'] {
+      --ds-checkbox-control-size: var(--size-target-min);
+    }
 
     .pinned-start,
     .pinned-end {
@@ -584,6 +643,7 @@ export class DsTreeGrid extends LitElement {
     .cell.editing {
       background: var(--color-control-background);
       box-shadow: inset 0 0 0 var(--border-width-focus) var(--color-border-focus);
+      transition: background-color var(--ds-tree-grid-row-transition) var(--motion-easing-standard);
     }
     [data-part='cell'].editing {
       padding-inline: 0;
@@ -663,7 +723,9 @@ export class DsTreeGrid extends LitElement {
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .expand-chevron {
+      .expand-chevron,
+      [data-part='row'],
+      .cell.editing {
         transition: none;
       }
     }
@@ -1046,7 +1108,7 @@ export class DsTreeGrid extends LitElement {
     return html`<div
       role="row"
       data-part="row"
-      class=${classMap({ 'row-layout': true, virtual })}
+      class=${classMap({ 'row-layout': true, virtual, nested: entry.level > 1 })}
       aria-rowindex=${index + 2}
       aria-level=${entry.level}
       aria-setsize=${entry.setsize}
@@ -1057,6 +1119,8 @@ export class DsTreeGrid extends LitElement {
       style=${styleMap({
         gridTemplateColumns: layout.columns,
         inlineSize: layout.width,
+        /* One guide line per ancestor level; the row's ::before repeats the line that many times. */
+        '--ds-tree-grid-depth': String(entry.level - 1),
         /* Until a row has been measured, offsets come from the row-size token. */
         transform: virtual
           ? this.rowHeightPx
@@ -1142,9 +1206,10 @@ export class DsTreeGrid extends LitElement {
   }
 
   /**
-   * The row header's indent (with one guide line per ancestor level), expand button and content. The `expandButton`
-   * part is the span this element owns around the composed Button: it is the pointer target and carries the
-   * rotation, never the Icon.
+   * The row header's indent spacer, expand button and content. The `expandButton` part is the span this element
+   * owns around the composed Button: it is the pointer target, it is `expandButtonSize` on both axes, and it
+   * carries the rotation, never the Icon. The guide lines are not drawn here — they hang off the row, whose
+   * `::before` is neither clipped by this cell's `overflow: hidden` nor moved by a sticky pinned column.
    *
    * Neither the span nor the Button is `aria-hidden`. The Button is a real, focusable control — `tabindex="-1"`
    * only takes it out of the tab order — so hiding either would be axe's `aria-hidden-focus`. It stays exposed
@@ -1153,22 +1218,12 @@ export class DsTreeGrid extends LitElement {
    */
   private renderTreeColumn(entry: VisibleRow, content: TemplateResult | typeof nothing): TemplateResult {
     const row = entry.row;
-    const guides = Array.from(
-      { length: entry.level - 1 },
-      (_, depth) =>
-        html`<span
-          class="guide"
-          style=${styleMap({
-            insetInlineStart: `calc(var(--ds-tree-grid-cell-padding-inline) + var(--ds-tree-grid-indent) * ${depth} + var(--size-target-min) / 2 - var(--ds-tree-grid-guide-line-width) / 2)`,
-          })}
-        ></span>`,
-    );
     const name = row ? this.rowName(row) : '';
     return html`<span
         data-part="indent"
         aria-hidden="true"
-        style=${styleMap({ paddingInlineStart: `calc(var(--ds-tree-grid-indent) * ${entry.level - 1})` })}
-        >${guides}</span
+        style=${styleMap({ inlineSize: `calc(var(--ds-tree-grid-indent) * ${entry.level - 1})` })}
+      ></span
       ><span class="node">
         ${row && entry.hasChildren
           ? html`<span
@@ -2152,7 +2207,8 @@ export class DsTreeGrid extends LitElement {
       if (node.dataset['row'] !== undefined && node.dataset['col'] !== undefined) {
         return { row: Number(node.dataset['row']), col: Number(node.dataset['col']), inControl };
       }
-      if (node.matches(`${CELL_CONTROLS}, .editor-frame, .resize-handle`)) {
+      /* The expand button's own wrapper handles its click, so the cell's pointer rules skip it entirely. */
+      if (node.matches(`${CELL_CONTROLS}, .editor-frame, .resize-handle, [data-part='expandButton']`)) {
         inControl = true;
       }
       if (node === this.gridEl) {
@@ -2181,7 +2237,18 @@ export class DsTreeGrid extends LitElement {
     if (hit.inControl) {
       return;
     }
-    const row = hit.row >= 0 ? rows[hit.row]?.row : undefined;
+    const entry = hit.row >= 0 ? rows[hit.row] : undefined;
+    const row = entry?.row;
+    /*
+     * A plain click on the row header of a row with children toggles it and never selects the cell,
+     * `selectable: "cell"` included. A modified click keeps its selection meaning, and a leaf row header
+     * follows DataGrid's order below.
+     */
+    if (row && entry.hasChildren && hit.col === this.rowHeaderCol && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
+      this.setExpanded([row], !entry.expanded);
+      this.focusGrid();
+      return;
+    }
     if (this.selectable === 'cell' && row && moved) {
       this.emitCellSelection();
     } else if (this.selectable === 'row' && row && hit.col > 0) {

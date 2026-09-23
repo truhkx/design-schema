@@ -73,8 +73,12 @@ describe('ds-landmark', () => {
     expect(s.el.shadowRoot!.querySelector('[role="search"]')).not.toBeNull();
   });
   test('main-is-the-primary-content-landmark', async () => {
-    const s = await setup({"role": "main"});
+    const s = await setup({"role": "main", "label": ""});
     expect(s.el.shadowRoot!.querySelector('[role="main"]')).not.toBeNull();
+  });
+  test('a-label-is-dropped-on-a-role-that-refuses-one', async () => {
+    const s = await setup({"role": "banner", "label": "Site header"});
+    expect(s.region()).not.toHaveAttribute("aria-label");
   });
   test('a-region-is-named-by-its-label', async () => {
     const s = await setup({"role": "region", "label": "Related articles"});

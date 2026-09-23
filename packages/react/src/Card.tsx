@@ -6,9 +6,12 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type ElementType,
+  type FocusEvent,
+  type PointerEvent,
   type ReactElement,
   type ReactNode,
   type Ref,
@@ -71,13 +74,16 @@ export interface CardProps
   /**
    * The body. Usually a Stack of Text and controls; a plain string or number is rendered inside the
    * system Text with its defaults (a bare string cannot sit in a native View), including each
-   * top-level string or number in an array body.
+   * top-level string or number in an array body. Fragments and arrays are flattened before the
+   * wrap, exactly as they are when the interactive target is looked for, so a string directly
+   * inside a top-level Fragment is wrapped too.
    */
   children: ReactNode;
   /**
    * The card's title, rendered as the system Heading at the card's level and at `size: lg` on every
    * platform, so a card heading reads smaller than a page heading. Omit for cards that are a single
-   * piece of content; an empty string counts as omitted (no article, no label).
+   * piece of content; an empty string counts as omitted (no article, no label) — but the header row
+   * still renders when `headerActions` is set, holding the actions alone.
    */
   heading?: string | undefined;
   /** Heading level for `heading`, so cards fit the page outline. Cards in a list share a level. */
@@ -100,16 +106,22 @@ export interface CardProps
    * is accepted too); controls nested inside a wrapper such as a Stack are not searched, so place
    * the link at the top level beside any Text. A top-level Fragment is flattened, so its children
    * count as top-level. With zero or several such children the card stays non-interactive (no hit
-   * area, no hover background, no press) and warns once per mounted card in development. If the
-   * child is disabled the card is disabled with it. Controls in `headerActions` and `footer` are
-   * never the target; they sit above the hit area and keep their own targets.
+   * area, no hover background, no press) and warns once per mounted card in development — latched
+   * for the life of the mount, so a card that goes valid and then invalid again does not warn a
+   * second time. If the child is disabled the card is disabled with it: no hover background and
+   * pressing does nothing. The card itself never dims; the child renders its own disabled state.
+   * Controls in `headerActions` and `footer` are never the target; they sit above the hit area and
+   * keep their own targets.
    */
   interactive?: boolean | undefined;
   /**
    * The card root takes tabindex=-1 so a container (Feed) can move focus to it by script, and
    * draws its own focus ring when focused that way. Not a tab stop; not for making cards
    * clickable (`interactive`). With `interactive` also set, `interactive` wins and this is a
-   * no-op — the card already has a target — and a development warning says so.
+   * no-op — the card already has a target — and a development warning says so. It stays a no-op
+   * whenever `interactive` is set, even when that card fell back to non-interactive for want of a
+   * single target. The ring is an outline drawn outside the box, so a focusable card reserves no
+   * border.
    */
   focusable?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
@@ -132,12 +144,16 @@ function isTarget(node: ReactNode): node is ReactElement<Record<string, unknown>
 /**
  * The body's top-level children, with Fragments flattened so a `<>…</>` wrapper does not hide the
  * card's single target (and so no clone ever lands on a Fragment, which takes no attributes).
+ * Each nested `Children.toArray` restarts its keys, so a flattened Fragment's children are re-keyed
+ * under the Fragment's own key rather than colliding with the siblings they join.
  */
-function topLevelChildren(children: ReactNode): ReactNode[] {
+function topLevelChildren(children: ReactNode, prefix: string = ''): ReactNode[] {
   const items: ReactNode[] = [];
   for (const child of Children.toArray(children)) {
     if (isValidElement<{ children?: ReactNode }>(child) && child.type === Fragment) {
-      items.push(...topLevelChildren(child.props.children));
+      items.push(...topLevelChildren(child.props.children, `${prefix}${String(child.key)}`));
+    } else if (prefix !== '' && isValidElement(child)) {
+      items.push(cloneElement(child, { key: `${prefix}${String(child.key)}` }));
     } else {
       items.push(child);
     }
@@ -163,6 +179,10 @@ export function Card({
   interactive = false,
   focusable = false,
   overrides,
+  onFocus,
+  onBlur,
+  onPointerDown,
+  onPointerUp,
   ...rest
 }: CardProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const headingId = useId();
@@ -172,12 +192,12 @@ export function Card({
   const items = topLevelChildren(children);
   const targets = interactive ? items.filter(isTarget) : [];
   const target = targets.length === 1 ? targets[0]! : null;
-  const isInteractive = target !== null;
+  const hasTarget = target !== null;
   // A bare string or number cannot carry the body's type styles, so each one goes inside Text.
   const hasBareText = items.some((item) => typeof item === 'string' || typeof item === 'number');
 
   let body: ReactNode = children;
-  if (isInteractive || hasBareText) {
+  if (hasTarget || hasBareText) {
     // `Children.toArray` already keys every element, so only the wrapped bare strings need one of
     // their own; re-keying the rest would remount the body whenever `interactive` flips.
     body = items.map((item, index) => {
@@ -187,11 +207,46 @@ export function Card({
     });
   }
   // `interactive` wins: the card already has a target, so it takes no scripted focus of its own.
+  // It wins on the prop alone, so a card that fell back to non-interactive stays a no-op too.
   const isFocusable = focusable && !interactive;
+
+  /*
+   * Only scripted focus (a Feed's PageUp/PageDown) lands on a focusable card, and Chromium does not
+   * match :focus-visible on a programmatic focus() that follows a pointer interaction — exactly the
+   * Feed case. So the card keeps its own ring state from focusin/focusout, and skips it when the
+   * focusin follows a pointerdown on the card. The CSS draws on either this state or :focus-visible.
+   */
+  const [focusRing, setFocusRing] = useState(false);
+  const afterPointerDown = useRef(false);
+
+  const handleFocus = (event: FocusEvent<HTMLElement>): void => {
+    onFocus?.(event);
+    if (event.target !== event.currentTarget) return;
+    const fromPointer = afterPointerDown.current;
+    afterPointerDown.current = false;
+    if (isFocusable && !fromPointer) setFocusRing(true);
+  };
+
+  const handleBlur = (event: FocusEvent<HTMLElement>): void => {
+    onBlur?.(event);
+    if (event.target !== event.currentTarget) return;
+    setFocusRing(false);
+  };
+
+  const handlePointerDown = (event: PointerEvent<HTMLElement>): void => {
+    onPointerDown?.(event);
+    afterPointerDown.current = true;
+  };
+
+  const handlePointerUp = (event: PointerEvent<HTMLElement>): void => {
+    onPointerUp?.(event);
+    // A pointerdown that moved focus nowhere must not suppress the next scripted focus.
+    afterPointerDown.current = false;
+  };
 
   const warnedNoTarget = useRef(false);
   const warnedBoth = useRef(false);
-  const warnNoTarget = isDev && interactive && !isInteractive;
+  const warnNoTarget = isDev && interactive && !hasTarget;
   const warnBoth = isDev && interactive && focusable;
   useEffect(() => {
     if (warnNoTarget && !warnedNoTarget.current) {
@@ -214,8 +269,12 @@ export function Card({
     'ds-card',
     `ds-card--inset-${inset}`,
     `ds-card--surface-${surface}`,
-    isInteractive ? 'ds-card--interactive' : null,
+    // The reserved focus-ring border is keyed on the prop alone, so a card that fell back to
+    // non-interactive keeps its geometry instead of shifting on a content change.
+    interactive ? 'ds-card--interactive' : null,
+    hasTarget ? 'ds-card--has-target' : null,
     isFocusable ? 'ds-card--focusable' : null,
+    isFocusable && focusRing ? 'ds-card--focus-ring' : null,
   ]
     .filter(Boolean)
     .join(' ');
@@ -233,6 +292,10 @@ export function Card({
       style={overrides ? overridesToStyle(overrides) : undefined}
       aria-labelledby={hasHeading ? headingId : undefined}
       tabIndex={isFocusable ? -1 : rest.tabIndex}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
     >
       {hasHeading || hasHeaderActions ? (
         <div className="ds-card__header" data-part="header">

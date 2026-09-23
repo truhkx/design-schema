@@ -4,6 +4,7 @@ import { layoutBreakpointMd } from '@design-schema/tokens/calm-precise/light';
 
 import type { TopItem } from '../nav';
 import { applyTheme, THEME_LINK_ATTR } from '../theme-switch';
+import { chooseMode, parseMode, storedMode, type ModeChoice } from '../mode-switch';
 
 /** User-facing strings, in one place, the way the generated components keep theirs. */
 const COPY = {
@@ -11,7 +12,11 @@ const COPY = {
   menuHeading: 'Menu',
   openMenu: 'Open menu',
   themeLabel: 'Theme',
+  modeLabel: 'Appearance',
+  modes: { light: 'Light', dark: 'Dark', system: 'System' } satisfies Record<ModeChoice, string>,
 };
+
+const MODE_OPTIONS = (Object.keys(COPY.modes) as ModeChoice[]).map((value) => ({ value, label: COPY.modes[value] }));
 
 export interface HeaderNavProps {
   /** The top-level links, from `generated/nav.json`'s `top` list. Never hand-written. */
@@ -21,7 +26,7 @@ export interface HeaderNavProps {
 }
 
 /**
- * The interactive half of the site header: the nav links, the theme switcher, and — below
+ * The interactive half of the site header: the nav links, the theme and appearance switchers, and — below
  * `layout.breakpoint.md` — the hamburger and its `SidePanel` drawer
  * (site/src/content/docs/process/website-plan.md, "Global chrome").
  *
@@ -40,6 +45,11 @@ export default function HeaderNav({ items, themes }: HeaderNavProps) {
     const active = document.documentElement.getAttribute(THEME_LINK_ATTR);
     if (active && themes.some((candidate) => candidate.id === active)) setTheme(active);
   }, [themes]);
+
+  // The same for the mode, except the choice (not the resolved `data-mode`) is what the control
+  // shows: `system` on a dark machine is still "System", so it is read back from storage.
+  const [mode, setMode] = useState<ModeChoice>('system');
+  useEffect(() => setMode(storedMode()), []);
 
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return undefined;
@@ -129,8 +139,16 @@ export default function HeaderNav({ items, themes }: HeaderNavProps) {
     applyTheme(id);
   };
 
+  const chooseAppearance = (value: string) => {
+    const choice = parseMode(value);
+    setMode(choice);
+    chooseMode(choice);
+  };
+
+  // Link's default tone: in the header that is the dark `--color-link` from the band's
+  // `data-mode="dark"`, and in the drawer (portaled to <body>) the page's own.
   const links = items.map((item) => (
-    <Link key={item.href} href={item.href} label={item.label} external={item.external} tone="inherit" />
+    <Link key={item.href} href={item.href} label={item.label} external={item.external} />
   ));
 
   // One control per layout, both driven by the same state: only one of the two is ever displayed,
@@ -145,6 +163,12 @@ export default function HeaderNav({ items, themes }: HeaderNavProps) {
     />
   );
 
+  // Built the same way, beside it. It changes `data-mode` on <html> only; the header band carries
+  // its own `data-mode="dark"` (Header.astro) and stays dark whatever is chosen here.
+  const modeControl = (
+    <SegmentedControl label={COPY.modeLabel} size="sm" value={mode} options={MODE_OPTIONS} onChange={chooseAppearance} />
+  );
+
   // `label` is the accessible name of an `iconOnly` Button — `accessibleName` exists only to say
   // *more* than a visible label, and this one has none. SidePanel clones the trigger with
   // `aria-expanded` and `aria-controls`, so the open state is announced without any wiring here.
@@ -154,19 +178,16 @@ export default function HeaderNav({ items, themes }: HeaderNavProps) {
     <>
       <div className="ds-site-header__wide">
         <Stack direction="horizontal" gap="normal" align="center">
-          {/* One group next to the lockup: `gap="loose"` spaces the links, and
-              `ds-site-header__links` takes the row's slack so the theme control stays at the end. */}
-          <Stack
-            element="nav"
-            aria-label={COPY.navLabel}
-            className="ds-site-header__links"
-            direction="horizontal"
-            gap="loose"
-            align="center"
-          >
-            {links}
-          </Stack>
+          {/* One group, centred: `gap="loose"` spaces the links, and the `ds-site-header__links`
+              wrapper takes the row's slack so the theme control stays at the end. A plain div,
+              because generated components take no `className` of ours. */}
+          <div className="ds-site-header__links">
+            <Stack element="nav" aria-label={COPY.navLabel} direction="horizontal" gap="loose" align="center" justify="center">
+              {links}
+            </Stack>
+          </div>
           {themeControl}
+          {modeControl}
         </Stack>
       </div>
 
@@ -177,7 +198,12 @@ export default function HeaderNav({ items, themes }: HeaderNavProps) {
           width="narrow"
           open={open}
           onOpenChange={setOpen}
-          footer={themeControl}
+          footer={
+            <Stack direction="vertical" gap="normal" align="start">
+              {themeControl}
+              {modeControl}
+            </Stack>
+          }
           trigger={hamburger}
         >
           <Stack element="nav" aria-label={COPY.navLabel} direction="vertical" gap="normal" align="start">

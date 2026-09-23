@@ -44,8 +44,23 @@ export interface AccessibilityContractProps {
   reducedMotion?: string | undefined;
 }
 
+/**
+ * Row ids that stay unique when the labels do not. `Table` keys its rows by `id`, and a keyboard
+ * model routinely names one key twice (Dialog's `Tab` on the last element and on the only one;
+ * Menu's `ArrowDown` in and out of a submenu), as a doc can list one contrast pair twice. A repeat
+ * gets its ordinal, so React sees distinct keys and the cell still shows the plain label.
+ */
+function uniqueIds(labels: string[]): string[] {
+  const seen = new Map<string, number>();
+  return labels.map((label) => {
+    const count = (seen.get(label) ?? 0) + 1;
+    seen.set(label, count);
+    return count === 1 ? label : `${label} (${count})`;
+  });
+}
+
 const KEYBOARD_COLUMNS: TableColumn[] = [
-  { key: 'key', header: 'Key', isRowHeader: true, width: 'min', render: (row: TableRow) => <Mono>{row.id}</Mono> },
+  { key: 'key', header: 'Key', isRowHeader: true, width: 'min', render: (row: TableRow) => <Mono>{String(row.key)}</Mono> },
   { key: 'action', header: 'Action', width: 'fill' },
 ];
 
@@ -83,6 +98,10 @@ export function AccessibilityContract({
   contrast,
   reducedMotion,
 }: AccessibilityContractProps) {
+  const keyboardIds = uniqueIds((keyboard ?? []).map((line) => line.key));
+  const keyboardRows = (keyboard ?? []).map((line, index) => ({ id: keyboardIds[index] as string, key: line.key, action: line.action }));
+  const contrastIds = uniqueIds(contrast.map((pair) => `${pair.foreground} on ${pair.background}`));
+
   const items: AccordionItem[] = [
     {
       id: 'role',
@@ -123,7 +142,7 @@ export function AccessibilityContract({
           captionLevel={4}
           hideCaption
           columns={KEYBOARD_COLUMNS}
-          data={keyboard.map((line) => ({ id: line.key, action: line.action }))}
+          data={keyboardRows}
           responsive="stack"
           stickyHeader={false}
           density="compact"
@@ -144,8 +163,8 @@ export function AccessibilityContract({
             captionLevel={4}
             hideCaption
             columns={CONTRAST_COLUMNS}
-            data={contrast.map((pair) => ({
-              id: `${pair.foreground} on ${pair.background}`,
+            data={contrast.map((pair, index) => ({
+              id: contrastIds[index] as string,
               foreground: pair.foreground,
               background: pair.background,
               level: pair.level,

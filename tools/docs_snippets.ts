@@ -814,7 +814,11 @@ function renderJsx(render: Render, story: StoryDef): string | null {
     return assemble(render, element);
   }
 
-  const fn = unwrap(renderFn);
+  // `render: controlled`, where `const controlled = (args) => …` sits at module level and several
+  // stories share it (Popover's): the same function, reached by name.
+  const named = unwrap(renderFn);
+  const declared = ts.isIdentifier(named) ? module.consts.get(named.text) : undefined;
+  const fn = declared === undefined ? named : unwrap(declared);
   if (!ts.isArrowFunction(fn) && !ts.isFunctionExpression(fn)) {
     render.problems.push('render is not an inline function');
     return null;

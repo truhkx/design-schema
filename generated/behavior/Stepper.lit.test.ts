@@ -60,7 +60,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    list: () => (deep(root, '[part="list"]') ?? deep(root, '[data-part="list"]') ?? root.firstElementChild) as HTMLElement,
+    list: () => (deep(root, '[role="navigation"]') ?? deep(root, '[part="list"]') ?? deep(root, '[data-part="list"]') ?? root.firstElementChild) as HTMLElement,
     indicator: () => (deep(root, '[part="indicator"]') ?? deep(root, '[data-part="indicator"]')) as HTMLElement,
   };
   return s;
@@ -124,5 +124,8 @@ describe('ds-stepper', () => {
     const s = await setup({"navigable": "all"});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
   });
-  test.skip('has-accessible-name — then.name: role \'none\' cannot be queried; name the landmark/text role in the doc', async () => {});
+  test('has-accessible-name', async () => {
+    const s = await setup({});
+    expect(s.list()).toHaveAccessibleName();
+  });
 });

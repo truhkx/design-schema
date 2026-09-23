@@ -176,7 +176,7 @@ export const Empty: Story = { args: { data: [] } };
 export const EmptyMessage: Story = { args: { data: [], emptyMessage: 'No accounts loaded.' } };
 export const DefaultSort: Story = { args: { defaultSort: { column: 'balance', direction: 'descending' } } };
 export const NoStatusBar: Story = { args: { showStatusBar: false } };
-export const NoStickyHeader: Story = { args: { stickyHeader: false, height: 'content' } };
+export const NoStickyHeader: Story = { args: { stickyHeader: false } };
 
 /* examples */
 export const ChartOfAccounts: Story = {
@@ -244,9 +244,14 @@ export const EditableQuantities: Story = {
 };
 
 /**
- * Fully expanded, sortable and editable: several parent row headers and leaves to exercise ArrowLeft/ArrowRight,
- * `*`, Enter and F2. The grid is one tab stop; its cells are reached with the arrows.
+ * The tree grid present with expanded rows, a sortable header, the select-all Checkbox and one Checkbox
+ * per row — well over three focusable children — for the keyboard gate. The grid itself is one tab stop;
+ * its cells are reached with the arrows, ArrowLeft/ArrowRight and `*` with a row header active.
  */
 export const Keyboard: Story = {
-  args: { defaultExpanded: ['*'], editable: true, selectable: 'row', height: 'content' },
+  args: {
+    selectable: 'row',
+    editable: true,
+    defaultExpanded: ['*'],
+  },
 };

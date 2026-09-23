@@ -48,6 +48,10 @@ describe('Alert', () => {
     const s = setup({"live": "off"});
     expect(s.container()).not.toHaveAttribute("role");
   });
+  test('an-empty-heading-falls-back-to-the-body', async () => {
+    const s = setup({"heading": "", "children": "Your card was declined."});
+    expect(screen.getByText(new RegExp("Your\\ card\\ was\\ declined\\."))).toBeInTheDocument();
+  });
   test('the-heading-is-rendered', async () => {
     const s = setup({"heading": "Payment failed"});
     expect(screen.getByText(new RegExp("Payment\\ failed"))).toBeInTheDocument();

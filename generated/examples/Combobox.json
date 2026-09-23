@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -42,6 +43,7 @@
       "storyId": "combobox-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -83,6 +85,7 @@
         "value": "startsWith"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -124,6 +127,7 @@
         "value": "contains"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -165,6 +169,7 @@
         "value": "none"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -206,6 +211,7 @@
         "value": "async"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -243,6 +249,7 @@
       "storyId": "combobox-react--fruit-picker",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -284,6 +291,7 @@
       "storyId": "combobox-react--multi-select-with-chips",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -319,6 +327,7 @@
       "storyId": "combobox-react--free-text-tags",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -350,6 +359,7 @@
       "storyId": "combobox-react--async-results",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -391,6 +401,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -417,7 +428,7 @@
       },
       "snippets": {
         "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\n<Combobox\n  label=\"Fruit\"\n  name=\"fruit\"\n  options={FRUITS}\n  description=\"Used for the produce order.\"\n  placeholder=\"Search fruit\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxItem[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\nhtml`\n  <ds-combobox\n    label=\"Fruit\"\n    name=\"fruit\"\n    .options=${FRUIT_OPTIONS}\n    placeholder=\"Search fruit\"\n    description=\"Pick one for the order.\"\n  ></ds-combobox>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxItem[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\nhtml`\n  <ds-combobox\n    label=\"Fruit\"\n    name=\"fruit\"\n    .options=${FRUIT_OPTIONS}\n    placeholder=\"Search fruit\"\n    description=\"Used for the produce order.\"\n  ></ds-combobox>\n`;",
         "rn": "import { Combobox } from '@design-schema/rn';\n\nconst FRUIT = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\n<Combobox\n  label=\"Fruit\"\n  name=\"fruit\"\n  options={FRUIT}\n  description=\"Pick the one you want delivered.\"\n  placeholder=\"Search fruit\"\n/>",
         "swift": null
       },
@@ -430,6 +441,7 @@
       "storyId": "combobox-react--with-description",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -471,6 +483,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -497,7 +510,7 @@
       },
       "snippets": {
         "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\n<Combobox\n  label=\"Fruit\"\n  name=\"fruit\"\n  options={FRUITS}\n  disabled\n  defaultValue=\"banana\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxItem[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\nhtml`\n  <ds-combobox\n    label=\"Fruit\"\n    name=\"fruit\"\n    .options=${FRUIT_OPTIONS}\n    .defaultValue=${'apple'}\n    disabled\n  ></ds-combobox>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxItem[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\nhtml`\n  <ds-combobox\n    label=\"Fruit\"\n    name=\"fruit\"\n    .options=${FRUIT_OPTIONS}\n    .defaultValue=${'banana'}\n    disabled\n  ></ds-combobox>\n`;",
         "rn": "import { Combobox } from '@design-schema/rn';\n\nconst FRUIT = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\n<Combobox\n  label=\"Fruit\"\n  name=\"fruit\"\n  options={FRUIT}\n  disabled\n  defaultValue=\"apple\"\n/>",
         "swift": null
       },
@@ -510,6 +523,7 @@
       "storyId": "combobox-react--disabled",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -551,6 +565,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -576,7 +591,7 @@
       },
       "snippets": {
         "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\n<Combobox\n  label=\"Fruit\"\n  name=\"fruit\"\n  options={FRUITS}\n  error=\"Choose a fruit from the list.\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxItem[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\nhtml`\n  <ds-combobox\n    label=\"Fruit\"\n    name=\"fruit\"\n    .options=${FRUIT_OPTIONS}\n    error=\"Fix this before continuing.\"\n  ></ds-combobox>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxItem[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\nhtml`\n  <ds-combobox\n    label=\"Fruit\"\n    name=\"fruit\"\n    .options=${FRUIT_OPTIONS}\n    error=\"Choose a fruit from the list.\"\n  ></ds-combobox>\n`;",
         "rn": "import { Combobox } from '@design-schema/rn';\n\nconst FRUIT = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\n<Combobox label=\"Fruit\" name=\"fruit\" options={FRUIT} error=\"Choose a fruit.\" />",
         "swift": null
       },
@@ -589,6 +604,7 @@
       "storyId": "combobox-react--with-error",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -615,7 +631,7 @@
       },
       "snippets": {
         "react": "import { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\n<Combobox\n  label=\"Fruit\"\n  name=\"fruit\"\n  options={FRUITS}\n  clearable={false}\n  defaultValue=\"apple\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxItem[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\nhtml`\n  <ds-combobox\n    label=\"Fruit\"\n    name=\"fruit\"\n    .options=${FRUIT_OPTIONS}\n    .defaultValue=${'banana'}\n  ></ds-combobox>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxItem[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\nhtml`\n  <ds-combobox\n    label=\"Fruit\"\n    name=\"fruit\"\n    .options=${FRUIT_OPTIONS}\n    .defaultValue=${'apple'}\n  ></ds-combobox>\n`;",
         "rn": "import { Combobox } from '@design-schema/rn';\n\nconst FRUIT = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\n<Combobox\n  label=\"Fruit\"\n  name=\"fruit\"\n  options={FRUIT}\n  clearable={false}\n  defaultValue=\"apple\"\n/>",
         "swift": null
       },
@@ -628,44 +644,7 @@
       "storyId": "combobox-react--not-clearable",
       "sweep": null,
       "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "label": "Fruit",
-        "name": "fruit",
-        "options": [
-          {
-            "value": "apple",
-            "label": "Apple"
-          },
-          {
-            "value": "apricot",
-            "label": "Apricot"
-          },
-          {
-            "value": "banana",
-            "label": "Banana"
-          }
-        ],
-        "open": true
-      },
-      "snippets": {
-        "react": "import { useState } from 'react';\nimport { Combobox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\nfunction Example() {\n  const [open, setOpen] = useState(true ?? true);\n  return (\n    <Combobox\n      label=\"Fruit\"\n      name=\"fruit\"\n      options={FRUITS}\n      open={open}\n      onOpenChange={(next) => {\n        setOpen(next);\n        undefined?.(next);\n      }}\n    />\n  );\n}\n\n<Example />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst FRUIT_OPTIONS: ListboxItem[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\nhtml`\n  <ds-combobox\n    label=\"Fruit\"\n    name=\"fruit\"\n    .options=${FRUIT_OPTIONS}\n    .defaultValue=${'apple'}\n    open\n  ></ds-combobox>\n`;",
-        "rn": "import { Combobox } from '@design-schema/rn';\n\nconst FRUIT = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'apricot', label: 'Apricot' },\n  { value: 'banana', label: 'Banana' },\n];\n\n<Combobox label=\"Fruit\" name=\"fruit\" options={FRUIT} open />",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": "Keyboard",
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "combobox-react--keyboard",
-      "sweep": null,
-      "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

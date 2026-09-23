@@ -82,53 +82,69 @@
 }
 
 /*
- * interactive: the card extends its single top-level link/button child's hit area over its own
- * geometry. The card always reserves border.width.focus so the ring never shifts the layout; at rest
- * it is `border` on surface default and transparent on subtle. borderWidth overrides therefore only
- * change non-interactive cards.
+ * borderWidth: an interactive card always reserves border.width.focus instead of the thin border, so
+ * the ring appearing never shifts the layout. The reserve is keyed on the `interactive` prop alone,
+ * not on whether a target was found, so a card that fell back to non-interactive keeps its geometry
+ * rather than changing it on a content change. At rest that border is `border` on surface default
+ * (the card keeps its visible border) and transparent on subtle. A borderWidth override therefore
+ * only changes cards that are not interactive.
  */
-/* transition: only the hover background animates, with motion.easing.standard — the focus ring
-   appears at once. */
 .ds-card--interactive {
-  position: relative;
   border-width: var(--ds-card-focus-ring-width);
-  transition: background-color var(--ds-card-transition) var(--motion-easing-standard);
 }
 .ds-card--interactive.ds-card--surface-subtle {
   border-color: transparent;
 }
 
-.ds-card--interactive [data-ds-card-target]::after {
+/*
+ * The card extends its single top-level link/button child's hit area over its own geometry. These
+ * rules apply only once that target was found — a fallback card has no hit area, no hover and no ring.
+ * transition: only the hover background animates, with motion.easing.standard; the ring appears at once.
+ */
+.ds-card--has-target {
+  position: relative;
+  transition: background-color var(--ds-card-transition) var(--motion-easing-standard);
+}
+
+.ds-card--has-target [data-ds-card-target]::after {
   content: '';
   position: absolute;
   inset: 0;
 }
 
-/* headerActions and footer controls sit above the hit area and keep their own targets. */
-.ds-card--interactive .ds-card__header-actions,
-.ds-card--interactive .ds-card__footer {
+/* headerActions and footer controls sit above the hit area and keep their own targets.
+   Plain cards get no stacking context. */
+.ds-card--has-target .ds-card__header-actions,
+.ds-card--has-target .ds-card__footer {
   position: relative;
   z-index: 1;
 }
 
 /* hoverBackground (locked): interactive cards only, on pointer hover; a disabled target disables the card. */
-.ds-card--interactive:hover:not(:has([data-ds-card-target]:is([aria-disabled='true'], :disabled))) {
+.ds-card--has-target:hover:not(:has([data-ds-card-target]:is([aria-disabled='true'], :disabled))) {
   background-color: var(--ds-card-hover-background);
 }
 
-/* focus-visible: the ring is drawn on the card only while its target has keyboard focus. */
-.ds-card--interactive:has([data-ds-card-target]:focus-visible) {
+/* focus-visible: the ring is drawn on the card only while its target has keyboard focus — never for
+   mouse focus, and never for a focused headerActions or footer control. */
+.ds-card--has-target:has([data-ds-card-target]:focus-visible) {
   border-color: var(--ds-card-focus-ring);
 }
 
-/* focusable: scripted focus (Feed PageUp/PageDown) draws the ring on the card itself; no reserved border. */
-.ds-card--focusable:focus-visible {
+/*
+ * focusable: scripted focus (a Feed's PageUp/PageDown) draws the ring on the card itself, as an
+ * outline outside the box, so a focusable card reserves no border. The card's own focusin state
+ * carries it, because Chromium does not match :focus-visible on a programmatic focus() that follows
+ * a pointer interaction; :focus-visible covers the rest.
+ */
+.ds-card--focusable:focus-visible,
+.ds-card--focusable.ds-card--focus-ring {
   outline: var(--ds-card-focus-ring-width) solid var(--ds-card-focus-ring);
   outline-offset: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ds-card--interactive {
+  .ds-card--has-target {
     transition: none;
   }
 }

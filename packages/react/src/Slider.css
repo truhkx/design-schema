@@ -16,7 +16,7 @@
   --ds-slider-thumb-active-scale: var(--opacity-disabled);
   --ds-slider-halo-spread: var(--space-2);
   --ds-slider-mark: var(--color-border-strong);
-  --ds-slider-mark-size: var(--space-1);
+  --ds-slider-mark-size: var(--space-2);
   --ds-slider-mark-label-gap: var(--space-1);
   --ds-slider-bubble-surface: var(--color-inverse-surface);
   --ds-slider-bubble-text: var(--color-inverse-foreground);
@@ -38,18 +38,23 @@
   inline-size: 100%;
 }
 
-/* label row: label and value text */
+/* label row: label and value text. The thumbs' hit area overflows the track area into this row, so the
+   row is raised above them and takes any press that lands on it. */
 .ds-slider__header {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--ds-slider-label-gap);
 }
 
-/* control: the track area and the tick marks, with no part gap between them */
+/* control: the track area and the mark label row, separated by markLabelGap — partGap does not apply
+   between them. The gap only materialises when some mark has a label and the row is rendered. */
 .ds-slider__control {
   display: flex;
   flex-direction: column;
+  gap: var(--ds-slider-mark-label-gap);
 }
 
 /* track area: unparted wrapper and pointer hit area; trackPaddingBlock gives the thumb, its halo and the
@@ -78,31 +83,32 @@
   background-color: var(--ds-slider-fill);
 }
 
-/* tickMarks: dots drawn back up on the track centre line, labels in their own line below the track area */
+/* tickMarks: a layer on the track centre line inside the track area. The dots stand proud of the rail
+   (markSize is deliberately larger than trackHeight) and never take a press. */
 .ds-slider__tick-marks {
-  position: relative;
+  position: absolute;
+  inset: 0;
   pointer-events: none;
-}
-
-.ds-slider__tick-marks--labelled {
-  padding-block-start: var(--ds-slider-mark-label-gap);
 }
 
 .ds-slider__mark {
   position: absolute;
-  inset-block-end: calc(100% + var(--ds-slider-track-padding-block) + var(--ds-slider-track-height) / 2);
+  inset-block-start: 50%;
   inline-size: var(--ds-slider-mark-size);
   block-size: var(--ds-slider-mark-size);
   border-radius: var(--radius-full);
   background-color: var(--ds-slider-mark);
-  translate: -50% 50%;
+  translate: -50% -50%;
 }
 
 .ds-slider__mark:dir(rtl) {
-  translate: 50% 50%;
+  translate: 50% -50%;
 }
 
+/* mark label row: unparted, below the track area, painting above the thumbs so it takes the press */
 .ds-slider__mark-labels {
+  position: relative;
+  z-index: 1;
   display: grid;
 }
 

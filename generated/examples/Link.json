@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -31,6 +32,7 @@
       "storyId": "link-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -60,6 +62,7 @@
         "value": "default"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -86,6 +89,7 @@
       "storyId": "link-react--tone-inherit",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -112,6 +116,7 @@
       "storyId": "link-react--inline-in-a-paragraph",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -141,6 +146,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -167,6 +173,7 @@
       "storyId": "link-react--inside-muted-text",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -196,6 +203,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     }
   ]

@@ -25,10 +25,17 @@
  *
  *   { "layout": "scenarios",
  *     "platforms": { "react": true, "lit": true, "rn": true, "swift": false },
+ *     "harnessEvents": null,
  *     "examples": [{ "title": "Default", "args": {...},
  *                    "snippets": { "react": "import { Button } …", "lit": "<ds-button …>", "rn": "…", "swift": null },
  *                    "stories": { "react": "Default", "lit": "Default", "rn": "Default", "swift": null },
- *                    "storyId": "button-react--default", "sweep": null, "decorated": false, "primary": true }, …] }
+ *                    "storyId": "button-react--default", "sweep": null, "decorated": false, "harness": null,
+ *                    "primary": true }, …] }
+ *
+ * `harness` and `harnessEvents` are for overlays a consumer opens from elsewhere (Dialog, BottomSheet):
+ * the page renders a button that opens the example and wires the listed events to close it — see
+ * `harnessOf`. Stories titled `Closed` or `Keyboard` are Storybook's and are not projected at all
+ * (`SITE_EXCLUDED_TITLES`).
  *
  * `snippets` is the copy/paste code for each platform, rendered by ./docs_snippets.ts from that
  * platform's own story module (`packages/{react,rn}/src/<Name>.stories.tsx`,
@@ -141,6 +148,21 @@ export interface Sweep {
 /** How a component page lays its examples out: one small-multiple grid, or tabs. */
 export type Layout = 'sweep' | 'scenarios';
 
+/**
+ * Whether the page has to supply what opens the example. `trigger`: the component is an overlay the
+ * consumer opens from elsewhere — it has a boolean `open`, a close event, and no opener of its own — so
+ * a story's `open: true` is Storybook's fixture, not something a page can mount. See `harnessOf`.
+ */
+export type Harness = 'trigger' | null;
+
+/** Which of a `trigger` component's events the page's harness listens to. See `harnessEventsOf`. */
+export interface HarnessEvents {
+  /** Request-phase events: the consumer is asked to close, and the harness does (Dialog `onClose`, AlertDialog `onConfirm`). */
+  close: string[];
+  /** Events whose first argument is the new boolean `open` (SidePanel `onOpenChange`), which the harness applies as given. */
+  change: string[];
+}
+
 /** One story, as the website reads it. */
 export interface Example {
   /** Storybook's own display name for the story ("Heading Level 2"), the tab's label. */
@@ -161,6 +183,8 @@ export interface Example {
    * (Text's `ToneOnAction` is white text, and without its action background it is white on white).
    */
   decorated: boolean;
+  /** The component's `Harness`, which the page renders around this example instead of the story's own `open`. */
+  harness: Harness;
   /** Whether the tab is in the always-visible set rather than behind "More examples". */
   primary: boolean;
 }
@@ -170,6 +194,8 @@ export interface ExampleSet {
   layout: Layout;
   /** Whether each platform has source for this component at all: a story module, or the generated Swift view. */
   platforms: Record<Platform, boolean>;
+  /** The events a `trigger` harness wires, or `null` when the component needs none. */
+  harnessEvents: HarnessEvents | null;
   examples: Example[];
 }
 
@@ -177,6 +203,9 @@ export interface ExampleSet {
 export interface ComponentInfo {
   category: string;
   props: Record<string, { type: string; default?: unknown }>;
+  /** Absent reads as `null`: the tests' components are not overlays. */
+  harness?: Harness;
+  harnessEvents?: HarnessEvents | null;
 }
 
 /** Where an example's code comes from. The tests' default is React-only with no snippets. */
@@ -612,6 +641,7 @@ export function examplesFor(
         `${name}.stories.tsx exports \`${story.exportName}\`, which storybook-static/index.json does not list — rebuild it with \`${BUILD_COMMAND}\``,
       );
     }
+    if (SITE_EXCLUDED_TITLES.has(entry.name)) continue;
     const { snippets, stories: from, problems: gaps } = code.forStory(story.exportName, entry.name);
     problems.push(...gaps.map((gap) => `${name}/${entry.name}: ${gap}`));
     examples.push({
@@ -622,6 +652,7 @@ export function examplesFor(
       storyId: entry.id,
       sweep: sweepOf(story, component),
       decorated: story.decorated,
+      harness: component.harness ?? null,
       primary: true,
     });
   }
@@ -635,10 +666,21 @@ export function examplesFor(
   return {
     layout,
     platforms: code.platforms,
+    harnessEvents: component.harness === 'trigger' ? (component.harnessEvents ?? null) : null,
     examples: examples.map((example, index) => ({ ...example, primary: primary[index] === true })),
     problems,
   };
 }
+
+/**
+ * Story titles Storybook keeps and the docs site does not.
+ *
+ * `Closed` is an overlay rendered shut — on a page, an empty card; the harness already shows the
+ * closed state, which is the button. `Keyboard` is the keyboard gate's fixture (open, with enough
+ * focusable children to walk), there for the gate's play and not for a reader. Both stay in
+ * Storybook, and in the manifest check above: an excluded story still has to exist there.
+ */
+export const SITE_EXCLUDED_TITLES: ReadonlySet<string> = new Set(['Closed', 'Keyboard']);
 
 /** A package's name from its manifest beside `src/`, or the workspace's own name when the sandbox has none. */
 function packageName(sourceDirectory: string, fallback: string): string {
@@ -780,24 +822,83 @@ export function primaryFlags(layout: Layout, examples: readonly Pick<Example, 't
   });
 }
 
+/** A component's schema, narrowed to what `harnessOf` reads. */
+export interface OverlaySchema {
+  props: Record<string, { type?: unknown; required?: unknown }>;
+  events?: Record<string, { timing?: { phase?: unknown }; payload?: { name?: unknown; type?: unknown }[] }> | undefined;
+  overlay?: { closeEvent?: unknown; anchor?: unknown } | undefined;
+  form?: unknown;
+}
+
+/** The event names that close an overlay by convention, beside whatever `overlay.closeEvent` names. */
+const CLOSE_EVENTS: readonly string[] = ['onClose', 'onOpenChange'];
+
+/**
+ * `trigger` when the page has to supply the opener, read off the schema rather than a list — so an
+ * overlay added tomorrow gets a working example the day its docs page is built.
+ *
+ * Three facts, all required:
+ *
+ *   - a boolean `open` prop: there is a state to drive;
+ *   - a close event — `onClose`, `onOpenChange`, or whatever `overlay.closeEvent` names (AlertDialog's
+ *     is `onCancel`): there is a way for the harness to hear "close";
+ *   - no opener of its own. A component anchored to a trigger (`overlay.anchor`: Popover, Menu,
+ *     Tooltip), one that requires a `trigger` prop, or a form field whose control is the opener
+ *     (Select, Combobox, DatePicker) already renders what a visitor presses; a second button beside
+ *     it would be a second way to do one thing. SidePanel's `trigger` is optional, so it qualifies,
+ *     and an example that passes one keeps it (the page's harness steps aside).
+ */
+export function harnessOf(component: OverlaySchema): Harness {
+  if (component.props['open']?.type !== 'boolean') return null;
+  const events = component.events ?? {};
+  const closeEvent = component.overlay?.closeEvent;
+  const closes = [...CLOSE_EVENTS, ...(typeof closeEvent === 'string' ? [closeEvent] : [])].some((event) => Object.hasOwn(events, event));
+  if (!closes) return null;
+  const ownOpener = component.overlay?.anchor !== undefined || component.props['trigger']?.required === true || component.form !== undefined;
+  return ownOpener ? null : 'trigger';
+}
+
+/**
+ * The events a harness wires, from the same schema: every request-phase event closes (the schema's
+ * "the consumer performs it and closes" — Dialog `onClose`, AlertDialog `onConfirm` and `onCancel`,
+ * ActionSheet `onAction`), and an event whose first argument is the boolean `open` is applied as given.
+ */
+export function harnessEventsOf(component: OverlaySchema): HarnessEvents {
+  const close: string[] = [];
+  const change: string[] = [];
+  for (const [event, spec] of Object.entries(component.events ?? {})) {
+    const first = spec.payload?.[0];
+    if (first?.name === 'open' && first.type === 'boolean') change.push(event);
+    else if (spec.timing?.phase === 'request') close.push(event);
+  }
+  return { close, change };
+}
+
 /** `generated/components.json`, by component name, narrowed to `ComponentInfo`. */
 export function componentInfo(json: unknown): Map<string, ComponentInfo> {
   if (!Array.isArray(json)) throw new ExamplesError('generated/components.json is not an array — re-run `pnpm parse`');
   const components = new Map<string, ComponentInfo>();
-  for (const entry of json as { component?: { name?: unknown; category?: unknown; props?: unknown } }[]) {
+  for (const entry of json as { component?: { name?: unknown; category?: unknown; props?: unknown } & Omit<OverlaySchema, 'props'> }[]) {
     const { name, category, props } = entry.component ?? {};
     if (typeof name !== 'string' || typeof category !== 'string' || typeof props !== 'object' || props === null) {
       throw new ExamplesError('generated/components.json has an entry without component.name/category/props — re-run `pnpm parse`');
     }
-    components.set(name, { category, props: props as ComponentInfo['props'] });
+    const schema = { ...entry.component, props: props as OverlaySchema['props'] };
+    const harness = harnessOf(schema);
+    components.set(name, {
+      category,
+      props: props as ComponentInfo['props'],
+      harness,
+      harnessEvents: harness === 'trigger' ? harnessEventsOf(schema) : null,
+    });
   }
   return components;
 }
 
 /** The bytes of one `<Name>.json`: deterministic, so re-running on unchanged stories is a no-op. */
 export function render(set: ExampleSet): string {
-  const { layout, platforms, examples } = set;
-  return JSON.stringify({ layout, platforms, examples }, null, 2) + '\n';
+  const { layout, platforms, harnessEvents, examples } = set;
+  return JSON.stringify({ layout, platforms, harnessEvents, examples }, null, 2) + '\n';
 }
 
 /** Every `{ $unsupported }` in a value, as `path -> source`, for `--report`. */

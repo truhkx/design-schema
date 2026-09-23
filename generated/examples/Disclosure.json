@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -24,7 +25,7 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\">{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\">\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\">\n  <ds-text>You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted.</ds-text>\n</ds-disclosure>",
         "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\">Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
@@ -37,6 +38,7 @@
       "storyId": "disclosure-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -57,7 +59,7 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"2\">{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"2\">\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"2\">\n  <ds-text>You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted.</ds-text>\n</ds-disclosure>",
         "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" headingLevel=\"2\">Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
@@ -73,6 +75,7 @@
         "value": "2"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -93,7 +96,7 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"3\">{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"3\">\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"3\">\n  <ds-text>You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted.</ds-text>\n</ds-disclosure>",
         "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" headingLevel=\"3\">Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
@@ -109,6 +112,7 @@
         "value": "3"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -129,7 +133,7 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"4\">{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"4\">\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"4\">\n  <ds-text>You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted.</ds-text>\n</ds-disclosure>",
         "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" headingLevel=\"4\">Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
@@ -145,6 +149,7 @@
         "value": "4"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -165,7 +170,7 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"5\">{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"5\">\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"5\">\n  <ds-text>You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted.</ds-text>\n</ds-disclosure>",
         "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" headingLevel=\"5\">Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
@@ -181,6 +186,7 @@
         "value": "5"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -201,7 +207,7 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"6\">{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"6\">\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"6\">\n  <ds-text>You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted.</ds-text>\n</ds-disclosure>",
         "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" headingLevel=\"6\">Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
@@ -217,6 +223,7 @@
         "value": "6"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -247,6 +254,7 @@
         "value": "3"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -273,6 +281,7 @@
       "storyId": "disclosure-react--advanced-options",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -299,6 +308,7 @@
       "storyId": "disclosure-react--open-with-form-fields",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -328,6 +338,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -347,13 +358,13 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" defaultOpen>{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" default-open>\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" default-open>\n  <ds-text>You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted.</ds-text>\n</ds-disclosure>",
         "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" defaultOpen>Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
       "stories": {
         "react": "Open",
-        "lit": "DefaultOpenTrue",
+        "lit": "Open",
         "rn": "Open",
         "swift": null
       },
@@ -363,6 +374,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -383,13 +395,13 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" open>{panel}</Disclosure>",
-        "lit": null,
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" open>\n  <ds-text>You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted.</ds-text>\n</ds-disclosure>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Controlled",
-        "lit": null,
+        "lit": "Controlled",
         "rn": null,
         "swift": null
       },
@@ -399,6 +411,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -418,13 +431,13 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" keepMounted>{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" keep-mounted>\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" keep-mounted>\n  <ds-text>You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted.</ds-text>\n</ds-disclosure>",
         "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" keepMounted>Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
       "stories": {
         "react": "KeepMounted",
-        "lit": "KeepMountedTrue",
+        "lit": "KeepMounted",
         "rn": "KeepMounted",
         "swift": null
       },
@@ -434,6 +447,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -453,7 +467,7 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text, Stack } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Stack gap=\"none\">\n  <Disclosure summary=\"What happens if I cancel?\" headingLevel=\"3\">{panel}</Disclosure>\n  <Disclosure summary=\"Can I change plans later?\" headingLevel=\"3\">\n    <Text>Yes. Changes take effect at the next billing date.</Text>\n  </Disclosure>\n  <Disclosure summary=\"Do you offer refunds?\" headingLevel=\"3\">\n    <Text>Within 14 days of a charge, in full.</Text>\n  </Disclosure>\n</Stack>",
-        "lit": "<ds-stack gap=\"0\">\n  <ds-disclosure summary=\"Can I change plans later?\" heading-level=\"3\">\n    <ds-text>Yes. Upgrades apply immediately; downgrades apply at the next renewal.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure summary=\"Do you offer refunds?\" heading-level=\"3\">\n    <ds-text>Annual plans can be refunded within 14 days of purchase.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"3\">\n    <ds-text>Your workspace becomes read-only at the end of the billing period.</ds-text>\n  </ds-disclosure>\n</ds-stack>",
+        "lit": "<ds-stack gap=\"none\">\n  <ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"3\">\n    <ds-text>You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure summary=\"Can I change plans later?\" heading-level=\"3\">\n    <ds-text>Yes. Changes take effect at the next billing date.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure summary=\"Do you offer refunds?\" heading-level=\"3\">\n    <ds-text>Within 14 days of a charge, in full.</ds-text>\n  </ds-disclosure>\n</ds-stack>",
         "rn": null,
         "swift": null
       },
@@ -466,6 +480,7 @@
       "storyId": "disclosure-react--accordion",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

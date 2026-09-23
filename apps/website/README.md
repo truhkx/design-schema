@@ -31,6 +31,20 @@ so by name.
 `pnpm --filter website... build` builds the workspace dependencies first, if you'd rather not run
 them by hand.
 
+**What keeps the components current.** A regen rewrites `packages/react/src` and nothing rebuilds
+`dist` on its own (website-audit.md, "Workflow hazards found along the way"). Two things close that:
+
+- **The build step in the root scripts guarantees it.** `pnpm dev` runs
+  `pnpm --filter @design-schema/react build` before `astro dev`, and `pnpm build` runs it before
+  `pnpm --filter website build`, so both start from current source. That rebuild is what makes the
+  stylesheet fresh: `@design-schema/react/index.css` always comes from `dist`, because `src` has one
+  CSS file per component and no single entry to alias.
+- **In dev, the JavaScript also comes from source.** `astro.config.mjs` aliases
+  `@design-schema/react` to `packages/react/src/index.ts` when Vite is serving (never for
+  `astro build`), so component edits made *while* `pnpm dev` is running show up on reload. Running
+  `pnpm --filter website dev` directly skips the rebuild: the components are still current, the
+  shared stylesheet may not be.
+
 ## Layout
 
 | Path | What |

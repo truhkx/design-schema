@@ -5,19 +5,17 @@
  */
 import * as React from 'react';
 import { render } from '@testing-library/react-native';
-import { Container } from './Container';
 import type { ContainerProps } from './Container';
-import meta from './Container.stories';
+import meta, { Default } from './Container.stories';
 import { ThemeProvider } from './theme';
 
-/** The Default story's args plus the scenario's `given`. */
+/**
+ * The Default story's args plus the scenario's `given`, rendered through the meta-level
+ * render so the story's string children are wrapped in a Text, as native requires.
+ */
 function setup(given: Partial<ContainerProps> = {}) {
-  const props: ContainerProps = { ...(meta.args as ContainerProps), ...given };
-  const utils = render(
-    <ThemeProvider mode="light">
-      <Container {...props} />
-    </ThemeProvider>,
-  );
+  const props: ContainerProps = { ...(meta.args as ContainerProps), ...(Default.args as Partial<ContainerProps>), ...given };
+  const utils = render(<ThemeProvider mode="light">{meta.render!(props, {} as never)}</ThemeProvider>);
   return { ...utils, props };
 }
 

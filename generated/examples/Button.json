@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -34,6 +35,7 @@
       "storyId": "button-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -66,6 +68,7 @@
         "value": "primary"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -98,6 +101,7 @@
         "value": "secondary"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -130,6 +134,7 @@
         "value": "ghost"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -162,6 +167,7 @@
         "value": "danger"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -194,6 +200,7 @@
         "value": "sm"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -226,6 +233,7 @@
         "value": "md"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -258,6 +266,7 @@
         "value": "lg"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -290,6 +299,7 @@
         "value": "button"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -322,6 +332,7 @@
         "value": "submit"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -354,6 +365,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -386,6 +398,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -423,6 +436,7 @@
       "storyId": "button-react--loading-icon-only",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -468,6 +482,7 @@
       "storyId": "button-react--with-icons",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -505,6 +520,7 @@
       "storyId": "button-react--icon-only",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -543,6 +559,7 @@
       "storyId": "button-react--expanded",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -559,7 +576,7 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Undo\" variant=\"ghost\" inverse />",
-        "lit": "<div style=\"background: var(--color-inverse-surface); padding: var(--space-lg);\">\n  <ds-button label=\"Undo\" variant=\"ghost\" inverse></ds-button>\n</div>",
+        "lit": "<ds-button label=\"Undo\" variant=\"ghost\" inverse></ds-button>",
         "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Button, useTheme } from '@design-schema/rn';\n\nfunction InverseSurface({ children }: { children: React.ReactNode }): React.JSX.Element {\n  const { tokens } = useTheme();\n  return (\n    <View style={{ backgroundColor: tokens.colorInverseSurface, padding: tokens.spaceMd, borderRadius: tokens.radiusMd }}>\n      {children}\n    </View>\n  );\n}\n\n<InverseSurface>\n  <Button label=\"Learn more\" variant=\"ghost\" inverse />\n</InverseSurface>",
         "swift": null
       },
@@ -572,6 +589,7 @@
       "storyId": "button-react--inverse",
       "sweep": null,
       "decorated": true,
+      "harness": null,
       "primary": false
     },
     {
@@ -602,6 +620,7 @@
       "storyId": "button-react--tracked",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -634,6 +653,7 @@
         "value": "primary"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -666,6 +686,7 @@
         "value": "danger"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -703,6 +724,7 @@
       "storyId": "button-react--icon-only-in-a-toolbar",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -732,6 +754,7 @@
       "storyId": "button-react--pending-submit",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

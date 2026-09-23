@@ -295,6 +295,109 @@ describe('examplesFor', () => {
     expect(built().layout).toBe('scenarios');
     expect(built().examples.every((e) => e.primary)).toBe(true);
   });
+
+  /** The fixture plus a `Closed` and a `Keyboard` story, listed in the manifest or not. */
+  const withFixtures = (listed: boolean) => {
+    const manifest = stories();
+    const extra = ['Closed', 'Keyboard'].map((exportName) => {
+      if (listed) {
+        manifest.set(`./src/Widget.stories.tsx#${exportName}`, {
+          id: `widget-react--${exportName.toLowerCase()}`,
+          name: exportName,
+          importPath: './src/Widget.stories.tsx',
+          exportName,
+        });
+      }
+      return { exportName, args: { open: exportName === 'Keyboard' }, set: ['open'], code: false, decorated: false };
+    });
+    return () => examples.examplesFor('Widget', [...examples.parseStories('Widget.stories.tsx', STORIES), ...extra], manifest, WIDGET);
+  };
+
+  test('Closed and Keyboard stay in Storybook and off the site', () => {
+    const titles = withFixtures(true)().examples.map((e) => e.title);
+    expect(titles).not.toContain('Closed');
+    expect(titles).not.toContain('Keyboard');
+    expect(titles).toEqual(built().examples.map((e) => e.title));
+  });
+
+  test('an excluded story still has to be in the manifest — it is skipped on the site, not unchecked', () => {
+    expect(withFixtures(false)).toThrow(/build-storybook/);
+  });
+
+  test('a component with no harness writes `harness: null` on every example and no harness events', () => {
+    expect(built().examples.every((e) => e.harness === null)).toBe(true);
+    expect(built().harnessEvents).toBeNull();
+  });
+
+  test('a harnessed component carries the flag onto every example, and its events onto the set', () => {
+    const events = { close: ['onClose'], change: [] };
+    const set = examples.examplesFor('Widget', examples.parseStories('Widget.stories.tsx', STORIES), stories(), {
+      ...WIDGET,
+      harness: 'trigger',
+      harnessEvents: events,
+    });
+    expect(set.examples.every((e) => e.harness === 'trigger')).toBe(true);
+    expect(set.harnessEvents).toEqual(events);
+    expect(JSON.parse(examples.render(set))).toMatchObject({ harnessEvents: events });
+  });
+});
+
+describe('harnessOf', () => {
+  const request = { timing: { phase: 'request' } };
+  const openChange = { payload: [{ name: 'open', type: 'boolean' }], timing: { phase: 'after-change' } };
+
+  test('an overlay opened from elsewhere — boolean open, a close event, no opener of its own — gets a trigger', () => {
+    // Dialog, BottomSheet, ActionSheet.
+    expect(examples.harnessOf({ props: { open: { type: 'boolean', required: true } }, events: { onClose: request } })).toBe('trigger');
+  });
+
+  test('the close event can be the one `overlay.closeEvent` names', () => {
+    // AlertDialog: `onConfirm` and `onCancel`, and the schema says which one dismisses.
+    const alert = { props: { open: { type: 'boolean' } }, events: { onConfirm: request, onCancel: request }, overlay: { closeEvent: 'onCancel' } };
+    expect(examples.harnessOf(alert)).toBe('trigger');
+    expect(examples.harnessOf({ ...alert, overlay: {} })).toBeNull();
+  });
+
+  test('an optional trigger prop still gets one: the harness steps aside where an example passes it', () => {
+    // SidePanel.
+    expect(examples.harnessOf({ props: { open: { type: 'boolean' }, trigger: { type: 'content' } }, events: { onOpenChange: openChange } })).toBe('trigger');
+  });
+
+  test('a component that opens itself gets none', () => {
+    const base = { props: { open: { type: 'boolean' } }, events: { onOpenChange: openChange } };
+    // Popover, Menu, Tooltip: anchored to their own trigger.
+    expect(examples.harnessOf({ ...base, overlay: { anchor: 'trigger' } })).toBeNull();
+    // A required trigger prop.
+    expect(examples.harnessOf({ ...base, props: { ...base.props, trigger: { type: 'content', required: true } } })).toBeNull();
+    // Select, Combobox, DatePicker: the field is the opener.
+    expect(examples.harnessOf({ ...base, form: { name: 'value' } })).toBeNull();
+  });
+
+  test('no boolean open, or no way to hear "close", is no harness', () => {
+    // Tooltip has `open` and no events at all; Disclosure's only event is `onToggle`.
+    expect(examples.harnessOf({ props: { open: { type: 'boolean' } } })).toBeNull();
+    expect(examples.harnessOf({ props: { open: { type: 'boolean' } }, events: { onToggle: openChange } })).toBeNull();
+    expect(examples.harnessOf({ props: { open: { type: 'string' } }, events: { onClose: request } })).toBeNull();
+    expect(examples.harnessOf({ props: {}, events: { onClose: request } })).toBeNull();
+  });
+
+  test('its events: every request-phase event closes, and an event carrying `open` is applied as given', () => {
+    expect(
+      examples.harnessEventsOf({
+        props: {},
+        events: { onAction: request, onClose: request, onOpened: { timing: { phase: 'after-change' } }, onOpenChange: openChange },
+      }),
+    ).toEqual({ close: ['onAction', 'onClose'], change: ['onOpenChange'] });
+  });
+
+  test('componentInfo derives both from generated/components.json', () => {
+    const info = examples.componentInfo([
+      { component: { name: 'Sheet', category: 'overlay', props: { open: { type: 'boolean' } }, events: { onClose: request } } },
+      { component: { name: 'Widget', ...WIDGET } },
+    ]);
+    expect(info.get('Sheet')).toMatchObject({ harness: 'trigger', harnessEvents: { close: ['onClose'], change: [] } });
+    expect(info.get('Widget')).toMatchObject({ harness: null, harnessEvents: null });
+  });
 });
 
 describe('snippets', () => {
@@ -527,5 +630,35 @@ describe('main', () => {
   test('an unknown flag exits 2', () => {
     expect(examples.main(['--stories'])).toBe(2);
     expect(std.err()).toContain('unrecognized arguments: --stories');
+  });
+});
+
+describe('a render passed by name', () => {
+  // Popover's stories share `render: controlled`, a module-level arrow — every one of them lost its
+  // React snippet while the tool read only inline render functions.
+  const NAMED = `import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Widget, type WidgetProps } from './Widget';
+
+function Wrapped(props: WidgetProps) {
+  return <Widget {...props} />;
+}
+
+const wrapped = (args: WidgetProps) => <Wrapped {...args} />;
+
+const meta: Meta<typeof Widget> = { title: 'Widget/React', component: Widget, args: { label: 'Save' } };
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = { args: { size: 'sm' }, render: wrapped };
+`;
+
+  test('resolves to the module-level function, and brings what it calls along', () => {
+    const code = examples.codeSource('Widget', NAMED, WIDGET, examples.snippetOptions()).forStory('Default', 'Default');
+    expect(code.problems.filter((problem) => problem.startsWith('react'))).toEqual([]);
+    expect(code.snippets.react).toContain('function Wrapped(props: WidgetProps)');
+    expect(code.snippets.react).toContain('<Wrapped');
+    expect(code.snippets.react).toContain('size="sm"');
+    // The const that only named the render is not a helper the snippet needs.
+    expect(code.snippets.react).not.toContain('const wrapped');
   });
 });

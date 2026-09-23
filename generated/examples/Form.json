@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -64,6 +65,7 @@
       "storyId": "form-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -127,6 +129,7 @@
         "value": "submit"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -190,6 +193,7 @@
         "value": "blur"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -253,6 +257,7 @@
         "value": "change"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -312,6 +317,7 @@
       "storyId": "form-react--sign-in",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -393,6 +399,7 @@
         "value": "blur"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -456,6 +463,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -500,6 +508,7 @@
         "value": false
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -559,6 +568,7 @@
       "storyId": "form-react--failed-submit",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -606,7 +616,7 @@
       },
       "snippets": {
         "react": "import { Form, Input, Button, Stack, Heading } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Stack gap=\"normal\">\n  <Heading id=\"form-labelled-by-heading\" level=\"2\">\n    Sign in\n  </Heading>\n  <Form\n    name=\"sign-in\"\n    label=\"Sign in\"\n    actions={signInActions}\n    labelledBy=\"form-labelled-by-heading\"\n  >{signInFields}</Form>\n</Stack>",
-        "lit": "<ds-stack gap=\"normal\">\n  <ds-heading id=\"form-labelled-by-heading\" level=\"2\">Sign in</ds-heading>\n  <ds-form name=\"sign-in\" label=\"Sign in\" labelledby=\"form-labelled-by-heading\">\n    <ds-stack gap=\"normal\">\n      <ds-input label=\"Email\" name=\"email\" type=\"email\" required></ds-input>\n      <ds-input label=\"Password\" name=\"password\" type=\"password\" required></ds-input>\n    </ds-stack>\n    <ds-button slot=\"actions\" label=\"Sign in\" type=\"submit\"></ds-button>\n  </ds-form>\n</ds-stack>",
+        "lit": "<ds-stack gap=\"normal\">\n  <ds-heading id=\"form-labelled-by-heading\" level=\"2\">Sign in</ds-heading>\n  <ds-form name=\"sign-in\" label=\"Sign in\" labelled-by=\"form-labelled-by-heading\">\n    <ds-stack gap=\"normal\">\n      <ds-input label=\"Email\" name=\"email\" type=\"email\" required></ds-input>\n      <ds-input label=\"Password\" name=\"password\" type=\"password\" required></ds-input>\n    </ds-stack>\n    <ds-button slot=\"actions\" label=\"Sign in\" type=\"submit\"></ds-button>\n  </ds-form>\n</ds-stack>",
         "rn": null,
         "swift": null
       },
@@ -619,6 +629,7 @@
       "storyId": "form-react--labelled-by",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     }
   ]

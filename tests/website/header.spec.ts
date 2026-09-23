@@ -77,6 +77,29 @@ test.describe('site header — below the breakpoint', () => {
     });
   }
 
+  // Job 543: the audit's drawer opened (aria-expanded, focus moved in) but stayed parked off-canvas, so
+  // focus was trapped in a panel nobody could see. Measured from the click, not from a settled state.
+  test('a click slides the drawer on screen within 400ms, with focus on a visible link', async ({ page }) => {
+    await openHome(page);
+    await hamburger(page).click();
+    await page.waitForTimeout(400);
+    const state = await page.evaluate(() => {
+      const surface = document.querySelector('dialog.ds-side-panel [data-part="surface"]');
+      if (!surface) return null;
+      const rect = surface.getBoundingClientRect();
+      const active = document.activeElement;
+      const activeRect = active?.getBoundingClientRect();
+      return {
+        transform: getComputedStyle(surface).transform,
+        inViewport: rect.width > 0 && rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight,
+        focusIsLink: active instanceof HTMLAnchorElement && surface.contains(active),
+        focusOnScreen: !!activeRect && activeRect.width > 0 && activeRect.left >= 0 && activeRect.right <= innerWidth,
+      };
+    });
+    expect(state).toEqual({ transform: 'none', inViewport: true, focusIsLink: true, focusOnScreen: true });
+    await expect(page.locator(':focus')).toBeVisible();
+  });
+
   test('the drawer traps Tab and repeats the generated nav links', async ({ page }) => {
     await openHome(page);
     await openDrawer(page, 'Enter');
@@ -146,9 +169,8 @@ test.describe('site header — above the breakpoint', () => {
       expect(gap).toBeLessThanOrEqual(40);
       expect(Math.abs(gap - gaps[0]!)).toBeLessThanOrEqual(2);
     }
-    // The group sits at the start of the nav, beside the lockup...
-    expect(linkBoxes[0]!.left - navBox!.x).toBeLessThanOrEqual(2);
-    // ...and the nav still takes the row's slack, which is what keeps the theme control hard right.
+    // The nav takes the row's slack, which is what keeps the theme control hard right. Where the
+    // group sits inside it (centred) is header-band.spec.ts's check.
     const linksWidth = linkBoxes.reduce((sum, box) => sum + (box.right - box.left), 0);
     expect(navBox!.width).toBeGreaterThan(linksWidth * 2);
   });
@@ -156,9 +178,11 @@ test.describe('site header — above the breakpoint', () => {
   test('the header is dark on a light page', async ({ page }) => {
     await openHome(page);
     await expect(page.locator('html')).toHaveAttribute('data-mode', 'light');
-    await expect(page.getByRole('banner')).toHaveAttribute('data-mode', 'dark');
+    // The dark band is the Landmark's one child, not the Landmark: generated components take no class.
+    const band = page.getByRole('banner').locator('> .ds-site-header');
+    await expect(band).toHaveAttribute('data-mode', 'dark');
     const [header, body] = await Promise.all([
-      page.getByRole('banner').evaluate((el) => getComputedStyle(el).backgroundColor),
+      band.evaluate((el) => getComputedStyle(el).backgroundColor),
       page.locator('html').evaluate((el) => getComputedStyle(el).backgroundColor),
     ]);
     expect(header).not.toEqual(body);

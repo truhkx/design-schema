@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -30,6 +31,7 @@
       "storyId": "switch-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -58,6 +60,7 @@
         "value": "start"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -86,6 +89,7 @@
         "value": "end"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -114,6 +118,7 @@
         "value": "start"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -140,6 +145,7 @@
       "storyId": "switch-react--with-description",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -168,6 +174,7 @@
         "value": "end"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -196,6 +203,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -214,7 +222,7 @@
       },
       "stories": {
         "react": "On",
-        "lit": "DefaultCheckedTrue",
+        "lit": "On",
         "rn": "On",
         "swift": null
       },
@@ -224,6 +232,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -242,13 +251,14 @@
       },
       "stories": {
         "react": "DisabledOn",
-        "lit": "DisabledChecked",
+        "lit": "DisabledOn",
         "rn": null,
         "swift": null
       },
       "storyId": "switch-react--disabled-on",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -262,13 +272,13 @@
       },
       "snippets": {
         "react": "import { Switch } from '@design-schema/react';\n\n<Switch label=\"Email notifications\" checked />",
-        "lit": null,
+        "lit": "<ds-switch label=\"Email notifications\" checked></ds-switch>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Controlled",
-        "lit": null,
+        "lit": "Controlled",
         "rn": null,
         "swift": null
       },
@@ -278,6 +288,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     }
   ]

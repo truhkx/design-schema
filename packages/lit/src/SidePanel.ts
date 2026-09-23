@@ -66,8 +66,12 @@ const HOOKS: Record<SidePanelOverridableBinding, string> = {
   exit: '--ds-side-panel-exit',
 };
 
-/** copy.closeLabel */
-const COPY_CLOSE_LABEL = 'Close';
+/**
+ * `copy.*`, verbatim. `expanded` is rendered only on SwiftUI: here the trigger's
+ * `aria-expanded` carries the state and the platform announces it in its own
+ * words, so the string is carried unused rather than dropped.
+ */
+const COPY = { closeLabel: 'Close', expanded: 'Expanded' };
 
 /** The persistent breakpoint for each `persistent` value, read through its token. */
 const PERSISTENT_BREAKPOINT_VARS: Record<Exclude<SidePanelPersistent, 'never'>, string> = {
@@ -116,6 +120,24 @@ function unlockBodyScroll(): void {
   if (scrollLockCount === 0) {
     document.documentElement.style.removeProperty('overflow');
   }
+}
+
+/**
+ * A CSS length resolved to px, measured once with an off-screen probe on
+ * `<html>`. A `rem` breakpoint handed straight to `matchMedia` resolves against
+ * the initial font size rather than the one on `<html>`, so the token is
+ * converted before the media query is built.
+ */
+function measurePx(length: string): number {
+  const probe = document.createElement('div');
+  probe.style.position = 'absolute';
+  probe.style.visibility = 'hidden';
+  probe.style.pointerEvents = 'none';
+  probe.style.inlineSize = length;
+  document.documentElement.append(probe);
+  const px = probe.getBoundingClientRect().width;
+  probe.remove();
+  return px;
 }
 
 /** The focused element, descending through open shadow roots. */
@@ -605,7 +627,7 @@ export class DsSidePanel extends LitElement {
                     data-part="closeButton"
                     variant="ghost"
                     icon-only
-                    label=${COPY_CLOSE_LABEL}
+                    label=${COPY.closeLabel}
                     @press=${this.handleCloseButtonPress}
                   >
                     <ds-icon slot="leading-icon" name="close"></ds-icon>
@@ -993,24 +1015,26 @@ export class DsSidePanel extends LitElement {
 
   /**
    * The breakpoint is read from the theme token on `<html>` when the component
-   * connects; a theme change after that takes effect on the next mount.
+   * connects; a theme change after that takes effect on the next mount. Where
+   * `matchMedia` does not exist (jsdom) the overlay presentation renders.
    */
   private setupPersistentQuery(): void {
     this.persistentQuery?.removeEventListener('change', this.handlePersistentChange);
     this.persistentQuery = null;
-    if (this.persistent === 'never') {
+    if (this.persistent === 'never' || typeof matchMedia !== 'function') {
       this.isPersistent = false;
       return;
     }
     const breakpoint = getComputedStyle(document.documentElement)
       .getPropertyValue(PERSISTENT_BREAKPOINT_VARS[this.persistent])
       .trim();
-    if (!breakpoint) {
+    const px = breakpoint ? measurePx(breakpoint) : 0;
+    if (px <= 0) {
       this.isPersistent = false;
       return;
     }
     // `(width > token)`: exactly the token width is still the overlay.
-    this.persistentQuery = matchMedia(`(width > ${breakpoint})`);
+    this.persistentQuery = matchMedia(`(width > ${px}px)`);
     this.isPersistent = this.persistentQuery.matches;
     this.persistentQuery.addEventListener('change', this.handlePersistentChange);
   }

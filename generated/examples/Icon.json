@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -29,6 +30,7 @@
       "storyId": "icon-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -56,6 +58,7 @@
         "value": "check"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -83,6 +86,7 @@
         "value": "dash"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -110,6 +114,7 @@
         "value": "chevron-right"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -137,6 +142,7 @@
         "value": "chevron-down"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -164,6 +170,7 @@
         "value": "chevron-up"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -191,6 +198,7 @@
         "value": "chevron-left"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -218,6 +226,7 @@
         "value": "close"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -245,6 +254,7 @@
         "value": "plus"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -272,6 +282,7 @@
         "value": "minus"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -299,6 +310,7 @@
         "value": "info"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -326,6 +338,7 @@
         "value": "success"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -353,6 +366,7 @@
         "value": "warning"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -380,6 +394,7 @@
         "value": "danger"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -407,6 +422,7 @@
         "value": "external"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -434,6 +450,7 @@
         "value": "ellipsis"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -461,6 +478,7 @@
         "value": "search"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -488,6 +506,7 @@
         "value": "arrow-right"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -515,6 +534,7 @@
         "value": "arrow-left"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -542,6 +562,7 @@
         "value": "calendar"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -569,6 +590,7 @@
         "value": "menu"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -596,6 +618,7 @@
         "value": "list"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -623,6 +646,7 @@
         "value": "grid"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -650,6 +674,7 @@
         "value": "play"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -677,6 +702,7 @@
         "value": "pause"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -704,6 +730,7 @@
         "value": "folder"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -731,6 +758,7 @@
         "value": "file"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -758,6 +786,7 @@
         "value": "xs"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -785,6 +814,7 @@
         "value": "sm"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -812,6 +842,7 @@
         "value": "md"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -839,6 +870,7 @@
         "value": "lg"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -866,6 +898,7 @@
         "value": "xl"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -894,6 +927,7 @@
         "value": "warning"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -918,6 +952,7 @@
       "storyId": "icon-react--decorative-beside-a-label",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -942,6 +977,7 @@
       "storyId": "icon-react--inline-in-running-text",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     }
   ]

@@ -101,7 +101,7 @@ test.describe('home page — page art is decorative', () => {
  */
 test.describe('home page — the feature cards form columns', () => {
   const cardTops = (page: Page) =>
-    page.locator('.ds-home-pillars > *').evaluateAll((cards) => cards.map((card) => Math.round(card.getBoundingClientRect().top)));
+    page.locator('.ds-home-pillars > * > *').evaluateAll((cards) => cards.map((card) => Math.round(card.getBoundingClientRect().top)));
 
   test('one row on a wide viewport', async ({ page }) => {
     await page.setViewportSize(WIDE);

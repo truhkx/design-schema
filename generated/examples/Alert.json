@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -30,6 +31,7 @@
       "storyId": "alert-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -58,6 +60,7 @@
         "value": "info"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -86,6 +89,7 @@
         "value": "success"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -114,6 +118,7 @@
         "value": "warning"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -142,6 +147,7 @@
         "value": "danger"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -170,6 +176,7 @@
         "value": "status"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -198,6 +205,7 @@
         "value": "alert"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -226,6 +234,7 @@
         "value": "off"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -254,6 +263,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -267,19 +277,20 @@
       },
       "snippets": {
         "react": "import { Alert } from '@design-schema/react';\n\n<Alert heading=\"Changes saved\">Some features are unavailable while you are offline.</Alert>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 36rem)\">\n    <ds-alert\n      heading=\"Changes saved\"\n      @dismiss=${(event: Event) => (event.target as HTMLElement).remove()}\n      >Some features are unavailable while you are offline.</ds-alert>\n  </div>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "WithHeading",
-        "lit": null,
+        "lit": "WithHeading",
         "rn": null,
         "swift": null
       },
       "storyId": "alert-react--with-heading",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -309,7 +320,7 @@
       },
       "snippets": {
         "react": "import { Alert, Link } from '@design-schema/react';\n\n<Alert tone=\"danger\" heading=\"Payment failed\">\n  <>\n    Your card was declined. <Link href=\"/billing\" label=\"Update your payment method\" tone=\"inherit\" /> to keep\n    your plan.\n  </>\n</Alert>",
-        "lit": "<div style=\"inline-size: min(100%, 36rem)\">\n  <ds-alert tone=\"warning\" heading=\"Trial ends in three days\">\n    <ds-text>Add a payment method to keep your workspace.\n      <ds-link href=\"#billing\" label=\"Go to billing\"></ds-link></ds-text>\n  </ds-alert>\n</div>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <div style=\"inline-size: min(100%, 36rem)\">\n    <ds-alert\n      tone=\"danger\"\n      heading=\"Payment failed\"\n      @dismiss=${(event: Event) => (event.target as HTMLElement).remove()}\n    >\n      Your card was declined.\n      <ds-link href=\"/billing\" label=\"Update your payment method\" tone=\"inherit\"></ds-link> to keep your plan.\n    </ds-alert>\n  </div>\n`;",
         "rn": null,
         "swift": null
       },
@@ -325,6 +336,7 @@
         "value": "danger"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -351,6 +363,7 @@
       "storyId": "alert-react--blocking-error",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -380,6 +393,7 @@
         "value": "success"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -405,6 +419,7 @@
       "storyId": "alert-react--dismissible-notice",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -431,6 +446,7 @@
       "storyId": "alert-react--present-at-load",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     }
   ]

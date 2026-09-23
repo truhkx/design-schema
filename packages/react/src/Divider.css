@@ -10,18 +10,23 @@
   margin: 0;
   padding: 0;
   border: none;
-  background-color: var(--ds-divider-color);
 }
 
-/* orientation: horizontal spans the inline axis; vertical stretches to the row height. */
-.ds-divider--horizontal {
+/*
+ * Unlabelled, the root is the `line` part: it paints itself, as a background-color box of the
+ * thickness rather than a border. The paint is scoped to the unlabelled case rather than cancelled
+ * on the labelled root, so no "no background" keyword is needed.
+ */
+.ds-divider--horizontal:not(.ds-divider--labelled) {
   inline-size: 100%;
   block-size: var(--ds-divider-thickness);
+  background-color: var(--ds-divider-color);
 }
 
 /*
  * Flex stretch applies only to an auto cross size, and the min fills a parent that has a set
- * height, so a vertical divider needs both to reach the row height.
+ * height, so a vertical divider needs both to reach the row height. A label is ignored here, so
+ * the vertical root is always the line.
  */
 .ds-divider--vertical {
   display: inline-block;
@@ -29,6 +34,7 @@
   block-size: auto;
   min-block-size: 100%;
   align-self: stretch;
+  background-color: var(--ds-divider-color);
 }
 
 /* spacing → layout.gap.{spacing} on both sides. `none` is the off state: no hook, so an override is a no-op. */
@@ -36,16 +42,20 @@
 .ds-divider--spacing-normal { --ds-divider-spacing: var(--layout-gap-normal); }
 .ds-divider--spacing-loose { --ds-divider-spacing: var(--layout-gap-loose); }
 
+/* The space is around the whole divider, label included, not around each line piece. */
 .ds-divider--horizontal:not(.ds-divider--spacing-none) { margin-block: var(--ds-divider-spacing); }
 .ds-divider--vertical:not(.ds-divider--spacing-none) { margin-inline: var(--ds-divider-spacing); }
 
-/* Labelled: the root is a row of line — label — line; the lines paint, the root does not. */
+/*
+ * Labelled: the root is the row, a flex line — label — line. align-items center puts the lines at
+ * the label's vertical center; the line pieces paint, the root does not.
+ */
 .ds-divider--labelled {
   display: flex;
   align-items: center;
+  inline-size: 100%;
   block-size: auto;
   gap: var(--ds-divider-label-gap);
-  background-color: transparent;
 }
 
 .ds-divider__line {

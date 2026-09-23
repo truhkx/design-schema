@@ -60,8 +60,22 @@ export interface Example {
   sweep: Sweep | null;
   /** Whether the story wraps the component in a decorator this page cannot run. */
   decorated: boolean;
+  /**
+   * `trigger` when the page supplies the opener: the component is an overlay a consumer opens from
+   * elsewhere (Dialog, BottomSheet), so the story's `open: true` is Storybook's fixture. The island
+   * renders a button that opens it, and wires `ExampleSet.harnessEvents` to close it.
+   */
+  harness: 'trigger' | null;
   /** Whether the tab is in the always-visible strip rather than behind "More examples". */
   primary: boolean;
+}
+
+/** The events a `trigger` harness wires. Mirrors tools/docs_examples.ts. */
+export interface HarnessEvents {
+  /** Request-phase events — the consumer is asked to close, and the harness does. */
+  close: string[];
+  /** Events whose first argument is the new boolean `open`, applied as given. */
+  change: string[];
 }
 
 /** One component's file. */
@@ -72,6 +86,8 @@ export interface ExampleSet {
    * generation writes `packages/swiftui/Sources/DesignSchema/<Name>.swift` and `pnpm docs:examples` runs.
    */
   platforms: Record<Platform, boolean>;
+  /** The events a `trigger` harness wires, or `null` for a component that needs none. */
+  harnessEvents: HarnessEvents | null;
   examples: Example[];
 }
 
@@ -103,7 +119,14 @@ const CHROMATIC = import.meta.glob<Record<string, string>>('../../../generated/c
  * project, and its page shows the schema and the accessibility contract as it always did.
  */
 export function examplesFor(name: string): ExampleSet {
-  return BY_NAME.get(name) ?? { layout: 'scenarios', platforms: { react: false, lit: false, rn: false, swift: false }, examples: [] };
+  return (
+    BY_NAME.get(name) ?? {
+      layout: 'scenarios',
+      platforms: { react: false, lit: false, rn: false, swift: false },
+      harnessEvents: null,
+      examples: [],
+    }
+  );
 }
 
 /**

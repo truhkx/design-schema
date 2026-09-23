@@ -23,9 +23,10 @@ const HOOKS: Record<ContainerOverridableBinding, string> = {
  * the light DOM behind a default slot, and the host carries
  * `data-part="column"`. `maxWidth` and `paddingInline` are
  * reflected-attribute-driven CSS custom properties on `:host`. `element:
- * main` sets the page's main landmark role on the host through
- * `ElementInternals`; `div` and `section` carry no role, since a custom
- * element's host tag can't be swapped the way a real HTML tag can.
+ * main` sets the page's main landmark role as a plain `role` attribute on the
+ * host, the way Box writes its sectioning roles; `div` and `section` carry no
+ * role, since a custom element's host tag can't be swapped the way a real HTML
+ * tag can, and a section is a region only when it is named.
  *
  * ## When to use
  *
@@ -122,18 +123,17 @@ export class DsContainer extends LitElement {
   /** Where the capped column sits in a wider viewport. `start` sets `margin-inline: 0` on both sides. */
   @property({ type: String, reflect: true }) accessor align: ContainerAlign = 'center';
 
-  /** Use `main` for the page's main column when no Landmark wraps it. */
+  /**
+   * Use `main` for the page's main column when no Landmark wraps it; a page has exactly
+   * one, which is the author's responsibility — Container cannot see the rest of the page,
+   * so it neither enforces it nor warns. The host is always the element in the DOM, so this
+   * swaps no tag: `main` sets the landmark role on the host, and `div` and `section` set
+   * none. It changes no styling, so it does not reflect.
+   */
   @property({ type: String }) accessor element: ContainerElement = 'div';
 
   /** Per-instance style overrides: `{ maxWidth: 'layout.maxWidth.page' }`. */
   @property({ attribute: false }) accessor overrides: Partial<Record<ContainerOverridableBinding, TokenRef | undefined>> | undefined;
-
-  private readonly internals: ElementInternals;
-
-  constructor() {
-    super();
-    this.internals = this.attachInternals();
-  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -143,7 +143,15 @@ export class DsContainer extends LitElement {
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('element')) {
-      this.internals.role = this.element === 'main' ? 'main' : null;
+      /* A plain attribute, not ElementInternals: the accessible-role tests cannot read
+         internals, and this is the one semantic Container has. Compare before writing, so a
+         same-value write never queues a mutation record. `section` sets none alongside `div`:
+         a section is a region only when it is named, and Container has nothing to name it. */
+      if (this.element === 'main') {
+        if (this.getAttribute('role') !== 'main') this.setAttribute('role', 'main');
+      } else {
+        this.removeAttribute('role');
+      }
     }
     /* `width` and `gutter` decide which overrides are in effect, so a change to either re-applies them. */
     if (changed.has('overrides') || changed.has('width') || changed.has('gutter')) {

@@ -88,6 +88,10 @@ describe('ds-alert', () => {
     const s = await setup({"live": "off"});
     expect(s.container()).not.toHaveAttribute("role");
   });
+  test('an-empty-heading-falls-back-to-the-body', async () => {
+    const s = await setup({"heading": "", "children": "Your card was declined."});
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Your\\ card\\ was\\ declined\\."));
+  });
   test('the-heading-is-rendered', async () => {
     const s = await setup({"heading": "Payment failed"});
     expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Payment\\ failed"));

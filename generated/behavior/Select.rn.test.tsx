@@ -65,6 +65,10 @@ describe('Select', () => {
     const s = setup({"required": true, "open": true});
     expect(screen.getByText(new RegExp("\\(required\\)"))).toBeOnTheScreen();
   });
+  test('invalid-is-reported-on-the-trigger', () => {
+    const s = setup({"invalid": true, "open": true});
+    expect(screen.getByText(new RegExp(escapeRegExp(s.props.label) + "\\ is\\ not\\ valid\\."))).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({"open": true});
     expect(s.root()).toBeTruthy();

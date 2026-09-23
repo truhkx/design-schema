@@ -60,7 +60,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    trigger: () => (deep(root, '[part="trigger"]') ?? deep(root, '[data-part="trigger"]') ?? root.firstElementChild) as HTMLElement,
+    trigger: () => (deep(root, '[role="complementary"]') ?? deep(root, '[part="trigger"]') ?? deep(root, '[data-part="trigger"]') ?? root.firstElementChild) as HTMLElement,
     scrim: () => (deep(root, '[part="scrim"]') ?? deep(root, '[data-part="scrim"]')) as HTMLElement,
     closeButton: () => (deep(root, '[part="closeButton"]') ?? deep(root, '[data-part="closeButton"]')) as HTMLElement,
   };
@@ -141,7 +141,10 @@ describe('ds-side-panel', () => {
     const s = await setup({"role": "navigation", "open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
   });
-  test.skip('has-accessible-name — then.name: role \'none\' cannot be queried; name the landmark/text role in the doc', async () => {});
+  test('has-accessible-name', async () => {
+    const s = await setup({"open": true});
+    expect(s.trigger()).toHaveAccessibleName();
+  });
   test('escape-fires-on-open-change', async () => {
     const s = await setup({"open": true});
     s.el.focus();

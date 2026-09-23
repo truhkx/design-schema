@@ -5,7 +5,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { Card, type CardProps } from './Card';
 import { Link } from './Link';
 import meta, { Default } from './Card.stories';
@@ -23,11 +23,17 @@ function setup(given: Partial<CardProps> = {}) {
   return { ...utils, props, root };
 }
 
-/** True when the element can take focus: script focus lands on it. */
+/**
+ * True when the element can take focus: script focus lands on it. Wrapped in `act` because a
+ * focusable card turns its own focus-ring state on from its focusin handler.
+ */
 function canFocus(el: HTMLElement): boolean {
-  el.focus();
-  const focused = document.activeElement === el;
-  el.blur();
+  let focused = false;
+  act(() => {
+    el.focus();
+    focused = document.activeElement === el;
+    el.blur();
+  });
   return focused;
 }
 

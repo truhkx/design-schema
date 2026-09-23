@@ -26,7 +26,7 @@ function setup(given: Partial<SidePanelProps> = {}) {
     events,
     props,
     root: () => screen.queryByTestId('SidePanel') ?? screen.UNSAFE_root,
-    trigger: () => s.root(),
+    trigger: () => screen.queryByRole('complementary') ?? s.root(),
     scrim: () => screen.queryByTestId('SidePanel.scrim') ?? s.root(),
     closeButton: () => screen.queryByTestId('SidePanel.closeButton') ?? s.root(),
     rerender: (next: Partial<SidePanelProps>) => utils.rerender(tree({ ...props, ...next })),
@@ -98,5 +98,8 @@ describe('SidePanel', () => {
     const s = setup({"role": "navigation", "open": true});
     expect(s.root()).toBeTruthy();
   });
-  test.skip('has-accessible-name — then.name: role \'none\' cannot be queried; name the landmark/text role in the doc', async () => {});
+  test('has-accessible-name', () => {
+    const s = setup({"open": true});
+    expect(screen.getByRole('complementary')).toBeOnTheScreen();
+  });
 });

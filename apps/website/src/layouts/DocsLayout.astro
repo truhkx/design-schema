@@ -12,7 +12,8 @@
  *
  * Above the breakpoint the shell also fills the space between the header and the footer, however
  * short the page (Tony's review, 2026-09-15), so the sidebar column runs all the way down to the
- * footer rather than stopping at its last link. `ds-docs-page` is the hook docs-layout.css stretches.
+ * footer rather than stopping at its last link. `ds-docs-page` is the hook docs-layout.css stretches:
+ * a plain div around the Container, which takes no `className` (foundations/styling-and-overrides.md).
  */
 import { Container } from '@design-schema/react';
 
@@ -31,12 +32,14 @@ const { title, description } = Astro.props;
 ---
 
 <Layout title={title} description={description}>
-  <Container width="page" className="ds-docs-page">
-    <div class="ds-docs-shell">
-      <DocsSidebar />
-      <div class="ds-docs-shell__content">
-        <slot />
+  <div class="ds-docs-page">
+    <Container width="page">
+      <div class="ds-docs-shell">
+        <DocsSidebar />
+        <div class="ds-docs-shell__content">
+          <slot />
+        </div>
       </div>
-    </div>
-  </Container>
+    </Container>
+  </div>
 </Layout>

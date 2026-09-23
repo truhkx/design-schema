@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -41,7 +42,7 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select label=\"Country\" name=\"country\" options={COUNTRIES} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxItem[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS}></ds-select>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRIES}></ds-select>\n`;",
         "rn": "import { Select } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n];\n\n<Select label=\"Country\" name=\"country\" options={OPTIONS} />",
         "swift": null
       },
@@ -54,6 +55,7 @@
       "storyId": "select-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -91,7 +93,7 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select label=\"Country\" name=\"country\" options={COUNTRIES} size=\"sm\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxItem[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS} size=\"sm\"></ds-select>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRIES} size=\"sm\"></ds-select>\n`;",
         "rn": "import { Select } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n];\n\n<Select label=\"Country\" name=\"country\" options={OPTIONS} size=\"sm\" />",
         "swift": null
       },
@@ -107,6 +109,7 @@
         "value": "sm"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -144,7 +147,7 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select label=\"Country\" name=\"country\" options={COUNTRIES} size=\"md\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxItem[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS} size=\"md\"></ds-select>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRIES} size=\"md\"></ds-select>\n`;",
         "rn": "import { Select } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n];\n\n<Select label=\"Country\" name=\"country\" options={OPTIONS} size=\"md\" />",
         "swift": null
       },
@@ -160,6 +163,7 @@
         "value": "md"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -197,7 +201,7 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select label=\"Country\" name=\"country\" options={COUNTRIES} native=\"auto\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxItem[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS} native=\"auto\"></ds-select>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRIES} native=\"auto\"></ds-select>\n`;",
         "rn": "import { Select } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n];\n\n<Select label=\"Country\" name=\"country\" options={OPTIONS} native=\"auto\" />",
         "swift": null
       },
@@ -213,6 +217,7 @@
         "value": "auto"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -250,7 +255,7 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select label=\"Country\" name=\"country\" options={COUNTRIES} native=\"always\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxItem[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS} native=\"always\"></ds-select>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRIES} native=\"always\"></ds-select>\n`;",
         "rn": "import { Select } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n];\n\n<Select label=\"Country\" name=\"country\" options={OPTIONS} native=\"always\" />",
         "swift": null
       },
@@ -266,6 +271,7 @@
         "value": "always"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -303,7 +309,7 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select label=\"Country\" name=\"country\" options={COUNTRIES} native=\"never\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxItem[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS} native=\"never\"></ds-select>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRIES} native=\"never\"></ds-select>\n`;",
         "rn": "import { Select } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n];\n\n<Select label=\"Country\" name=\"country\" options={OPTIONS} native=\"never\" />",
         "swift": null
       },
@@ -319,6 +325,7 @@
         "value": "never"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -357,6 +364,7 @@
       "storyId": "select-react--country-picker",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -395,6 +403,7 @@
       "storyId": "select-react--multi-select-roles",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -429,6 +438,7 @@
       "storyId": "select-react--forced-native-picker",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -464,6 +474,7 @@
       "storyId": "select-react--compact-picker-in-a-header",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -508,7 +519,7 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxItem } from '@design-schema/react';\n\nconst ROLES: ListboxItem[] = [\n  {\n    group: 'Engineering',\n    options: [\n      { value: 'frontend', label: 'Frontend' },\n      { value: 'backend', label: 'Backend' },\n    ],\n  },\n  {\n    group: 'Design',\n    options: [\n      { value: 'product', label: 'Product design' },\n      { value: 'brand', label: 'Brand design' },\n    ],\n  },\n];\n\n<Select\n  label=\"Role\"\n  name=\"role\"\n  options={ROLES}\n  multiple\n  defaultValue={['frontend', 'backend', 'brand']}\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxItem[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select\n    label=\"Country\"\n    name=\"country\"\n    .options=${COUNTRY_OPTIONS}\n    .defaultValue=${['ca', 'fr', 'jp']}\n    multiple\n  ></ds-select>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst ROLES: ListboxItem[] = [\n  {\n    group: 'Engineering',\n    options: [\n      { value: 'frontend', label: 'Frontend' },\n      { value: 'backend', label: 'Backend' },\n    ],\n  },\n  {\n    group: 'Design',\n    options: [\n      { value: 'product', label: 'Product design' },\n      { value: 'brand', label: 'Brand design' },\n    ],\n  },\n];\n\nhtml`\n  <ds-select\n    label=\"Role\"\n    name=\"role\"\n    .options=${ROLES}\n    .defaultValue=${['frontend', 'backend', 'brand']}\n    multiple\n  ></ds-select>\n`;",
         "rn": "import { Select } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n];\n\n<Select\n  label=\"Time zones\"\n  name=\"timeZones\"\n  options={OPTIONS}\n  multiple\n  defaultValue={['us', 'ca', 'fr']}\n/>",
         "swift": null
       },
@@ -521,6 +532,7 @@
       "storyId": "select-react--multiple",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -558,7 +570,7 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select\n  label=\"Country\"\n  name=\"country\"\n  options={COUNTRIES}\n  description=\"Used for shipping and tax rates.\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxItem[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select\n    label=\"Country\"\n    name=\"country\"\n    .options=${COUNTRY_OPTIONS}\n    description=\"Where the account is registered.\"\n  ></ds-select>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select\n    label=\"Country\"\n    name=\"country\"\n    .options=${COUNTRIES}\n    description=\"Used for shipping and tax rates.\"\n  ></ds-select>\n`;",
         "rn": "import { Select } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n];\n\n<Select\n  label=\"Country\"\n  name=\"country\"\n  options={OPTIONS}\n  description=\"Used to set your default currency and tax rate.\"\n/>",
         "swift": null
       },
@@ -571,6 +583,7 @@
       "storyId": "select-react--with-description",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -608,7 +621,7 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select label=\"Country\" name=\"country\" options={COUNTRIES} required />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxItem[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS} required></ds-select>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRIES} required></ds-select>\n`;",
         "rn": "import { Select } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n];\n\n<Select label=\"Country\" name=\"country\" options={OPTIONS} required />",
         "swift": null
       },
@@ -624,6 +637,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -662,7 +676,7 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select\n  label=\"Country\"\n  name=\"country\"\n  options={COUNTRIES}\n  disabled\n  defaultValue=\"fr\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxItem[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select\n    label=\"Country\"\n    name=\"country\"\n    .options=${COUNTRY_OPTIONS}\n    .defaultValue=${'fr'}\n    disabled\n  ></ds-select>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select\n    label=\"Country\"\n    name=\"country\"\n    .options=${COUNTRIES}\n    .defaultValue=${'fr'}\n    disabled\n  ></ds-select>\n`;",
         "rn": "import { Select } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n];\n\n<Select\n  label=\"Country\"\n  name=\"country\"\n  options={OPTIONS}\n  disabled\n  defaultValue=\"us\"\n/>",
         "swift": null
       },
@@ -675,6 +689,7 @@
       "storyId": "select-react--disabled",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -712,7 +727,7 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select label=\"Country\" name=\"country\" options={COUNTRIES} invalid />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxItem[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS} invalid></ds-select>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRIES} invalid></ds-select>\n`;",
         "rn": "import { Select } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n];\n\n<Select label=\"Country\" name=\"country\" options={OPTIONS} invalid />",
         "swift": null
       },
@@ -728,6 +743,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -765,7 +781,7 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select\n  label=\"Country\"\n  name=\"country\"\n  options={COUNTRIES}\n  error=\"Choose the country you ship to.\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxItem[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select\n    label=\"Country\"\n    name=\"country\"\n    .options=${COUNTRY_OPTIONS}\n    error=\"Fix this before continuing.\"\n  ></ds-select>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select\n    label=\"Country\"\n    name=\"country\"\n    .options=${COUNTRIES}\n    error=\"Choose the country you ship to.\"\n  ></ds-select>\n`;",
         "rn": "import { Select } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n];\n\n<Select\n  label=\"Country\"\n  name=\"country\"\n  options={OPTIONS}\n  error=\"Choose a country.\"\n/>",
         "swift": null
       },
@@ -778,6 +794,7 @@
       "storyId": "select-react--with-error",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -815,69 +832,20 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select label=\"Country\" name=\"country\" options={COUNTRIES} defaultValue=\"fr\" />",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select\n    label=\"Country\"\n    name=\"country\"\n    .options=${COUNTRIES}\n    .defaultValue=${'fr'}\n  ></ds-select>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "DefaultValue",
-        "lit": null,
+        "lit": "DefaultValue",
         "rn": null,
         "swift": null
       },
       "storyId": "select-react--default-value",
       "sweep": null,
       "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "label": "Country",
-        "name": "country",
-        "options": [
-          {
-            "value": "ca",
-            "label": "Canada"
-          },
-          {
-            "value": "fr",
-            "label": "France"
-          },
-          {
-            "value": "de",
-            "label": "Germany"
-          },
-          {
-            "value": "jp",
-            "label": "Japan"
-          },
-          {
-            "value": "mx",
-            "label": "Mexico"
-          },
-          {
-            "value": "us",
-            "label": "United States"
-          }
-        ],
-        "open": true
-      },
-      "snippets": {
-        "react": "import { useState } from 'react';\nimport { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nfunction Example() {\n  const [open, setOpen] = useState(true ?? true);\n  return (\n    <Select\n      label=\"Country\"\n      name=\"country\"\n      options={COUNTRIES}\n      open={open}\n      onOpenChange={(next) => {\n        setOpen(next);\n        undefined?.(next);\n      }}\n    />\n  );\n}\n\n<Example />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem } from '@design-schema/lit';\n\nconst COUNTRY_OPTIONS: ListboxItem[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRY_OPTIONS} open></ds-select>\n`;",
-        "rn": "import { Select } from '@design-schema/rn';\n\nconst OPTIONS = [\n  { value: 'us', label: 'United States' },\n  { value: 'ca', label: 'Canada' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'fr', label: 'France' },\n];\n\n<Select label=\"Country\" name=\"country\" options={OPTIONS} open />",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": "Keyboard",
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "select-react--keyboard",
-      "sweep": null,
-      "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

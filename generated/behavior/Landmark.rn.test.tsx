@@ -35,6 +35,10 @@ describe('Landmark', () => {
     const s = setup({"role": "search"});
     expect(s.region()).toHaveProp("accessibilityRole", "search");
   });
+  test('a-label-is-dropped-on-a-role-that-refuses-one', () => {
+    const s = setup({"role": "banner", "label": "Site header"});
+    expect(s.region()).not.toHaveProp("accessibilityLabel");
+  });
   test('a-region-is-named-by-its-label', () => {
     const s = setup({"role": "region", "label": "Related articles"});
     expect(s.region()).toHaveProp("accessibilityLabel", "Related articles");

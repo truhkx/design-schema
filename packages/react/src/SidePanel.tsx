@@ -6,6 +6,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -184,9 +185,24 @@ function persistentQuery(persistent: SidePanelPersistent): MediaQueryList | null
   return window.matchMedia(`(width > ${breakpoint})`);
 }
 
+/**
+ * False on the server and through hydration, true from then on (and from the first render of a
+ * client-only mount). Nothing that exists only in the browser — the portal host, a media query —
+ * may shape the markup before this is true, or the server and client trees differ.
+ */
+const subscribeNothing = (): (() => void) => () => {};
+function useHydrated(): boolean {
+  return useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
+}
+
 function useIsPersistent(persistent: SidePanelPersistent): boolean {
-  const [matches, setMatches] = useState<boolean>(() => persistentQuery(persistent)?.matches ?? false);
-  useEffect(() => {
+  // Never read the viewport during render: the server has none, so the first client render must match it.
+  const [matches, setMatches] = useState(false);
+  useLayoutEffect(() => {
     const query = persistentQuery(persistent);
     if (!query) {
       setMatches(false);
@@ -342,6 +358,7 @@ export function SidePanel({
   style: _style,
   ...rest
 }: SidePanelProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
+  const hydrated = useHydrated();
   const isPersistent = useIsPersistent(persistent);
   const modalActive = modal && !isPersistent;
 
@@ -423,7 +440,7 @@ export function SidePanel({
 
   // Modal open: showModal(), then focus the body's first focusable, the footer's, the close button, or the title.
   useLayoutEffect(() => {
-    if (!present || !modalActive) return;
+    if (!present || !modalActive || !hydrated) return;
     const dialog = rootRef.current;
     if (!(dialog instanceof HTMLDialogElement)) return;
     if (!dialog.open) {
@@ -437,14 +454,16 @@ export function SidePanel({
       return;
     }
     headingRef.current?.focus();
-  }, [present, modalActive]);
+  }, [present, modalActive, hydrated]);
 
-  // Reveal on the next frame so the slide-in runs from the off-edge position.
+  // Reveal on the next frame so the slide-in runs from the off-edge position. Keyed on `hydrated`
+  // too: the surface is only in the DOM once the portal renders, and a flag set before that has
+  // nothing to slide.
   useLayoutEffect(() => {
-    if (!present || !open || isPersistent) return undefined;
+    if (!present || !open || isPersistent || !hydrated) return undefined;
     const frame = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(frame);
-  }, [present, open, isPersistent]);
+  }, [present, open, isPersistent, hydrated]);
 
   // Non-modal close: focus inside the panel returns to the trigger (the modal's FocusScope restores on unmount).
   const wasOpenRef = useRef(open);
@@ -763,7 +782,8 @@ export function SidePanel({
         </span>
       ) : null}
       <div ref={slotRef} className="ds-side-panel-slot" />
-      {host && panel ? createPortal(panel, host) : null}
+      {/* The server renders no portal, so hydration must not either; it appears on the next render. */}
+      {hydrated && host && panel ? createPortal(panel, host) : null}
     </>
   );
 }

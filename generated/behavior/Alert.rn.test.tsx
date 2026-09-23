@@ -51,6 +51,10 @@ describe('Alert', () => {
     const s = setup({"live": "off"});
     expect(s.container()).not.toHaveProp("accessibilityLiveRegion");
   });
+  test('an-empty-heading-falls-back-to-the-body', () => {
+    const s = setup({"heading": "", "children": "Your card was declined."});
+    expect(screen.getByText(new RegExp("Your\\ card\\ was\\ declined\\."))).toBeOnTheScreen();
+  });
   test('the-heading-is-rendered', () => {
     const s = setup({"heading": "Payment failed"});
     expect(screen.getByText(new RegExp("Payment\\ failed"))).toBeOnTheScreen();

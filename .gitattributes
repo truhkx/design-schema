@@ -1,0 +1,3 @@
+# Derived theme tokens are written with LF by tools/theme.ts; pin them so core.autocrlf checkouts
+# and Windows runs do not show whole-file line-ending diffs (website-audit.md, "Workflow hazards").
+tokens/themes/**/*.json text eol=lf

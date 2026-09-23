@@ -111,6 +111,9 @@ const COPY = {
 /** PageUp/PageDown move by ten steps. */
 const PAGE_STEPS = 10;
 
+/** One warning per bad `min:max` pair, so a re-render does not repeat it. */
+const warnedRanges = new Set<string>();
+
 /** Decimal places in `step` (`0.1` → 1), so arithmetic on it stays exact. */
 function decimalsIn(step: number): number {
   const str = String(step);
@@ -197,7 +200,7 @@ export class DsSlider extends LitElement {
       --ds-slider-thumb-active-scale: var(--opacity-disabled);
       --ds-slider-halo-spread: var(--space-2);
       --ds-slider-mark: var(--color-border-strong);
-      --ds-slider-mark-size: var(--space-1);
+      --ds-slider-mark-size: var(--space-2);
       --ds-slider-mark-label-size: var(--font-size-xs);
       --ds-slider-mark-label-gap: var(--space-1);
       --ds-slider-bubble-padding-block: var(--space-1);
@@ -545,6 +548,9 @@ export class DsSlider extends LitElement {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
+    if (import.meta.env.DEV) {
+      this.warnInvalidRange();
+    }
   }
 
   protected override updated(): void {
@@ -701,7 +707,7 @@ export class DsSlider extends LitElement {
       : undefined;
 
     return html`<div
-      id=${ifDefined(index === 0 ? this.id || 'thumb' : undefined)}
+      id=${ifDefined(index === 0 ? 'thumb' : undefined)}
       part="thumb"
       data-part="thumb"
       class=${classMap({ pressed: this.pressedIndex === index })}
@@ -812,13 +818,16 @@ export class DsSlider extends LitElement {
    */
   private normalizeValue(raw: SliderValue | undefined): SliderValue {
     if (this.range) {
-      const pair: [number, number] = raw === undefined ? [this.minValue, this.maxValue] : toPair(raw);
-      const low = this.clamp(pair[0]);
-      const high = this.clamp(pair[1]);
+      // A number where a pair belongs is a shape mismatch: fall back to the
+      // range's own default, silently — only `max <= min` warns.
+      const pair: [number, number] = Array.isArray(raw) ? raw : [this.minValue, this.maxValue];
+      const low = this.clamp(finite(pair[0], this.minValue));
+      const high = this.clamp(finite(pair[1], this.maxValue));
       return low <= high ? [low, high] : [high, low];
     }
-    if (raw === undefined) return this.minValue;
-    return this.clamp(Array.isArray(raw) ? raw[0] : raw);
+    // The mirror mismatch — a pair on a single-thumb slider — falls back to `min`.
+    if (Array.isArray(raw)) return this.minValue;
+    return this.clamp(finite(raw, this.minValue));
   }
 
   /** Snap a raw value to the marks (with `snapToMarks`) or to the step grid. */
@@ -895,13 +904,23 @@ export class DsSlider extends LitElement {
     const step = this.stepSize;
     const digits = decimalsIn(step);
     const current = this.thumbValue(index);
+    // ArrowLeft/ArrowRight are mirrored in a right-to-left layout, read from the
+    // host's computed direction at keydown, as in Tabs and SegmentedControl.
+    // ArrowUp/ArrowDown and the Page keys are never mirrored.
+    const rtl = getComputedStyle(this).direction === 'rtl';
     switch (event.key) {
       case 'ArrowRight':
+        event.preventDefault();
+        this.setThumb(index, roundTo(current + (rtl ? -step : step), digits));
+        break;
       case 'ArrowUp':
         event.preventDefault();
         this.setThumb(index, roundTo(current + step, digits));
         break;
       case 'ArrowLeft':
+        event.preventDefault();
+        this.setThumb(index, roundTo(current + (rtl ? step : -step), digits));
+        break;
       case 'ArrowDown':
         event.preventDefault();
         this.setThumb(index, roundTo(current - step, digits));
@@ -1028,6 +1047,20 @@ export class DsSlider extends LitElement {
     forwarded: Partial<Record<TextOverridableBinding, TokenRef | undefined>>,
   ): Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined {
     return this.overrides ? forwarded : undefined;
+  }
+
+  /**
+   * A shape mismatch between `range` and `value`/`defaultValue` falls back
+   * silently; `max <= min` is the one case the doc asks to warn about.
+   */
+  private warnInvalidRange(): void {
+    const min = finite(this.min, 0);
+    const max = finite(this.max, 100);
+    if (max > min) return;
+    const pair = `${min}:${max}`;
+    if (warnedRanges.has(pair)) return;
+    warnedRanges.add(pair);
+    console.warn(`<ds-slider>: \`max\` (${max}) must be greater than \`min\` (${min}).`);
   }
 
   private applyOverrides(): void {

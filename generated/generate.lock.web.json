@@ -185,21 +185,17 @@
     }
   },
   "Button.web": {
-    "hash": "f9287a334e4da936",
-    "lastAttemptHash": "f9287a334e4da936",
-    "generatedAt": "2026-09-20T20:07:10+00:00",
+    "hash": "66399b69b597a864",
+    "lastAttemptHash": "66399b69b597a864",
+    "generatedAt": "2026-09-22T06:59:15+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.1427,
+    "costUsd": 1.4613,
     "files": [
-      "packages/react/src/Button.css",
-      "packages/react/src/Button.stories.tsx",
-      "packages/react/src/Button.test.tsx",
-      "packages/react/src/Button.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Button.css"
     ],
-    "gaps": 8,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -212,21 +208,20 @@
     }
   },
   "Card.web": {
-    "hash": "db41ee3d7e6b6368",
-    "lastAttemptHash": "db41ee3d7e6b6368",
-    "generatedAt": "2026-09-20T20:37:28+00:00",
+    "hash": "7b226ef738ded1ca",
+    "lastAttemptHash": "7b226ef738ded1ca",
+    "generatedAt": "2026-09-22T08:04:51+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.5782,
+    "costUsd": 2.193,
     "files": [
       "packages/react/src/Card.css",
       "packages/react/src/Card.stories.tsx",
       "packages/react/src/Card.test.tsx",
-      "packages/react/src/Card.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Card.tsx"
     ],
-    "gaps": 9,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -313,13 +308,13 @@
     }
   },
   "Container.web": {
-    "hash": "068e164380384645",
-    "lastAttemptHash": "068e164380384645",
-    "generatedAt": "2026-09-20T20:31:18+00:00",
+    "hash": "88314ee3a5b60a11",
+    "lastAttemptHash": "88314ee3a5b60a11",
+    "generatedAt": "2026-09-22T07:54:54+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.906,
+    "costUsd": 1.1299,
     "files": [
       "packages/react/src/Container.css",
       "packages/react/src/Container.stories.tsx",
@@ -447,17 +442,15 @@
     }
   },
   "Divider.web": {
-    "hash": "126baf96f938419e",
-    "lastAttemptHash": "126baf96f938419e",
-    "generatedAt": "2026-09-20T20:42:59+00:00",
+    "hash": "288f8a09ce7194b1",
+    "lastAttemptHash": "288f8a09ce7194b1",
+    "generatedAt": "2026-09-22T08:14:54+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0458,
+    "costUsd": 1.2833,
     "files": [
       "packages/react/src/Divider.css",
-      "packages/react/src/Divider.stories.tsx",
-      "packages/react/src/Divider.test.tsx",
       "packages/react/src/Divider.tsx"
     ],
     "gaps": 6,
@@ -547,21 +540,18 @@
     }
   },
   "Form.web": {
-    "hash": "9c64726f2da3e132",
-    "lastAttemptHash": "9c64726f2da3e132",
-    "generatedAt": "2026-09-20T20:25:25+00:00",
+    "hash": "8a0631203f34dcb0",
+    "lastAttemptHash": "8a0631203f34dcb0",
+    "generatedAt": "2026-09-22T07:40:12+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.6255,
+    "costUsd": 2.2553,
     "files": [
-      "packages/react/src/Form.css",
-      "packages/react/src/Form.stories.tsx",
       "packages/react/src/Form.tsx",
-      "packages/react/src/FormContext.ts",
-      "packages/react/src/index.ts"
+      "packages/react/src/FormContext.ts"
     ],
-    "gaps": 21,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -630,13 +620,13 @@
     }
   },
   "Input.web": {
-    "hash": "3227cdb688fa2e27",
-    "lastAttemptHash": "3227cdb688fa2e27",
-    "generatedAt": "2026-09-20T20:16:52+00:00",
+    "hash": "56e1dc20f5976313",
+    "lastAttemptHash": "56e1dc20f5976313",
+    "generatedAt": "2026-09-22T07:26:21+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3065,
+    "costUsd": 1.3473,
     "files": [
       "packages/react/src/Input.css",
       "packages/react/src/Input.stories.tsx",
@@ -644,7 +634,7 @@
       "packages/react/src/Input.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -682,20 +672,21 @@
     }
   },
   "Link.web": {
-    "hash": "83eafa5501b5c32d",
-    "lastAttemptHash": "83eafa5501b5c32d",
-    "generatedAt": "2026-09-20T20:12:01+00:00",
+    "hash": "c7e12e320d05e337",
+    "lastAttemptHash": "c7e12e320d05e337",
+    "generatedAt": "2026-09-22T07:10:14+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2227,
+    "costUsd": 1.2114,
     "files": [
       "packages/react/src/Link.css",
       "packages/react/src/Link.stories.tsx",
+      "packages/react/src/Link.test.tsx",
       "packages/react/src/Link.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1021,18 +1012,18 @@
     }
   },
   "Slider.web": {
-    "hash": "66be73a4672305e4",
-    "lastAttemptHash": "816df82e9193aa67",
-    "generatedAt": "2026-09-21T19:10:21+00:00",
+    "hash": "35a536bf06e96ab7",
+    "lastAttemptHash": "35a536bf06e96ab7",
+    "generatedAt": "2026-09-22T05:21:37+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 15.24,
+    "rounds": 1,
+    "costUsd": 4.7222,
     "files": [
       "packages/react/src/Slider.css",
       "packages/react/src/Slider.tsx"
     ],
-    "gaps": 35,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1041,7 +1032,7 @@
       "deps": true,
       "modules": true,
       "keyboard": true,
-      "keyboard-run": false,
+      "keyboard-run": true,
       "axe": true
     }
   },
@@ -1276,19 +1267,17 @@
     }
   },
   "Tooltip.web": {
-    "hash": "1088edd04b29e0c8",
-    "lastAttemptHash": "e989bad6e996a4cb",
-    "generatedAt": "2026-09-21T09:08:31+00:00",
+    "hash": "d4c35217fa6973be",
+    "lastAttemptHash": "d4c35217fa6973be",
+    "generatedAt": "2026-09-22T05:09:47+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 9.6826,
+    "rounds": 1,
+    "costUsd": 1.3855,
     "files": [
-      "packages/react/src/Tooltip.css",
-      "packages/react/src/Tooltip.stories.tsx",
-      "packages/react/src/Tooltip.tsx"
+      "packages/react/src/Tooltip.stories.tsx"
     ],
-    "gaps": 22,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1297,7 +1286,7 @@
       "deps": true,
       "modules": true,
       "keyboard": true,
-      "keyboard-run": false,
+      "keyboard-run": true,
       "axe": true
     }
   },

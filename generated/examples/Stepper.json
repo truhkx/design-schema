@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -48,6 +49,7 @@
       "storyId": "stepper-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -94,6 +96,7 @@
         "value": "horizontal"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -140,6 +143,7 @@
         "value": "vertical"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -186,6 +190,7 @@
         "value": "none"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -232,6 +237,7 @@
         "value": "completed"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -278,6 +284,7 @@
         "value": "all"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -324,6 +331,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -351,19 +359,20 @@
       },
       "snippets": {
         "react": "import { Stepper } from '@design-schema/react';\n\n<Stepper\n  steps={[\n    { id: 'shipping', label: 'Shipping address' },\n    { id: 'payment', label: 'Payment', status: 'error' },\n    { id: 'review', label: 'Review order' },\n  ]}\n  current=\"payment\"\n/>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-stepper\n        .steps=${[\n    { id: 'shipping', label: 'Shipping address' },\n    { id: 'payment', label: 'Payment', status: 'error' },\n    { id: 'review', label: 'Review order' },\n  ]}\n        current=\"payment\"\n      ></ds-stepper>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "CurrentStepWithError",
-        "lit": null,
+        "lit": "CurrentStepWithError",
         "rn": null,
         "swift": null
       },
       "storyId": "stepper-react--current-step-with-error",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -403,6 +412,7 @@
       "storyId": "stepper-react--checkout",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -445,6 +455,7 @@
       "storyId": "stepper-react--onboarding-with-descriptions",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -484,6 +495,7 @@
       "storyId": "stepper-react--display-only",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -525,52 +537,7 @@
       "storyId": "stepper-react--a-step-with-an-error",
       "sweep": null,
       "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "steps": [
-          {
-            "id": "shipping",
-            "label": "Shipping address"
-          },
-          {
-            "id": "payment",
-            "label": "Payment"
-          },
-          {
-            "id": "review",
-            "label": "Review order"
-          },
-          {
-            "id": "confirm",
-            "label": "Confirmation"
-          }
-        ],
-        "current": "payment",
-        "orientation": "horizontal",
-        "navigable": "all",
-        "compact": false
-      },
-      "snippets": {
-        "react": "import { Stepper } from '@design-schema/react';\n\n<Stepper\n  steps={[\n    { id: 'shipping', label: 'Shipping address' },\n    { id: 'payment', label: 'Payment' },\n    { id: 'review', label: 'Review order' },\n    { id: 'confirm', label: 'Confirmation' },\n  ]}\n  current=\"payment\"\n  navigable=\"all\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { StepperStep } from '@design-schema/lit';\n\nconst checkout: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address' },\n  { id: 'payment', label: 'Payment' },\n  { id: 'review', label: 'Review order' },\n];\n\nhtml`\n  <ds-stepper\n    .steps=${[...checkout, { id: 'confirm', label: 'Confirmation' }]}\n    current=\"payment\"\n    navigable=\"all\"\n  ></ds-stepper>\n`;",
-        "rn": "import { Stepper, type StepperStep } from '@design-schema/rn';\n\nconst steps: StepperStep[] = [\n  { id: 'shipping', label: 'Shipping address' },\n  { id: 'payment', label: 'Payment' },\n  { id: 'review', label: 'Review order' },\n  { id: 'confirm', label: 'Confirmation' },\n];\n\n<Stepper steps={steps} current=\"review\" navigable=\"all\" />",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": "Keyboard",
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "stepper-react--keyboard",
-      "sweep": {
-        "prop": "navigable",
-        "value": "all"
-      },
-      "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

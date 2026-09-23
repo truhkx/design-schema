@@ -22,8 +22,8 @@ function setup(given: Partial<StepperProps> = {}) {
     user,
     events,
     props,
-    root: () => (document.querySelector('[data-ds="Stepper"]') ?? utils.container.firstElementChild) as HTMLElement,
-    list: () => s.root(),
+    root: () => (document.querySelector('[data-ds="Stepper"]') ?? screen.queryByRole('navigation') ?? utils.container.firstElementChild) as HTMLElement,
+    list: () => (screen.queryByRole('navigation') ?? s.root()) as HTMLElement,
     indicator: () => (document.querySelector('[data-part="indicator"]') ?? s.root()),
     rerender: (next: Partial<StepperProps>) => utils.rerender(<Stepper {...props} {...next} />),
   };
@@ -83,5 +83,8 @@ describe('Stepper', () => {
     const s = setup({"navigable": "all"});
     expect(s.root()).not.toBeNull();
   });
-  test.skip('has-accessible-name — then.name: role \'none\' cannot be queried; name the landmark/text role in the doc', async () => {});
+  test('has-accessible-name', async () => {
+    const s = setup({});
+    expect(screen.getByRole('navigation')).toHaveAccessibleName();
+  });
 });

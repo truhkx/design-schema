@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
+import { fileURLToPath } from 'node:url';
 
 // The adopter-facing website. Deliberately *no* @astrojs/starlight: Starlight owns its own header,
 // skip links, TOC and pagination markup, and the point of this app is that every pixel of UI is one
@@ -12,6 +13,7 @@ import react from '@astrojs/react';
 export default defineConfig({
   integrations: [react()],
   vite: {
+    plugins: [reactFromSourceInDev()],
     resolve: {
       alias: {
         // The naming demo (/docs/naming-demo, job 523) renders packages/react/demo-brand — a tree
@@ -24,3 +26,22 @@ export default defineConfig({
     },
   },
 });
+
+/**
+ * `astro dev` (Vite `serve`) renders the components from packages/react/src, so a regen shows up
+ * without a package rebuild (website-audit.md, "Workflow hazards found along the way"). Exact match
+ * only: `@design-schema/react/index.css` stays on dist, because src has one stylesheet per component
+ * and no single entry — the root `pnpm dev` builds the package first to keep that sheet fresh.
+ * `astro build` gets no alias and resolves both through the package's exports, i.e. dist.
+ * @returns {import('vite').Plugin}
+ */
+function reactFromSourceInDev() {
+  return {
+    name: 'design-schema:react-from-source-in-dev',
+    config(_config, { command }) {
+      if (command !== 'serve') return;
+      const src = fileURLToPath(new URL('../../packages/react/src/index.ts', import.meta.url));
+      return { resolve: { alias: [{ find: /^@design-schema\/react$/, replacement: src }] } };
+    },
+  };
+}

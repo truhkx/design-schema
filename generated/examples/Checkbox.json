@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -35,6 +36,7 @@
       "storyId": "checkbox-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -68,6 +70,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -101,6 +104,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -132,6 +136,7 @@
       "storyId": "checkbox-react--with-description",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -165,6 +170,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -188,7 +194,7 @@
       },
       "stories": {
         "react": "Checked",
-        "lit": "DefaultCheckedTrue",
+        "lit": "Checked",
         "rn": "Checked",
         "swift": null
       },
@@ -198,6 +204,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -221,7 +228,7 @@
       },
       "stories": {
         "react": "Disabled",
-        "lit": "DisabledTrue",
+        "lit": "Disabled",
         "rn": "Disabled",
         "swift": null
       },
@@ -231,6 +238,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -261,6 +269,7 @@
       "storyId": "checkbox-react--disabled-checked",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -284,7 +293,7 @@
       },
       "stories": {
         "react": "Invalid",
-        "lit": "InvalidTrue",
+        "lit": "Invalid",
         "rn": "Invalid",
         "swift": null
       },
@@ -294,6 +303,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -312,13 +322,13 @@
       },
       "snippets": {
         "react": "import { Checkbox } from '@design-schema/react';\n\n<Checkbox\n  label=\"I accept the terms of service\"\n  name=\"terms\"\n  required\n  error=\"Accept the terms to continue.\"\n/>",
-        "lit": "<ds-checkbox label=\"Send me product updates\" name=\"updates\" required></ds-checkbox>",
+        "lit": "<ds-checkbox\n  label=\"I accept the terms of service\"\n  name=\"terms\"\n  error=\"Accept the terms to continue.\"\n  required\n></ds-checkbox>",
         "rn": "import { Checkbox } from '@design-schema/rn';\n\n<Checkbox\n  label=\"I accept the terms of service\"\n  name=\"terms\"\n  required\n  error=\"Accept the terms to continue.\"\n/>",
         "swift": null
       },
       "stories": {
         "react": "WithError",
-        "lit": "RequiredTrue",
+        "lit": "WithError",
         "rn": "WithError",
         "swift": null
       },
@@ -328,6 +338,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -346,13 +357,13 @@
       },
       "snippets": {
         "react": "import { Checkbox } from '@design-schema/react';\n\n<Checkbox label=\"Send me product updates\" name=\"updates\" checked />",
-        "lit": null,
+        "lit": "<ds-checkbox label=\"Send me product updates\" name=\"updates\" checked></ds-checkbox>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Controlled",
-        "lit": null,
+        "lit": "Controlled",
         "rn": null,
         "swift": null
       },
@@ -362,6 +373,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

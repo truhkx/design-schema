@@ -8,13 +8,16 @@
  */
 
 /*
- * Always dark (Tony's review, 2026-09-15). Header.astro puts `data-mode="dark"` on the banner, and
- * every theme's token sheet declares its whole dark palette — surfaces, borders, focus, every
- * semantic color — on `[data-mode="dark"]`, not on `:root`. So the header and everything in it read
- * the active theme's dark tokens whatever mode the page is in, and the surface below is those same
- * tokens rather than a new inverse pair. The drawer is portaled to <body>, so it keeps the page's mode.
+ * Always dark (Tony's review, 2026-09-15). Header.astro puts `data-mode="dark"` on this element — a
+ * plain div inside the banner Landmark, which takes no `className` — and every theme's token sheet
+ * declares its whole dark palette — surfaces, borders, focus, every semantic color — on
+ * `[data-mode="dark"]`, not on `:root`. So the rules below and everything in the header read the
+ * active theme's dark tokens whatever mode the page is in, and the surface is those same tokens
+ * rather than a new inverse pair. `color` is set here, never inherited from the page; the nav links
+ * take `--color-link` through Link's default tone. The drawer is portaled to <body>, so it keeps the
+ * page's mode.
  */
-.ds-site-header {
+.ds-site-header[data-mode="dark"] {
   background: var(--color-background);
   color: var(--color-foreground);
   border-block-end: var(--border-width-thin) solid var(--color-border);
@@ -49,25 +52,23 @@
 }
 
 /*
- * The links are one group beside the lockup, not a band stretched across the row: the wordmark at the
- * start, the three links next to it, the theme control at the far end.
+ * The links are one group, centred between the lockup and the theme control: the wordmark at the
+ * start, the three links in the middle of the space that is left, the theme control at the far end.
  *
  * Tony's review on 2026-09-15 asked for `space-evenly` so the nav would not cluster at the end, but
  * spreading three links over a 1280px row left ~170px between each of them — no closer to each other
  * than to the lockup or the theme control, so they read as four unrelated things rather than as a
- * nav. The nav still takes the row's slack; it just spends it after the group instead of between the
- * links.
+ * nav. So the links keep the Stack's own `gap="loose"` between them (HeaderNav.tsx) and the group is
+ * centred with the Stack's `justify="center"` — both through the component's API, not lengths here.
  *
- * `flex: 1 1 auto` is the whole of "theme control at the end": the nav absorbs the leftover width, so
- * the control is held hard right without a `margin-inline-start: auto` of its own, and the row keeps
- * the three-part shape the plan describes. The space between the links is the Stack's own
- * `gap="loose"` (HeaderNav.tsx) — the token through the component's API rather than a length here.
- * This rule adds only the step in from the wordmark, one gap wider than the row's own, so the group
- * reads as separate from it rather than as a fourth word after it.
+ * This wrapper (a plain div: the Stack takes no class of ours) is the whole of "theme control at the
+ * end": it absorbs the leftover width, so the control is held hard right without a
+ * `margin-inline-start: auto` of its own. It has no margin of its own either, so the row's equal
+ * gaps on each side leave its midpoint exactly between the lockup and the control.
  */
 .ds-site-header__links {
   flex: 1 1 auto;
-  margin-inline-start: var(--layout-gap-loose);
+  min-inline-size: 0;
 }
 
 .ds-site-header__wide {

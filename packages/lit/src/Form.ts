@@ -161,7 +161,9 @@ export class DsForm extends LitElement {
       align-items: flex-start;
     }
 
-    /* errorSummaryBackground / errorSummaryText: color.background.subtle / color.foreground.danger, locked */
+    /* errorSummaryBackground / errorSummaryText / errorSummaryLineHeight:
+       color.background.subtle / color.foreground.danger / font.lineHeight.normal, all locked, so they
+       read their tokens directly and get no --ds-form-* hook. */
     [data-part='errorSummary'] {
       box-sizing: border-box;
       padding: var(--ds-form-error-summary-padding);
@@ -169,6 +171,11 @@ export class DsForm extends LitElement {
       border-radius: var(--ds-form-error-summary-radius);
       background: var(--color-background-subtle);
       color: var(--color-foreground-danger);
+      /* The item Links are bare text in this box, so without this they inherit the document's
+         line-height: normal and each link's box falls under the 24px target floor (WCAG 2.5.8).
+         Form may not give the Links a target of their own, so the box sets the body rhythm and the
+         Links inherit it, as they inherit the danger color. Locked for exactly that reason. */
+      line-height: var(--font-line-height-normal);
     }
 
     [data-part='errorSummary']:focus-visible {
@@ -234,6 +241,9 @@ export class DsForm extends LitElement {
 
   private readonly instanceId = `ds-form-${++formInstanceCount}`;
 
+  /** The forbidden-nesting dev warning is emitted once per element, not on every reconnection. */
+  private warnedAboutNesting = false;
+
   constructor() {
     super();
     this.addEventListener('keydown', (event) => this.handleKeydown(event));
@@ -251,7 +261,8 @@ export class DsForm extends LitElement {
     this.setAttribute('data-ds', 'Form');
     if (this.getAttribute('role') !== 'form') this.setAttribute('role', 'form');
     this.mutationObserver.observe(this, { childList: true, subtree: true });
-    if (import.meta.env.DEV && this.parentElement?.closest('form, ds-form')) {
+    if (import.meta.env.DEV && !this.warnedAboutNesting && this.parentElement?.closest('form, ds-form')) {
+      this.warnedAboutNesting = true;
       console.warn('<ds-form> must not be nested inside a native <form> or another <ds-form>.');
     }
   }
@@ -332,8 +343,18 @@ export class DsForm extends LitElement {
     `;
   }
 
+  /**
+   * copy.summaryHeading, pluralised by `count` in the locale read at the failed submit. A `lang` tag
+   * `Intl.PluralRules` rejects falls back to the runtime default locale rather than throwing.
+   */
   private summaryHeading(count: number): string {
-    const form = new Intl.PluralRules(this.summaryLocale).select(count) === 'one' ? 'one' : 'other';
+    let rules: Intl.PluralRules;
+    try {
+      rules = new Intl.PluralRules(this.summaryLocale);
+    } catch {
+      rules = new Intl.PluralRules();
+    }
+    const form = rules.select(count) === 'one' ? 'one' : 'other';
     return COPY_SUMMARY_HEADING[form].replace('{count}', String(count));
   }
 

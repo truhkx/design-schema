@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -75,7 +76,7 @@
       },
       "snippets": {
         "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: 'a1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: '2026-09-15T09:00:00Z',\n    content: <Text>Looks right to me.</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: 'a2',\n    heading: 'Bo approved Invoice 41',\n    timestamp: '2026-09-14T16:20:00Z',\n    content: <Link href=\"#invoice-41\" label=\"Open Invoice 41\" />,\n  },\n  {\n    id: 'a3',\n    heading: 'Cy exported the March report',\n    timestamp: '2026-09-10T12:00:00Z',\n    content: <Text>The export is ready to download.</Text>,\n    actions: <Button label=\"Download\" variant=\"secondary\" size=\"sm\" />,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nfunction minutesAgo(minutes: number): string {\n  return new Date(Date.now() - minutes * 60_000).toISOString();\n}\n\nconst BASE_ITEMS: FeedItem[] = [\n  {\n    id: 'evt-3',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: html`<ds-text size=\"sm\">Looks right to me.</ds-text>`,\n    actions: html`<ds-link href=\"#invoice-42\" label=\"View invoice\"></ds-link>`,\n    unread: true,\n  },\n  {\n    id: 'evt-47',\n    heading: 'Bo approved Invoice 41',\n    timestamp: minutesAgo(47),\n    content: html`<ds-text size=\"sm\">Approved for payment.</ds-text>`,\n    actions: html`<ds-link href=\"#invoice-41\" label=\"View invoice\"></ds-link>`,\n  },\n  {\n    id: 'evt-95',\n    heading: 'Dae opened a ticket',\n    timestamp: minutesAgo(95),\n    content: html`<ds-text size=\"sm\">Export fails for large workspaces.</ds-text>`,\n    actions: html`<ds-link href=\"#ticket-108\" label=\"View ticket\"></ds-link>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" .items=${BASE_ITEMS}></ds-feed>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: 'a1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: '2026-09-15T09:00:00Z',\n    content: html`<ds-text>Looks right to me.</ds-text>`,\n    actions: html`<ds-button label=\"Reply\" variant=\"secondary\" size=\"sm\"></ds-button>`,\n    unread: true,\n  },\n  {\n    id: 'a2',\n    heading: 'Bo approved Invoice 41',\n    timestamp: '2026-09-14T16:20:00Z',\n    content: html`<ds-link href=\"#invoice-41\" label=\"Open Invoice 41\"></ds-link>`,\n  },\n  {\n    id: 'a3',\n    heading: 'Cy exported the March report',\n    timestamp: '2026-09-10T12:00:00Z',\n    content: html`<ds-text>The export is ready to download.</ds-text>`,\n    actions: html`<ds-button label=\"Download\" variant=\"secondary\" size=\"sm\"></ds-button>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" .items=${SAMPLE_ITEMS}></ds-feed>\n`;",
         "rn": "import { Button, Feed, type FeedItem, Link, Stack, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60_000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>Looks right to me.</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <Stack gap=\"tight\">\n        <Text>The export is missing line items.</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </Stack>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'Bo approved Invoice 41',\n    timestamp: minutesAgo(180),\n    content: <Text>Approved for payment.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore />",
         "swift": null
       },
@@ -88,6 +89,7 @@
       "storyId": "feed-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -158,7 +160,7 @@
       },
       "snippets": {
         "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: 'a1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: '2026-09-15T09:00:00Z',\n    content: <Text>Looks right to me.</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: 'a2',\n    heading: 'Bo approved Invoice 41',\n    timestamp: '2026-09-14T16:20:00Z',\n    content: <Link href=\"#invoice-41\" label=\"Open Invoice 41\" />,\n  },\n  {\n    id: 'a3',\n    heading: 'Cy exported the March report',\n    timestamp: '2026-09-10T12:00:00Z',\n    content: <Text>The export is ready to download.</Text>,\n    actions: <Button label=\"Download\" variant=\"secondary\" size=\"sm\" />,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} headingLevel=\"2\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nfunction minutesAgo(minutes: number): string {\n  return new Date(Date.now() - minutes * 60_000).toISOString();\n}\n\nconst BASE_ITEMS: FeedItem[] = [\n  {\n    id: 'evt-3',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: html`<ds-text size=\"sm\">Looks right to me.</ds-text>`,\n    actions: html`<ds-link href=\"#invoice-42\" label=\"View invoice\"></ds-link>`,\n    unread: true,\n  },\n  {\n    id: 'evt-47',\n    heading: 'Bo approved Invoice 41',\n    timestamp: minutesAgo(47),\n    content: html`<ds-text size=\"sm\">Approved for payment.</ds-text>`,\n    actions: html`<ds-link href=\"#invoice-41\" label=\"View invoice\"></ds-link>`,\n  },\n  {\n    id: 'evt-95',\n    heading: 'Dae opened a ticket',\n    timestamp: minutesAgo(95),\n    content: html`<ds-text size=\"sm\">Export fails for large workspaces.</ds-text>`,\n    actions: html`<ds-link href=\"#ticket-108\" label=\"View ticket\"></ds-link>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" heading-level=\"2\" .items=${BASE_ITEMS}></ds-feed>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: 'a1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: '2026-09-15T09:00:00Z',\n    content: html`<ds-text>Looks right to me.</ds-text>`,\n    actions: html`<ds-button label=\"Reply\" variant=\"secondary\" size=\"sm\"></ds-button>`,\n    unread: true,\n  },\n  {\n    id: 'a2',\n    heading: 'Bo approved Invoice 41',\n    timestamp: '2026-09-14T16:20:00Z',\n    content: html`<ds-link href=\"#invoice-41\" label=\"Open Invoice 41\"></ds-link>`,\n  },\n  {\n    id: 'a3',\n    heading: 'Cy exported the March report',\n    timestamp: '2026-09-10T12:00:00Z',\n    content: html`<ds-text>The export is ready to download.</ds-text>`,\n    actions: html`<ds-button label=\"Download\" variant=\"secondary\" size=\"sm\"></ds-button>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" heading-level=\"2\" .items=${SAMPLE_ITEMS}></ds-feed>\n`;",
         "rn": "import { Button, Feed, type FeedItem, Link, Stack, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60_000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>Looks right to me.</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <Stack gap=\"tight\">\n        <Text>The export is missing line items.</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </Stack>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'Bo approved Invoice 41',\n    timestamp: minutesAgo(180),\n    content: <Text>Approved for payment.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore headingLevel=\"2\" />",
         "swift": null
       },
@@ -174,6 +176,7 @@
         "value": "2"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -244,7 +247,7 @@
       },
       "snippets": {
         "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: 'a1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: '2026-09-15T09:00:00Z',\n    content: <Text>Looks right to me.</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: 'a2',\n    heading: 'Bo approved Invoice 41',\n    timestamp: '2026-09-14T16:20:00Z',\n    content: <Link href=\"#invoice-41\" label=\"Open Invoice 41\" />,\n  },\n  {\n    id: 'a3',\n    heading: 'Cy exported the March report',\n    timestamp: '2026-09-10T12:00:00Z',\n    content: <Text>The export is ready to download.</Text>,\n    actions: <Button label=\"Download\" variant=\"secondary\" size=\"sm\" />,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} headingLevel=\"3\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nfunction minutesAgo(minutes: number): string {\n  return new Date(Date.now() - minutes * 60_000).toISOString();\n}\n\nconst BASE_ITEMS: FeedItem[] = [\n  {\n    id: 'evt-3',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: html`<ds-text size=\"sm\">Looks right to me.</ds-text>`,\n    actions: html`<ds-link href=\"#invoice-42\" label=\"View invoice\"></ds-link>`,\n    unread: true,\n  },\n  {\n    id: 'evt-47',\n    heading: 'Bo approved Invoice 41',\n    timestamp: minutesAgo(47),\n    content: html`<ds-text size=\"sm\">Approved for payment.</ds-text>`,\n    actions: html`<ds-link href=\"#invoice-41\" label=\"View invoice\"></ds-link>`,\n  },\n  {\n    id: 'evt-95',\n    heading: 'Dae opened a ticket',\n    timestamp: minutesAgo(95),\n    content: html`<ds-text size=\"sm\">Export fails for large workspaces.</ds-text>`,\n    actions: html`<ds-link href=\"#ticket-108\" label=\"View ticket\"></ds-link>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" heading-level=\"3\" .items=${BASE_ITEMS}></ds-feed>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: 'a1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: '2026-09-15T09:00:00Z',\n    content: html`<ds-text>Looks right to me.</ds-text>`,\n    actions: html`<ds-button label=\"Reply\" variant=\"secondary\" size=\"sm\"></ds-button>`,\n    unread: true,\n  },\n  {\n    id: 'a2',\n    heading: 'Bo approved Invoice 41',\n    timestamp: '2026-09-14T16:20:00Z',\n    content: html`<ds-link href=\"#invoice-41\" label=\"Open Invoice 41\"></ds-link>`,\n  },\n  {\n    id: 'a3',\n    heading: 'Cy exported the March report',\n    timestamp: '2026-09-10T12:00:00Z',\n    content: html`<ds-text>The export is ready to download.</ds-text>`,\n    actions: html`<ds-button label=\"Download\" variant=\"secondary\" size=\"sm\"></ds-button>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" heading-level=\"3\" .items=${SAMPLE_ITEMS}></ds-feed>\n`;",
         "rn": "import { Button, Feed, type FeedItem, Link, Stack, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60_000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>Looks right to me.</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <Stack gap=\"tight\">\n        <Text>The export is missing line items.</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </Stack>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'Bo approved Invoice 41',\n    timestamp: minutesAgo(180),\n    content: <Text>Approved for payment.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore headingLevel=\"3\" />",
         "swift": null
       },
@@ -260,6 +263,7 @@
         "value": "3"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -330,7 +334,7 @@
       },
       "snippets": {
         "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: 'a1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: '2026-09-15T09:00:00Z',\n    content: <Text>Looks right to me.</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: 'a2',\n    heading: 'Bo approved Invoice 41',\n    timestamp: '2026-09-14T16:20:00Z',\n    content: <Link href=\"#invoice-41\" label=\"Open Invoice 41\" />,\n  },\n  {\n    id: 'a3',\n    heading: 'Cy exported the March report',\n    timestamp: '2026-09-10T12:00:00Z',\n    content: <Text>The export is ready to download.</Text>,\n    actions: <Button label=\"Download\" variant=\"secondary\" size=\"sm\" />,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} headingLevel=\"4\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nfunction minutesAgo(minutes: number): string {\n  return new Date(Date.now() - minutes * 60_000).toISOString();\n}\n\nconst BASE_ITEMS: FeedItem[] = [\n  {\n    id: 'evt-3',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: html`<ds-text size=\"sm\">Looks right to me.</ds-text>`,\n    actions: html`<ds-link href=\"#invoice-42\" label=\"View invoice\"></ds-link>`,\n    unread: true,\n  },\n  {\n    id: 'evt-47',\n    heading: 'Bo approved Invoice 41',\n    timestamp: minutesAgo(47),\n    content: html`<ds-text size=\"sm\">Approved for payment.</ds-text>`,\n    actions: html`<ds-link href=\"#invoice-41\" label=\"View invoice\"></ds-link>`,\n  },\n  {\n    id: 'evt-95',\n    heading: 'Dae opened a ticket',\n    timestamp: minutesAgo(95),\n    content: html`<ds-text size=\"sm\">Export fails for large workspaces.</ds-text>`,\n    actions: html`<ds-link href=\"#ticket-108\" label=\"View ticket\"></ds-link>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" heading-level=\"4\" .items=${BASE_ITEMS}></ds-feed>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: 'a1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: '2026-09-15T09:00:00Z',\n    content: html`<ds-text>Looks right to me.</ds-text>`,\n    actions: html`<ds-button label=\"Reply\" variant=\"secondary\" size=\"sm\"></ds-button>`,\n    unread: true,\n  },\n  {\n    id: 'a2',\n    heading: 'Bo approved Invoice 41',\n    timestamp: '2026-09-14T16:20:00Z',\n    content: html`<ds-link href=\"#invoice-41\" label=\"Open Invoice 41\"></ds-link>`,\n  },\n  {\n    id: 'a3',\n    heading: 'Cy exported the March report',\n    timestamp: '2026-09-10T12:00:00Z',\n    content: html`<ds-text>The export is ready to download.</ds-text>`,\n    actions: html`<ds-button label=\"Download\" variant=\"secondary\" size=\"sm\"></ds-button>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" heading-level=\"4\" .items=${SAMPLE_ITEMS}></ds-feed>\n`;",
         "rn": "import { Button, Feed, type FeedItem, Link, Stack, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60_000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>Looks right to me.</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <Stack gap=\"tight\">\n        <Text>The export is missing line items.</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </Stack>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'Bo approved Invoice 41',\n    timestamp: minutesAgo(180),\n    content: <Text>Approved for payment.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore headingLevel=\"4\" />",
         "swift": null
       },
@@ -346,6 +350,7 @@
         "value": "4"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -416,7 +421,7 @@
       },
       "snippets": {
         "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: 'a1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: '2026-09-15T09:00:00Z',\n    content: <Text>Looks right to me.</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: 'a2',\n    heading: 'Bo approved Invoice 41',\n    timestamp: '2026-09-14T16:20:00Z',\n    content: <Link href=\"#invoice-41\" label=\"Open Invoice 41\" />,\n  },\n  {\n    id: 'a3',\n    heading: 'Cy exported the March report',\n    timestamp: '2026-09-10T12:00:00Z',\n    content: <Text>The export is ready to download.</Text>,\n    actions: <Button label=\"Download\" variant=\"secondary\" size=\"sm\" />,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore loading />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nfunction minutesAgo(minutes: number): string {\n  return new Date(Date.now() - minutes * 60_000).toISOString();\n}\n\nconst BASE_ITEMS: FeedItem[] = [\n  {\n    id: 'evt-3',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: html`<ds-text size=\"sm\">Looks right to me.</ds-text>`,\n    actions: html`<ds-link href=\"#invoice-42\" label=\"View invoice\"></ds-link>`,\n    unread: true,\n  },\n  {\n    id: 'evt-47',\n    heading: 'Bo approved Invoice 41',\n    timestamp: minutesAgo(47),\n    content: html`<ds-text size=\"sm\">Approved for payment.</ds-text>`,\n    actions: html`<ds-link href=\"#invoice-41\" label=\"View invoice\"></ds-link>`,\n  },\n  {\n    id: 'evt-95',\n    heading: 'Dae opened a ticket',\n    timestamp: minutesAgo(95),\n    content: html`<ds-text size=\"sm\">Export fails for large workspaces.</ds-text>`,\n    actions: html`<ds-link href=\"#ticket-108\" label=\"View ticket\"></ds-link>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" has-more loading .items=${BASE_ITEMS}></ds-feed>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: 'a1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: '2026-09-15T09:00:00Z',\n    content: html`<ds-text>Looks right to me.</ds-text>`,\n    actions: html`<ds-button label=\"Reply\" variant=\"secondary\" size=\"sm\"></ds-button>`,\n    unread: true,\n  },\n  {\n    id: 'a2',\n    heading: 'Bo approved Invoice 41',\n    timestamp: '2026-09-14T16:20:00Z',\n    content: html`<ds-link href=\"#invoice-41\" label=\"Open Invoice 41\"></ds-link>`,\n  },\n  {\n    id: 'a3',\n    heading: 'Cy exported the March report',\n    timestamp: '2026-09-10T12:00:00Z',\n    content: html`<ds-text>The export is ready to download.</ds-text>`,\n    actions: html`<ds-button label=\"Download\" variant=\"secondary\" size=\"sm\"></ds-button>`,\n  },\n];\n\nhtml`\n  <ds-feed label=\"Activity\" has-more loading .items=${SAMPLE_ITEMS}></ds-feed>\n`;",
         "rn": "import { Button, Feed, type FeedItem, Link, Stack, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60_000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>Looks right to me.</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <Stack gap=\"tight\">\n        <Text>The export is missing line items.</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </Stack>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'Bo approved Invoice 41',\n    timestamp: minutesAgo(180),\n    content: <Text>Approved for payment.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore loading />",
         "swift": null
       },
@@ -429,6 +434,7 @@
       "storyId": "feed-react--loading",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -455,6 +461,7 @@
       "storyId": "feed-react--empty",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -494,6 +501,7 @@
       "storyId": "feed-react--activity-stream",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -535,6 +543,7 @@
       "storyId": "feed-react--notifications-with-unread-items",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -569,6 +578,7 @@
       "storyId": "feed-react--caught-up",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -602,90 +612,7 @@
       "storyId": "feed-react--loading-the-next-page",
       "sweep": null,
       "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "label": "Activity",
-        "items": [
-          {
-            "id": "a1",
-            "heading": "Ana commented on Invoice 42",
-            "timestamp": "2026-09-15T09:00:00Z",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Looks right to me."
-              ]
-            },
-            "actions": {
-              "$element": "Button",
-              "props": {
-                "label": "Reply",
-                "variant": "secondary",
-                "size": "sm"
-              },
-              "children": []
-            },
-            "unread": true
-          },
-          {
-            "id": "a2",
-            "heading": "Bo approved Invoice 41",
-            "timestamp": "2026-09-14T16:20:00Z",
-            "content": {
-              "$element": "Link",
-              "props": {
-                "href": "#invoice-41",
-                "label": "Open Invoice 41"
-              },
-              "children": []
-            }
-          },
-          {
-            "id": "a3",
-            "heading": "Cy exported the March report",
-            "timestamp": "2026-09-10T12:00:00Z",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "The export is ready to download."
-              ]
-            },
-            "actions": {
-              "$element": "Button",
-              "props": {
-                "label": "Download",
-                "variant": "secondary",
-                "size": "sm"
-              },
-              "children": []
-            }
-          }
-        ],
-        "hasMore": false,
-        "loading": false,
-        "headingLevel": "3",
-        "newItemsCount": 2
-      },
-      "snippets": {
-        "react": "import { Button, Feed, type FeedItem, Link, Text } from '@design-schema/react';\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: 'a1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: '2026-09-15T09:00:00Z',\n    content: <Text>Looks right to me.</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: 'a2',\n    heading: 'Bo approved Invoice 41',\n    timestamp: '2026-09-14T16:20:00Z',\n    content: <Link href=\"#invoice-41\" label=\"Open Invoice 41\" />,\n  },\n  {\n    id: 'a3',\n    heading: 'Cy exported the March report',\n    timestamp: '2026-09-10T12:00:00Z',\n    content: <Text>The export is ready to download.</Text>,\n    actions: <Button label=\"Download\" variant=\"secondary\" size=\"sm\" />,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} newItemsCount={2} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { FeedItem } from '@design-schema/lit';\n\nfunction minutesAgo(minutes: number): string {\n  return new Date(Date.now() - minutes * 60_000).toISOString();\n}\n\nconst BASE_ITEMS: FeedItem[] = [\n  {\n    id: 'evt-3',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: html`<ds-text size=\"sm\">Looks right to me.</ds-text>`,\n    actions: html`<ds-link href=\"#invoice-42\" label=\"View invoice\"></ds-link>`,\n    unread: true,\n  },\n  {\n    id: 'evt-47',\n    heading: 'Bo approved Invoice 41',\n    timestamp: minutesAgo(47),\n    content: html`<ds-text size=\"sm\">Approved for payment.</ds-text>`,\n    actions: html`<ds-link href=\"#invoice-41\" label=\"View invoice\"></ds-link>`,\n  },\n  {\n    id: 'evt-95',\n    heading: 'Dae opened a ticket',\n    timestamp: minutesAgo(95),\n    content: html`<ds-text size=\"sm\">Export fails for large workspaces.</ds-text>`,\n    actions: html`<ds-link href=\"#ticket-108\" label=\"View ticket\"></ds-link>`,\n  },\n];\n\nhtml`\n  <ds-link href=\"#before\" label=\"Before the feed\"></ds-link>\n  ${meta.render!({ label: 'Activity', newItemsCount: 2, items: BASE_ITEMS }, context)}\n  <ds-link href=\"#after\" label=\"After the feed\"></ds-link>\n`;",
-        "rn": "import { Button, Feed, type FeedItem, Link, Stack, Text } from '@design-schema/rn';\n\nconst now = Date.now();\n\nconst minutesAgo = (minutes: number): string => new Date(now - minutes * 60_000).toISOString();\n\nconst SAMPLE_ITEMS: FeedItem[] = [\n  {\n    id: '1',\n    heading: 'Ana commented on Invoice 42',\n    timestamp: minutesAgo(3),\n    content: <Text>Looks right to me.</Text>,\n    actions: <Button label=\"Reply\" variant=\"secondary\" size=\"sm\" />,\n    unread: true,\n  },\n  {\n    id: '2',\n    heading: 'Priya assigned you Ticket 118',\n    timestamp: minutesAgo(47),\n    content: (\n      <Stack gap=\"tight\">\n        <Text>The export is missing line items.</Text>\n        <Link href=\"#\" label=\"Open ticket\" />\n      </Stack>\n    ),\n  },\n  {\n    id: '3',\n    heading: 'Bo approved Invoice 41',\n    timestamp: minutesAgo(180),\n    content: <Text>Approved for payment.</Text>,\n  },\n];\n\n<Feed label=\"Activity\" items={SAMPLE_ITEMS} hasMore={false} newItemsCount={3} />",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": "Keyboard",
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "feed-react--keyboard",
-      "sweep": null,
-      "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

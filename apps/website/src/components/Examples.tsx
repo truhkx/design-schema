@@ -1,9 +1,9 @@
 import { Component as ReactComponent, createElement, useState, type ElementType, type ErrorInfo, type ReactNode } from 'react';
-import { Alert, Card, Disclosure, Heading, Link, Stack, TabPanel, Tabs, Text } from '@design-schema/react';
+import { Alert, Box, Button, Card, Disclosure, Heading, Link, Stack, TabPanel, Tabs, Text } from '@design-schema/react';
 
-import { COMPONENTS, decodeArgs } from '../example-args';
+import { COMPONENTS, exampleProps } from '../example-args';
 import type { Caption } from '../example-sweep';
-import { PLATFORM_ORDER, storybookLink, type ExampleView, type Layout, type Platform } from '../examples';
+import { PLATFORM_ORDER, storybookLink, type ExampleView, type HarnessEvents, type Layout, type Platform } from '../examples';
 import type { PlatformCode } from '../highlight';
 import { Mono } from './Mono';
 
@@ -48,7 +48,104 @@ const COPY = {
   swiftPendingEnd: '.',
   swiftNoPreview: 'The generated SwiftUI view has no preview for this scenario, so there is no Swift code for it.',
   litRegister: 'Register the elements once, anywhere in the app: ',
+  /**
+   * The harness button's label. Which components get a harness is the schema's call (see
+   * tools/docs_examples.ts, `harnessOf`); only the wording is kept here, and a component without an
+   * entry reads "Open <its name>" — so a new overlay gets a working button before anyone words it.
+   */
+  harnessLabels: {
+    Dialog: 'Open dialog',
+    AlertDialog: 'Open alert',
+    BottomSheet: 'Show sheet',
+    SidePanel: 'Open panel',
+    ActionSheet: 'Show actions',
+  } as Record<string, string>,
+  harnessLabel: (name: string) => `Open ${name.replace(/(?<=[a-z])(?=[A-Z])/g, ' ').toLowerCase()}`,
+  /** The neutral content `EXAMPLE_CONTEXT` puts around an example that is furniture on its own. */
+  context: {
+    dividerAbove: 'Today',
+    dividerBelow: 'Earlier',
+    // The same pair the stories' `inRow` decorator puts either side of a vertical Divider.
+    dividerBefore: 'Bold Italic',
+    dividerAfter: 'Align left',
+    stackItem: (position: number) => `Item ${position}`,
+  },
 };
+
+/**
+ * Examples that are furniture on their own, given the frame Storybook's decorator gives them.
+ *
+ * A horizontal Divider is a 1px line in an otherwise empty card, and a Stack whose children were
+ * code in the story (a `.map`, which the extractor cannot carry) is an empty flex box; both read as
+ * broken. The site owns how an example is presented, so the frame is kept here, by component name,
+ * rather than in the stories or the JSON: each entry gets the component and the example's props and
+ * returns what to render, or `null` to render the example bare. The code panel still shows the story
+ * as written — the frame is presentation, not part of the example.
+ */
+const EXAMPLE_CONTEXT: Record<string, (component: ElementType, props: Record<string, unknown>) => ReactNode | null> = {
+  // Two short lines either side, so the rule is visibly between something — beside, for a vertical
+  // one, in a stretched row as the stories' `inRow` decorator does. Gap `none`, so the space around
+  // the line is the Divider's own `spacing`, which is what half these examples are showing.
+  Divider: (component, props) =>
+    props['orientation'] === 'vertical' ? (
+      <Stack direction="horizontal" align="stretch" gap="tight">
+        <Text>{COPY.context.dividerBefore}</Text>
+        {createElement(component, props)}
+        <Text>{COPY.context.dividerAfter}</Text>
+      </Stack>
+    ) : (
+      <Stack direction="vertical" gap="none">
+        <Text>{COPY.context.dividerAbove}</Text>
+        {createElement(component, props)}
+        <Text>{COPY.context.dividerBelow}</Text>
+      </Stack>
+    ),
+  // Only a Stack with nothing in it: one whose story's children survived renders as written.
+  Stack: (component, props) => {
+    const children = props['children'];
+    if (children !== undefined && children !== null && !(Array.isArray(children) && children.length === 0)) return null;
+    return createElement(
+      component,
+      props,
+      ...[1, 2, 3].map((position) => (
+        <Box key={position} inset="sm" surface="subtle" radius="sm">
+          <Text>{COPY.context.stackItem(position)}</Text>
+        </Box>
+      )),
+    );
+  },
+};
+
+interface TriggerHarnessProps {
+  component: ElementType;
+  /** The example's props, already decoded; `open` is overridden here. */
+  props: Record<string, unknown>;
+  label: string;
+  events: HarnessEvents;
+}
+
+/**
+ * An overlay a consumer opens from elsewhere, with the elsewhere supplied: a secondary Button that
+ * sets `open`, and the component's own close events wired back to it — what a real consumer writes,
+ * and what the story's `open: true` stands in for in Storybook.
+ *
+ * Closed on the server and on first render, so hydration matches and nothing opens over the page on
+ * load. Focus is not handled here: returning it to the button on close is the component's contract,
+ * and tests/website/overlay-harness.spec.ts holds it to that. An example that passes a `trigger` of
+ * its own (SidePanel's) keeps it, and the harness only owns the state.
+ */
+function TriggerHarness({ component, props, label, events }: TriggerHarnessProps) {
+  const [open, setOpen] = useState(false);
+  const wiring: Record<string, (next?: unknown) => void> = {};
+  for (const event of events.close) wiring[event] = () => setOpen(false);
+  for (const event of events.change) wiring[event] = (next) => setOpen(next === true);
+  return (
+    <>
+      {props['trigger'] === undefined ? <Button variant="secondary" label={label} onClick={() => setOpen(true)} /> : null}
+      {createElement(component, { ...props, ...wiring, open })}
+    </>
+  );
+}
 
 export interface ExamplesProps {
   /** The component the examples render — a `@design-schema/react` export name. */
@@ -62,6 +159,13 @@ export interface ExamplesProps {
    * it by rendering them at build time rather than by inspecting them.
    */
   renderable: boolean[];
+  /**
+   * Whether each example renders only without its story's `open`, in the same order — an overlay that
+   * opens from its own trigger, rendered closed so the visitor opens it. From ../example-probe.ts.
+   */
+  withoutOpen: boolean[];
+  /** The events a `trigger` harness wires, from `generated/examples/<Name>.json`, or `null` when it needs none. */
+  harnessEvents: HarnessEvents | null;
   /**
    * Whether each example would put an `<h1>` on this page, in the same order — from
    * ../example-probe.ts, which answered it by rendering them at build time. Those are shown as
@@ -175,6 +279,8 @@ export function Examples({
   layout,
   examples,
   renderable,
+  withoutOpen,
+  harnessEvents,
   pageHeading,
   headingLevel,
   storybookUrl,
@@ -217,18 +323,32 @@ export function Examples({
     </Text>
   );
 
-  /** The story rendered live, or the note that says why its source stands in. */
+  /**
+   * The story rendered live, or the note that says why its source stands in. A harness example is
+   * the story behind a button that opens it (`TriggerHarness`) — decorated or not, since the harness
+   * is the frame an overlay needs and a decorator's background or width means nothing to one.
+   */
   const live = (index: number, inset: 'md' | 'lg') => {
     const example = examples[index] as ExampleView;
     if (pageHeading[index] === true) return outlineNote;
-    return renderable[index] === true ? (
+    if (renderable[index] !== true) return sourceOnly;
+    const props = exampleProps(example, withoutOpen[index] === true);
+    const harnessed = example.harness === 'trigger' && harnessEvents !== null;
+    return (
       <ExampleBoundary fallback={sourceOnly}>
-        <Card inset={inset} data-example={example.storyId}>
-          {createElement(Component as ElementType, decodeArgs(example.args))}
+        <Card inset={inset} data-example={example.storyId} data-example-harness={harnessed ? example.harness : undefined}>
+          {harnessed ? (
+            <TriggerHarness
+              component={Component as ElementType}
+              props={props}
+              label={COPY.harnessLabels[name] ?? COPY.harnessLabel(name)}
+              events={harnessEvents}
+            />
+          ) : (
+            (EXAMPLE_CONTEXT[name]?.(Component as ElementType, props) ?? createElement(Component as ElementType, props))
+          )}
         </Card>
       </ExampleBoundary>
-    ) : (
-      sourceOnly
     );
   };
 
@@ -364,7 +484,8 @@ export function Examples({
                 return (
                   <li key={example.storyId} className="ds-example-grid__tile" data-example-tile={example.storyId}>
                     <Stack direction="vertical" gap="tight">
-                      {example.decorated ? (
+                      {/* A decorator is only a reason for source when there is no harness to frame the example instead. */}
+                      {example.decorated && example.harness !== 'trigger' ? (
                         <Text size="sm" tone="muted">
                           {COPY.decorated}
                         </Text>
@@ -424,17 +545,21 @@ export function Examples({
     );
   }
 
+  // The plain wrapper is the hook examples.css scopes the tab rows' scrollbar to: generated
+  // components take no `className`.
   return (
-    <Stack direction="vertical" gap="normal">
-      <Heading level={2}>{COPY.heading}</Heading>
-      {exported ? null : (
-        /* `tone="info"`: a statement of fact, not urgency — the same gap Alert's own tone list has
-           on this page's "not yet generated" notice (generated/gaps/Alert.web.md). */
-        <Alert tone="info" live="off" heading={COPY.notExported}>
-          <Text>{COPY.notExportedBody}</Text>
-        </Alert>
-      )}
-      {body}
-    </Stack>
+    <div className="ds-examples">
+      <Stack direction="vertical" gap="normal">
+        <Heading level={2}>{COPY.heading}</Heading>
+        {exported ? null : (
+          /* `tone="info"`: a statement of fact, not urgency — the same gap Alert's own tone list has
+             on this page's "not yet generated" notice (generated/gaps/Alert.web.md). */
+          <Alert tone="info" live="off" heading={COPY.notExported}>
+            <Text>{COPY.notExportedBody}</Text>
+          </Alert>
+        )}
+        {body}
+      </Stack>
+    </div>
   );
 }

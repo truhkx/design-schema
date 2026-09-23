@@ -77,11 +77,14 @@ function Pair({ heading, canonical, brand }: { heading: string; canonical: React
       <Heading level={3}>{heading}</Heading>
       {/* The two columns share a width rule in ../styles/naming-demo.css, for the reason the home
           page's card row does: a flex row sizes its items by their content, and two components of
-          different widths would not read as a comparison. */}
-      <Stack direction="horizontal" gap="normal" wrap align="stretch" className="ds-naming-demo__pair">
-        {canonical}
-        {brand}
-      </Stack>
+          different widths would not read as a comparison. The hook is a plain div around the Stack,
+          because generated components take no `className` of ours. */}
+      <div className="ds-naming-demo__pair">
+        <Stack direction="horizontal" gap="normal" wrap align="stretch">
+          {canonical}
+          {brand}
+        </Stack>
+      </div>
     </Stack>
   );
 }

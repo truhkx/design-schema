@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -44,6 +45,7 @@
       "storyId": "segmentedcontrol-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -86,6 +88,7 @@
         "value": "sm"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -128,6 +131,7 @@
         "value": "md"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -154,13 +158,13 @@
       },
       "snippets": {
         "react": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/react';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month' },\n];\n\n<SegmentedControl label=\"Range\" options={OPTIONS} fill />",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { SegmentedControlOption } from '@design-schema/lit';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month' },\n];\n\nhtml`\n  <ds-segmented-control label=\"Range\" .options=${OPTIONS} fill></ds-segmented-control>\n`;",
         "rn": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/rn';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'list', label: 'List' },\n  { value: 'grid', label: 'Grid' },\n  { value: 'board', label: 'Board' },\n];\n\n<SegmentedControl label=\"View mode\" options={OPTIONS} fill />",
         "swift": null
       },
       "stories": {
         "react": "Fill",
-        "lit": null,
+        "lit": "Fill",
         "rn": "Fill",
         "swift": null
       },
@@ -170,6 +174,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -210,6 +215,7 @@
       "storyId": "segmentedcontrol-react--controlled",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -237,19 +243,20 @@
       },
       "snippets": {
         "react": "import { SegmentedControl } from '@design-schema/react';\n\n<SegmentedControl\n  label=\"Range\"\n  options={[{ value: 'day', label: 'Day' }, { value: 'week', label: 'Week', disabled: true }, { value: 'month', label: 'Month' }]}\n/>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-segmented-control\n        label=\"Range\"\n        .options=${[\n    { value: 'day', label: 'Day' },\n    { value: 'week', label: 'Week', disabled: true },\n    { value: 'month', label: 'Month' },\n  ]}\n      ></ds-segmented-control>\n`;",
         "rn": "import { SegmentedControl } from '@design-schema/rn';\n\n<SegmentedControl\n  label=\"View mode\"\n  options={[\n    { value: 'list', label: 'List' },\n    { value: 'grid', label: 'Grid' },\n    { value: 'board', label: 'Board', disabled: true },\n  ]}\n/>",
         "swift": null
       },
       "stories": {
         "react": "DisabledSegment",
-        "lit": null,
+        "lit": "DisabledSegment",
         "rn": "DisabledSegment",
         "swift": null
       },
       "storyId": "segmentedcontrol-react--disabled-segment",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -286,6 +293,7 @@
       "storyId": "segmentedcontrol-react--view-mode",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -323,6 +331,7 @@
       "storyId": "segmentedcontrol-react--icon-only-toolbar",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -363,45 +372,7 @@
       "storyId": "segmentedcontrol-react--filled-range-switch",
       "sweep": null,
       "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "label": "Range",
-        "options": [
-          {
-            "value": "day",
-            "label": "Day"
-          },
-          {
-            "value": "week",
-            "label": "Week"
-          },
-          {
-            "value": "month",
-            "label": "Month"
-          }
-        ],
-        "iconOnly": false,
-        "size": "md",
-        "fill": false
-      },
-      "snippets": {
-        "react": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/react';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month' },\n];\n\n<SegmentedControl label=\"Range\" options={OPTIONS} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { SegmentedControlOption } from '@design-schema/lit';\n\nconst KEYBOARD_OPTIONS: SegmentedControlOption[] = [\n  { value: 'day', label: 'Day' },\n  { value: 'week', label: 'Week' },\n  { value: 'month', label: 'Month' },\n  { value: 'year', label: 'Year', disabled: true },\n];\n\nhtml`\n  <ds-segmented-control label=\"Range\" .options=${KEYBOARD_OPTIONS}></ds-segmented-control>\n`;",
-        "rn": "import { SegmentedControl, type SegmentedControlOption } from '@design-schema/rn';\n\nconst OPTIONS: SegmentedControlOption[] = [\n  { value: 'list', label: 'List' },\n  { value: 'grid', label: 'Grid' },\n  { value: 'board', label: 'Board' },\n];\n\n<SegmentedControl label=\"View mode\" options={OPTIONS} />",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": "Keyboard",
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "segmentedcontrol-react--keyboard",
-      "sweep": null,
-      "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

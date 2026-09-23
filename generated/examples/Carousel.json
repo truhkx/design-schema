@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -17,19 +18,20 @@
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Featured products\">{slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])}</Carousel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst slides = (names: string[], body: (name: string) => string): TemplateResult[] =>\n  names.map(\n    (name) => html`\n      <ds-carousel-slide label=${name}>\n        <ds-card heading=${name} heading-level=\"3\">${body(name)}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <ds-carousel label=\"Featured products\">\n    ${slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'], () => 'A product worth a closer look.')}\n  </ds-carousel>\n`;",
         "rn": "import { Carousel, CarouselSlide, Card, Text } from '@design-schema/rn';\n\nfunction cardSlides(labels: string[]): React.JSX.Element[] {\n  return labels.map((label) => (\n    <CarouselSlide key={label} label={label}>\n      <Card heading={label} headingLevel={3}>\n        <Text>{label}</Text>\n      </Card>\n    </CarouselSlide>\n  ));\n}\n\nconst productSlides = cardSlides(['Product 1', 'Product 2', 'Product 3', 'Product 4']);\n\n<Carousel label=\"Featured products\">{productSlides}</Carousel>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": null,
+        "lit": "Default",
         "rn": "Default",
         "swift": null
       },
       "storyId": "carousel-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -43,13 +45,13 @@
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Featured products\" picker=\"dots\">{slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])}</Carousel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst slides = (names: string[], body: (name: string) => string): TemplateResult[] =>\n  names.map(\n    (name) => html`\n      <ds-carousel-slide label=${name}>\n        <ds-card heading=${name} heading-level=\"3\">${body(name)}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <ds-carousel label=\"Featured products\" picker=\"dots\">\n    ${slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'], () => 'A product worth a closer look.')}\n  </ds-carousel>\n`;",
         "rn": "import { Carousel, CarouselSlide, Card, Text } from '@design-schema/rn';\n\nfunction cardSlides(labels: string[]): React.JSX.Element[] {\n  return labels.map((label) => (\n    <CarouselSlide key={label} label={label}>\n      <Card heading={label} headingLevel={3}>\n        <Text>{label}</Text>\n      </Card>\n    </CarouselSlide>\n  ));\n}\n\nconst productSlides = cardSlides(['Product 1', 'Product 2', 'Product 3', 'Product 4']);\n\n<Carousel label=\"Featured products\" picker=\"dots\">{productSlides}</Carousel>",
         "swift": null
       },
       "stories": {
         "react": "PickerDots",
-        "lit": null,
+        "lit": "PickerDots",
         "rn": "PickerDots",
         "swift": null
       },
@@ -59,6 +61,7 @@
         "value": "dots"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -72,13 +75,13 @@
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Featured products\" picker=\"tabs\">{slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])}</Carousel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst slides = (names: string[], body: (name: string) => string): TemplateResult[] =>\n  names.map(\n    (name) => html`\n      <ds-carousel-slide label=${name}>\n        <ds-card heading=${name} heading-level=\"3\">${body(name)}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <ds-carousel label=\"Featured products\" picker=\"tabs\">\n    ${slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'], () => 'A product worth a closer look.')}\n  </ds-carousel>\n`;",
         "rn": "import { Carousel, CarouselSlide, Card, Text } from '@design-schema/rn';\n\nfunction cardSlides(labels: string[]): React.JSX.Element[] {\n  return labels.map((label) => (\n    <CarouselSlide key={label} label={label}>\n      <Card heading={label} headingLevel={3}>\n        <Text>{label}</Text>\n      </Card>\n    </CarouselSlide>\n  ));\n}\n\nconst productSlides = cardSlides(['Product 1', 'Product 2', 'Product 3', 'Product 4']);\n\n<Carousel label=\"Featured products\" picker=\"tabs\">{productSlides}</Carousel>",
         "swift": null
       },
       "stories": {
         "react": "PickerTabs",
-        "lit": null,
+        "lit": "PickerTabs",
         "rn": "PickerTabs",
         "swift": null
       },
@@ -88,6 +91,7 @@
         "value": "tabs"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -101,13 +105,13 @@
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Featured products\" picker=\"none\">{slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])}</Carousel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst slides = (names: string[], body: (name: string) => string): TemplateResult[] =>\n  names.map(\n    (name) => html`\n      <ds-carousel-slide label=${name}>\n        <ds-card heading=${name} heading-level=\"3\">${body(name)}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <ds-carousel label=\"Featured products\" picker=\"none\">\n    ${slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'], () => 'A product worth a closer look.')}\n  </ds-carousel>\n`;",
         "rn": "import { Carousel, CarouselSlide, Card, Text } from '@design-schema/rn';\n\nfunction cardSlides(labels: string[]): React.JSX.Element[] {\n  return labels.map((label) => (\n    <CarouselSlide key={label} label={label}>\n      <Card heading={label} headingLevel={3}>\n        <Text>{label}</Text>\n      </Card>\n    </CarouselSlide>\n  ));\n}\n\nconst productSlides = cardSlides(['Product 1', 'Product 2', 'Product 3', 'Product 4']);\n\n<Carousel label=\"Featured products\" picker=\"none\">{productSlides}</Carousel>",
         "swift": null
       },
       "stories": {
         "react": "PickerNone",
-        "lit": null,
+        "lit": "PickerNone",
         "rn": "PickerNone",
         "swift": null
       },
@@ -117,6 +121,7 @@
         "value": "none"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -130,13 +135,13 @@
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Featured products\" loop>{slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])}</Carousel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst slides = (names: string[], body: (name: string) => string): TemplateResult[] =>\n  names.map(\n    (name) => html`\n      <ds-carousel-slide label=${name}>\n        <ds-card heading=${name} heading-level=\"3\">${body(name)}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <ds-carousel label=\"Featured products\" loop>\n    ${slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'], () => 'A product worth a closer look.')}\n  </ds-carousel>\n`;",
         "rn": "import { Carousel, CarouselSlide, Card, Text } from '@design-schema/rn';\n\nfunction cardSlides(labels: string[]): React.JSX.Element[] {\n  return labels.map((label) => (\n    <CarouselSlide key={label} label={label}>\n      <Card heading={label} headingLevel={3}>\n        <Text>{label}</Text>\n      </Card>\n    </CarouselSlide>\n  ));\n}\n\nconst productSlides = cardSlides(['Product 1', 'Product 2', 'Product 3', 'Product 4']);\n\n<Carousel label=\"Featured products\" loop>{productSlides}</Carousel>",
         "swift": null
       },
       "stories": {
         "react": "Loop",
-        "lit": null,
+        "lit": "Loop",
         "rn": "Loop",
         "swift": null
       },
@@ -146,6 +151,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -159,13 +165,13 @@
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Featured products\" snap={false}>{slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])}</Carousel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst slides = (names: string[], body: (name: string) => string): TemplateResult[] =>\n  names.map(\n    (name) => html`\n      <ds-carousel-slide label=${name}>\n        <ds-card heading=${name} heading-level=\"3\">${body(name)}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <ds-carousel label=\"Featured products\" no-snap>\n    ${slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'], () => 'A product worth a closer look.')}\n  </ds-carousel>\n`;",
         "rn": "import { Carousel, CarouselSlide, Card, Text } from '@design-schema/rn';\n\nfunction cardSlides(labels: string[]): React.JSX.Element[] {\n  return labels.map((label) => (\n    <CarouselSlide key={label} label={label}>\n      <Card heading={label} headingLevel={3}>\n        <Text>{label}</Text>\n      </Card>\n    </CarouselSlide>\n  ));\n}\n\nconst productSlides = cardSlides(['Product 1', 'Product 2', 'Product 3', 'Product 4']);\n\n<Carousel label=\"Featured products\" snap={false}>{productSlides}</Carousel>",
         "swift": null
       },
       "stories": {
         "react": "NoSnap",
-        "lit": null,
+        "lit": "NoSnap",
         "rn": "NoSnap",
         "swift": null
       },
@@ -175,6 +181,7 @@
         "value": false
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -188,19 +195,20 @@
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Featured products\" activeIndex={1}>{slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])}</Carousel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst slides = (names: string[], body: (name: string) => string): TemplateResult[] =>\n  names.map(\n    (name) => html`\n      <ds-carousel-slide label=${name}>\n        <ds-card heading=${name} heading-level=\"3\">${body(name)}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <ds-carousel label=\"Featured products\" active-index=\"1\">\n    ${slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'], () => 'A product worth a closer look.')}\n  </ds-carousel>\n`;",
         "rn": "import { Carousel, CarouselSlide, Card, Text } from '@design-schema/rn';\n\nfunction cardSlides(labels: string[]): React.JSX.Element[] {\n  return labels.map((label) => (\n    <CarouselSlide key={label} label={label}>\n      <Card heading={label} headingLevel={3}>\n        <Text>{label}</Text>\n      </Card>\n    </CarouselSlide>\n  ));\n}\n\nconst productSlides = cardSlides(['Product 1', 'Product 2', 'Product 3', 'Product 4']);\n\n<Carousel label=\"Featured products\" activeIndex={2}>{productSlides}</Carousel>",
         "swift": null
       },
       "stories": {
         "react": "Controlled",
-        "lit": null,
+        "lit": "Controlled",
         "rn": "Controlled",
         "swift": null
       },
       "storyId": "carousel-react--controlled",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -214,13 +222,13 @@
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Featured products\" autoplay>{slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])}</Carousel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst slides = (names: string[], body: (name: string) => string): TemplateResult[] =>\n  names.map(\n    (name) => html`\n      <ds-carousel-slide label=${name}>\n        <ds-card heading=${name} heading-level=\"3\">${body(name)}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <ds-carousel label=\"Featured products\" autoplay>\n    ${slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'], () => 'A product worth a closer look.')}\n  </ds-carousel>\n`;",
         "rn": "import { Carousel, CarouselSlide, Card, Text } from '@design-schema/rn';\n\nfunction cardSlides(labels: string[]): React.JSX.Element[] {\n  return labels.map((label) => (\n    <CarouselSlide key={label} label={label}>\n      <Card heading={label} headingLevel={3}>\n        <Text>{label}</Text>\n      </Card>\n    </CarouselSlide>\n  ));\n}\n\nconst productSlides = cardSlides(['Product 1', 'Product 2', 'Product 3', 'Product 4']);\n\n<Carousel label=\"Featured products\" autoplay>{productSlides}</Carousel>",
         "swift": null
       },
       "stories": {
         "react": "Autoplay",
-        "lit": null,
+        "lit": "Autoplay",
         "rn": "Autoplay",
         "swift": null
       },
@@ -230,6 +238,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -242,19 +251,20 @@
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Featured products\">{slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])}</Carousel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst slides = (names: string[], body: (name: string) => string): TemplateResult[] =>\n  names.map(\n    (name) => html`\n      <ds-carousel-slide label=${name}>\n        <ds-card heading=${name} heading-level=\"3\">${body(name)}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <ds-carousel label=\"Featured products\">\n    ${slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'], () => 'A product worth a closer look.')}\n  </ds-carousel>\n`;",
         "rn": "import { Carousel, CarouselSlide, Card, Text } from '@design-schema/rn';\n\nfunction cardSlides(labels: string[]): React.JSX.Element[] {\n  return labels.map((label) => (\n    <CarouselSlide key={label} label={label}>\n      <Card heading={label} headingLevel={3}>\n        <Text>{label}</Text>\n      </Card>\n    </CarouselSlide>\n  ));\n}\n\nconst productSlides = cardSlides(['Product 1', 'Product 2', 'Product 3', 'Product 4']);\n\n<Carousel label=\"Featured products\">{productSlides}</Carousel>",
         "swift": null
       },
       "stories": {
         "react": "FeaturedProducts",
-        "lit": null,
+        "lit": "FeaturedProducts",
         "rn": "FeaturedProducts",
         "swift": null
       },
       "storyId": "carousel-react--featured-products",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -268,13 +278,13 @@
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Plans\" picker=\"tabs\">{slides(['Starter', 'Team', 'Enterprise'])}</Carousel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst slides = (names: string[], body: (name: string) => string): TemplateResult[] =>\n  names.map(\n    (name) => html`\n      <ds-carousel-slide label=${name}>\n        <ds-card heading=${name} heading-level=\"3\">${body(name)}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <ds-carousel label=\"Plans\" picker=\"tabs\">\n    ${slides(['Starter', 'Team', 'Enterprise'], (name) => \\`What the ${name} plan includes.\\`)}\n  </ds-carousel>\n`;",
         "rn": "import { Carousel, CarouselSlide, Card, Text } from '@design-schema/rn';\n\nfunction cardSlides(labels: string[]): React.JSX.Element[] {\n  return labels.map((label) => (\n    <CarouselSlide key={label} label={label}>\n      <Card heading={label} headingLevel={3}>\n        <Text>{label}</Text>\n      </Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Plans\" picker=\"tabs\">{cardSlides(['Starter', 'Team', 'Enterprise'])}</Carousel>",
         "swift": null
       },
       "stories": {
         "react": "NamedSlidesWithTabs",
-        "lit": null,
+        "lit": "NamedSlidesWithTabs",
         "rn": "NamedSlidesWithTabs",
         "swift": null
       },
@@ -284,6 +294,7 @@
         "value": "tabs"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -299,19 +310,20 @@
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Customer stories\" autoplay interval={8000} loop>{slides(['Story 1', 'Story 2', 'Story 3'])}</Carousel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst slides = (names: string[], body: (name: string) => string): TemplateResult[] =>\n  names.map(\n    (name) => html`\n      <ds-carousel-slide label=${name}>\n        <ds-card heading=${name} heading-level=\"3\">${body(name)}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <ds-carousel label=\"Customer stories\" interval=\"8000\" loop autoplay>\n    ${slides(['Story 1', 'Story 2', 'Story 3'], () => 'Stands in for a photograph.')}\n  </ds-carousel>\n`;",
         "rn": "import { Carousel, CarouselSlide, Card, Text } from '@design-schema/rn';\n\nfunction cardSlides(labels: string[]): React.JSX.Element[] {\n  return labels.map((label) => (\n    <CarouselSlide key={label} label={label}>\n      <Card heading={label} headingLevel={3}>\n        <Text>{label}</Text>\n      </Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Customer stories\" autoplay interval={8000} loop>{cardSlides(['Story 1', 'Story 2', 'Story 3'])}</Carousel>",
         "swift": null
       },
       "stories": {
         "react": "AmbientHero",
-        "lit": null,
+        "lit": "AmbientHero",
         "rn": "AmbientHero",
         "swift": null
       },
       "storyId": "carousel-react--ambient-hero",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -326,48 +338,20 @@
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Gallery\" perView={3} picker=\"none\">{slides(['Image 1', 'Image 2', 'Image 3', 'Image 4', 'Image 5', 'Image 6'])}</Carousel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst slides = (names: string[], body: (name: string) => string): TemplateResult[] =>\n  names.map(\n    (name) => html`\n      <ds-carousel-slide label=${name}>\n        <ds-card heading=${name} heading-level=\"3\">${body(name)}</ds-card>\n      </ds-carousel-slide>\n    `,\n  );\n\nhtml`\n  <ds-carousel label=\"Gallery\" per-view=\"3\" picker=\"none\">\n    ${slides(['Image 1', 'Image 2', 'Image 3', 'Image 4', 'Image 5', 'Image 6'], () => 'Stands in for an image.')}\n  </ds-carousel>\n`;",
         "rn": "import { Carousel, CarouselSlide, Card, Text } from '@design-schema/rn';\n\nfunction cardSlides(labels: string[]): React.JSX.Element[] {\n  return labels.map((label) => (\n    <CarouselSlide key={label} label={label}>\n      <Card heading={label} headingLevel={3}>\n        <Text>{label}</Text>\n      </Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Gallery\" perView={3} picker=\"none\">{cardSlides(['Image 1', 'Image 2', 'Image 3', 'Image 4', 'Image 5', 'Image 6'])}</Carousel>",
         "swift": null
       },
       "stories": {
         "react": "ThreeUpGallery",
-        "lit": null,
+        "lit": "ThreeUpGallery",
         "rn": "ThreeUpGallery",
         "swift": null
       },
       "storyId": "carousel-react--three-up-gallery",
       "sweep": null,
       "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "label": "Featured products",
-        "children": {
-          "$unsupported": "slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])"
-        },
-        "picker": "tabs"
-      },
-      "snippets": {
-        "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Featured products\" picker=\"tabs\">{slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])}</Carousel>",
-        "lit": null,
-        "rn": "import { Carousel, CarouselSlide, Button, Card } from '@design-schema/rn';\n\n<Carousel label=\"Featured products\" autoplay>\n  {['Product 1', 'Product 2', 'Product 3', 'Product 4'].map((label) => (\n    <CarouselSlide key={label} label={label}>\n      <Card heading={label} headingLevel={3}>\n        <Button label=\"Add to cart\" variant=\"secondary\" />\n      </Card>\n    </CarouselSlide>\n  ))}\n</Carousel>",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": null,
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "carousel-react--keyboard",
-      "sweep": {
-        "prop": "picker",
-        "value": "tabs"
-      },
-      "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

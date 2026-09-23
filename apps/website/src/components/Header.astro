@@ -3,8 +3,13 @@
  * The site header (site/src/content/docs/process/website-plan.md, "Global chrome").
  *
  * `Landmark(role="banner")` → `Container(width="page")` → a `Stack` row with the logo link at the
- * start, the nav's links grouped beside it, and the theme control at the end (header.css). The banner
- * carries `data-mode="dark"`, so it is dark on a light page too.
+ * start, the nav's links centred in the space after it, and the theme control at the end (header.css).
+ *
+ * The band is a plain `<div class="ds-site-header" data-mode="dark">` inside the Landmark, not a
+ * class on the Landmark: generated components take no `className` (foundations/styling-and-overrides.md),
+ * and the regen of 2026-09-16 that enforced it for Landmark is what cost the header its dark band
+ * (process/website-audit.md). `data-mode` sits on the same element as the rules that read its
+ * variables, so the header is dark on a light page too.
  *
  * Everything static lives here, rendered to HTML at build time; only the pieces that have state — the theme switcher and the mobile drawer — are the `HeaderNav`
  * island, so the links are in the document whether or not its JavaScript ever arrives.
@@ -50,14 +55,16 @@ if (layoutBreakpointMd !== BREAKPOINT_MD_IN_CSS) {
 }
 ---
 
-<Landmark role="banner" className="ds-site-header" data-mode="dark">
-  <Container width="page">
-    <Stack direction="horizontal" align="center" gap="normal">
-      <a class="ds-site-header__home" href="/">
-        <Logo class="ds-site-header__mark" aria-hidden="true" focusable="false" />
-        <span>{WORDMARK}</span>
-      </a>
-      <HeaderNav client:load items={top} themes={themes} />
-    </Stack>
-  </Container>
+<Landmark role="banner">
+  <div class="ds-site-header" data-mode="dark">
+    <Container width="page">
+      <Stack direction="horizontal" align="center" gap="normal">
+        <a class="ds-site-header__home" href="/">
+          <Logo class="ds-site-header__mark" aria-hidden="true" focusable="false" />
+          <span>{WORDMARK}</span>
+        </a>
+        <HeaderNav client:load items={top} themes={themes} />
+      </Stack>
+    </Container>
+  </div>
 </Landmark>

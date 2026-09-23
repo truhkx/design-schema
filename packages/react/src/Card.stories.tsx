@@ -112,13 +112,24 @@ export const InteractiveDisabledButton: Story = {
   },
 };
 
+/* Zero or several targets: the card stays non-interactive, but still reserves the ring's border
+   width, so its geometry does not change with its content. */
+export const InteractiveWithoutTarget: Story = {
+  args: {
+    heading: 'September invoice',
+    interactive: true,
+    children: 'Nothing here is a link, so the card is not a target.',
+  },
+};
+
 /* examples */
 export const PlanCard: Story = {
   args: { heading: 'Team plan', headingLevel: '3', children: 'What the plan includes' },
 };
 
+/* The empty heading clears any Default heading: an empty string counts as omitted. */
 export const DenseGridCard: Story = {
-  args: { children: 'A search result', inset: 'sm', surface: 'subtle' },
+  args: { heading: '', children: 'A search result', inset: 'sm', surface: 'subtle' },
 };
 
 export const WholeCardIsALink: Story = {

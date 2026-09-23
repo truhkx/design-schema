@@ -177,20 +177,17 @@
     }
   },
   "Button.lit": {
-    "hash": "642ce135bbbf1057",
-    "lastAttemptHash": "642ce135bbbf1057",
-    "generatedAt": "2026-09-20T20:09:59+00:00",
+    "hash": "a3a7b113c88b9c19",
+    "lastAttemptHash": "a3a7b113c88b9c19",
+    "generatedAt": "2026-09-22T07:03:49+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.4485,
+    "costUsd": 2.6328,
     "files": [
-      "packages/lit/src/Button.stories.ts",
-      "packages/lit/src/Button.test.ts",
-      "packages/lit/src/Button.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Button.ts"
     ],
-    "gaps": 11,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -203,20 +200,18 @@
     }
   },
   "Card.lit": {
-    "hash": "5336e156026866b7",
-    "lastAttemptHash": "5336e156026866b7",
-    "generatedAt": "2026-09-20T20:40:54+00:00",
+    "hash": "b644cf79abaaa8a7",
+    "lastAttemptHash": "b644cf79abaaa8a7",
+    "generatedAt": "2026-09-22T08:09:40+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.6854,
+    "costUsd": 2.7526,
     "files": [
       "packages/lit/src/Card.stories.ts",
-      "packages/lit/src/Card.test.ts",
-      "packages/lit/src/Card.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Card.ts"
     ],
-    "gaps": 15,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -303,20 +298,20 @@
     }
   },
   "Container.lit": {
-    "hash": "edea4931ab5523e2",
-    "lastAttemptHash": "edea4931ab5523e2",
-    "generatedAt": "2026-09-20T20:33:46+00:00",
+    "hash": "b50edb892d14b8e1",
+    "lastAttemptHash": "b50edb892d14b8e1",
+    "generatedAt": "2026-09-22T07:57:55+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0692,
+    "costUsd": 1.9098,
     "files": [
       "packages/lit/src/Container.stories.ts",
       "packages/lit/src/Container.test.ts",
       "packages/lit/src/Container.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -378,19 +373,18 @@
     }
   },
   "Dialog.lit": {
-    "hash": "6d1ca16ebdb7e97a",
-    "lastAttemptHash": "079c0bd3e21a105b",
-    "generatedAt": "2026-09-21T10:49:23+00:00",
+    "hash": "e1c7c9a42cc247ad",
+    "lastAttemptHash": "e1c7c9a42cc247ad",
+    "generatedAt": "2026-09-22T05:38:49+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 35.5123,
+    "rounds": 1,
+    "costUsd": 4.6927,
     "files": [
-      "packages/lit/src/Dialog.stories.ts",
-      "packages/lit/src/Dialog.ts",
-      "packages/lit/src/FocusScope.ts"
+      "packages/lit/src/Dialog.test.ts",
+      "packages/lit/src/Dialog.ts"
     ],
-    "gaps": 33,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -399,7 +393,7 @@
       "deps": true,
       "modules": true,
       "keyboard": true,
-      "keyboard-run": false,
+      "keyboard-run": true,
       "axe": true
     }
   },
@@ -429,19 +423,20 @@
     }
   },
   "Divider.lit": {
-    "hash": "99852efba44fcbcc",
-    "lastAttemptHash": "99852efba44fcbcc",
-    "generatedAt": "2026-09-20T20:47:10+00:00",
+    "hash": "85bb55250d7a77ca",
+    "lastAttemptHash": "85bb55250d7a77ca",
+    "generatedAt": "2026-09-22T08:18:41+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.2677,
+    "costUsd": 2.3418,
     "files": [
       "packages/lit/src/Divider.stories.ts",
       "packages/lit/src/Divider.test.ts",
-      "packages/lit/src/Divider.ts"
+      "packages/lit/src/Divider.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 13,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -530,20 +525,17 @@
     }
   },
   "Form.lit": {
-    "hash": "af4bcb51f7328252",
-    "lastAttemptHash": "af4bcb51f7328252",
-    "generatedAt": "2026-09-20T20:29:38+00:00",
+    "hash": "85d06fc5319f1021",
+    "lastAttemptHash": "85d06fc5319f1021",
+    "generatedAt": "2026-09-22T07:43:44+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8407,
+    "costUsd": 1.9913,
     "files": [
-      "packages/lit/src/Form.stories.ts",
-      "packages/lit/src/Form.test.ts",
-      "packages/lit/src/Form.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Form.ts"
     ],
-    "gaps": 10,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -612,20 +604,19 @@
     }
   },
   "Input.lit": {
-    "hash": "ce3574050dbb44d0",
-    "lastAttemptHash": "ce3574050dbb44d0",
-    "generatedAt": "2026-09-20T20:20:51+00:00",
+    "hash": "5234a5f6e0fbcd19",
+    "lastAttemptHash": "5234a5f6e0fbcd19",
+    "generatedAt": "2026-09-22T07:31:12+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.5963,
+    "costUsd": 2.254,
     "files": [
       "packages/lit/src/Input.stories.ts",
-      "packages/lit/src/Input.test.ts",
       "packages/lit/src/Input.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -663,20 +654,20 @@
     }
   },
   "Link.lit": {
-    "hash": "d74457b3dd6632a2",
-    "lastAttemptHash": "d74457b3dd6632a2",
-    "generatedAt": "2026-09-20T20:14:15+00:00",
+    "hash": "e924fb06badb953b",
+    "lastAttemptHash": "e924fb06badb953b",
+    "generatedAt": "2026-09-22T07:20:13+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3512,
+    "costUsd": 4.4746,
     "files": [
       "packages/lit/src/Link.stories.ts",
       "packages/lit/src/Link.test.ts",
       "packages/lit/src/Link.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -968,19 +959,17 @@
     }
   },
   "SidePanel.lit": {
-    "hash": "6d43167378a74e4b",
-    "lastAttemptHash": "eb279bc001dbf73d",
-    "generatedAt": "2026-09-21T15:03:39+00:00",
+    "hash": "34e6554b66136905",
+    "lastAttemptHash": "34e6554b66136905",
+    "generatedAt": "2026-09-22T05:43:03+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 24.7336,
+    "rounds": 1,
+    "costUsd": 2.7938,
     "files": [
-      "packages/lit/src/SidePanel.stories.ts",
-      "packages/lit/src/SidePanel.test.ts",
       "packages/lit/src/SidePanel.ts"
     ],
-    "gaps": 15,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -989,24 +978,22 @@
       "deps": true,
       "modules": true,
       "keyboard": true,
-      "keyboard-run": false,
+      "keyboard-run": true,
       "axe": true
     }
   },
   "Slider.lit": {
-    "hash": "b71ae6a3d470a6f0",
-    "lastAttemptHash": "2e5526a74e85bfbd",
-    "generatedAt": "2026-09-21T19:33:32+00:00",
+    "hash": "a7d39242a3dc39af",
+    "lastAttemptHash": "a7d39242a3dc39af",
+    "generatedAt": "2026-09-22T05:47:44+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 25.6916,
+    "rounds": 1,
+    "costUsd": 2.4727,
     "files": [
-      "packages/lit/src/Slider.stories.ts",
-      "packages/lit/src/Slider.test.ts",
       "packages/lit/src/Slider.ts"
     ],
-    "gaps": 40,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1015,7 +1002,7 @@
       "deps": true,
       "modules": true,
       "keyboard": true,
-      "keyboard-run": false,
+      "keyboard-run": true,
       "axe": true
     }
   },
@@ -1249,19 +1236,19 @@
     }
   },
   "Tooltip.lit": {
-    "hash": "e781e38529140a52",
-    "lastAttemptHash": "36e65e2fdec9f829",
-    "generatedAt": "2026-09-21T09:26:24+00:00",
+    "hash": "01a16c331e21816f",
+    "lastAttemptHash": "01a16c331e21816f",
+    "generatedAt": "2026-09-22T05:29:27+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 20.4009,
+    "rounds": 1,
+    "costUsd": 3.5922,
     "files": [
       "packages/lit/src/Tooltip.stories.ts",
-      "packages/lit/src/Tooltip.test.ts",
-      "packages/lit/src/Tooltip.ts"
+      "packages/lit/src/Tooltip.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 38,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1270,7 +1257,7 @@
       "deps": true,
       "modules": true,
       "keyboard": true,
-      "keyboard-run": false,
+      "keyboard-run": true,
       "axe": true
     }
   },
@@ -1300,16 +1287,28 @@
     }
   },
   "TreeGrid.lit": {
-    "hash": null,
-    "lastAttemptHash": "1707f231ffd7c6c0",
-    "error": "claude reported an error: API Error: 500 Internal server error. This is a server-side issue, usually temporary — try again in a moment. If it persists, check https://status.claude.com.",
-    "generatedAt": "2026-09-22T01:45:30+00:00",
+    "hash": "89bbfc7b35b93094",
+    "lastAttemptHash": "89bbfc7b35b93094",
+    "generatedAt": "2026-09-22T06:01:08+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.0,
-    "files": [],
-    "gaps": 0,
-    "gates": {}
+    "costUsd": 9.46,
+    "files": [
+      "packages/lit/src/TreeGrid.stories.ts",
+      "packages/lit/src/TreeGrid.ts"
+    ],
+    "gaps": 10,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
   }
 }

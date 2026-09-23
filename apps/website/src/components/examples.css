@@ -18,6 +18,39 @@
   list-style: none;
 }
 
+/*
+ * The example tab rows. Tabs scrolls a horizontal strip that outgrows its column (and scrolls the
+ * selected tab into view, arrow keys included) but hides the scrollbar, so on a phone the strip ends
+ * mid-word with nothing to say there is more. Two affordances come back:
+ *
+ * - the native scrollbar, thin, in the muted foreground. On a desktop with classic scrollbars it is
+ *   always there; the `-webkit-` rules are for Safari before `scrollbar-width`.
+ * - a shaded edge on whichever side has more tabs, because phones (and overlay-scrollbar desktops)
+ *   show a scrollbar only mid-scroll. The scroll-shadow pattern: two shades fixed to the row's edges
+ *   (`scroll`), each hidden by a page-coloured cover that travels with the content (`local`) and
+ *   reaches the edge only when the row is scrolled all the way to that side. No script, every engine.
+ */
+.ds-examples .ds-tabs--horizontal .ds-tabs__tablist {
+  --ds-examples-shade: color-mix(in srgb, var(--color-foreground) 22%, transparent); /* literal-ok: shade strength */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-foreground-muted) transparent;
+  background:
+    linear-gradient(to right, var(--color-background) 40%, transparent) left / var(--space-8) 100% no-repeat local,
+    linear-gradient(to left, var(--color-background) 40%, transparent) right / var(--space-8) 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, var(--ds-examples-shade), transparent) left / var(--space-3) 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--ds-examples-shade), transparent) right / var(--space-3) 100% no-repeat scroll;
+}
+
+.ds-examples .ds-tabs--horizontal .ds-tabs__tablist::-webkit-scrollbar {
+  display: block;
+  block-size: var(--space-1);
+}
+
+.ds-examples .ds-tabs--horizontal .ds-tabs__tablist::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-sm);
+  background-color: var(--color-foreground-muted);
+}
+
 .ds-example-grid__tile {
   /* The same guard as the docs column: a long caption or a wide sample scrolls inside its tile
      rather than stretching the track. */

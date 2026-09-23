@@ -12,8 +12,9 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
 
 /**
  * Style bindings that can be overridden per instance; the accessibility-bearing `labelColor` is
- * never in this list. `labelSize` and `fontFamily` are forwarded to the composed `Text` label's
- * own `overrides` (as `fontSize` and `fontFamily`); Divider does not style the Text itself.
+ * never in this list. `labelSize` and `fontFamily` have no `--ds-divider-*` hook: they are
+ * forwarded to the composed `Text` label's own `overrides` (as `fontSize` and `fontFamily`), since
+ * Divider does not style the Text itself.
  */
 export type DividerOverridableBinding = 'color' | 'thickness' | 'spacing' | 'labelSize' | 'labelGap' | 'fontFamily';
 
@@ -39,9 +40,13 @@ export interface DividerProps
    * from decorative into a labelled separator (`semantic` is implied). Ignored on a vertical
    * divider, with a development warning: a vertical line has no room for centered text. An ignored
    * label implies nothing either — a vertical divider is semantic only when `semantic` says so. An
-   * empty string is no label: the divider stays decorative and nothing warns. When in effect, the
-   * label is the separator's accessible name (through `aria-labelledby`), and the two line pieces
-   * on either side are hidden from assistive technology.
+   * empty string is no label: the divider stays decorative and nothing warns. The development
+   * warning fires when the ignored combination appears or changes, not on every render. A vertical
+   * divider with an ignored label and `semantic: true` is a separator with no accessible name:
+   * naming it from text that is not rendered would contradict the label being ignored. When in
+   * effect, the label is the separator's accessible name (through `aria-labelledby`, since
+   * separator children are presentational), and the two line pieces on either side are hidden from
+   * assistive technology.
    */
   label?: string | undefined;
   /**
@@ -54,6 +59,8 @@ export interface DividerProps
    * Space on both sides along the cross axis (above and below a horizontal divider, left and right
    * of a vertical one), from the layout rhythm, for dividers used outside a Stack that already
    * spaces them. The space is transparent: `margin-block` horizontally, `margin-inline` vertically.
+   * It applies to a labelled divider too, where the root is the row: the space is around the whole
+   * divider, label included, not around each line piece.
    */
   spacing?: DividerSpacing | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook (or the composed label's own override) to that token. */
@@ -79,16 +86,15 @@ export function Divider({
   ...rest
 }: DividerProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const labelId = useId();
-  const labelIgnored = Boolean(label) && orientation === 'vertical';
   const showLabel = Boolean(label) && orientation === 'horizontal';
   const isSemantic = semantic || showLabel;
 
-  // Keyed on `label` and `orientation`: warns when the ignored combination appears or changes, not per render.
+  // Keyed on `label` and `orientation`: warns when the ignored combination appears or changes,
+  // not on every render. An empty string is no label, so nothing warns.
   useEffect(() => {
-    if (isDev && labelIgnored) {
+    if (isDev && Boolean(label) && orientation === 'vertical') {
       console.warn('Divider: `label` is ignored on a vertical divider — a vertical line has no room for centered text.');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [label, orientation]);
 
   const rootStyle: Record<string, string> = {};
@@ -121,6 +127,8 @@ export function Divider({
     .filter(Boolean)
     .join(' ');
 
+  // A decorative divider is an <hr> hidden from assistive technology: hr has an implicit separator
+  // role, so hiding it is deliberate.
   if (!isSemantic) {
     return (
       <hr
@@ -134,6 +142,8 @@ export function Divider({
     );
   }
 
+  // Every semantic divider, labelled or not, is the same div: the semantic and labelled cases
+  // share one element.
   return (
     <div
       {...rest}

@@ -21,6 +21,12 @@ export interface FormFieldHandle {
   label?: string | undefined;
   /** Current value of the field. `undefined` means "contributes nothing". */
   getValue(): FormFieldValue;
+  /**
+   * Whether the field is disabled right now. A disabled field stays registered and reports
+   * `true` here; the Form leaves it out of the collected values, out of validation and out
+   * of `order`, so the previous field's "next" key skips past it. Absent means enabled.
+   */
+  isDisabled?(): boolean;
   /** Returns an error message when the field is invalid, otherwise `null`. */
   validate(): string | null;
   /** Moves keyboard and accessibility focus to the field. */
@@ -28,9 +34,9 @@ export interface FormFieldHandle {
 }
 
 export interface FormContextValue {
-  /** Registers a field by `name`. Registration order is the field order. */
+  /** Registers a field by `name`. Registration (mount) order is the field order. */
   register(name: string, handle: FormFieldHandle): void;
-  /** Removes a field on unmount (or when it becomes disabled). */
+  /** Removes a field on unmount. A field that is merely disabled stays registered and reports `isDisabled()`. */
   unregister(name: string): void;
   /** Validates every field and fires `onSubmit` or `onInvalid`. */
   submit(): void;
@@ -55,7 +61,10 @@ export interface FormContextValue {
   errorSummary: boolean;
   /** Errors from the most recent validation, keyed by field name. */
   errors: Readonly<Partial<Record<string, string | undefined>>>;
-  /** Field names in registration order; the last one gets `returnKeyType="done"`. */
+  /**
+   * Field names in registration order, disabled fields left out; the last one gets
+   * `returnKeyType="done"` and every earlier one `"next"` (`focusField`).
+   */
   order: readonly string[];
 }
 

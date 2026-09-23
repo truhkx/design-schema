@@ -33,8 +33,8 @@ function setup(given: Partial<SidePanelProps> = {}) {
     user,
     events,
     props,
-    root: () => (document.querySelector('[data-ds="SidePanel"]') ?? utils.container.firstElementChild) as HTMLElement,
-    trigger: () => s.root(),
+    root: () => (document.querySelector('[data-ds="SidePanel"]') ?? screen.queryByRole('complementary') ?? utils.container.firstElementChild) as HTMLElement,
+    trigger: () => (screen.queryByRole('complementary') ?? s.root()) as HTMLElement,
     scrim: () => (document.querySelector('[data-part="scrim"]') ?? s.root()),
     closeButton: () => (document.querySelector('[data-part="closeButton"]') ?? s.root()),
     rerender: (next: Partial<SidePanelProps>) => utils.rerender(<SidePanel {...props} {...next} />),
@@ -112,7 +112,10 @@ describe('SidePanel', () => {
     const s = setup({"role": "navigation", "open": true});
     expect(s.root()).not.toBeNull();
   });
-  test.skip('has-accessible-name — then.name: role \'none\' cannot be queried; name the landmark/text role in the doc', async () => {});
+  test('has-accessible-name', async () => {
+    const s = setup({"open": true});
+    expect(screen.getByRole('complementary')).toHaveAccessibleName();
+  });
   test('escape-fires-on-open-change', async () => {
     const s = setup({"open": true});
     act(() => focusInto(s.trigger()));

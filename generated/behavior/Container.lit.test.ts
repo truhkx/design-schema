@@ -64,6 +64,10 @@ beforeEach(() => {
 });
 
 describe('ds-container', () => {
+  test('main-element-is-the-page-landmark', async () => {
+    const s = await setup({"element": "main"});
+    expect(s.el.shadowRoot!.querySelector('[role="main"]')).not.toBeNull();
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

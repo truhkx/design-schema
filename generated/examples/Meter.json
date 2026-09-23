@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -28,6 +29,7 @@
       "storyId": "meter-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -55,6 +57,7 @@
         "value": "info"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -82,6 +85,7 @@
         "value": "success"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -93,7 +97,7 @@
       },
       "snippets": {
         "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={82} tone=\"warning\" />",
-        "lit": "<ds-meter label=\"Storage used\" value=\"32\" tone=\"warning\"></ds-meter>",
+        "lit": "<ds-meter label=\"Storage used\" value=\"82\" tone=\"warning\"></ds-meter>",
         "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter\n  label=\"Storage used\"\n  value={82}\n  valueText=\"8.2 GB of 10 GB\"\n  tone=\"warning\"\n/>",
         "swift": null
       },
@@ -106,6 +110,7 @@
       "storyId": "meter-react--tone-warning",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -117,7 +122,7 @@
       },
       "snippets": {
         "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={95} tone=\"danger\" />",
-        "lit": "<ds-meter label=\"Storage used\" value=\"32\" tone=\"danger\"></ds-meter>",
+        "lit": "<ds-meter label=\"Storage used\" value=\"95\" tone=\"danger\"></ds-meter>",
         "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter\n  label=\"Storage used\"\n  value={95}\n  valueText=\"9.5 GB of 10 GB\"\n  tone=\"danger\"\n/>",
         "swift": null
       },
@@ -130,6 +135,7 @@
       "storyId": "meter-react--tone-danger",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -154,6 +160,7 @@
       "storyId": "meter-react--storage-quota",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -179,6 +186,7 @@
       "storyId": "meter-react--nearly-full",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -206,6 +214,7 @@
       "storyId": "meter-react--password-strength",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -230,6 +239,7 @@
       "storyId": "meter-react--bar-only",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -240,19 +250,20 @@
       },
       "snippets": {
         "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={0} />",
-        "lit": null,
+        "lit": "<ds-meter label=\"Storage used\" value=\"0\"></ds-meter>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Empty",
-        "lit": null,
+        "lit": "Empty",
         "rn": null,
         "swift": null
       },
       "storyId": "meter-react--empty",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -263,19 +274,20 @@
       },
       "snippets": {
         "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={100} />",
-        "lit": null,
+        "lit": "<ds-meter label=\"Storage used\" value=\"100\"></ds-meter>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Full",
-        "lit": null,
+        "lit": "Full",
         "rn": null,
         "swift": null
       },
       "storyId": "meter-react--full",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -292,13 +304,14 @@
       },
       "stories": {
         "react": "AboveMaximum",
-        "lit": "ClampedAboveMax",
+        "lit": "AboveMaximum",
         "rn": null,
         "swift": null
       },
       "storyId": "meter-react--above-maximum",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

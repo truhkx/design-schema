@@ -210,17 +210,26 @@ export class DsButton extends LitElement {
       background: var(--color-action-danger-background);
     }
 
-    /* backgroundHover: color.action.{variant}.backgroundHover on pointer hover and pressed, locked */
-    :host([variant='primary']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+    /*
+     * backgroundHover: color.action.{variant}.backgroundHover on pointer hover and
+     * pressed, locked. Suppressed by selector while the button is not accepting a
+     * press -- :not([aria-disabled='true']):not([aria-busy='true']), the same
+     * suppression web writes, read off the inner button's own state attributes.
+     */
+    :host([variant='primary'])
+      [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
       background: var(--color-action-primary-background-hover);
     }
-    :host([variant='secondary']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+    :host([variant='secondary'])
+      [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
       background: var(--color-action-secondary-background-hover);
     }
-    :host([variant='ghost']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+    :host([variant='ghost'])
+      [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
       background: var(--color-action-ghost-background-hover);
     }
-    :host([variant='danger']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+    :host([variant='danger'])
+      [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
       background: var(--color-action-danger-background-hover);
     }
 
@@ -233,7 +242,8 @@ export class DsButton extends LitElement {
     :host([inverse][variant='ghost']) [data-part='container'] {
       color: var(--color-inverse-link);
     }
-    :host([inverse][variant='ghost']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+    :host([inverse][variant='ghost'])
+      [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
       background: color-mix(
         in srgb,
         var(--ds-button-inverse-background-hover) calc(var(--ds-button-inverse-hover-opacity) * 0.25 * 100%),
@@ -265,11 +275,6 @@ export class DsButton extends LitElement {
       gap: var(--ds-button-icon-gap);
     }
 
-    /* iconOnly: hide the visible label; the accessible name moves to aria-label */
-    :host([icon-only]) [data-part='label'] {
-      display: none;
-    }
-
     :host([loading]) [data-part='container'] {
       cursor: progress;
     }
@@ -281,7 +286,8 @@ export class DsButton extends LitElement {
       inline-size: var(--ds-button-spinner-size);
       block-size: var(--ds-button-spinner-size);
       border: var(--ds-button-spinner-stroke) solid currentColor;
-      border-inline-end-color: transparent;
+      /* the block-start quarter, so the turn reads as starting from twelve o'clock */
+      border-block-start-color: transparent;
       border-radius: var(--radius-full);
       animation: ds-button-spin var(--ds-button-loading-spin) linear infinite;
     }
@@ -442,7 +448,11 @@ export class DsButton extends LitElement {
           ${this.loading
             ? html`<span class="spinner" aria-hidden="true"></span>`
             : html`<slot name="leading-icon" part="leadingIcon" data-part="leadingIcon"></slot>`}
-          <span class="label" part="label" data-part="label">${this.label}</span>
+          ${this.iconOnly
+            ? // iconOnly removes the label part outright — no hidden node either, since the
+              // name moves to aria-label, so a part selector targeting it finds nothing.
+              nothing
+            : html`<span class="label" part="label" data-part="label">${this.label}</span>`}
           ${this.iconOnly || this.loading
             ? nothing
             : html`<slot name="trailing-icon" part="trailingIcon" data-part="trailingIcon"></slot>`}

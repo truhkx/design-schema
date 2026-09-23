@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -56,7 +57,7 @@
       },
       "snippets": {
         "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} @open-change=${followOpenChange}></ds-menu>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} @open-change=${followOpenChange}></ds-menu>\n`;",
         "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} />",
         "swift": null
       },
@@ -69,6 +70,7 @@
       "storyId": "menu-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -121,7 +123,7 @@
       },
       "snippets": {
         "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerVariant=\"ghost\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    trigger-variant=\"ghost\"\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    trigger-variant=\"ghost\"\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
         "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerVariant=\"ghost\" />",
         "swift": null
       },
@@ -137,6 +139,7 @@
         "value": "ghost"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -189,7 +192,7 @@
       },
       "snippets": {
         "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerVariant=\"secondary\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    trigger-variant=\"secondary\"\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    trigger-variant=\"secondary\"\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
         "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerVariant=\"secondary\" />",
         "swift": null
       },
@@ -205,6 +208,7 @@
         "value": "secondary"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -257,7 +261,7 @@
       },
       "snippets": {
         "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerVariant=\"primary\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    trigger-variant=\"primary\"\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    trigger-variant=\"primary\"\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
         "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerVariant=\"primary\" />",
         "swift": null
       },
@@ -273,6 +277,7 @@
         "value": "primary"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -325,7 +330,7 @@
       },
       "snippets": {
         "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"ellipsis\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    trigger-icon=\"ellipsis\"\n    icon-only\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    trigger-icon=\"ellipsis\"\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
         "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"ellipsis\" />",
         "swift": null
       },
@@ -341,6 +346,7 @@
         "value": "ellipsis"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -393,7 +399,7 @@
       },
       "snippets": {
         "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"chevron-down\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    trigger-icon=\"chevron-down\"\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    trigger-icon=\"chevron-down\"\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
         "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"chevron-down\" />",
         "swift": null
       },
@@ -409,6 +415,7 @@
         "value": "chevron-down"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -461,7 +468,7 @@
       },
       "snippets": {
         "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"none\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} trigger-icon=\"none\" @open-change=${followOpenChange}></ds-menu>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} trigger-icon=\"none\" @open-change=${followOpenChange}></ds-menu>\n`;",
         "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} triggerIcon=\"none\" />",
         "swift": null
       },
@@ -477,6 +484,7 @@
         "value": "none"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -529,7 +537,7 @@
       },
       "snippets": {
         "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"bottom-start\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    placement=\"bottom-start\"\n    open\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    placement=\"bottom-start\"\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
         "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"bottom-start\" />",
         "swift": null
       },
@@ -545,6 +553,7 @@
         "value": "bottom-start"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -597,7 +606,7 @@
       },
       "snippets": {
         "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"bottom-end\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    placement=\"bottom-end\"\n    open\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    placement=\"bottom-end\"\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
         "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"bottom-end\" />",
         "swift": null
       },
@@ -613,6 +622,7 @@
         "value": "bottom-end"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -665,7 +675,7 @@
       },
       "snippets": {
         "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"top-start\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    placement=\"top-start\"\n    open\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    placement=\"top-start\"\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
         "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"top-start\" />",
         "swift": null
       },
@@ -681,6 +691,7 @@
         "value": "top-start"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -733,7 +744,7 @@
       },
       "snippets": {
         "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"top-end\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    placement=\"top-end\"\n    open\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} placement=\"top-end\" @open-change=${followOpenChange}></ds-menu>\n`;",
         "rn": "import { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} placement=\"top-end\" />",
         "swift": null
       },
@@ -749,6 +760,7 @@
         "value": "top-end"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -802,84 +814,20 @@
       },
       "snippets": {
         "react": "import { Menu, type MenuItem } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\n<Menu label=\"More actions\" items={ITEMS} iconOnly triggerIcon=\"ellipsis\" />",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu\n    label=\"More actions\"\n    .items=${ITEMS}\n    trigger-icon=\"ellipsis\"\n    icon-only\n    @open-change=${followOpenChange}\n  ></ds-menu>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "IconOnly",
-        "lit": null,
+        "lit": "IconOnly",
         "rn": null,
         "swift": null
       },
       "storyId": "menu-react--icon-only",
       "sweep": null,
       "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "label": "More actions",
-        "items": [
-          {
-            "id": "open",
-            "label": "Open",
-            "icon": "external"
-          },
-          {
-            "id": "rename",
-            "label": "Rename",
-            "shortcut": "Ctrl+R"
-          },
-          {
-            "id": "duplicate",
-            "label": "Duplicate"
-          },
-          {
-            "group": "Sort by",
-            "items": [
-              {
-                "id": "sort-name",
-                "label": "Name"
-              },
-              {
-                "id": "sort-date",
-                "label": "Date modified"
-              }
-            ]
-          },
-          {
-            "separator": true
-          },
-          {
-            "id": "archive",
-            "label": "Archive",
-            "disabled": true
-          },
-          {
-            "id": "delete",
-            "label": "Delete",
-            "tone": "danger"
-          }
-        ],
-        "open": true
-      },
-      "snippets": {
-        "react": "import { useState, type ComponentProps, type ReactElement } from 'react';\nimport { Menu, type MenuItem, type MenuOpenChangeReason } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction OpenMenu(args: ComponentProps<typeof Menu>): ReactElement {\n  const [open, setOpen] = useState(args.open ?? true);\n  return (\n    <Menu\n      {...args}\n      open={open}\n      onOpenChange={(next: boolean, reason: MenuOpenChangeReason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenMenu label=\"More actions\" items={ITEMS} open />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'rename', label: 'Rename' },\n  { id: 'duplicate', label: 'Duplicate' },\n  { id: 'archive', label: 'Archive' },\n  { separator: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nhtml`\n  <ds-menu label=\"More actions\" .items=${ITEMS} open @open-change=${followOpenChange}></ds-menu>\n`;",
-        "rn": "import * as React from 'react';\nimport { Menu, type MenuItem } from '@design-schema/rn';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction Open(): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return <Menu label=\"More actions\" items={ITEMS} open={open} onOpenChange={(next) => setOpen(next)} />;\n}\n\n<Open />",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": "Keyboard",
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "menu-react--keyboard",
-      "sweep": null,
-      "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -922,6 +870,7 @@
       "storyId": "menu-react--row-overflow",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -960,6 +909,7 @@
       "storyId": "menu-react--sort-by",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -1018,6 +968,7 @@
       "storyId": "menu-react--grouped-account-menu",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -1052,7 +1003,8 @@
       "storyId": "menu-react--with-shortcuts",
       "sweep": null,
       "decorated": false,
-      "primary": false
+      "harness": null,
+      "primary": true
     },
     {
       "title": "Anchor Positioned",
@@ -1103,19 +1055,20 @@
       },
       "snippets": {
         "react": "import { useRef, useState, type ComponentProps, type ReactElement } from 'react';\nimport { Menu, type MenuItem, type MenuOpenChangeReason } from '@design-schema/react';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction OpenMenu(args: ComponentProps<typeof Menu>): ReactElement {\n  const [open, setOpen] = useState(args.open ?? true);\n  return (\n    <Menu\n      {...args}\n      open={open}\n      onOpenChange={(next: boolean, reason: MenuOpenChangeReason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nfunction Example() {\n  const anchor = useRef<HTMLDivElement>(null);\n  return (\n    <div\n      ref={anchor}\n      style={{ display: 'inline-block', padding: '2rem', border: '1px dashed currentColor' }} // literal-ok: Storybook canvas decoration, not a component style\n    >\n      Anchor element\n      <OpenMenu label=\"More actions\" items={ITEMS} anchor={anchor} open />\n    </div>\n  );\n}\n\n<Example />",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport { ref } from 'lit/directives/ref.js';\nimport type { DsMenu, MenuItem, MenuOpenChangeDetail } from '@design-schema/lit';\n\nconst ITEMS: MenuItem[] = [\n  { id: 'open', label: 'Open', icon: 'external' },\n  { id: 'rename', label: 'Rename', shortcut: 'Ctrl+R' },\n  { id: 'duplicate', label: 'Duplicate' },\n  {\n    group: 'Sort by',\n    items: [\n      { id: 'sort-name', label: 'Name' },\n      { id: 'sort-date', label: 'Date modified' },\n    ],\n  },\n  { separator: true },\n  { id: 'archive', label: 'Archive', disabled: true },\n  { id: 'delete', label: 'Delete', tone: 'danger' },\n];\n\nfunction followOpenChange(event: Event): void {\n  const menu = event.currentTarget as DsMenu;\n  if (menu.open !== undefined) menu.open = (event as CustomEvent<MenuOpenChangeDetail>).detail.open;\n}\n\nfunction anchorToParent(element?: Element): void {\n  const menu = element as DsMenu | undefined;\n  if (menu?.parentElement) menu.anchor = menu.parentElement;\n}\n\nhtml`\n  <div style=\"display: inline-block; padding: 2rem; border: 1px dashed currentColor\">\n    Anchor element\n    <ds-menu\n      ${ref(anchorToParent)}\n      label=\"More actions\"\n      .items=${ITEMS}\n      open\n      @open-change=${followOpenChange}\n    ></ds-menu>\n  </div>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "AnchorPositioned",
-        "lit": null,
+        "lit": "AnchorPositioned",
         "rn": null,
         "swift": null
       },
       "storyId": "menu-react--anchor-positioned",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

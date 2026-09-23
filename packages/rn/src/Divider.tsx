@@ -50,14 +50,15 @@ const SPACING_TOKEN = {
  * segments and makes the line meaningful rather than furniture.
  *
  * The line is an inner `View` `border.width.thin` thick along the cross axis in
- * `color.border` (vertical: `alignSelf: 'stretch'` to the row height), inside a root `View`
- * that carries `spacing` as padding on that axis. `spacing: none` renders no space, so
+ * `color.border`, inside a root `View` that carries `spacing` as padding on that axis;
+ * root and line both `alignSelf: 'stretch'` in either orientation, so a divider in a parent
+ * that does not stretch its children still draws. `spacing: none` renders no space, so
  * `overrides.spacing` is a no-op there. There is no `separator` role on React Native:
  * a decorative root hides itself and its line (`accessibilityElementsHidden` +
  * `importantForAccessibility="no-hide-descendants"`); a labelled root is a row (`gap` from
  * `labelGap`) of two hidden line Views around `Text size="sm" tone="muted"`, which is read.
- * The label Text sits in a plain View carrying the `Divider.label` hook, since Text takes
- * no `testID`. `labelSize`/`fontFamily` overrides reach Text's `fontSize`/`fontFamily`.
+ * The label Text sits in a plain unflexed View carrying the `Divider.label` hook, since Text
+ * takes no `testID`. `labelSize`/`fontFamily` overrides reach Text's `fontSize`/`fontFamily`.
  */
 export function Divider({
   orientation = 'horizontal',
@@ -105,10 +106,16 @@ export function Divider({
     const root: ViewStyle = vertical
       ? { flexDirection: 'row', alignSelf: 'stretch', paddingHorizontal: space }
       : { alignSelf: 'stretch', paddingVertical: space };
-    const labelledRoot: ViewStyle = { alignSelf: 'stretch', paddingVertical: space, flexDirection: 'row', alignItems: 'center', gap };
+    const labelledRoot: ViewStyle = {
+      alignSelf: 'stretch',
+      paddingVertical: space,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap,
+    };
     const line: ViewStyle = vertical
       ? { width: thickness, alignSelf: 'stretch', backgroundColor: color }
-      : { height: thickness, backgroundColor: color };
+      : { height: thickness, alignSelf: 'stretch', backgroundColor: color };
     const segment: ViewStyle = { flex: 1, height: thickness, backgroundColor: color };
     return { root, labelledRoot, line, segment };
   }, [t, orientation, spacing, overrides]);

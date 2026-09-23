@@ -30,6 +30,10 @@ function setup(given: Partial<FormProps> = {}) {
 }
 
 describe('Form', () => {
+  test('label-names-the-form-landmark', () => {
+    const s = setup({"label": "Sign in"});
+    expect(s.container()).toHaveProp("accessibilityLabel", "Sign in");
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

@@ -6,6 +6,12 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": {
+    "close": [
+      "onClose"
+    ],
+    "change": []
+  },
   "examples": [
     {
       "title": "Default",
@@ -50,19 +56,20 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\nconst renameFooter = (\n  <>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>\n);\n\n<DialogHarness open heading=\"Rename project\" footer={renameFooter}><Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" /></DialogHarness>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n  <ds-button label=\"Rename project\" @press=${openDialog}></ds-button>\n  <ds-dialog open heading=\"Rename project\" size=\"md\" initial-focus=\"first\" @close=${closeDialog}>\n    <ds-input label=\"Project name\" name=\"projectName\" default-value=\"Q3 roadmap\"></ds-input>\n    <ds-button slot=\"footer\" variant=\"primary\" label=\"Rename\" @press=${closeDialog}></ds-button>\n    <ds-button slot=\"footer\" variant=\"secondary\" label=\"Cancel\" @press=${closeDialog}></ds-button>\n  </ds-dialog>\n`;",
         "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, Input } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Rename project\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n><Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" /></Consumer>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": null,
+        "lit": "Default",
         "rn": "Default",
         "swift": null
       },
       "storyId": "dialog-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": "trigger",
       "primary": true
     },
     {
@@ -108,13 +115,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\nconst renameFooter = (\n  <>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>\n);\n\n<DialogHarness\n  open\n  heading=\"Rename project\"\n  footer={renameFooter}\n  size=\"sm\"\n><Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" /></DialogHarness>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n  <ds-button label=\"Rename project\" @press=${openDialog}></ds-button>\n  <ds-dialog open heading=\"Rename project\" size=\"sm\" initial-focus=\"first\" @close=${closeDialog}>\n    <ds-input label=\"Project name\" name=\"projectName\" default-value=\"Q3 roadmap\"></ds-input>\n    <ds-button slot=\"footer\" variant=\"primary\" label=\"Rename\" @press=${closeDialog}></ds-button>\n    <ds-button slot=\"footer\" variant=\"secondary\" label=\"Cancel\" @press=${closeDialog}></ds-button>\n  </ds-dialog>\n`;",
         "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, Input } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Rename project\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  size=\"sm\"\n><Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" /></Consumer>",
         "swift": null
       },
       "stories": {
         "react": "SizeSm",
-        "lit": null,
+        "lit": "SizeSm",
         "rn": "SizeSm",
         "swift": null
       },
@@ -124,6 +131,7 @@
         "value": "sm"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -169,13 +177,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\nconst renameFooter = (\n  <>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>\n);\n\n<DialogHarness\n  open\n  heading=\"Rename project\"\n  footer={renameFooter}\n  size=\"md\"\n><Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" /></DialogHarness>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n  <ds-button label=\"Rename project\" @press=${openDialog}></ds-button>\n  <ds-dialog open heading=\"Rename project\" size=\"md\" initial-focus=\"first\" @close=${closeDialog}>\n    <ds-input label=\"Project name\" name=\"projectName\" default-value=\"Q3 roadmap\"></ds-input>\n    <ds-button slot=\"footer\" variant=\"primary\" label=\"Rename\" @press=${closeDialog}></ds-button>\n    <ds-button slot=\"footer\" variant=\"secondary\" label=\"Cancel\" @press=${closeDialog}></ds-button>\n  </ds-dialog>\n`;",
         "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, Input } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Rename project\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  size=\"md\"\n><Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" /></Consumer>",
         "swift": null
       },
       "stories": {
         "react": "SizeMd",
-        "lit": null,
+        "lit": "SizeMd",
         "rn": "SizeMd",
         "swift": null
       },
@@ -185,6 +193,7 @@
         "value": "md"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -230,13 +239,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\nconst renameFooter = (\n  <>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>\n);\n\n<DialogHarness\n  open\n  heading=\"Rename project\"\n  footer={renameFooter}\n  size=\"lg\"\n><Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" /></DialogHarness>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n  <ds-button label=\"Rename project\" @press=${openDialog}></ds-button>\n  <ds-dialog open heading=\"Rename project\" size=\"lg\" initial-focus=\"first\" @close=${closeDialog}>\n    <ds-input label=\"Project name\" name=\"projectName\" default-value=\"Q3 roadmap\"></ds-input>\n    <ds-button slot=\"footer\" variant=\"primary\" label=\"Rename\" @press=${closeDialog}></ds-button>\n    <ds-button slot=\"footer\" variant=\"secondary\" label=\"Cancel\" @press=${closeDialog}></ds-button>\n  </ds-dialog>\n`;",
         "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, Input } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Rename project\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  size=\"lg\"\n><Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" /></Consumer>",
         "swift": null
       },
       "stories": {
         "react": "SizeLg",
-        "lit": null,
+        "lit": "SizeLg",
         "rn": "SizeLg",
         "swift": null
       },
@@ -246,6 +255,7 @@
         "value": "lg"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -291,13 +301,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\nconst renameFooter = (\n  <>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>\n);\n\n<DialogHarness\n  open\n  heading=\"Rename project\"\n  footer={renameFooter}\n  initialFocus=\"first\"\n><Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" /></DialogHarness>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n  <ds-button label=\"Rename project\" @press=${openDialog}></ds-button>\n  <ds-dialog open heading=\"Rename project\" size=\"md\" initial-focus=\"first\" @close=${closeDialog}>\n    <ds-input label=\"Project name\" name=\"projectName\" default-value=\"Q3 roadmap\"></ds-input>\n    <ds-button slot=\"footer\" variant=\"primary\" label=\"Rename\" @press=${closeDialog}></ds-button>\n    <ds-button slot=\"footer\" variant=\"secondary\" label=\"Cancel\" @press=${closeDialog}></ds-button>\n  </ds-dialog>\n`;",
         "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, Input } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Rename project\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  initialFocus=\"first\"\n><Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" /></Consumer>",
         "swift": null
       },
       "stories": {
         "react": "InitialFocusFirst",
-        "lit": null,
+        "lit": "InitialFocusFirst",
         "rn": "InitialFocusFirst",
         "swift": null
       },
@@ -307,6 +317,7 @@
         "value": "first"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -352,13 +363,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\nconst renameFooter = (\n  <>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>\n);\n\n<DialogHarness\n  open\n  heading=\"Rename project\"\n  footer={renameFooter}\n  initialFocus=\"title\"\n><Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" /></DialogHarness>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n  <ds-button label=\"Rename project\" @press=${openDialog}></ds-button>\n  <ds-dialog open heading=\"Rename project\" size=\"md\" initial-focus=\"title\" @close=${closeDialog}>\n    <ds-input label=\"Project name\" name=\"projectName\" default-value=\"Q3 roadmap\"></ds-input>\n    <ds-button slot=\"footer\" variant=\"primary\" label=\"Rename\" @press=${closeDialog}></ds-button>\n    <ds-button slot=\"footer\" variant=\"secondary\" label=\"Cancel\" @press=${closeDialog}></ds-button>\n  </ds-dialog>\n`;",
         "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, Input } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Rename project\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  initialFocus=\"title\"\n><Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" /></Consumer>",
         "swift": null
       },
       "stories": {
         "react": "InitialFocusTitle",
-        "lit": null,
+        "lit": "InitialFocusTitle",
         "rn": "InitialFocusTitle",
         "swift": null
       },
@@ -368,6 +379,7 @@
         "value": "title"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -413,13 +425,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\nconst renameFooter = (\n  <>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>\n);\n\n<DialogHarness\n  open\n  heading=\"Rename project\"\n  footer={renameFooter}\n  initialFocus=\"close\"\n><Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" /></DialogHarness>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n  <ds-button label=\"Rename project\" @press=${openDialog}></ds-button>\n  <ds-dialog open heading=\"Rename project\" size=\"md\" initial-focus=\"close\" @close=${closeDialog}>\n    <ds-input label=\"Project name\" name=\"projectName\" default-value=\"Q3 roadmap\"></ds-input>\n    <ds-button slot=\"footer\" variant=\"primary\" label=\"Rename\" @press=${closeDialog}></ds-button>\n    <ds-button slot=\"footer\" variant=\"secondary\" label=\"Cancel\" @press=${closeDialog}></ds-button>\n  </ds-dialog>\n`;",
         "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, Input } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Rename project\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  initialFocus=\"close\"\n><Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" /></Consumer>",
         "swift": null
       },
       "stories": {
         "react": "InitialFocusClose",
-        "lit": null,
+        "lit": "InitialFocusClose",
         "rn": "InitialFocusClose",
         "swift": null
       },
@@ -429,6 +441,7 @@
         "value": "close"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -474,13 +487,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\nconst renameFooter = (\n  <>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>\n);\n\n<DialogHarness\n  open\n  heading=\"Rename project\"\n  footer={renameFooter}\n  hideHeading\n><Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" /></DialogHarness>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n  <ds-button label=\"Rename project\" @press=${openDialog}></ds-button>\n  <ds-dialog\n    open\n    heading=\"Rename project\"\n    hide-heading\n    size=\"md\"\n    initial-focus=\"first\"\n    @close=${closeDialog}\n  >\n    <ds-input label=\"Project name\" name=\"projectName\" default-value=\"Q3 roadmap\"></ds-input>\n    <ds-button slot=\"footer\" variant=\"primary\" label=\"Rename\" @press=${closeDialog}></ds-button>\n    <ds-button slot=\"footer\" variant=\"secondary\" label=\"Cancel\" @press=${closeDialog}></ds-button>\n  </ds-dialog>\n`;",
         "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, Input } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Rename project\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  hideHeading\n><Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" /></Consumer>",
         "swift": null
       },
       "stories": {
         "react": "HideHeading",
-        "lit": null,
+        "lit": "HideHeading",
         "rn": "HideHeading",
         "swift": null
       },
@@ -490,6 +503,67 @@
         "value": true
       },
       "decorated": false,
+      "harness": "trigger",
+      "primary": true
+    },
+    {
+      "title": "With Description",
+      "args": {
+        "open": true,
+        "heading": "Rename project",
+        "children": {
+          "$element": "Input",
+          "props": {
+            "label": "Project name",
+            "name": "projectName",
+            "defaultValue": "Q3 roadmap"
+          },
+          "children": []
+        },
+        "footer": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Rename",
+                "variant": "primary"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Cancel",
+                "variant": "secondary"
+              },
+              "children": []
+            }
+          ]
+        },
+        "hideHeading": false,
+        "size": "md",
+        "dismissible": true,
+        "initialFocus": "first",
+        "description": "Everyone with access will see the new name."
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\nconst renameFooter = (\n  <>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>\n);\n\n<DialogHarness\n  open\n  heading=\"Rename project\"\n  footer={renameFooter}\n  description=\"Everyone with access will see the new name.\"\n><Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" /></DialogHarness>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n  <ds-button label=\"Rename project\" @press=${openDialog}></ds-button>\n  <ds-dialog\n    open\n    heading=\"Rename project\"\n    description=\"Everyone with access will see the new name.\"\n    size=\"md\"\n    initial-focus=\"first\"\n    @close=${closeDialog}\n  >\n    <ds-input label=\"Project name\" name=\"projectName\" default-value=\"Q3 roadmap\"></ds-input>\n    <ds-button slot=\"footer\" variant=\"primary\" label=\"Rename\" @press=${closeDialog}></ds-button>\n    <ds-button slot=\"footer\" variant=\"secondary\" label=\"Cancel\" @press=${closeDialog}></ds-button>\n  </ds-dialog>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, Input } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Rename project\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  description=\"The new name appears everywhere the project is listed.\"\n><Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" /></Consumer>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithDescription",
+        "lit": "WithDescription",
+        "rn": "WithDescription",
+        "swift": null
+      },
+      "storyId": "dialog-react--with-description",
+      "sweep": null,
+      "decorated": false,
+      "harness": "trigger",
       "primary": true
     },
     {
@@ -535,13 +609,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\nconst renameFooter = (\n  <>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>\n);\n\n<DialogHarness\n  open\n  heading=\"Rename project\"\n  footer={renameFooter}\n  dismissible={false}\n><Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" /></DialogHarness>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n  <ds-button label=\"Rename project\" @press=${openDialog}></ds-button>\n  <ds-dialog\n    open\n    heading=\"Rename project\"\n    size=\"md\"\n    no-dismiss\n    initial-focus=\"first\"\n    @close=${closeDialog}\n  >\n    <ds-input label=\"Project name\" name=\"projectName\" default-value=\"Q3 roadmap\"></ds-input>\n    <ds-button slot=\"footer\" variant=\"primary\" label=\"Rename\" @press=${closeDialog}></ds-button>\n    <ds-button slot=\"footer\" variant=\"secondary\" label=\"Cancel\" @press=${closeDialog}></ds-button>\n  </ds-dialog>\n`;",
         "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, Input } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Rename project\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  dismissible={false}\n><Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" /></Consumer>",
         "swift": null
       },
       "stories": {
         "react": "NotDismissible",
-        "lit": null,
+        "lit": "NotDismissible",
         "rn": "NotDismissible",
         "swift": null
       },
@@ -551,145 +625,7 @@
         "value": false
       },
       "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Closed",
-      "args": {
-        "open": false,
-        "heading": "Rename project",
-        "children": {
-          "$element": "Input",
-          "props": {
-            "label": "Project name",
-            "name": "projectName",
-            "defaultValue": "Q3 roadmap"
-          },
-          "children": []
-        },
-        "footer": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Rename",
-                "variant": "primary"
-              },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
-            }
-          ]
-        },
-        "hideHeading": false,
-        "size": "md",
-        "dismissible": true,
-        "initialFocus": "first"
-      },
-      "snippets": {
-        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\nconst renameFooter = (\n  <>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>\n);\n\n<DialogHarness open={false} heading=\"Rename project\" footer={renameFooter}><Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" /></DialogHarness>",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "Closed",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "dialog-react--closed",
-      "sweep": {
-        "prop": "open",
-        "value": false
-      },
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "open": true,
-        "heading": "Rename project",
-        "children": {
-          "$element": "Stack",
-          "props": {
-            "gap": "normal"
-          },
-          "children": [
-            {
-              "$element": "Input",
-              "props": {
-                "label": "Project name",
-                "name": "projectName",
-                "defaultValue": "Q3 roadmap"
-              },
-              "children": []
-            },
-            {
-              "$element": "Input",
-              "props": {
-                "label": "Slug",
-                "name": "slug",
-                "defaultValue": "q3-roadmap"
-              },
-              "children": []
-            }
-          ]
-        },
-        "footer": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Rename",
-                "variant": "primary"
-              },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
-            }
-          ]
-        },
-        "hideHeading": false,
-        "size": "md",
-        "dismissible": true,
-        "initialFocus": "first"
-      },
-      "snippets": {
-        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input, Stack } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\nconst renameFooter = (\n  <>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>\n);\n\n<DialogHarness open heading=\"Rename project\" footer={renameFooter}><Stack gap=\"normal\">\n<Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" />\n<Input label=\"Slug\" name=\"slug\" defaultValue=\"q3-roadmap\" />\n</Stack></DialogHarness>",
-        "lit": null,
-        "rn": "import * as React from 'react';\nimport { Button, Dialog, Input, Stack } from '@design-schema/rn';\n\nfunction Open(): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Open dialog\" onPress={() => setOpen(true)} />\n      <Dialog\n        heading=\"Rename project\"\n        open={open}\n        onClose={(reason) => {\n          undefined?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          <>\n            <Button label=\"Rename\" variant=\"primary\" onPress={() => setOpen(false)} />\n            <Button label=\"Cancel\" variant=\"secondary\" onPress={() => setOpen(false)} />\n          </>\n        }\n      >\n        <Stack gap=\"loose\">\n          <Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" />\n          <Input label=\"Description\" name=\"description\" />\n        </Stack>\n      </Dialog>\n    </Stack>\n  );\n}\n\n<Open />",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": null,
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "dialog-react--keyboard",
-      "sweep": {
-        "prop": "open",
-        "value": true
-      },
-      "decorated": false,
+      "harness": "trigger",
       "primary": true
     },
     {
@@ -735,13 +671,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\nconst renameFooter = (\n  <>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>\n);\n\n<DialogHarness open heading=\"Rename project\" footer={renameFooter}><Input label=\"Project name\" name=\"projectName\" defaultValue=\"Q3 roadmap\" /></DialogHarness>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n  <ds-button label=\"Rename project\" @press=${openDialog}></ds-button>\n  <ds-dialog open heading=\"Rename project\" size=\"md\" initial-focus=\"first\" @close=${closeDialog}>\n    <ds-input label=\"Project name\" name=\"projectName\" default-value=\"Q3 roadmap\"></ds-input>\n    <ds-button slot=\"footer\" variant=\"primary\" label=\"Rename\" @press=${closeDialog}></ds-button>\n    <ds-button slot=\"footer\" variant=\"secondary\" label=\"Cancel\" @press=${closeDialog}></ds-button>\n  </ds-dialog>\n`;",
         "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, Input } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Rename project\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n><Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" /></Consumer>",
         "swift": null
       },
       "stories": {
         "react": "RenameProject",
-        "lit": null,
+        "lit": "RenameProject",
         "rn": "RenameProject",
         "swift": null
       },
@@ -751,6 +687,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": true
     },
     {
@@ -823,20 +760,21 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Input, Select, Stack } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<DialogHarness\n  open\n  heading=\"Invite people\"\n  footer={<>\n    <Button label=\"Send invites\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  size=\"sm\"\n><Stack gap=\"normal\">\n<Input label=\"Email\" name=\"email\" type=\"email\" />\n<Select\n  label=\"Role\"\n  name=\"role\"\n  defaultValue=\"member\"\n  options={[\n    { value: 'member', label: 'Member' },\n    { value: 'admin', label: 'Admin' },\n  ]}\n/>\n</Stack></DialogHarness>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n      <ds-button label=\"Invite people\" @press=${openDialog}></ds-button>\n      <ds-dialog open heading=\"Invite people\" size=\"sm\" initial-focus=\"first\" @close=${closeDialog}>\n        <ds-stack gap=\"normal\">\n          <ds-input type=\"email\" label=\"Email\" name=\"email\"></ds-input>\n          <ds-select\n            label=\"Role\"\n            name=\"role\"\n            .defaultValue=${'member'}\n            .options=${[\n    { value: 'member', label: 'Member' },\n    { value: 'admin', label: 'Admin' },\n  ]}\n          ></ds-select>\n        </ds-stack>\n        <ds-button slot=\"footer\" variant=\"primary\" label=\"Send invites\" @press=${closeDialog}></ds-button>\n        <ds-button slot=\"footer\" variant=\"secondary\" label=\"Cancel\" @press=${closeDialog}></ds-button>\n      </ds-dialog>\n`;",
         "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, Input, Select, Stack } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Invite people\"\n  footer={<>\n    <Button label=\"Send invites\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  size=\"sm\"\n><Stack gap=\"normal\">\n<Input label=\"Email address\" name=\"email\" type=\"email\" />\n<Select\n  label=\"Role\"\n  name=\"role\"\n  options={[\n    { value: 'viewer', label: 'Viewer' },\n    { value: 'editor', label: 'Editor' },\n    { value: 'admin', label: 'Admin' },\n  ]}\n/>\n</Stack></Consumer>",
         "swift": null
       },
       "stories": {
         "react": "InvitePeople",
-        "lit": null,
+        "lit": "InvitePeople",
         "rn": "InvitePeople",
         "swift": null
       },
       "storyId": "dialog-react--invite-people",
       "sweep": null,
       "decorated": false,
-      "primary": false
+      "harness": "trigger",
+      "primary": true
     },
     {
       "title": "Must Be Answered",
@@ -881,19 +819,20 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, RadioGroup } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<DialogHarness\n  open\n  heading=\"Choose a plan\"\n  footer={<Button label=\"Continue\" variant=\"primary\" />}\n  dismissible={false}\n  description=\"You need a plan before you can invite anyone.\"\n><RadioGroup\nlabel=\"Plan\"\nname=\"plan\"\noptions={[\n  { value: 'starter', label: 'Starter' },\n  { value: 'team', label: 'Team' },\n  { value: 'business', label: 'Business' },\n]}\n/></DialogHarness>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n      <ds-button label=\"Choose a plan\" @press=${openDialog}></ds-button>\n      <ds-dialog\n        open\n        heading=\"Choose a plan\"\n        description=\"You need a plan before you can invite anyone.\"\n        size=\"md\"\n        no-dismiss\n        initial-focus=\"first\"\n        @close=${closeDialog}\n      >\n        <ds-radio-group\n          label=\"Plan\"\n          name=\"plan\"\n          .options=${[\n    { value: 'starter', label: 'Starter' },\n    { value: 'team', label: 'Team' },\n    { value: 'business', label: 'Business' },\n  ]}\n        ></ds-radio-group>\n        <ds-button slot=\"footer\" variant=\"primary\" label=\"Continue\" @press=${closeDialog}></ds-button>\n      </ds-dialog>\n`;",
         "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, RadioGroup } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Choose a plan\"\n  footer={<Button label=\"Continue\" variant=\"primary\" />}\n  description=\"You need a plan before you can invite anyone.\"\n  dismissible={false}\n><RadioGroup\nlabel=\"Plan\"\nname=\"plan\"\noptions={[\n  { value: 'free', label: 'Free' },\n  { value: 'team', label: 'Team' },\n  { value: 'enterprise', label: 'Enterprise' },\n]}\n/></Consumer>",
         "swift": null
       },
       "stories": {
         "react": "MustBeAnswered",
-        "lit": null,
+        "lit": "MustBeAnswered",
         "rn": "MustBeAnswered",
         "swift": null
       },
       "storyId": "dialog-react--must-be-answered",
       "sweep": null,
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -944,19 +883,20 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { Dialog, type DialogProps, Button, Stack, Text } from '@design-schema/react';\n\nfunction DialogHarness({ open: initialOpen, onClose, ...rest }: DialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.heading} onClick={() => setOpen(true)} />\n      <Dialog\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<DialogHarness\n  open\n  heading=\"Terms of service\"\n  size=\"lg\"\n  initialFocus=\"title\"\n><Stack gap=\"normal\">\n<Text>These terms govern your use of the service and any content you create with it.</Text>\n<Text>You keep ownership of your content. You grant us the rights needed to host and display it to the people you share it with.</Text>\n<Text>We may update these terms. When we do, we will tell you before the changes take effect.</Text>\n<Text>You can close your account at any time. Your content is deleted thirty days after closure.</Text>\n</Stack></DialogHarness>",
-        "lit": null,
-        "rn": "import * as React from 'react';\nimport { Button, Dialog, type DialogProps, Stack, Text } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Terms of service\"\n  footer={<>\n    <Button label=\"Rename\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  size=\"lg\"\n  initialFocus=\"title\"\n><Stack gap=\"normal\">\n<Text>These terms govern your use of the service and any content you create with it.</Text>\n<Text>You keep ownership of your content. You grant us the rights needed to host and display it to the people you share it with.</Text>\n<Text>We may change these terms. When we do, we will tell you before the change takes effect.</Text>\n<Text>You can close your account at any time. Your content is deleted within thirty days of closing.</Text>\n</Stack></Consumer>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsDialog } from '@design-schema/lit';\n\nfunction closeDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).closest('ds-dialog') as DsDialog | null;\n  if (dialog) {\n    dialog.open = false;\n  }\n}\n\nfunction openDialog(event: Event): void {\n  const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsDialog | null;\n  if (dialog) {\n    dialog.open = true;\n  }\n}\n\nhtml`\n  <ds-button label=\"Terms of service\" @press=${openDialog}></ds-button>\n  <ds-dialog open heading=\"Terms of service\" size=\"lg\" initial-focus=\"title\" @close=${closeDialog}>\n    <ds-stack gap=\"normal\">\n      <ds-text>These terms govern your use of the service and any content you create with it.</ds-text>\n      <ds-text>You keep ownership of your content. You grant us the rights needed to host and display it to the people you\n        share it with.</ds-text>\n      <ds-text>We may update these terms. When we do, we will tell you before the changes take effect.</ds-text>\n      <ds-text>You can close your account at any time. Your content is deleted thirty days after closure.</ds-text>\n    </ds-stack>\n  </ds-dialog>\n`;",
+        "rn": "import * as React from 'react';\nimport { Dialog, type DialogProps, Stack, Text } from '@design-schema/rn';\n\nfunction Consumer(args: DialogProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <Dialog\n      {...args}\n      open={open}\n      onClose={(reason) => {\n        args.onClose?.(reason);\n        setOpen(false);\n      }}\n    />\n  );\n}\n\n<Consumer\n  open\n  heading=\"Terms of service\"\n  size=\"lg\"\n  initialFocus=\"title\"\n><Stack gap=\"normal\">\n<Text>These terms govern your use of the service and any content you create with it.</Text>\n<Text>You keep ownership of your content. You grant us the rights needed to host and display it to the people you share it with.</Text>\n<Text>We may change these terms. When we do, we will tell you before the change takes effect.</Text>\n<Text>You can close your account at any time. Your content is deleted within thirty days of closing.</Text>\n</Stack></Consumer>",
         "swift": null
       },
       "stories": {
         "react": "ReadingDialog",
-        "lit": null,
+        "lit": "ReadingDialog",
         "rn": "ReadingDialog",
         "swift": null
       },
       "storyId": "dialog-react--reading-dialog",
       "sweep": null,
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     }
   ]

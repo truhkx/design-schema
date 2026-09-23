@@ -121,6 +121,7 @@ describe('ds-select', () => {
   test('invalid-is-reported-on-the-trigger', async () => {
     const s = await setup({"invalid": true, "open": true});
     expect(s.label()).toHaveAttribute('aria-invalid', 'true');
+    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp(escapeRegExp(s.props.label) + "\\ is\\ not\\ valid\\."));
   });
   test('renders', async () => {
     const s = await setup({"open": true});

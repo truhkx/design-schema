@@ -8,6 +8,7 @@ import type { FormContextValue, FormFieldHandle, FormValidateMode, FormValues } 
 import { Link } from './Link';
 import { Stack } from './Stack';
 import { Text } from './Text';
+import type { TextOverridableBinding } from './Text';
 import { useTheme } from './theme';
 
 export type { FormFieldValue, FormValidateMode, FormValues } from './FormContext';
@@ -108,6 +109,14 @@ function isEmptyValue(value: unknown): boolean {
   return value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
 }
 
+/**
+ * errorSummaryLineHeight — locked at `font.lineHeight.normal`, the binding that keeps the
+ * item Links above the target floor. There is no cascade on native, so the box cannot set a
+ * line height its Texts inherit: it is handed to each summary Text instead, and the item
+ * Links take it from the Text they are nested in.
+ */
+const SUMMARY_LINE_HEIGHT = { lineHeight: 'font.lineHeight.normal' } as const satisfies Partial<Record<TextOverridableBinding, TokenRef>>;
+
 /** One line of the error summary. `registered` is false once its field has unmounted. */
 interface SummaryEntry {
   name: string;
@@ -126,9 +135,11 @@ interface SummaryEntry {
  *
  * There is no form element on native. Form renders a `View` with `role="form"` (a landmark
  * only on react-native-web; `accessibilityLabel` is the native alternative) and provides a
- * context: each field calls `register(name, { label, getValue, validate, focus })` in mount
- * order (disabled fields do not register), a Button with `type: submit` calls `submit()`,
- * non-last Inputs get `returnKeyType="next"` and the last one's return key submits.
+ * context: each field calls `register(name, { label, getValue, isDisabled, validate, focus })`
+ * in mount order, a Button with `type: submit` calls `submit()`, non-last Inputs get
+ * `returnKeyType="next"` and the last one's return key submits. A disabled field is left out
+ * of the values, out of validation and out of `order`, so the previous field's "next" key
+ * skips past it.
  *
  * On a failed submission `onInvalid` fires, the summary is announced
  * (`accessibilityLiveRegion="assertive"` for Android, `announceForAccessibility` on iOS —
@@ -177,24 +188,37 @@ export function Form({
   const latest = React.useRef({ disabled, errorSummary, onSubmit, onInvalid });
   latest.current = { disabled, errorSummary, onSubmit, onInvalid };
 
-  const register = React.useCallback((fieldName: string, handle: FormFieldHandle) => {
-    handles.current.set(fieldName, handle);
-    labels.current.set(fieldName, handle.label ?? '');
-    if (!orderRef.current.includes(fieldName)) {
-      orderRef.current = [...orderRef.current, fieldName];
-      setOrder(orderRef.current);
-    }
+  // A disabled field stays registered and reports `isDisabled()`; it is left out of the
+  // order the fields read, so the previous field's "next" key skips past it.
+  const syncOrder = React.useCallback(() => {
+    const next = orderRef.current.filter((fieldName) => handles.current.get(fieldName)?.isDisabled?.() !== true);
+    setOrder((prev) => (prev.length === next.length && prev.every((fieldName, index) => fieldName === next[index]) ? prev : next));
   }, []);
 
-  const unregister = React.useCallback((fieldName: string) => {
-    handles.current.delete(fieldName);
-    if (orderRef.current.includes(fieldName)) {
-      orderRef.current = orderRef.current.filter((registered) => registered !== fieldName);
-      setOrder(orderRef.current);
-    }
-    // The error is kept: an entry whose field has gone (a Disclosure closed after the failed
-    // submit) stays in the summary, without its link, until the next validation replaces it.
-  }, []);
+  const register = React.useCallback(
+    (fieldName: string, handle: FormFieldHandle) => {
+      handles.current.set(fieldName, handle);
+      labels.current.set(fieldName, handle.label ?? '');
+      if (!orderRef.current.includes(fieldName)) {
+        orderRef.current = [...orderRef.current, fieldName];
+      }
+      syncOrder();
+    },
+    [syncOrder],
+  );
+
+  const unregister = React.useCallback(
+    (fieldName: string) => {
+      handles.current.delete(fieldName);
+      if (orderRef.current.includes(fieldName)) {
+        orderRef.current = orderRef.current.filter((registered) => registered !== fieldName);
+      }
+      syncOrder();
+      // The error is kept: an entry whose field has gone (a Disclosure closed after the failed
+      // submit) stays in the summary, without its link, until the next validation replaces it.
+    },
+    [syncOrder],
+  );
 
   const reportValidity = React.useCallback((fieldName: string, error: string | null) => {
     setErrors((prev) => {
@@ -222,7 +246,9 @@ export function Form({
     let firstInvalid: FormFieldHandle | null = null;
     for (const fieldName of orderRef.current) {
       const handle = handles.current.get(fieldName);
-      if (handle === undefined) {
+      // A disabled field is neither validated nor collected, whether it left the order or
+      // stayed registered and reported it.
+      if (handle === undefined || handle.isDisabled?.() === true) {
         continue;
       }
       const error = handle.validate();
@@ -358,13 +384,13 @@ export function Form({
           // Not `accessible`, so every item Link stays separately focusable.
           <View testID="Form.errorSummary" accessibilityLiveRegion="assertive" style={styles.summary}>
             <Stack gap="tight" overrides={summaryGapOverrides}>
-              <Text ref={headingRef} tone="danger" weight="semibold">
+              <Text ref={headingRef} tone="danger" weight="semibold" overrides={SUMMARY_LINE_HEIGHT}>
                 {heading}
               </Text>
               <Stack gap="tight" overrides={summaryGapOverrides}>
                 {errorEntries.map((entry) =>
                   entry.registered ? (
-                    <Text key={entry.name} tone="danger">
+                    <Text key={entry.name} tone="danger" overrides={SUMMARY_LINE_HEIGHT}>
                       <Link
                         href={entry.name}
                         label={entry.text}
@@ -377,7 +403,7 @@ export function Form({
                       />
                     </Text>
                   ) : (
-                    <Text key={entry.name} tone="danger">
+                    <Text key={entry.name} tone="danger" overrides={SUMMARY_LINE_HEIGHT}>
                       {entry.text}
                     </Text>
                   ),

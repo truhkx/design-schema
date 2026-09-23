@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -24,8 +25,8 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container><Text>Container content.</Text></Container>",
-        "lit": "<ds-container>\n  <ds-text>Container content</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container><Text>Container content</Text></Container>",
+        "lit": "<ds-container>\n  <ds-text>Container content.</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container>{typeof 'Container content.' === 'string' ? <Text>{'Container content.'}</Text> : 'Container content.'}</Container>",
         "swift": null
       },
       "stories": {
@@ -37,6 +38,7 @@
       "storyId": "container-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -56,8 +58,8 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"prose\"><Text>Container content.</Text></Container>",
-        "lit": "<ds-container width=\"prose\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"prose\"><Text>Container content</Text></Container>",
+        "lit": "<ds-container width=\"prose\">\n  <ds-text>Container content.</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"prose\">{typeof 'Container content.' === 'string' ? <Text>{'Container content.'}</Text> : 'Container content.'}</Container>",
         "swift": null
       },
       "stories": {
@@ -72,6 +74,7 @@
         "value": "prose"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -91,8 +94,8 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"content\"><Text>Container content.</Text></Container>",
-        "lit": "<ds-container width=\"content\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"content\"><Text>Container content</Text></Container>",
+        "lit": "<ds-container width=\"content\">\n  <ds-text>Container content.</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"content\">{typeof 'Container content.' === 'string' ? <Text>{'Container content.'}</Text> : 'Container content.'}</Container>",
         "swift": null
       },
       "stories": {
@@ -107,6 +110,7 @@
         "value": "content"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -126,8 +130,8 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"page\"><Text>Container content.</Text></Container>",
-        "lit": "<ds-container width=\"page\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"page\"><Text>Container content</Text></Container>",
+        "lit": "<ds-container width=\"page\">\n  <ds-text>Container content.</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"page\">{typeof 'Container content.' === 'string' ? <Text>{'Container content.'}</Text> : 'Container content.'}</Container>",
         "swift": null
       },
       "stories": {
@@ -142,6 +146,7 @@
         "value": "page"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -161,8 +166,8 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"full\"><Text>Container content.</Text></Container>",
-        "lit": "<ds-container width=\"full\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"full\"><Text>Container content</Text></Container>",
+        "lit": "<ds-container width=\"full\">\n  <ds-text>Container content.</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"full\">{typeof 'Container content.' === 'string' ? <Text>{'Container content.'}</Text> : 'Container content.'}</Container>",
         "swift": null
       },
       "stories": {
@@ -177,6 +182,7 @@
         "value": "full"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -196,8 +202,8 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container gutter=\"narrow\"><Text>Container content.</Text></Container>",
-        "lit": "<ds-container gutter=\"narrow\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"narrow\"><Text>Container content</Text></Container>",
+        "lit": "<ds-container gutter=\"narrow\">\n  <ds-text>Container content.</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"narrow\">{typeof 'Container content.' === 'string' ? <Text>{'Container content.'}</Text> : 'Container content.'}</Container>",
         "swift": null
       },
       "stories": {
@@ -212,6 +218,7 @@
         "value": "narrow"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -231,8 +238,8 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container gutter=\"default\"><Text>Container content.</Text></Container>",
-        "lit": "<ds-container gutter=\"default\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"default\"><Text>Container content</Text></Container>",
+        "lit": "<ds-container gutter=\"default\">\n  <ds-text>Container content.</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"default\">{typeof 'Container content.' === 'string' ? <Text>{'Container content.'}</Text> : 'Container content.'}</Container>",
         "swift": null
       },
       "stories": {
@@ -247,6 +254,7 @@
         "value": "default"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -266,8 +274,8 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container gutter=\"wide\"><Text>Container content.</Text></Container>",
-        "lit": "<ds-container gutter=\"wide\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"wide\"><Text>Container content</Text></Container>",
+        "lit": "<ds-container gutter=\"wide\">\n  <ds-text>Container content.</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"wide\">{typeof 'Container content.' === 'string' ? <Text>{'Container content.'}</Text> : 'Container content.'}</Container>",
         "swift": null
       },
       "stories": {
@@ -282,6 +290,7 @@
         "value": "wide"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -301,8 +310,8 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container gutter=\"none\"><Text>Container content.</Text></Container>",
-        "lit": "<ds-container gutter=\"none\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"none\"><Text>Container content</Text></Container>",
+        "lit": "<ds-container gutter=\"none\">\n  <ds-text>Container content.</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"none\">{typeof 'Container content.' === 'string' ? <Text>{'Container content.'}</Text> : 'Container content.'}</Container>",
         "swift": null
       },
       "stories": {
@@ -317,6 +326,7 @@
         "value": "none"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -336,8 +346,8 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container align=\"center\"><Text>Container content.</Text></Container>",
-        "lit": "<ds-container align=\"center\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container align=\"center\"><Text>Container content</Text></Container>",
+        "lit": "<ds-container align=\"center\">\n  <ds-text>Container content.</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container align=\"center\">{typeof 'Container content.' === 'string' ? <Text>{'Container content.'}</Text> : 'Container content.'}</Container>",
         "swift": null
       },
       "stories": {
@@ -352,6 +362,7 @@
         "value": "center"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -371,8 +382,8 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container align=\"start\"><Text>Container content.</Text></Container>",
-        "lit": "<ds-container align=\"start\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container align=\"start\"><Text>Container content</Text></Container>",
+        "lit": "<ds-container align=\"start\">\n  <ds-text>Container content.</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container align=\"start\">{typeof 'Container content.' === 'string' ? <Text>{'Container content.'}</Text> : 'Container content.'}</Container>",
         "swift": null
       },
       "stories": {
@@ -387,6 +398,7 @@
         "value": "start"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -406,7 +418,7 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container element=\"div\"><Text>Container content.</Text></Container>",
-        "lit": "<ds-container element=\"div\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "lit": "<ds-container element=\"div\">\n  <ds-text>Container content.</ds-text>\n</ds-container>",
         "rn": null,
         "swift": null
       },
@@ -422,6 +434,7 @@
         "value": "div"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -441,7 +454,7 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container element=\"main\"><Text>Container content.</Text></Container>",
-        "lit": "<ds-container element=\"main\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "lit": "<ds-container element=\"main\">\n  <ds-text>Container content.</ds-text>\n</ds-container>",
         "rn": null,
         "swift": null
       },
@@ -457,6 +470,7 @@
         "value": "main"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -476,7 +490,7 @@
       },
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container element=\"section\"><Text>Container content.</Text></Container>",
-        "lit": "<ds-container element=\"section\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
+        "lit": "<ds-container element=\"section\">\n  <ds-text>Container content.</ds-text>\n</ds-container>",
         "rn": null,
         "swift": null
       },
@@ -492,6 +506,7 @@
         "value": "section"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -512,7 +527,7 @@
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"content\"><Text>A Stack of page regions</Text></Container>",
         "lit": "<ds-container width=\"content\">\n  <ds-text>A Stack of page regions</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"content\"><Text>A Stack of page regions</Text></Container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"content\">{typeof 'A Stack of page regions' === 'string' ? <Text>{'A Stack of page regions'}</Text> : 'A Stack of page regions'}</Container>",
         "swift": null
       },
       "stories": {
@@ -527,6 +542,7 @@
         "value": "content"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -547,7 +563,7 @@
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"prose\"><Text>An article</Text></Container>",
         "lit": "<ds-container width=\"prose\">\n  <ds-text>An article</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"prose\"><Text>An article</Text></Container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"prose\">{typeof 'An article' === 'string' ? <Text>{'An article'}</Text> : 'An article'}</Container>",
         "swift": null
       },
       "stories": {
@@ -562,6 +578,7 @@
         "value": "prose"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -582,7 +599,7 @@
       "snippets": {
         "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"prose\" gutter=\"none\"><Text>A narrower section</Text></Container>",
         "lit": "<ds-container width=\"prose\" gutter=\"none\">\n  <ds-text>A narrower section</ds-text>\n</ds-container>",
-        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"prose\" gutter=\"none\"><Text>A narrower section</Text></Container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"prose\" gutter=\"none\">{typeof 'A narrower section' === 'string' ? <Text>{'A narrower section'}</Text> : 'A narrower section'}</Container>",
         "swift": null
       },
       "stories": {
@@ -594,6 +611,7 @@
       "storyId": "container-react--nested-section",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     }
   ]

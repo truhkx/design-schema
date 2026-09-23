@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -49,6 +50,7 @@
       "storyId": "radiogroup-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -96,6 +98,7 @@
         "value": "vertical"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -120,7 +123,7 @@
       },
       "snippets": {
         "react": "import { RadioGroup } from '@design-schema/react';\n\n<RadioGroup\n  label=\"Send a receipt\"\n  name=\"receipt\"\n  options={[\n    { value: 'yes', label: 'Yes' },\n    { value: 'no', label: 'No' },\n  ]}\n  orientation=\"horizontal\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { RadioGroupOption } from '@design-schema/lit';\n\nconst shippingOptions: RadioGroupOption[] = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3 to 5 business days' },\n  { value: 'express', label: 'Express', description: 'Next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n];\n\nhtml`\n  <ds-radio-group\n    label=\"Shipping method\"\n    name=\"shipping\"\n    .options=${shippingOptions}\n    orientation=\"horizontal\"\n  ></ds-radio-group>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-radio-group\n        label=\"Send a receipt\"\n        name=\"receipt\"\n        .options=${[\n    { value: 'yes', label: 'Yes' },\n    { value: 'no', label: 'No' },\n  ]}\n        orientation=\"horizontal\"\n      ></ds-radio-group>\n`;",
         "rn": "import { RadioGroup } from '@design-schema/rn';\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    { value: 'yes', label: 'Yes' },\n    { value: 'no', label: 'No' },\n  ]}\n  orientation=\"horizontal\"\n/>",
         "swift": null
       },
@@ -133,6 +136,7 @@
       "storyId": "radiogroup-react--orientation-horizontal",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -177,6 +181,7 @@
       "storyId": "radiogroup-react--shipping-method",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -214,6 +219,7 @@
       "storyId": "radiogroup-react--horizontal-pair",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -252,6 +258,7 @@
       "storyId": "radiogroup-react--required-with-a-group-error",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -291,51 +298,8 @@
       "storyId": "radiogroup-react--with-a-disabled-option",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "label": "Shipping method",
-        "name": "shipping",
-        "options": [
-          {
-            "value": "standard",
-            "label": "Standard",
-            "description": "Free, 3 to 5 business days"
-          },
-          {
-            "value": "express",
-            "label": "Express",
-            "description": "Next business day"
-          },
-          {
-            "value": "pickup",
-            "label": "Pick up in store",
-            "description": "Ready in 2 hours"
-          }
-        ],
-        "orientation": "vertical",
-        "required": false,
-        "invalid": false,
-        "disabled": false
-      },
-      "snippets": {
-        "react": "import { RadioGroup } from '@design-schema/react';\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    { value: 'standard', label: 'Standard', description: 'Free, 3 to 5 business days' },\n    { value: 'express', label: 'Express', description: 'Next business day' },\n    { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n  ]}\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { RadioGroupOption } from '@design-schema/lit';\n\nconst shippingOptions: RadioGroupOption[] = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3 to 5 business days' },\n  { value: 'express', label: 'Express', description: 'Next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n];\n\nhtml`\n  <ds-radio-group label=\"Shipping method\" name=\"shipping\" .options=${shippingOptions}></ds-radio-group>\n`;",
-        "rn": "import { RadioGroup } from '@design-schema/rn';\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    { value: 'standard', label: 'Standard', description: 'Free, 3 to 5 business days' },\n    { value: 'express', label: 'Express', description: 'Next business day' },\n    { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n  ]}\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": "Keyboard",
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "radiogroup-react--keyboard",
-      "sweep": null,
-      "decorated": false,
-      "primary": false
     },
     {
       "title": "Required",
@@ -372,7 +336,7 @@
       },
       "stories": {
         "react": "Required",
-        "lit": "RequiredTrue",
+        "lit": "Required",
         "rn": "Required",
         "swift": null
       },
@@ -382,6 +346,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -419,7 +384,7 @@
       },
       "stories": {
         "react": "Invalid",
-        "lit": "InvalidTrue",
+        "lit": "Invalid",
         "rn": "Invalid",
         "swift": null
       },
@@ -429,6 +394,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -467,7 +433,7 @@
       },
       "stories": {
         "react": "Disabled",
-        "lit": "DisabledTrue",
+        "lit": "Disabled",
         "rn": "Disabled",
         "swift": null
       },
@@ -477,6 +443,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -509,7 +476,7 @@
       },
       "snippets": {
         "react": "import { RadioGroup } from '@design-schema/react';\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    { value: 'standard', label: 'Standard', description: 'Free, 3 to 5 business days' },\n    { value: 'express', label: 'Express', description: 'Next business day' },\n    { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n  ]}\n  description=\"Delivery times are estimates from the day the order ships.\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { RadioGroupOption } from '@design-schema/lit';\n\nconst shippingOptions: RadioGroupOption[] = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3 to 5 business days' },\n  { value: 'express', label: 'Express', description: 'Next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n];\n\nhtml`\n  <ds-radio-group\n    label=\"Shipping method\"\n    name=\"shipping\"\n    .options=${shippingOptions}\n    description=\"Delivery times are estimates.\"\n  ></ds-radio-group>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { RadioGroupOption } from '@design-schema/lit';\n\nconst shippingOptions: RadioGroupOption[] = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3 to 5 business days' },\n  { value: 'express', label: 'Express', description: 'Next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n];\n\nhtml`\n  <ds-radio-group\n    label=\"Shipping method\"\n    name=\"shipping\"\n    .options=${shippingOptions}\n    description=\"Delivery times are estimates from the day the order ships.\"\n  ></ds-radio-group>\n`;",
         "rn": "import { RadioGroup } from '@design-schema/rn';\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    { value: 'standard', label: 'Standard', description: 'Free, 3 to 5 business days' },\n    { value: 'express', label: 'Express', description: 'Next business day' },\n    { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n  ]}\n  description=\"Delivery times are estimates.\"\n/>",
         "swift": null
       },
@@ -522,6 +489,7 @@
       "storyId": "radiogroup-react--with-description",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -554,19 +522,20 @@
       },
       "snippets": {
         "react": "import { RadioGroup } from '@design-schema/react';\n\n<RadioGroup\n  label=\"Shipping method\"\n  name=\"shipping\"\n  options={[\n    { value: 'standard', label: 'Standard', description: 'Free, 3 to 5 business days' },\n    { value: 'express', label: 'Express', description: 'Next business day' },\n    { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n  ]}\n  value=\"express\"\n/>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { RadioGroupOption } from '@design-schema/lit';\n\nconst shippingOptions: RadioGroupOption[] = [\n  { value: 'standard', label: 'Standard', description: 'Free, 3 to 5 business days' },\n  { value: 'express', label: 'Express', description: 'Next business day' },\n  { value: 'pickup', label: 'Pick up in store', description: 'Ready in 2 hours' },\n];\n\nhtml`\n  <ds-radio-group label=\"Shipping method\" name=\"shipping\" .options=${shippingOptions} value=\"express\"></ds-radio-group>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Controlled",
-        "lit": null,
+        "lit": "Controlled",
         "rn": null,
         "swift": null
       },
       "storyId": "radiogroup-react--controlled",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

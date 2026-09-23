@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -29,6 +30,7 @@
       "storyId": "toast-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -56,6 +58,7 @@
         "value": "neutral"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -83,6 +86,7 @@
         "value": "success"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -110,6 +114,7 @@
         "value": "warning"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -122,7 +127,7 @@
       "snippets": {
         "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Message sent\" tone=\"danger\" />",
         "lit": "<ds-toast message=\"Message sent\" tone=\"danger\"></ds-toast>",
-        "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast message=\"Upload failed\" tone=\"danger\" duration=\"persistent\" />",
+        "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast message=\"Upload failed\" tone=\"danger\" />",
         "swift": null
       },
       "stories": {
@@ -137,6 +142,7 @@
         "value": "danger"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -165,6 +171,7 @@
         "value": "short"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -193,6 +200,7 @@
         "value": "long"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -206,7 +214,7 @@
       "snippets": {
         "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Message sent\" duration=\"persistent\" />",
         "lit": "<ds-toast message=\"Message sent\" duration=\"persistent\"></ds-toast>",
-        "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast message=\"3 files deleted\" duration=\"persistent\" actionLabel=\"Undo\" />",
+        "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast message=\"Message sent\" duration=\"persistent\" />",
         "swift": null
       },
       "stories": {
@@ -221,6 +229,7 @@
         "value": "persistent"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -235,7 +244,7 @@
       "snippets": {
         "react": "import { Toast } from '@design-schema/react';\n\n<Toast\n  message=\"3 files moved to Archive\"\n  actionLabel=\"Undo\"\n  duration=\"persistent\"\n/>",
         "lit": "<ds-toast message=\"3 files moved to Archive\" action-label=\"Undo\" duration=\"persistent\"></ds-toast>",
-        "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast\n  message=\"3 files moved to Archive\"\n  duration=\"persistent\"\n  actionLabel=\"Undo\"\n/>",
+        "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast\n  message=\"3 files moved to Archive\"\n  actionLabel=\"Undo\"\n  duration=\"persistent\"\n/>",
         "swift": null
       },
       "stories": {
@@ -250,6 +259,7 @@
         "value": "persistent"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -277,6 +287,7 @@
         "value": "success"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -285,13 +296,12 @@
         "message": "Export ready",
         "tone": "neutral",
         "dismissible": true,
-        "actionLabel": "View",
-        "duration": "long"
+        "actionLabel": "View"
       },
       "snippets": {
-        "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Export ready\" actionLabel=\"View\" duration=\"long\" />",
-        "lit": "<ds-toast message=\"Export ready\" action-label=\"View\" duration=\"long\"></ds-toast>",
-        "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast message=\"Export ready\" duration=\"long\" actionLabel=\"View\" />",
+        "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Export ready\" actionLabel=\"View\" />",
+        "lit": "<ds-toast message=\"Export ready\" action-label=\"View\"></ds-toast>",
+        "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast message=\"Export ready\" actionLabel=\"View\" />",
         "swift": null
       },
       "stories": {
@@ -301,12 +311,10 @@
         "swift": null
       },
       "storyId": "toast-react--background-result",
-      "sweep": {
-        "prop": "duration",
-        "value": "long"
-      },
+      "sweep": null,
       "decorated": false,
-      "primary": false
+      "harness": null,
+      "primary": true
     },
     {
       "title": "Failed Upload",
@@ -320,7 +328,7 @@
       "snippets": {
         "react": "import { Toast } from '@design-schema/react';\n\n<Toast\n  message=\"Upload failed\"\n  tone=\"danger\"\n  actionLabel=\"Retry\"\n  duration=\"persistent\"\n/>",
         "lit": "<ds-toast message=\"Upload failed\" tone=\"danger\" action-label=\"Retry\" duration=\"persistent\"></ds-toast>",
-        "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast\n  message=\"Upload failed\"\n  tone=\"danger\"\n  duration=\"persistent\"\n  actionLabel=\"Retry\"\n/>",
+        "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast\n  message=\"Upload failed\"\n  tone=\"danger\"\n  actionLabel=\"Retry\"\n  duration=\"persistent\"\n/>",
         "swift": null
       },
       "stories": {
@@ -332,6 +340,7 @@
       "storyId": "toast-react--failed-upload",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -359,30 +368,7 @@
         "value": false
       },
       "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "message": "Message sent",
-        "tone": "neutral",
-        "dismissible": true
-      },
-      "snippets": {
-        "react": "import { useEffect, type ReactElement } from 'react';\nimport { ToastRegion, dismiss, toast } from '@design-schema/react';\n\nfunction ToastKeyboardHarness(): ReactElement {\n  useEffect(() => {\n    void toast({ toastId: 'keyboard-undo', message: '3 files moved to Archive', actionLabel: 'Undo', duration: 'persistent' });\n    void toast({ toastId: 'keyboard-view', message: 'Export ready', actionLabel: 'View', duration: 'persistent' });\n    return () => dismiss();\n  }, []);\n  return <ToastRegion />;\n}\n\n<ToastKeyboardHarness />",
-        "lit": "<div style=\"display: flex; gap: var(--space-md);\">\n  <button type=\"button\">Before</button>\n  <ds-toast-region style=\"position: static; inset: auto;\">\n    <ds-toast message=\"3 files moved to Archive\" action-label=\"Undo\" duration=\"persistent\"></ds-toast>\n  </ds-toast-region>\n  <button type=\"button\">After</button>\n</div>",
-        "rn": "import * as React from 'react';\nimport { Button, Stack, Toast } from '@design-schema/rn';\n\nfunction Demo(): React.JSX.Element {\n  const [visible, setVisible] = React.useState(true);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Show toasts\" onPress={() => setVisible(true)} />\n      {visible ? (\n        <Stack gap=\"tight\" align=\"start\">\n          <Toast message=\"3 files deleted\" actionLabel=\"Undo\" duration=\"persistent\" onDismiss={() => setVisible(false)} />\n          <Toast message=\"Export ready\" tone=\"success\" actionLabel=\"View\" duration=\"persistent\" />\n        </Stack>\n      ) : null}\n    </Stack>\n  );\n}\n\n<Demo />",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": "Keyboard",
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "toast-react--keyboard",
-      "sweep": null,
-      "decorated": false,
+      "harness": null,
       "primary": true
     }
   ]

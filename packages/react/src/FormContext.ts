@@ -12,8 +12,8 @@ export type FormValidateMode = 'submit' | 'blur' | 'change';
 export type FormFieldValue = string | number | boolean | string[] | [number, number] | undefined;
 
 /**
- * What an Input registers with its enclosing Form so the Form can collect
- * values, run validation, and move focus without reaching into the DOM.
+ * What a field registers with its enclosing Form so the Form can collect values, run validation,
+ * and move focus without reaching into the DOM.
  */
 export interface FormFieldRegistration {
   /** Field name; the key used in `onSubmit(values)` and `onInvalid(errors)`. */
@@ -24,7 +24,7 @@ export interface FormFieldRegistration {
   label: string;
   /** Current value read from the field. `undefined` leaves the field out of the submitted values. */
   getValue(): FormFieldValue;
-  /** Disabled fields are skipped by validation and omitted from values. */
+  /** Disabled fields are skipped by validation and omitted from values and from `order`. */
   isDisabled(): boolean;
   /** Returns an error message, or `null` when the field is valid. */
   validate(): string | null;
@@ -42,16 +42,33 @@ export interface FormContextValue {
   validateMode: FormValidateMode;
   /** `true` after a failed submission, until a successful one resets it. */
   submitFailed: boolean;
+  /**
+   * `true` while the Form renders an error summary, so a field can stay silent about its own error
+   * while the Form announces every one of them.
+   */
+  errorSummary: boolean;
   /** Same as `validateMode`; read by fields generated before `submitFailed` existed. */
   validate: FormValidateMode;
   /** Base for generated ids: the Form's `name`, or a generated unique id when it has none. */
   idBase: string | undefined;
   /** Errors currently held by the Form, keyed by field name. */
   errors: Readonly<Record<string, string>>;
+  /**
+   * Enabled registered fields in document order, by name — what gives a field its "next" key.
+   * Web submits with Enter natively, so this is read at call time rather than tracked in state:
+   * it reflects the fields registered now, not a value a field can re-render on.
+   */
+  order(): readonly string[];
   /** Registers a field; returns the matching unregister function. */
   register(field: FormFieldRegistration): () => void;
   /** Re-runs validation for one field and updates `errors`. */
   validateField(name: string): void;
+  /**
+   * Validates every enabled field, updates `errors`, and reports a failure the way a failed submit
+   * does — `onInvalid`, then focus to the summary or to the first invalid field. Returns `true` when
+   * every field is valid. A disabled Form has no enabled fields, so it reports valid and fires nothing.
+   */
+  reportValidity(): boolean;
 }
 
 export const FormContext: Context<FormContextValue | null> = createContext<FormContextValue | null>(null);

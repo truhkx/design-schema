@@ -67,7 +67,10 @@ What has been verified, and where: CI (`.github/workflows/ci.yml`) runs `pnpm ch
 pnpm check        # derive themes, resolve tokens, validate all docs, build prompts, check contrast
 pnpm themes       # just the theme derivation + resolve
 pnpm tokens       # build tokens with Style Dictionary
-pnpm docs         # run the docs site locally (http://localhost:4321)
+pnpm dev          # rebuild @design-schema/react, then run the public website (apps/website) — this is what deploys (http://localhost:4321)
+pnpm site:dev     # run the contributor reference site (site/, Starlight) locally; not deployed (also http://localhost:4321)
+                  #   both are Astro on 4321 by default; run both and whichever starts second moves to 4322 —
+                  #   check the URL in its console before reviewing, or you are looking at the other app
 pnpm storybook    # React (6007) + Lit (6008) + React Native via react-native-web (6009), composed at http://localhost:6006
 pnpm storybook:device # the same React Native stories on a phone (Expo Go) for VoiceOver / TalkBack; see below
 pnpm typecheck    # tsc --noEmit in every package
@@ -76,7 +79,8 @@ pnpm test:tools   # Vitest: color math, the token resolver, theme derivation, co
 pnpm gates:behavior # derive generated/behavior/ from the docs' scenarios, then run those tests in packages/react, lit and rn
                   #   (Lit runs them in a browser: `pnpm exec playwright install chromium` once)
 pnpm gates        # every code gate on committed code, no model
-pnpm build        # pnpm check, pnpm tokens, lint:literals, generate:check, then the docs site build (pnpm --filter site build)
+pnpm build        # pnpm check, pnpm tokens, lint:literals, generate:check, then rebuild @design-schema/react and the public website (pnpm --filter website build)
+pnpm site:build   # the contributor reference site build (pnpm --filter site build); not deployed
 pnpm generate --component <Name>   # regenerate one component on web, lit and rn (calls a model; parses first)
 pnpm generate --stale              # regenerate every target whose doc changed (calls a model)
 pnpm regen --dry-run               # print the full-regeneration plan and every command, start nothing

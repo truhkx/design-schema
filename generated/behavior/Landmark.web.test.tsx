@@ -33,8 +33,12 @@ describe('Landmark', () => {
     expect(screen.getByRole('search')).toBeInTheDocument();
   });
   test('main-is-the-primary-content-landmark', async () => {
-    const s = setup({"role": "main"});
+    const s = setup({"role": "main", "label": ""});
     expect(screen.getByRole('main')).toBeInTheDocument();
+  });
+  test('a-label-is-dropped-on-a-role-that-refuses-one', async () => {
+    const s = setup({"role": "banner", "label": "Site header"});
+    expect(s.region()).not.toHaveAttribute("aria-label");
   });
   test('a-region-is-named-by-its-label', async () => {
     const s = setup({"role": "region", "label": "Related articles"});
@@ -42,7 +46,7 @@ describe('Landmark', () => {
     expect(s.region()).toHaveAttribute("aria-label", "Related articles");
   });
   test('an-overridden-element-still-carries-its-role', async () => {
-    const s = setup({"role": "banner", "as": "div"});
+    const s = setup({"role": "banner", "as": "div", "label": ""});
     expect(s.region()).toHaveAttribute("role", "banner");
     expect(screen.getByRole('banner')).toBeInTheDocument();
   });

@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -35,6 +36,7 @@
       "storyId": "landmark-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -43,16 +45,14 @@
         "role": "banner",
         "children": {
           "$element": "Text",
-          "props": {
-            "weight": "semibold"
-          },
+          "props": {},
           "children": [
             "Site header"
           ]
         }
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"banner\"><Text weight=\"semibold\">Site header</Text></Landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"banner\"><Text>Site header</Text></Landmark>",
         "lit": "<ds-landmark role=\"banner\">\n  <ds-text>Site header</ds-text>\n</ds-landmark>",
         "rn": "import { Landmark } from '@design-schema/rn';\n\n<Landmark role=\"banner\">Primary links.</Landmark>",
         "swift": null
@@ -69,6 +69,7 @@
         "value": "banner"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -102,6 +103,7 @@
         "value": "navigation"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -109,18 +111,16 @@
       "args": {
         "role": "main",
         "children": {
-          "$element": "Heading",
-          "props": {
-            "level": "1"
-          },
+          "$element": "Text",
+          "props": {},
           "children": [
-            "Page title"
+            "Page content"
           ]
         }
       },
       "snippets": {
-        "react": "import { Landmark, Heading } from '@design-schema/react';\n\n<Landmark role=\"main\"><Heading level=\"1\">Page title</Heading></Landmark>",
-        "lit": "<ds-landmark role=\"main\">\n  <ds-text>The page content.</ds-text>\n</ds-landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"main\"><Text>Page content</Text></Landmark>",
+        "lit": "<ds-landmark role=\"main\">\n  <ds-text>Page content</ds-text>\n</ds-landmark>",
         "rn": "import { Landmark } from '@design-schema/rn';\n\n<Landmark role=\"main\">Primary links.</Landmark>",
         "swift": null
       },
@@ -136,13 +136,13 @@
         "value": "main"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
       "title": "Role Complementary",
       "args": {
         "role": "complementary",
-        "label": "Help",
         "children": {
           "$element": "Text",
           "props": {},
@@ -152,8 +152,8 @@
         }
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"complementary\" label=\"Help\"><Text>Sidebar content</Text></Landmark>",
-        "lit": "<ds-landmark role=\"complementary\" aria-label=\"Help\">\n  <ds-text>Sidebar content</ds-text>\n</ds-landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"complementary\"><Text>Sidebar content</Text></Landmark>",
+        "lit": "<ds-landmark role=\"complementary\">\n  <ds-text>Sidebar content</ds-text>\n</ds-landmark>",
         "rn": "import { Landmark } from '@design-schema/rn';\n\n<Landmark role=\"complementary\">Primary links.</Landmark>",
         "swift": null
       },
@@ -169,6 +169,7 @@
         "value": "complementary"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -177,16 +178,14 @@
         "role": "contentinfo",
         "children": {
           "$element": "Text",
-          "props": {
-            "size": "sm"
-          },
+          "props": {},
           "children": [
             "Site footer"
           ]
         }
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"contentinfo\"><Text size=\"sm\">Site footer</Text></Landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"contentinfo\"><Text>Site footer</Text></Landmark>",
         "lit": "<ds-landmark role=\"contentinfo\">\n  <ds-text>Site footer</ds-text>\n</ds-landmark>",
         "rn": "import { Landmark } from '@design-schema/rn';\n\n<Landmark role=\"contentinfo\">Primary links.</Landmark>",
         "swift": null
@@ -203,6 +202,7 @@
         "value": "contentinfo"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -214,13 +214,13 @@
           "$element": "Text",
           "props": {},
           "children": [
-            "Related articles"
+            "Section content"
           ]
         }
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"region\" label=\"Related articles\"><Text>Related articles</Text></Landmark>",
-        "lit": "<ds-landmark role=\"region\" aria-label=\"Related articles\">\n  <ds-text>A list of related articles.</ds-text>\n</ds-landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"region\" label=\"Related articles\"><Text>Section content</Text></Landmark>",
+        "lit": "<ds-landmark role=\"region\" aria-label=\"Related articles\">\n  <ds-text>Section content</ds-text>\n</ds-landmark>",
         "rn": "import { Landmark } from '@design-schema/rn';\n\n<Landmark role=\"region\" label=\"Related articles\">Primary links.</Landmark>",
         "swift": null
       },
@@ -236,13 +236,13 @@
         "value": "region"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
       "title": "Role Search",
       "args": {
         "role": "search",
-        "label": "Site",
         "children": {
           "$element": "Text",
           "props": {},
@@ -252,8 +252,8 @@
         }
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"search\" label=\"Site\"><Text>Search form</Text></Landmark>",
-        "lit": "<ds-landmark role=\"search\" aria-label=\"Site\">\n  <ds-text>Search form</ds-text>\n</ds-landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"search\"><Text>Search form</Text></Landmark>",
+        "lit": "<ds-landmark role=\"search\">\n  <ds-text>Search form</ds-text>\n</ds-landmark>",
         "rn": "import { Landmark } from '@design-schema/rn';\n\n<Landmark role=\"search\">Primary links.</Landmark>",
         "swift": null
       },
@@ -269,13 +269,14 @@
         "value": "search"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
       "title": "Role Form",
       "args": {
         "role": "form",
-        "label": "Feedback",
+        "label": "Sign in",
         "children": {
           "$element": "Text",
           "props": {},
@@ -285,8 +286,8 @@
         }
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"form\" label=\"Feedback\"><Text>Form fields</Text></Landmark>",
-        "lit": "<ds-landmark role=\"form\" aria-label=\"Feedback\">\n  <ds-text>Form fields</ds-text>\n</ds-landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"form\" label=\"Sign in\"><Text>Form fields</Text></Landmark>",
+        "lit": "<ds-landmark role=\"form\" aria-label=\"Sign in\">\n  <ds-text>Form fields</ds-text>\n</ds-landmark>",
         "rn": "import { Landmark } from '@design-schema/rn';\n\n<Landmark role=\"form\" label=\"Sign in\">Primary links.</Landmark>",
         "swift": null
       },
@@ -302,6 +303,7 @@
         "value": "form"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -332,6 +334,7 @@
       "storyId": "landmark-react--as-header",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -363,6 +366,7 @@
       "storyId": "landmark-react--as-nav",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -393,13 +397,13 @@
       "storyId": "landmark-react--as-main",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
       "title": "As Aside",
       "args": {
         "role": "complementary",
-        "label": "Help",
         "children": {
           "$element": "Text",
           "props": {},
@@ -410,7 +414,7 @@
         "as": "aside"
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"complementary\" label=\"Help\" as=\"aside\"><Text>Primary links.</Text></Landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"complementary\" as=\"aside\"><Text>Primary links.</Text></Landmark>",
         "lit": null,
         "rn": null,
         "swift": null
@@ -424,6 +428,7 @@
       "storyId": "landmark-react--as-aside",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -454,6 +459,7 @@
       "storyId": "landmark-react--as-footer",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -485,13 +491,13 @@
       "storyId": "landmark-react--as-section",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
       "title": "As Form",
       "args": {
         "role": "search",
-        "label": "Site",
         "children": {
           "$element": "Text",
           "props": {},
@@ -502,7 +508,7 @@
         "as": "form"
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"search\" label=\"Site\" as=\"form\"><Text>Primary links.</Text></Landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"search\" as=\"form\"><Text>Primary links.</Text></Landmark>",
         "lit": null,
         "rn": null,
         "swift": null
@@ -516,6 +522,7 @@
       "storyId": "landmark-react--as-form",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -546,6 +553,7 @@
       "storyId": "landmark-react--as-div",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -578,6 +586,7 @@
         "value": "main"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -611,6 +620,7 @@
         "value": "navigation"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -644,6 +654,7 @@
         "value": "region"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -674,6 +685,7 @@
       "storyId": "landmark-react--banner-that-is-not-the-page-header",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -690,20 +702,21 @@
         }
       },
       "snippets": {
-        "react": "import { Landmark, Heading, Text, Stack } from '@design-schema/react';\n\n<Stack gap=\"section\">\n  <Landmark role=\"banner\">\n    <Landmark role=\"navigation\" label=\"Main\">\n      <Text>Main navigation</Text>\n    </Landmark>\n  </Landmark>\n  <Landmark role=\"main\">\n    <Heading level=\"1\">Notifications</Heading>\n  </Landmark>\n  <Landmark role=\"complementary\" label=\"Help\">\n    <Text>Help panel</Text>\n  </Landmark>\n  <Landmark role=\"contentinfo\">\n    <Landmark role=\"navigation\" label=\"Footer\">\n      <Text size=\"sm\">Footer navigation</Text>\n    </Landmark>\n  </Landmark>\n</Stack>",
-        "lit": null,
+        "react": "import { Landmark, Heading, Text, Stack } from '@design-schema/react';\n\n<Stack gap=\"section\">\n  <Landmark role=\"banner\">\n    <Landmark role=\"navigation\" label=\"Main\">\n      <Text>Main navigation</Text>\n    </Landmark>\n  </Landmark>\n  <Landmark role=\"main\">\n    <Heading level=\"1\">Notifications</Heading>\n  </Landmark>\n  <Landmark role=\"complementary\" label=\"Help\">\n    <Text>Help panel</Text>\n  </Landmark>\n  <Landmark role=\"contentinfo\">\n    <Landmark role=\"navigation\" label=\"Footer\">\n      <Text>Footer navigation</Text>\n    </Landmark>\n  </Landmark>\n</Stack>",
+        "lit": "<ds-stack gap=\"section\">\n  <ds-landmark role=\"banner\">\n    <ds-landmark role=\"navigation\" aria-label=\"Main\">\n      <ds-text>Main navigation</ds-text>\n    </ds-landmark>\n  </ds-landmark>\n  <ds-landmark role=\"main\">\n    <ds-heading level=\"1\">Notifications</ds-heading>\n  </ds-landmark>\n  <ds-landmark role=\"complementary\" aria-label=\"Help\">\n    <ds-text>Help panel</ds-text>\n  </ds-landmark>\n  <ds-landmark role=\"contentinfo\">\n    <ds-landmark role=\"navigation\" aria-label=\"Footer\">\n      <ds-text>Footer navigation</ds-text>\n    </ds-landmark>\n  </ds-landmark>\n</ds-stack>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "PageSkeleton",
-        "lit": null,
+        "lit": "PageSkeleton",
         "rn": null,
         "swift": null
       },
       "storyId": "landmark-react--page-skeleton",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

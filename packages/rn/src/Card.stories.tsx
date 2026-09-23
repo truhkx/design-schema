@@ -50,9 +50,9 @@ export const PlanCard: Story = {
   args: { heading: 'Team plan', headingLevel: '3', children: 'What the plan includes' },
 };
 
-// `heading: undefined` clears the Default args' heading; the example has none.
+// `heading: ''` clears the Default args' heading; an empty string counts as omitted.
 export const DenseGridCard: Story = {
-  args: { heading: undefined, children: 'A search result', inset: 'sm', surface: 'subtle' },
+  args: { heading: '', children: 'A search result', inset: 'sm', surface: 'subtle' },
 };
 
 export const WholeCardIsALink: Story = {

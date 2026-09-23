@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -34,6 +35,7 @@
       "storyId": "progressbar-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -66,6 +68,7 @@
         "value": "neutral"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -98,6 +101,7 @@
         "value": "success"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -130,6 +134,7 @@
         "value": "danger"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -162,6 +167,7 @@
         "value": "none"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -194,6 +200,7 @@
         "value": "milestones"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -226,6 +233,7 @@
         "value": "complete"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -255,6 +263,7 @@
       "storyId": "progressbar-react--upload",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -284,6 +293,7 @@
       "storyId": "progressbar-react--long-import",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -313,6 +323,7 @@
       "storyId": "progressbar-react--finished",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -342,6 +353,7 @@
       "storyId": "progressbar-react--in-a-card",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -370,6 +382,7 @@
       "storyId": "progressbar-react--indeterminate",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -402,6 +415,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -424,7 +438,7 @@
       },
       "stories": {
         "react": "ShowValueFalse",
-        "lit": "HideValue",
+        "lit": "ShowValueFalse",
         "rn": "HideValue",
         "swift": null
       },
@@ -434,6 +448,7 @@
         "value": false
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -453,19 +468,20 @@
       },
       "snippets": {
         "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar\n  label=\"Importing contacts\"\n  value={3}\n  max={12}\n  formatValue={(value, _min, max) => `${value} of ${max} files`}\n/>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-progress-bar\n    label=\"Importing contacts\"\n    value=\"3\"\n    max=\"12\"\n    .formatValue=${((value, _min, max) => \\`${value} of ${max} files\\`)}\n  ></ds-progress-bar>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "CustomFormatValue",
-        "lit": null,
+        "lit": "CustomFormatValue",
         "rn": null,
         "swift": null
       },
       "storyId": "progressbar-react--custom-format-value",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -482,19 +498,20 @@
       },
       "snippets": {
         "react": "import { ProgressBar } from '@design-schema/react';\n\n<ProgressBar label=\"Uploading photos\" value={100} min={50} max={150} />",
-        "lit": null,
+        "lit": "<ds-progress-bar label=\"Uploading photos\" value=\"100\" min=\"50\" max=\"150\"></ds-progress-bar>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "NonZeroMin",
-        "lit": null,
+        "lit": "NonZeroMin",
         "rn": null,
         "swift": null
       },
       "storyId": "progressbar-react--non-zero-min",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

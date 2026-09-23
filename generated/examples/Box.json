@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -32,6 +33,7 @@
       "storyId": "box-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -62,6 +64,7 @@
         "value": "none"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -92,6 +95,7 @@
         "value": "sm"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -122,6 +126,7 @@
         "value": "md"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -152,6 +157,7 @@
         "value": "lg"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -182,6 +188,7 @@
         "value": "xl"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -213,6 +220,7 @@
         "value": "none"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -244,6 +252,7 @@
         "value": "sm"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -275,6 +284,7 @@
         "value": "md"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -306,6 +316,7 @@
         "value": "lg"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -337,6 +348,7 @@
         "value": "xl"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -368,6 +380,7 @@
         "value": "none"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -399,6 +412,7 @@
         "value": "sm"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -430,6 +444,7 @@
         "value": "md"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -461,6 +476,7 @@
         "value": "lg"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -492,6 +508,7 @@
         "value": "xl"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -522,6 +539,7 @@
         "value": "none"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -552,6 +570,7 @@
         "value": "default"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -582,6 +601,7 @@
         "value": "subtle"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -612,6 +632,7 @@
         "value": "strong"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -642,6 +663,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -672,6 +694,7 @@
         "value": "none"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -702,6 +725,7 @@
         "value": "sm"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -732,6 +756,7 @@
         "value": "md"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -762,6 +787,7 @@
         "value": "lg"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -792,6 +818,7 @@
         "value": "full"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -822,6 +849,7 @@
         "value": "div"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -852,6 +880,7 @@
         "value": "section"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -882,6 +911,7 @@
         "value": "article"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -912,6 +942,7 @@
         "value": "aside"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -942,6 +973,7 @@
         "value": "header"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -972,6 +1004,7 @@
         "value": "footer"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1002,6 +1035,7 @@
         "value": "main"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1032,6 +1066,7 @@
         "value": "nav"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1059,6 +1094,7 @@
       "storyId": "box-react--highlighted-panel",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -1086,6 +1122,7 @@
       "storyId": "box-react--bordered-row",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -1115,6 +1152,7 @@
       "storyId": "box-react--hero-band",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -1142,6 +1180,7 @@
       "storyId": "box-react--navigation-region",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     }
   ]

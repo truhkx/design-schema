@@ -54,7 +54,7 @@ async function useTheme(page: Page, theme: { id: string; title: string }) {
   await expect(page.locator('html')).toHaveAttribute('data-ds-theme', theme.id);
 }
 
-/** Light/dark is one attribute on <html> (Layout.astro); there is no visitor-facing switch yet. */
+/** Light/dark is one attribute on <html> (Layout.astro); mode.spec.ts drives the header's switch itself. */
 const useMode = (page: Page, mode: 'light' | 'dark') =>
   page.evaluate((value) => document.documentElement.setAttribute('data-mode', value), mode);
 

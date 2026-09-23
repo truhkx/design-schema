@@ -98,7 +98,9 @@ interface ResolvedOverrides {
   helper: TextOverrides | undefined;
 }
 
-function resolveOverrides(overrides: Partial<Record<SliderOverridableBinding, TokenRef | undefined>> | undefined): ResolvedOverrides {
+function resolveOverrides(
+  overrides: Partial<Record<SliderOverridableBinding, TokenRef | undefined>> | undefined,
+): ResolvedOverrides {
   if (!overrides) return { rootStyle: undefined, label: undefined, value: undefined, markLabel: undefined, helper: undefined };
   const rootStyle: Record<string, string> = {};
   const label: TextOverrides = {};
@@ -192,6 +194,7 @@ interface Thumb {
   /** `null` for a single slider; 0/1 for the low/high thumb of a range. */
   index: 0 | 1 | null;
   value: number;
+  /** The live constraint from the other thumb, so Home/End can never cross the thumbs. */
   ariaMin: number;
   ariaMax: number;
 }
@@ -252,14 +255,24 @@ export function Slider({
     if (isDev && !validBounds) console.warn(`Slider: \`max\` (${max}) must be greater than \`min\` (${min}).`);
   }, [validBounds, min, max]);
 
+  // A shape that disagrees with `range` falls back silently to that mode's default — no dev warning.
+  function normalize(candidate: SliderValue | undefined): SliderValue {
+    if (range) {
+      if (!Array.isArray(candidate)) return [min, max];
+      const lo = clamp(candidate[0], min, max);
+      return [lo, clamp(Math.max(candidate[1], lo), min, max)];
+    }
+    if (typeof candidate !== 'number') return min;
+    return clamp(candidate, min, max);
+  }
+
   // "The default": defaultValue when set, otherwise what `value` itself falls back to — clamped to
   // [min, max] so `required` and the initial value share one notion of it.
-  const given: SliderValue = defaultValue ?? (range ? [min, max] : min);
-  const fallback: SliderValue = Array.isArray(given)
-    ? [clamp(given[0], min, max), clamp(given[1], min, max)]
-    : clamp(given, min, max);
+  const fallback: SliderValue = normalize(defaultValue);
   const [internalValue, setInternalValue] = useState<SliderValue>(fallback);
-  const current: SliderValue = value !== undefined ? value : internalValue;
+  const current: SliderValue = normalize(value !== undefined ? value : internalValue);
+  // The comparison for "did the value change" is against the last value emitted; the displayed value
+  // resets from the prop on every render.
   const latestValue = useRef<SliderValue>(current);
   latestValue.current = current;
 
@@ -295,6 +308,8 @@ export function Slider({
       get label() {
         return latest.current.label;
       },
+      // The form value types have no number: a single value registers as its decimal string, a range
+      // as two strings, which is also what the hidden inputs submit.
       getValue: () => {
         const v = latestValue.current;
         return Array.isArray(v) ? [String(v[0]), String(v[1])] : String(v);
@@ -313,6 +328,8 @@ export function Slider({
 
   const precision = Math.max(decimalsOf(step), decimalsOf(min));
 
+  // The step grid is anchored at `min`; a trailing partial step still clamps to `max`, so the maximum
+  // is reachable by drag and click and not only by End.
   function snapToStep(raw: number): number {
     const clamped = clamp(raw, min, max);
     if (!(step > 0)) return clamped;
@@ -321,6 +338,7 @@ export function Slider({
   }
 
   const markValues = (marks ?? []).map((m) => m.value).sort((a, b) => a - b);
+  // Set without any `marks` the flag is inert: drag and click fall back to the step grid.
   const marksSnap = snapToMarks && markValues.length > 0;
 
   function snapToNearestMark(raw: number): number {
@@ -340,17 +358,18 @@ export function Slider({
     return [...markValues].reverse().find((v) => v < from) ?? min;
   }
 
-  const [low, high]: [number, number] = range && Array.isArray(current) ? current : [min, max];
-  const single = !range && typeof current === 'number' ? current : min;
+  const [low, high]: [number, number] = Array.isArray(current) ? current : [min, max];
+  const single = typeof current === 'number' ? current : min;
 
   function commit(index: 0 | 1 | null, next: number): void {
     const prev = latestValue.current;
     let nextValue: SliderValue;
     if (index === null) {
-      nextValue = next;
+      nextValue = clamp(next, min, max);
     } else {
+      // The thumbs cannot cross: the lower is clamped to the upper and vice versa.
       const [pLow, pHigh]: [number, number] = Array.isArray(prev) ? prev : [min, max];
-      nextValue = index === 0 ? [Math.min(next, pHigh), pHigh] : [pLow, Math.max(next, pLow)];
+      nextValue = index === 0 ? [clamp(Math.min(next, pHigh), min, max), pHigh] : [pLow, clamp(Math.max(next, pLow), min, max)];
     }
     if (sameValue(prev, nextValue)) return;
     latestValue.current = nextValue;
@@ -369,12 +388,16 @@ export function Slider({
 
   const percent = (v: number): number => (validBounds ? ((clamp(v, min, max) - min) / (max - min)) * 100 : 0);
 
+  const isRtl = (el: Element): boolean =>
+    typeof getComputedStyle === 'function' && getComputedStyle(el).direction === 'rtl';
+
+  /** Pointer math is logical: the ratio is mirrored in a right-to-left layout. */
   function valueAt(clientX: number): number {
     const track = trackRef.current;
     if (!track) return min;
     const rect = track.getBoundingClientRect();
     const ratio = rect.width === 0 ? 0 : (clientX - rect.left) / rect.width;
-    const logical = getComputedStyle(track).direction === 'rtl' ? 1 - ratio : ratio;
+    const logical = isRtl(track) ? 1 - ratio : ratio;
     return min + clamp(logical, 0, 1) * (max - min);
   }
 
@@ -384,7 +407,7 @@ export function Slider({
     if (isDisabled || event.button !== 0) return;
     event.preventDefault();
     const raw = valueAt(event.clientX);
-    // Nearest thumb; when the thumbs coincide, the side of the press decides.
+    // Nearest thumb; when the thumbs coincide, the side of the press decides (exactly on it, the low one).
     const index: 0 | 1 | null = range ? (raw > high || (raw > low && raw - low > high - raw) ? 1 : 0) : null;
     dragIndex.current = index;
     changedInInteraction.current = false;
@@ -412,13 +435,23 @@ export function Slider({
   };
 
   const handleKeyDown = (thumb: Thumb) => (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    // Keys are ignored while disabled — the page keeps its native scrolling.
+    if (isDisabled) return;
+    // ArrowLeft/ArrowRight are mirrored in a right-to-left layout, read from the thumb's computed
+    // `direction` at keydown; ArrowUp always increases, ArrowDown always decreases, and PageUp/PageDown
+    // are not mirrored.
+    const rtl = isRtl(event.currentTarget);
     let next: number;
     switch (event.key) {
       case 'ArrowRight':
+        next = snapToStep(thumb.value + (rtl ? -step : step));
+        break;
+      case 'ArrowLeft':
+        next = snapToStep(thumb.value + (rtl ? step : -step));
+        break;
       case 'ArrowUp':
         next = snapToStep(thumb.value + step);
         break;
-      case 'ArrowLeft':
       case 'ArrowDown':
         next = snapToStep(thumb.value - step);
         break;
@@ -428,17 +461,17 @@ export function Slider({
       case 'PageDown':
         next = pageFrom(thumb.value, -1);
         break;
+      // Home/End take the live constraint from the other thumb, so they can never cross the thumbs.
       case 'Home':
-        next = min;
+        next = thumb.ariaMin;
         break;
       case 'End':
-        next = max;
+        next = thumb.ariaMax;
         break;
       default:
         return;
     }
     event.preventDefault();
-    if (isDisabled) return;
     commit(thumb.index, next);
   };
 
@@ -453,7 +486,8 @@ export function Slider({
   const fillEnd = range ? percent(high) : percent(single);
   const describedBy = [description ? descriptionId : null, errorMessage ? errorId : null].filter(Boolean).join(' ') || undefined;
   const resolved = resolveOverrides(overrides);
-  const labelledMarks = (marks ?? []).some((m) => m.label);
+  const markList = marks ?? [];
+  const labelledMarks = markList.some((m) => m.label);
 
   const classes = ['ds-slider', isDisabled ? 'ds-slider--disabled' : null, isInvalid ? 'ds-slider--invalid' : null]
     .filter(Boolean)
@@ -463,22 +497,36 @@ export function Slider({
   // WCAG 1.4.3 exempts from contrast. aria-disabled (a global state) says so on the element that dims,
   // not only on the thumbs; without it the dimmed value text reads as failing text rather than inactive.
   return (
-    <div {...rest} ref={ref} data-ds="Slider" data-ds-field aria-disabled={isDisabled ? 'true' : undefined} className={classes} style={resolved.rootStyle}>
+    <div
+      {...rest}
+      ref={ref}
+      data-ds="Slider"
+      data-ds-field
+      aria-disabled={isDisabled ? 'true' : undefined}
+      className={classes}
+      style={resolved.rootStyle}
+    >
+      {/* label row: paints above the thumbs, so a press that lands on it never moves one */}
       <div className="ds-slider__header">
-        <span className="ds-slider__label" data-part="label">
-          <Text element="span" id={labelId} size="md" weight="medium" tone="default" overrides={resolved.label}>
-            {label}
-          </Text>
-        </span>
+        <Text
+          element="span"
+          id={labelId}
+          data-part="label"
+          size="md"
+          weight="medium"
+          tone="default"
+          overrides={resolved.label}
+        >
+          {label}
+        </Text>
         {showValue === 'always' ? (
-          <span className="ds-slider__value" data-part="valueText">
-            <Text element="span" size="sm" tone="default" overrides={resolved.value}>
-              {range ? COPY.rangeText.replace('{low}', format(low)).replace('{high}', format(high)) : format(single)}
-            </Text>
-          </span>
+          <Text element="span" data-part="valueText" size="sm" tone="default" overrides={resolved.value}>
+            {range ? COPY.rangeText.replace('{low}', format(low)).replace('{high}', format(high)) : format(single)}
+          </Text>
         ) : null}
       </div>
       <div className="ds-slider__control">
+        {/* track area: the pointer hit area; the thumbs' minTarget overflows it above and below */}
         <div
           className="ds-slider__area"
           onPointerDown={handlePointerDown}
@@ -494,7 +542,15 @@ export function Slider({
                 style={{ insetInlineStart: `${fillStart}%`, inlineSize: `${fillEnd - fillStart}%` }}
               />
             </div>
+            {markList.length > 0 ? (
+              <div className="ds-slider__tick-marks" data-part="tickMarks" aria-hidden="true">
+                {markList.map((mark) => (
+                  <span key={`dot-${mark.value}`} className="ds-slider__mark" style={{ insetInlineStart: `${percent(mark.value)}%` }} />
+                ))}
+              </div>
+            ) : null}
             {thumbs.map((thumb) => {
+              // Pressed or focused — plain pointer hover never shows the bubble.
               const bubbleVisible = activeKey === thumb.key || focusedKey === thumb.key;
               return (
                 <div
@@ -547,28 +603,18 @@ export function Slider({
             })}
           </div>
         </div>
-        {marks && marks.length > 0 ? (
-          <div
-            className={['ds-slider__tick-marks', labelledMarks ? 'ds-slider__tick-marks--labelled' : null].filter(Boolean).join(' ')}
-            data-part="tickMarks"
-            aria-hidden="true"
-          >
-            {marks.map((mark) => (
-              <span key={`dot-${mark.value}`} className="ds-slider__mark" style={{ insetInlineStart: `${percent(mark.value)}%` }} />
-            ))}
-            {labelledMarks ? (
-              <div className="ds-slider__mark-labels">
-                {marks.map((mark) =>
-                  mark.label ? (
-                    <span key={`label-${mark.value}`} className="ds-slider__mark-label" style={{ insetInlineStart: `${percent(mark.value)}%` }}>
-                      <Text element="span" size="xs" tone="muted" overrides={resolved.markLabel}>
-                        {mark.label}
-                      </Text>
-                    </span>
-                  ) : null,
-                )}
-              </div>
-            ) : null}
+        {/* mark label row: unparted, below the track area by markLabelGap, and painting above the thumbs */}
+        {labelledMarks ? (
+          <div className="ds-slider__mark-labels" aria-hidden="true">
+            {markList.map((mark) =>
+              mark.label ? (
+                <span key={`label-${mark.value}`} className="ds-slider__mark-label" style={{ insetInlineStart: `${percent(mark.value)}%` }}>
+                  <Text element="span" size="xs" tone="muted" overrides={resolved.markLabel}>
+                    {mark.label}
+                  </Text>
+                </span>
+              ) : null,
+            )}
           </div>
         ) : null}
       </div>
@@ -581,18 +627,16 @@ export function Slider({
         <input type="hidden" name={name} value={String(single)} disabled={isDisabled} />
       )}
       {description ? (
-        <span className="ds-slider__description" data-part="description">
-          <Text element="span" id={descriptionId} size="sm" tone="muted" overrides={resolved.helper}>
-            {description}
-          </Text>
-        </span>
+        <Text element="span" id={descriptionId} data-part="description" size="sm" tone="muted" overrides={resolved.helper}>
+          {description}
+        </Text>
       ) : null}
       {errorMessage ? (
-        <span className="ds-slider__error" data-part="errorMessage" role="alert">
-          <Text element="span" id={errorId} size="sm" tone="danger" overrides={resolved.helper}>
+        <div role="alert">
+          <Text element="span" id={errorId} data-part="errorMessage" size="sm" tone="danger" overrides={resolved.helper}>
             {errorMessage}
           </Text>
-        </span>
+        </div>
       ) : null}
     </div>
   );

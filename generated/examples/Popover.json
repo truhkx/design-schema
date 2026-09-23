@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -69,22 +70,20 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  open\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"3\"\n    placement=\"bottom-start\"\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": null,
-        "rn": null,
+        "lit": "Default",
+        "rn": "Default",
         "swift": null
       },
       "storyId": "popover-react--default",
-      "sweep": {
-        "prop": "open",
-        "value": true
-      },
+      "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -148,23 +147,21 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"2\"\n  placement=\"bottom-start\"\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"2\"\n    placement=\"bottom-start\"\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  headingLevel=\"2\"\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "HeadingLevel2",
-        "lit": null,
-        "rn": null,
+        "lit": "HeadingLevel2",
+        "rn": "HeadingLevel2",
         "swift": null
       },
       "storyId": "popover-react--heading-level-2",
-      "sweep": {
-        "prop": "headingLevel",
-        "value": "2"
-      },
+      "sweep": null,
       "decorated": false,
-      "primary": false
+      "harness": null,
+      "primary": true
     },
     {
       "title": "Heading Level 3",
@@ -227,23 +224,21 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"3\"\n  placement=\"bottom-start\"\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"3\"\n    placement=\"bottom-start\"\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  headingLevel=\"3\"\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "HeadingLevel3",
-        "lit": null,
-        "rn": null,
+        "lit": "HeadingLevel3",
+        "rn": "HeadingLevel3",
         "swift": null
       },
       "storyId": "popover-react--heading-level-3",
-      "sweep": {
-        "prop": "headingLevel",
-        "value": "3"
-      },
+      "sweep": null,
       "decorated": false,
-      "primary": false
+      "harness": null,
+      "primary": true
     },
     {
       "title": "Heading Level 4",
@@ -306,23 +301,21 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"4\"\n  placement=\"bottom-start\"\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"4\"\n    placement=\"bottom-start\"\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  headingLevel=\"4\"\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "HeadingLevel4",
-        "lit": null,
-        "rn": null,
+        "lit": "HeadingLevel4",
+        "rn": "HeadingLevel4",
         "swift": null
       },
       "storyId": "popover-react--heading-level-4",
-      "sweep": {
-        "prop": "headingLevel",
-        "value": "4"
-      },
+      "sweep": null,
       "decorated": false,
-      "primary": false
+      "harness": null,
+      "primary": true
     },
     {
       "title": "Placement Bottom Start",
@@ -385,23 +378,21 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"3\"\n    placement=\"bottom-start\"\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementBottomStart",
-        "lit": null,
+        "lit": "PlacementBottomStart",
         "rn": "PlacementBottomStart",
         "swift": null
       },
       "storyId": "popover-react--placement-bottom-start",
-      "sweep": {
-        "prop": "placement",
-        "value": "bottom-start"
-      },
+      "sweep": null,
       "decorated": false,
-      "primary": false
+      "harness": null,
+      "primary": true
     },
     {
       "title": "Placement Bottom",
@@ -464,23 +455,21 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom\"\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"3\"\n    placement=\"bottom\"\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom\"\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementBottom",
-        "lit": null,
+        "lit": "PlacementBottom",
         "rn": "PlacementBottom",
         "swift": null
       },
       "storyId": "popover-react--placement-bottom",
-      "sweep": {
-        "prop": "placement",
-        "value": "bottom"
-      },
+      "sweep": null,
       "decorated": false,
-      "primary": false
+      "harness": null,
+      "primary": true
     },
     {
       "title": "Placement Bottom End",
@@ -543,22 +532,20 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-end\"\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-end\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"3\"\n    placement=\"bottom-end\"\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-end\"\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementBottomEnd",
-        "lit": null,
+        "lit": "PlacementBottomEnd",
         "rn": "PlacementBottomEnd",
         "swift": null
       },
       "storyId": "popover-react--placement-bottom-end",
-      "sweep": {
-        "prop": "placement",
-        "value": "bottom-end"
-      },
+      "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -622,22 +609,20 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-start\"\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-start\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"3\"\n    placement=\"top-start\"\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-start\"\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementTopStart",
-        "lit": null,
+        "lit": "PlacementTopStart",
         "rn": "PlacementTopStart",
         "swift": null
       },
       "storyId": "popover-react--placement-top-start",
-      "sweep": {
-        "prop": "placement",
-        "value": "top-start"
-      },
+      "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -701,22 +686,20 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top\"\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"3\"\n    placement=\"top\"\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top\"\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementTop",
-        "lit": null,
+        "lit": "PlacementTop",
         "rn": "PlacementTop",
         "swift": null
       },
       "storyId": "popover-react--placement-top",
-      "sweep": {
-        "prop": "placement",
-        "value": "top"
-      },
+      "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -780,22 +763,20 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-end\"\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-end\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"3\"\n    placement=\"top-end\"\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-end\"\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementTopEnd",
-        "lit": null,
+        "lit": "PlacementTopEnd",
         "rn": "PlacementTopEnd",
         "swift": null
       },
       "storyId": "popover-react--placement-top-end",
-      "sweep": {
-        "prop": "placement",
-        "value": "top-end"
-      },
+      "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -859,22 +840,20 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"start\"\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"start\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"3\"\n    placement=\"start\"\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"start\"\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementStart",
-        "lit": null,
+        "lit": "PlacementStart",
         "rn": "PlacementStart",
         "swift": null
       },
       "storyId": "popover-react--placement-start",
-      "sweep": {
-        "prop": "placement",
-        "value": "start"
-      },
+      "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -938,22 +917,20 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"end\"\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"end\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"3\"\n    placement=\"end\"\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"end\"\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementEnd",
-        "lit": null,
+        "lit": "PlacementEnd",
         "rn": "PlacementEnd",
         "swift": null
       },
       "storyId": "popover-react--placement-end",
-      "sweep": {
-        "prop": "placement",
-        "value": "end"
-      },
+      "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1017,23 +994,21 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  dismissible={false}\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"3\"\n    placement=\"bottom-start\"\n    no-dismiss\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  dismissible={false}\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "NotDismissible",
-        "lit": null,
-        "rn": null,
+        "lit": "NotDismissible",
+        "rn": "NotDismissible",
         "swift": null
       },
       "storyId": "popover-react--not-dismissible",
-      "sweep": {
-        "prop": "dismissible",
-        "value": false
-      },
+      "sweep": null,
       "decorated": false,
-      "primary": true
+      "harness": null,
+      "primary": false
     },
     {
       "title": "With Arrow",
@@ -1096,23 +1071,21 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  showArrow\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"3\"\n    placement=\"bottom-start\"\n    show-arrow\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  showArrow\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "WithArrow",
-        "lit": null,
-        "rn": null,
+        "lit": "WithArrow",
+        "rn": "ShowArrow",
         "swift": null
       },
       "storyId": "popover-react--with-arrow",
-      "sweep": {
-        "prop": "showArrow",
-        "value": true
-      },
+      "sweep": null,
       "decorated": false,
-      "primary": true
+      "harness": null,
+      "primary": false
     },
     {
       "title": "Modal",
@@ -1175,99 +1148,21 @@
       },
       "snippets": {
         "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  modal\n>{filterForm}</OpenHarness>",
-        "lit": null,
-        "rn": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsPopover, PopoverOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<PopoverOpenChangeDetail>): void {\n  (event.currentTarget as DsPopover).open = event.detail.open;\n}\n\nhtml`\n  <ds-popover\n    heading=\"Filters\"\n    heading-level=\"3\"\n    placement=\"bottom-start\"\n    modal\n    open\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-form label=\"Filters\" name=\"filters\">\n      <ds-stack gap=\"normal\">\n        <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n        <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n      </ds-stack>\n      <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n    </ds-form>\n  </ds-popover>\n`;",
+        "rn": "import * as React from 'react';\nimport { Button, Checkbox, Form, Popover, type PopoverProps } from '@design-schema/rn';\n\nfunction OpenPopover(props: PopoverProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      {...props}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        props.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<OpenPopover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  modal\n><Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n  <Checkbox label=\"Open\" name=\"open\" />\n  <Checkbox label=\"Closed\" name=\"closed\" />\n</Form></OpenPopover>",
         "swift": null
       },
       "stories": {
         "react": "Modal",
-        "lit": null,
-        "rn": null,
+        "lit": "Modal",
+        "rn": "Modal",
         "swift": null
       },
       "storyId": "popover-react--modal",
-      "sweep": {
-        "prop": "modal",
-        "value": true
-      },
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Uncontrolled",
-      "args": {
-        "trigger": {
-          "$element": "Button",
-          "props": {
-            "label": "Filters",
-            "variant": "secondary"
-          },
-          "children": []
-        },
-        "children": {
-          "$element": "Form",
-          "props": {
-            "label": "Filters",
-            "actions": {
-              "$element": "Button",
-              "props": {
-                "label": "Apply",
-                "type": "submit",
-                "size": "sm"
-              },
-              "children": []
-            }
-          },
-          "children": [
-            {
-              "$element": "Stack",
-              "props": {
-                "gap": "normal"
-              },
-              "children": [
-                {
-                  "$element": "Switch",
-                  "props": {
-                    "label": "Only open items",
-                    "name": "openOnly"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Switch",
-                  "props": {
-                    "label": "Assigned to me",
-                    "name": "mine"
-                  },
-                  "children": []
-                }
-              ]
-            }
-          ]
-        },
-        "heading": "Filters",
-        "headingLevel": "3",
-        "placement": "bottom-start",
-        "modal": false,
-        "showArrow": false,
-        "dismissible": true
-      },
-      "snippets": {
-        "react": "import { Popover, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n>{filterForm}</Popover>",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "Uncontrolled",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "popover-react--uncontrolled",
       "sweep": null,
       "decorated": false,
-      "primary": true
+      "harness": null,
+      "primary": false
     },
     {
       "title": "Filter Panel",
@@ -1329,23 +1224,21 @@
         "dismissible": true
       },
       "snippets": {
-        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n>{filterForm}</OpenHarness>",
-        "lit": null,
+        "react": "import { Popover, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"3\"\n  placement=\"bottom-start\"\n  modal={false}\n  showArrow={false}\n  dismissible\n>{filterForm}</Popover>",
+        "lit": "<ds-popover heading=\"Filters\" heading-level=\"3\" placement=\"bottom-start\">\n  <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n  <ds-form label=\"Filters\" name=\"filters\">\n    <ds-stack gap=\"normal\">\n      <ds-switch label=\"Only open items\" name=\"openOnly\"></ds-switch>\n      <ds-switch label=\"Assigned to me\" name=\"mine\"></ds-switch>\n    </ds-stack>\n    <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n  </ds-form>\n</ds-popover>",
         "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
         "swift": null
       },
       "stories": {
         "react": "FilterPanel",
-        "lit": null,
+        "lit": "FilterPanel",
         "rn": "FilterPanel",
         "swift": null
       },
       "storyId": "popover-react--filter-panel",
-      "sweep": {
-        "prop": "placement",
-        "value": "bottom-start"
-      },
+      "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1403,27 +1296,28 @@
           ]
         },
         "headingLevel": "3",
-        "placement": "bottom-start",
+        "placement": "bottom",
         "modal": false,
         "showArrow": false,
         "dismissible": true
       },
       "snippets": {
-        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Icon, Stack } from '@design-schema/react';\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"16 September 2026\" variant=\"secondary\" leadingIcon={<Icon name=\"calendar\" inline />} />}\n  placement=\"bottom-start\"\n><Stack gap=\"tight\">\n<Button label=\"Today\" variant=\"ghost\" size=\"sm\" />\n<Button label=\"Tomorrow\" variant=\"ghost\" size=\"sm\" />\n<Button label=\"Next week\" variant=\"ghost\" size=\"sm\" />\n</Stack></OpenHarness>",
-        "lit": null,
-        "rn": "import * as React from 'react';\nimport { Button, Icon, Popover, Stack, useTheme } from '@design-schema/rn';\n\nfunction CalendarIcon(): React.JSX.Element {\n  const { tokens: t } = useTheme();\n  return <Icon name=\"calendar\" color={t.colorActionSecondaryForeground} />;\n}\n\n<Popover\n  trigger={<Button label=\"17 September 2026\" variant=\"secondary\" leadingIcon={<CalendarIcon />} />}\n  placement=\"bottom-start\"\n>\n  <Stack gap=\"tight\" align=\"start\">\n    <Button label=\"Today\" variant=\"ghost\" />\n    <Button label=\"Tomorrow\" variant=\"ghost\" />\n    <Button label=\"Next week\" variant=\"ghost\" />\n  </Stack>\n</Popover>",
+        "react": "import { Popover, Button, Icon, Stack } from '@design-schema/react';\n\n<Popover\n  trigger={<Button label=\"16 September 2026\" variant=\"secondary\" leadingIcon={<Icon name=\"calendar\" inline />} />}\n  headingLevel=\"3\"\n  placement=\"bottom\"\n  modal={false}\n  showArrow={false}\n  dismissible\n><Stack gap=\"tight\">\n  <Button label=\"Today\" variant=\"ghost\" size=\"sm\" />\n  <Button label=\"Tomorrow\" variant=\"ghost\" size=\"sm\" />\n  <Button label=\"Next week\" variant=\"ghost\" size=\"sm\" />\n</Stack></Popover>",
+        "lit": "<ds-popover heading-level=\"3\" placement=\"bottom\">\n  <ds-button slot=\"trigger\" variant=\"secondary\" label=\"16 September 2026\">\n    <ds-icon slot=\"leading-icon\" name=\"calendar\"></ds-icon>\n  </ds-button>\n  <ds-stack gap=\"tight\">\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Today\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Tomorrow\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Next week\"></ds-button>\n  </ds-stack>\n</ds-popover>",
+        "rn": "import * as React from 'react';\nimport { Button, Icon, Popover, Stack, useTheme } from '@design-schema/rn';\n\nfunction CalendarIcon(): React.JSX.Element {\n  const { tokens: t } = useTheme();\n  return <Icon name=\"calendar\" color={t.colorActionSecondaryForeground} />;\n}\n\n<Popover\n  trigger={<Button label=\"17 September 2026\" variant=\"secondary\" leadingIcon={<CalendarIcon />} />}\n  placement=\"bottom\"\n>\n  <Stack gap=\"tight\" align=\"start\">\n    <Button label=\"Today\" variant=\"ghost\" />\n    <Button label=\"Tomorrow\" variant=\"ghost\" />\n    <Button label=\"Next week\" variant=\"ghost\" />\n  </Stack>\n</Popover>",
         "swift": null
       },
       "stories": {
         "react": "DatePickerPanel",
-        "lit": null,
+        "lit": "DatePickerPanel",
         "rn": "DatePickerPanel",
         "swift": null
       },
       "storyId": "popover-react--date-picker-panel",
       "sweep": null,
       "decorated": false,
-      "primary": true
+      "harness": null,
+      "primary": false
     },
     {
       "title": "Required Step",
@@ -1465,29 +1359,27 @@
         },
         "heading": "Add member",
         "headingLevel": "3",
-        "placement": "bottom-start",
+        "placement": "bottom",
         "modal": true,
         "showArrow": false,
         "dismissible": true
       },
       "snippets": {
-        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Input } from '@design-schema/react';\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Add member\" variant=\"secondary\" />}\n  heading=\"Add member\"\n  placement=\"bottom-start\"\n  modal\n><Form label=\"Add member\" actions={<Button label=\"Save\" type=\"submit\" size=\"sm\" />}>\n<Input label=\"Email\" name=\"email\" type=\"email\" required />\n</Form></OpenHarness>",
-        "lit": null,
-        "rn": "import { Button, Input, Popover, Stack } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Add member\" />}\n  heading=\"Add member\"\n  placement=\"bottom-start\"\n  modal\n>\n  <Stack gap=\"normal\" align=\"start\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" />\n    <Button label=\"Save\" />\n  </Stack>\n</Popover>",
+        "react": "import { Popover, Button, Form, Input } from '@design-schema/react';\n\n<Popover\n  trigger={<Button label=\"Add member\" variant=\"secondary\" />}\n  heading=\"Add member\"\n  headingLevel=\"3\"\n  placement=\"bottom\"\n  modal\n  showArrow={false}\n  dismissible\n><Form label=\"Add member\" actions={<Button label=\"Save\" type=\"submit\" size=\"sm\" />}>\n  <Input label=\"Email\" name=\"email\" type=\"email\" required />\n</Form></Popover>",
+        "lit": "<ds-popover heading=\"Add member\" heading-level=\"3\" placement=\"bottom\" modal>\n  <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Add member\"></ds-button>\n  <ds-form label=\"Add member\" name=\"add-member\">\n    <ds-input label=\"Email\" name=\"email\" type=\"email\" required></ds-input>\n    <ds-button slot=\"actions\" type=\"submit\" variant=\"primary\" size=\"sm\" label=\"Save\"></ds-button>\n  </ds-form>\n</ds-popover>",
+        "rn": "import { Button, Input, Popover, Stack } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Add member\" />}\n  heading=\"Add member\"\n  placement=\"bottom\"\n  modal\n>\n  <Stack gap=\"normal\" align=\"start\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" />\n    <Button label=\"Save\" />\n  </Stack>\n</Popover>",
         "swift": null
       },
       "stories": {
         "react": "RequiredStep",
-        "lit": null,
+        "lit": "RequiredStep",
         "rn": "RequiredStep",
         "swift": null
       },
       "storyId": "popover-react--required-step",
-      "sweep": {
-        "prop": "modal",
-        "value": true
-      },
+      "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1534,94 +1426,21 @@
         "dismissible": true
       },
       "snippets": {
-        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Icon, Link, Text } from '@design-schema/react';\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Help\" variant=\"ghost\" iconOnly leadingIcon={<Icon name=\"info\" inline />} />}\n  placement=\"end\"\n  showArrow\n><Text size=\"sm\">\nFilters apply to every view in this project. <Link href=\"#\" label=\"Read the guide\" />\n</Text></OpenHarness>",
-        "lit": null,
+        "react": "import { Popover, Button, Icon, Link, Text } from '@design-schema/react';\n\n<Popover\n  trigger={<Button label=\"Help\" variant=\"ghost\" iconOnly leadingIcon={<Icon name=\"info\" inline />} />}\n  headingLevel=\"3\"\n  placement=\"end\"\n  modal={false}\n  showArrow\n  dismissible\n><Text size=\"sm\">\n  Filters apply to every view in this project. <Link href=\"#\" label=\"Read the guide\" />\n</Text></Popover>",
+        "lit": "<ds-popover heading-level=\"3\" placement=\"end\" show-arrow>\n  <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Help\">\n    <ds-icon slot=\"leading-icon\" name=\"info\"></ds-icon>\n  </ds-button>\n  <ds-text size=\"sm\">\n    Filters apply to every view in this project. <ds-link href=\"#\" label=\"Read the guide\"></ds-link>\n  </ds-text>\n</ds-popover>",
         "rn": "import * as React from 'react';\nimport { Button, Icon, Link, Popover, Text, useTheme } from '@design-schema/rn';\n\nfunction HelpIcon(): React.JSX.Element {\n  const { tokens: t } = useTheme();\n  return <Icon name=\"info\" color={t.colorActionGhostForeground} />;\n}\n\n<Popover\n  trigger={<Button label=\"Help\" variant=\"ghost\" iconOnly leadingIcon={<HelpIcon />} />}\n  placement=\"end\"\n  showArrow\n>\n  <Text>\n    Filters apply to every view in this project. <Link href=\"https://example.com/guide\" label=\"Read the guide\" />\n  </Text>\n</Popover>",
         "swift": null
       },
       "stories": {
         "react": "ContextualHelp",
-        "lit": null,
+        "lit": "ContextualHelp",
         "rn": "ContextualHelp",
         "swift": null
       },
       "storyId": "popover-react--contextual-help",
       "sweep": null,
       "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "trigger": {
-          "$element": "Button",
-          "props": {
-            "label": "Filters",
-            "variant": "secondary"
-          },
-          "children": []
-        },
-        "children": {
-          "$element": "Stack",
-          "props": {
-            "gap": "normal"
-          },
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "7 days",
-                "variant": "secondary",
-                "size": "sm"
-              },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "30 days",
-                "variant": "secondary",
-                "size": "sm"
-              },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "90 days",
-                "variant": "secondary",
-                "size": "sm"
-              },
-              "children": []
-            }
-          ]
-        },
-        "heading": "Filters",
-        "headingLevel": "3",
-        "placement": "bottom-start",
-        "modal": false,
-        "showArrow": false,
-        "dismissible": true,
-        "open": true
-      },
-      "snippets": {
-        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Stack } from '@design-schema/react';\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  open\n><Stack gap=\"normal\">\n<Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n<Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n<Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n</Stack></OpenHarness>",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "popover-react--keyboard",
-      "sweep": {
-        "prop": "open",
-        "value": true
-      },
-      "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

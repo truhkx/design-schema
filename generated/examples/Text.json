@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -33,6 +34,7 @@
       "storyId": "text-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -64,6 +66,7 @@
         "value": "xs"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -95,6 +98,7 @@
         "value": "sm"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -126,6 +130,7 @@
         "value": "md"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -157,6 +162,7 @@
         "value": "lg"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -188,6 +194,7 @@
         "value": "xl"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -219,6 +226,7 @@
         "value": "regular"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -250,6 +258,7 @@
         "value": "medium"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -281,6 +290,7 @@
         "value": "semibold"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -312,6 +322,7 @@
         "value": "bold"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -343,6 +354,7 @@
         "value": "default"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -374,6 +386,7 @@
         "value": "strong"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -405,6 +418,7 @@
         "value": "muted"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -436,6 +450,7 @@
         "value": "danger"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -467,6 +482,7 @@
         "value": "onAction"
       },
       "decorated": true,
+      "harness": null,
       "primary": true
     },
     {
@@ -498,6 +514,7 @@
         "value": "start"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -529,6 +546,7 @@
         "value": "center"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -560,6 +578,7 @@
         "value": "end"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -591,6 +610,7 @@
         "value": "p"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -622,6 +642,7 @@
         "value": "span"
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -653,6 +674,7 @@
         "value": true
       },
       "decorated": true,
+      "harness": null,
       "primary": true
     },
     {
@@ -681,6 +703,7 @@
       "storyId": "text-react--truncate-inline",
       "sweep": null,
       "decorated": true,
+      "harness": null,
       "primary": true
     },
     {
@@ -709,6 +732,7 @@
       "storyId": "text-react--body-copy",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -737,6 +761,7 @@
       "storyId": "text-react--caption",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -765,6 +790,7 @@
       "storyId": "text-react--inline-error-wording",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -796,6 +822,7 @@
         "value": true
       },
       "decorated": true,
+      "harness": null,
       "primary": true
     }
   ]

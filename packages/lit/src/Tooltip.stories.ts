@@ -49,20 +49,16 @@ type Story = StoryObj<TooltipArgs>;
 
 export const Default: Story = {};
 
-/* placement */
-export const PlacementTop: Story = { args: { placement: 'top' } };
-export const PlacementBottom: Story = { args: { placement: 'bottom' } };
-export const PlacementStart: Story = { args: { placement: 'start' } };
-export const PlacementEnd: Story = { args: { placement: 'end' } };
+/* placement — each renders open, because a hover-driven bubble is invisible on the docs page and the
+   four would otherwise look identical. */
+export const PlacementTop: Story = { args: { placement: 'top', open: true } };
+export const PlacementBottom: Story = { args: { placement: 'bottom', open: true } };
+export const PlacementStart: Story = { args: { placement: 'start', open: true } };
+export const PlacementEnd: Story = { args: { placement: 'end', open: true } };
 
 /* delay */
 export const DelayDefault: Story = { args: { delay: 'default' } };
 export const DelayNone: Story = { args: { delay: 'none' } };
-
-/* notable states */
-
-/** Controlled visibility, for stories and tests only; Escape still hides it. */
-export const Open: Story = { args: { open: true } };
 
 /* examples */
 

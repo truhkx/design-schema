@@ -99,12 +99,14 @@
 .ds-button--inverse.ds-button--ghost {
   color: var(--color-inverse-link);
 }
-/* inverseBackgroundHover at inverseHoverOpacity (its token × 0.25) over color.inverse.surface */
+/* inverseBackgroundHover at inverseHoverOpacity (its token × 0.25). The second colour of the mix is
+   `transparent`, never color.inverse.surface: ghost has no fill of its own, so whatever the Toast or
+   panel actually paints has to show through. */
 .ds-button--inverse.ds-button--ghost:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
   background-color: color-mix(
     in srgb,
     var(--ds-button-inverse-background-hover) calc(var(--ds-button-inverse-hover-opacity) * 0.25 * 100%),
-    var(--color-inverse-surface)
+    transparent
   );
 }
 

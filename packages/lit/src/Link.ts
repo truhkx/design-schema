@@ -68,7 +68,6 @@ export class DsLink extends LitElement {
       text-decoration-line: underline;
       text-decoration-thickness: var(--ds-link-underline-thickness);
       text-underline-offset: var(--ds-link-underline-offset);
-      cursor: pointer;
       transition: color var(--ds-link-transition) var(--motion-easing-standard);
     }
 

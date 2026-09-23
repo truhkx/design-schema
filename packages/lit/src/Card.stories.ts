@@ -148,6 +148,23 @@ export const InteractiveDisabledButton: Story = {
   `,
 };
 
+/* Zero or several targets: the card stays non-interactive, but still reserves the ring's border
+   width, so its geometry does not change with its content. */
+export const InteractiveWithoutTarget: Story = {
+  args: {
+    heading: 'September invoice',
+    interactive: true,
+    children: 'Nothing here is a link, so the card is not a target.',
+  },
+  render: (args) => html`
+    <div style="inline-size: min(100%, 24rem)">
+      <ds-card heading=${args.heading} heading-level=${args.headingLevel} inset=${args.inset} surface=${args.surface} interactive>
+        <ds-text element="p">${args.children}</ds-text>
+      </ds-card>
+    </div>
+  `,
+};
+
 /* examples */
 export const PlanCard: Story = {
   args: { heading: 'Team plan', headingLevel: '3', children: 'What the plan includes' },

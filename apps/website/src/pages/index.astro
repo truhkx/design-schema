@@ -90,65 +90,73 @@ if (!github) {
 <Layout title="Design Schema" description={COPY.statement}>
   {/* `section` between the two regions; the hero and the pillars are each their own section. */}
   <Stack direction="vertical" gap="section">
-    <Box element="section" inset="none" insetBlock="xl" className="ds-home-hero">
-      {/*
-        The hero's backdrop: the sand-and-geometric-line motif from the landing-page pattern note.
-        Inline SVG rather than an `Icon`, because this is page art and Icon is a fixed 16×16 UI-glyph
-        set; `aria-hidden` because it says nothing that the heading below does not. Every stroke and
-        fill is `currentColor`, so ../styles/home.css themes the whole motif with one `color`.
-      */}
-      <svg
-        class="ds-home-hero__backdrop"
-        aria-hidden="true"
-        focusable="false"
-        viewBox="0 0 1280 480"
-        preserveAspectRatio="xMidYMid slice"
-      >
-        <defs>
-          {/* The lattice: a schema grid, with a node at every intersection. */}
-          <pattern id="ds-home-hero-lattice" width="80" height="80" patternUnits="userSpaceOnUse">
-            <path d="M0 0H80M0 0V80" fill="none" stroke="currentColor" stroke-width="1" />
-            <circle cx="0" cy="0" r="2.5" fill="currentColor" />
-          </pattern>
-          {/*
-            Luminance mask: clear in the middle, where the heading and the statement sit, and full
-            strength out at the edges. The two stops are mask channel values, not colors — nothing
-            here is painted with them.
-          */}
-          <radialGradient id="ds-home-hero-fade" cx="50%" cy="50%" r="72%">
-            <stop offset="0.1" stop-color="#000" />
-            <stop offset="0.9" stop-color="#fff" />
-          </radialGradient>
-          <mask id="ds-home-hero-mask">
-            <rect width="1280" height="480" fill="url(#ds-home-hero-fade)" />
-          </mask>
-        </defs>
-        <g mask="url(#ds-home-hero-mask)">
-          <rect width="1280" height="480" fill="url(#ds-home-hero-lattice)" />
-          {/* A few larger figures, so the field is not only a grid. */}
-          <g fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="160" cy="120" r="96" />
-            <circle cx="160" cy="120" r="56" />
-            <rect x="1000" y="248" width="168" height="168" rx="8" transform="rotate(15 1084 332)" />
-            <path d="M968 72h128v128" />
-            <path d="M112 392h152M188 316v152" />
+    {/*
+      The hero's hooks in ../styles/home.css are plain elements around the generated components,
+      which take no `className` of ours (foundations/styling-and-overrides.md).
+    */}
+    <section class="ds-home-hero">
+      <Box inset="none" insetBlock="xl">
+        {/*
+          The hero's backdrop: the sand-and-geometric-line motif from the landing-page pattern note.
+          Inline SVG rather than an `Icon`, because this is page art and Icon is a fixed 16×16 UI-glyph
+          set; `aria-hidden` because it says nothing that the heading below does not. Every stroke and
+          fill is `currentColor`, so ../styles/home.css themes the whole motif with one `color`.
+        */}
+        <svg
+          class="ds-home-hero__backdrop"
+          aria-hidden="true"
+          focusable="false"
+          viewBox="0 0 1280 480"
+          preserveAspectRatio="xMidYMid slice"
+        >
+          <defs>
+            {/* The lattice: a schema grid, with a node at every intersection. */}
+            <pattern id="ds-home-hero-lattice" width="80" height="80" patternUnits="userSpaceOnUse">
+              <path d="M0 0H80M0 0V80" fill="none" stroke="currentColor" stroke-width="1" />
+              <circle cx="0" cy="0" r="2.5" fill="currentColor" />
+            </pattern>
+            {/*
+              Luminance mask: clear in the middle, where the heading and the statement sit, and full
+              strength out at the edges. The two stops are mask channel values, not colors — nothing
+              here is painted with them.
+            */}
+            <radialGradient id="ds-home-hero-fade" cx="50%" cy="50%" r="72%">
+              <stop offset="0.1" stop-color="#000" />
+              <stop offset="0.9" stop-color="#fff" />
+            </radialGradient>
+            <mask id="ds-home-hero-mask">
+              <rect width="1280" height="480" fill="url(#ds-home-hero-fade)" />
+            </mask>
+          </defs>
+          <g mask="url(#ds-home-hero-mask)">
+            <rect width="1280" height="480" fill="url(#ds-home-hero-lattice)" />
+            {/* A few larger figures, so the field is not only a grid. */}
+            <g fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="160" cy="120" r="96" />
+              <circle cx="160" cy="120" r="56" />
+              <rect x="1000" y="248" width="168" height="168" rx="8" transform="rotate(15 1084 332)" />
+              <path d="M968 72h128v128" />
+              <path d="M112 392h152M188 316v152" />
+            </g>
           </g>
-        </g>
-      </svg>
+        </svg>
 
-      <Container width="content" className="ds-home-hero__content">
-        <Stack direction="vertical" align="center" gap="loose">
-          {/* Decorative: the `Heading` below says the name, so the mark would only repeat it. */}
-          <Logo class="ds-home-hero__logo" aria-hidden="true" focusable="false" />
-          <Heading level={1} align="center">{COPY.title}</Heading>
-          <Text size="lg" tone="muted" align="center">{COPY.statement}</Text>
-          <Stack direction="horizontal" gap="normal" justify="center" wrap>
-            <Link href="/docs" label={COPY.readDocs} />
-            <Link href={github.href} label={COPY.viewOnGitHub} external />
-          </Stack>
-        </Stack>
-      </Container>
-    </Box>
+        <div class="ds-home-hero__content">
+          <Container width="content">
+            <Stack direction="vertical" align="center" gap="loose">
+              {/* Decorative: the `Heading` below says the name, so the mark would only repeat it. */}
+              <Logo class="ds-home-hero__logo" aria-hidden="true" focusable="false" />
+              <Heading level={1} align="center">{COPY.title}</Heading>
+              <Text size="lg" tone="muted" align="center">{COPY.statement}</Text>
+              <Stack direction="horizontal" gap="normal" justify="center" wrap>
+                <Link href="/docs" label={COPY.readDocs} />
+                <Link href={github.href} label={COPY.viewOnGitHub} external />
+              </Stack>
+            </Stack>
+          </Container>
+        </div>
+      </Box>
+    </section>
 
     <Container width="page" element="section">
       <Stack direction="vertical" gap="loose">
@@ -158,15 +166,17 @@ if (!github) {
           Each Card renders its own `Heading(level=3)` from `heading`/`headingLevel`, which is also
           what names the card's `article` — so the section's outline is h1 → h2 → h3, unbroken.
         */}
-        <Stack direction="horizontal" gap="loose" align="stretch" wrap className="ds-home-pillars">
-          {
-            PILLARS.map((pillar) => (
-              <Card heading={pillar.heading} headingLevel={3}>
-                <Text>{pillar.body}</Text>
-              </Card>
-            ))
-          }
-        </Stack>
+        <div class="ds-home-pillars">
+          <Stack direction="horizontal" gap="loose" align="stretch" wrap>
+            {
+              PILLARS.map((pillar) => (
+                <Card heading={pillar.heading} headingLevel={3}>
+                  <Text>{pillar.body}</Text>
+                </Card>
+              ))
+            }
+          </Stack>
+        </div>
       </Stack>
     </Container>
   </Stack>

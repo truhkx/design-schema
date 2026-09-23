@@ -127,13 +127,27 @@ type DomViewProps = React.ComponentProps<typeof View> & {
 };
 const DomView = View as unknown as React.ComponentType<DomViewProps>;
 
-/** A bare string or number cannot sit in a native View: it goes inside the system Text. */
-function wrapText(node: React.ReactNode, key?: number): React.ReactNode {
-  return typeof node === 'string' || typeof node === 'number' ? <Text key={key}>{node}</Text> : node;
+/** A slot renders its row when it holds content: `undefined`, `null` and `false` are absent, `0` and `''` are content. */
+function isPresent(node: React.ReactNode): boolean {
+  return node !== undefined && node !== null && node !== false;
 }
 
-function renderBody(children: React.ReactNode): React.ReactNode {
-  return Array.isArray(children) ? children.map((child, index) => wrapText(child, index)) : wrapText(children);
+/** A bare string or number cannot sit in a native View: it goes inside the system Text. */
+function wrapText(node: React.ReactNode): React.ReactNode {
+  return typeof node === 'string' || typeof node === 'number' ? <Text>{node}</Text> : node;
+}
+
+/**
+ * Arrays and Fragments are flattened before the wrap, exactly as they are when the
+ * interactive target is looked for, so a string directly inside a top-level Fragment is
+ * wrapped too.
+ */
+function renderSlot(children: React.ReactNode): React.ReactNode {
+  const items = flattenTopLevel(children);
+  if (items.length === 1) {
+    return wrapText(items[0]);
+  }
+  return items.map((item, index) => <React.Fragment key={index}>{wrapText(item)}</React.Fragment>);
 }
 
 /**
@@ -232,7 +246,7 @@ function scanTopLevel(
     }
   }
   if (count !== 1) {
-    return { content: renderBody(children), target: null, count };
+    return { content: renderSlot(children), target: null, count };
   }
   const content = items.map((item, i) =>
     i === index ? (
@@ -320,7 +334,7 @@ export function Card({
   const hoverBackground = t[HOVER_BACKGROUND[surface]];
 
   const scanned = React.useMemo(
-    () => (interactive ? scanTopLevel(children, form) : { content: renderBody(children), target: null, count: 1 }),
+    () => (interactive ? scanTopLevel(children, form) : { content: renderSlot(children), target: null, count: 1 }),
     [interactive, children, form],
   );
   const target = scanned.target;
@@ -345,9 +359,11 @@ export function Card({
     }
   }, [interactive, focusable, scanned.count]);
 
+  // Present means not `undefined`, `null` or `false`; a `0` or an empty string is content
+  // and renders its row. An empty `heading` is the one exception: it counts as omitted.
   const hasHeading = heading !== undefined && heading !== '';
-  const hasHeaderActions = headerActions !== undefined && headerActions !== null;
-  const hasFooter = footer !== undefined && footer !== null;
+  const hasHeaderActions = isPresent(headerActions);
+  const hasFooter = isPresent(footer);
 
   // `interactive` wins over `focusable` whenever it is set, including when the card
   // fell back to non-interactive for want of a single target.
@@ -390,7 +406,7 @@ export function Card({
           ) : null}
           {hasHeaderActions ? (
             <View style={actionsStyle} testID="Card.headerActions">
-              {headerActions}
+              {renderSlot(headerActions)}
             </View>
           ) : null}
         </View>
@@ -398,7 +414,7 @@ export function Card({
       <View testID="Card.body">{scanned.content}</View>
       {hasFooter ? (
         <View style={footerStyle} testID="Card.footer">
-          {footer}
+          {renderSlot(footer)}
         </View>
       ) : null}
     </>

@@ -147,13 +147,18 @@ export function sweepCaptions(def: ComponentDef, examples: Example[], renderable
  * The rules that show one reading per caption: each is hidden unless the root's `data-ds-theme` and
  * `data-mode` are the pair it holds in. Generated from the published themes, so a new theme needs no
  * CSS here — and a switch of theme or mode swaps the numbers with no script.
+ *
+ * Light is "not dark" rather than `[data-mode="light"]`: the server emits no `data-mode` (Layout.astro's
+ * pre-paint script sets it), and the token sheets are light on a bare `:root`, so a page with scripts
+ * off is light and its captions must say so.
  */
 export function variantCss(themes: ThemeTokens[]): string {
   const rules = ['[data-sweep-variants] { display: none; }'];
   for (const theme of themes) {
     for (const mode of MODES) {
+      const modeSelector = mode === 'light' ? ':not([data-mode="dark"])' : `[data-mode="${mode}"]`;
       rules.push(
-        `:root[data-ds-theme="${theme.id}"][data-mode="${mode}"] [data-sweep-variants~="${variantId(theme.id, mode)}"] { display: inline; }`,
+        `:root[data-ds-theme="${theme.id}"]${modeSelector} [data-sweep-variants~="${variantId(theme.id, mode)}"] { display: inline; }`,
       );
     }
   }

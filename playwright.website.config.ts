@@ -3,7 +3,10 @@
 // them (or failing when one of them fails to build). Run with `pnpm gates:website`.
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 4321;
+// 4321 by default. `reuseExistingServer` will happily test whatever already listens there — a
+// running `pnpm site:dev` included, which is a different site entirely — so WEBSITE_GATE_PORT moves
+// the preview aside when that port is busy.
+const PORT = Number(process.env.WEBSITE_GATE_PORT ?? 4321);
 
 export default defineConfig({
   testDir: 'tests/website',

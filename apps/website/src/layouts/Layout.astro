@@ -7,7 +7,9 @@
  * below it as siblings, not inside it — a `footer` nested in `main` is not a landmark at all.
  *
  * `data-mode` on <html> selects the light or dark half of the token sheet, exactly as the
- * Storybooks do (storybook/shared/mode.ts).
+ * Storybooks do (storybook/shared/mode.ts). The server does not emit it: the pre-paint script below
+ * sets it from the stored choice or `prefers-color-scheme` (../mode-switch.ts), and with scripts off
+ * the sheets' bare `:root` block is the light palette, so the fallback is light.
  */
 // The component styles for @design-schema/react. The package sets `sideEffects: false` and exports
 // its CSS separately, so a consumer imports it once, here, for the whole site.
@@ -20,6 +22,7 @@ import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { publishedThemes } from '../themes';
 import { THEME_LINK_ATTR, THEME_STORAGE_KEY } from '../theme-switch';
+import { MODE_CHOICES, MODE_STORAGE_KEY, PREFERS_DARK_QUERY } from '../mode-switch';
 
 interface Props {
   /** The document title. */
@@ -38,7 +41,7 @@ const themeIds = themes.map((theme) => theme.id);
 ---
 
 <!doctype html>
-<html lang="en" data-mode="light" data-ds-theme={themeIds[0]}>
+<html lang="en" data-ds-theme={themeIds[0]}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -50,10 +53,24 @@ const themeIds = themes.map((theme) => theme.id);
         <link rel="stylesheet" href={theme.href} media={index === 0 ? 'all' : 'not all'} {...{ [THEME_LINK_ATTR]: theme.id }} />
       ))
     }
-    {/* Before first paint, so a remembered theme never flashes the default one. This repeats
-        applyTheme() from ../theme-switch.ts because an inline script cannot import — keep them in
-        step. */}
-    <script is:inline define:vars={{ themeIds, linkAttr: THEME_LINK_ATTR, storageKey: THEME_STORAGE_KEY }}>
+    {/* Before first paint, so a remembered theme or mode never flashes the default one. This
+        repeats applyTheme() from ../theme-switch.ts and resolveMode()/applyMode() from
+        ../mode-switch.ts because an inline script cannot import — keep them in step.
+
+        The mode half also keeps following `prefers-color-scheme` for the page's lifetime while the
+        stored choice is `system` (or nothing): it re-reads storage on every change, so a choice made
+        in the header after load is honoured without the island listening too. */}
+    <script
+      is:inline
+      define:vars={{
+        themeIds,
+        linkAttr: THEME_LINK_ATTR,
+        storageKey: THEME_STORAGE_KEY,
+        modeKey: MODE_STORAGE_KEY,
+        modeChoices: MODE_CHOICES,
+        prefersDarkQuery: PREFERS_DARK_QUERY,
+      }}
+    >
       try {
         const stored = localStorage.getItem(storageKey);
         const id = themeIds.includes(stored) ? stored : themeIds[0];
@@ -63,6 +80,27 @@ const themeIds = themes.map((theme) => theme.id);
         document.documentElement.setAttribute(linkAttr, id);
       } catch {
         /* Storage denied; the default theme's sheet is already the enabled one. */
+      }
+
+      const readMode = () => {
+        try {
+          const stored = localStorage.getItem(modeKey);
+          return modeChoices.includes(stored) ? stored : 'system';
+        } catch {
+          return 'system';
+        }
+      };
+      const query = typeof matchMedia === 'function' ? matchMedia(prefersDarkQuery) : null;
+      const applyStoredMode = () => {
+        const choice = readMode();
+        const mode = choice === 'system' ? (query && query.matches ? 'dark' : 'light') : choice;
+        document.documentElement.setAttribute('data-mode', mode);
+      };
+      applyStoredMode();
+      if (query) {
+        query.addEventListener('change', () => {
+          if (readMode() === 'system') applyStoredMode();
+        });
       }
     </script>
   </head>

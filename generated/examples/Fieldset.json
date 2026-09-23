@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -36,7 +37,7 @@
       },
       "snippets": {
         "react": "import { Fieldset, Input } from '@design-schema/react';\n\nconst addressFields = [<Input key=\"street\" label=\"Street\" name=\"street\" />, <Input key=\"city\" label=\"City\" name=\"city\" />];\n\n<Fieldset legend=\"Shipping address\">{addressFields}</Fieldset>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst NOTIFICATIONS = 'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" gap=\"normal\">\n    ${(CHILDREN[undefined ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst REQUIRED_ADDRESS = 'A required Input name=street label=Street and a required Input name=city label=City';\n\nconst NOTIFICATIONS =\n  'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [REQUIRED_ADDRESS]: () => html`\n    <ds-input name=\"street\" label=\"Street\" required></ds-input>\n    <ds-input name=\"city\" label=\"City\" required></ds-input>\n  `,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" gap=\"normal\">\n    ${(CHILDREN[ADDRESS ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
         "rn": "import { Fieldset, Input } from '@design-schema/rn';\n\n<Fieldset legend=\"Shipping address\">\n  <Input label=\"Street\" name=\"street\" />\n  <Input label=\"City\" name=\"city\" />\n</Fieldset>",
         "swift": null
       },
@@ -49,6 +50,7 @@
       "storyId": "fieldset-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -80,7 +82,7 @@
       },
       "snippets": {
         "react": "import { Fieldset, Input } from '@design-schema/react';\n\nconst addressFields = [<Input key=\"street\" label=\"Street\" name=\"street\" />, <Input key=\"city\" label=\"City\" name=\"city\" />];\n\n<Fieldset legend=\"Shipping address\" gap=\"tight\">{addressFields}</Fieldset>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst NOTIFICATIONS = 'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" gap=\"tight\">\n    ${(CHILDREN[undefined ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst REQUIRED_ADDRESS = 'A required Input name=street label=Street and a required Input name=city label=City';\n\nconst NOTIFICATIONS =\n  'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [REQUIRED_ADDRESS]: () => html`\n    <ds-input name=\"street\" label=\"Street\" required></ds-input>\n    <ds-input name=\"city\" label=\"City\" required></ds-input>\n  `,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" gap=\"tight\">\n    ${(CHILDREN[ADDRESS ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
         "rn": "import { Fieldset, Input } from '@design-schema/rn';\n\n<Fieldset legend=\"Shipping address\" gap=\"tight\">\n  <Input label=\"Street\" name=\"street\" />\n  <Input label=\"City\" name=\"city\" />\n</Fieldset>",
         "swift": null
       },
@@ -96,6 +98,7 @@
         "value": "tight"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -127,7 +130,7 @@
       },
       "snippets": {
         "react": "import { Fieldset, Input } from '@design-schema/react';\n\nconst addressFields = [<Input key=\"street\" label=\"Street\" name=\"street\" />, <Input key=\"city\" label=\"City\" name=\"city\" />];\n\n<Fieldset legend=\"Shipping address\" gap=\"normal\">{addressFields}</Fieldset>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst NOTIFICATIONS = 'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" gap=\"normal\">\n    ${(CHILDREN[undefined ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst REQUIRED_ADDRESS = 'A required Input name=street label=Street and a required Input name=city label=City';\n\nconst NOTIFICATIONS =\n  'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [REQUIRED_ADDRESS]: () => html`\n    <ds-input name=\"street\" label=\"Street\" required></ds-input>\n    <ds-input name=\"city\" label=\"City\" required></ds-input>\n  `,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" gap=\"normal\">\n    ${(CHILDREN[ADDRESS ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
         "rn": "import { Fieldset, Input } from '@design-schema/rn';\n\n<Fieldset legend=\"Shipping address\" gap=\"normal\">\n  <Input label=\"Street\" name=\"street\" />\n  <Input label=\"City\" name=\"city\" />\n</Fieldset>",
         "swift": null
       },
@@ -143,6 +146,7 @@
         "value": "normal"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -174,7 +178,7 @@
       },
       "snippets": {
         "react": "import { Fieldset, Input } from '@design-schema/react';\n\nconst addressFields = [<Input key=\"street\" label=\"Street\" name=\"street\" />, <Input key=\"city\" label=\"City\" name=\"city\" />];\n\n<Fieldset legend=\"Shipping address\" gap=\"loose\">{addressFields}</Fieldset>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst NOTIFICATIONS = 'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" gap=\"loose\">\n    ${(CHILDREN[undefined ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst REQUIRED_ADDRESS = 'A required Input name=street label=Street and a required Input name=city label=City';\n\nconst NOTIFICATIONS =\n  'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [REQUIRED_ADDRESS]: () => html`\n    <ds-input name=\"street\" label=\"Street\" required></ds-input>\n    <ds-input name=\"city\" label=\"City\" required></ds-input>\n  `,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" gap=\"loose\">\n    ${(CHILDREN[ADDRESS ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
         "rn": "import { Fieldset, Input } from '@design-schema/rn';\n\n<Fieldset legend=\"Shipping address\" gap=\"loose\">\n  <Input label=\"Street\" name=\"street\" />\n  <Input label=\"City\" name=\"city\" />\n</Fieldset>",
         "swift": null
       },
@@ -190,6 +194,7 @@
         "value": "loose"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -222,7 +227,7 @@
       },
       "snippets": {
         "react": "import { Fieldset, Input } from '@design-schema/react';\n\nconst addressFields = [<Input key=\"street\" label=\"Street\" name=\"street\" />, <Input key=\"city\" label=\"City\" name=\"city\" />];\n\n<Fieldset legend=\"Shipping address\" description=\"We only ship within the EU.\">{addressFields}</Fieldset>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst NOTIFICATIONS = 'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" description=\"We only ship within the EU.\" gap=\"normal\">\n    ${(CHILDREN[undefined ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst REQUIRED_ADDRESS = 'A required Input name=street label=Street and a required Input name=city label=City';\n\nconst NOTIFICATIONS =\n  'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [REQUIRED_ADDRESS]: () => html`\n    <ds-input name=\"street\" label=\"Street\" required></ds-input>\n    <ds-input name=\"city\" label=\"City\" required></ds-input>\n  `,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" description=\"We only ship within the EU.\" gap=\"normal\">\n    ${(CHILDREN[ADDRESS ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
         "rn": "import { Fieldset, Input } from '@design-schema/rn';\n\n<Fieldset\n  legend=\"Shipping address\"\n  description=\"We only ship within the EU.\"\n>\n  <Input label=\"Street\" name=\"street\" />\n  <Input label=\"City\" name=\"city\" />\n</Fieldset>",
         "swift": null
       },
@@ -235,6 +240,7 @@
       "storyId": "fieldset-react--with-description",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -268,19 +274,20 @@
       },
       "snippets": {
         "react": "import { Fieldset, Input } from '@design-schema/react';\n\nconst requiredAddressFields = [\n  <Input key=\"street\" label=\"Street\" name=\"street\" required />,\n  <Input key=\"city\" label=\"City\" name=\"city\" required />,\n];\n\n<Fieldset legend=\"Shipping address\">{requiredAddressFields}</Fieldset>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst REQUIRED_ADDRESS = 'A required Input name=street label=Street and a required Input name=city label=City';\n\nconst NOTIFICATIONS =\n  'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [REQUIRED_ADDRESS]: () => html`\n    <ds-input name=\"street\" label=\"Street\" required></ds-input>\n    <ds-input name=\"city\" label=\"City\" required></ds-input>\n  `,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" gap=\"normal\">\n    ${(CHILDREN[REQUIRED_ADDRESS ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "RequiredIndicator",
-        "lit": null,
+        "lit": "RequiredIndicator",
         "rn": null,
         "swift": null
       },
       "storyId": "fieldset-react--required-indicator",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -313,19 +320,20 @@
       },
       "snippets": {
         "react": "import { Fieldset, Input } from '@design-schema/react';\n\nconst dateFields = [<Input key=\"start\" label=\"Start date\" name=\"startDate\" />, <Input key=\"end\" label=\"End date\" name=\"endDate\" />];\n\n<Fieldset\n  legend=\"Shipping address\"\n  error=\"End date must be after start date.\"\n>\n  {dateFields}\n</Fieldset>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst REQUIRED_ADDRESS = 'A required Input name=street label=Street and a required Input name=city label=City';\n\nconst NOTIFICATIONS =\n  'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [REQUIRED_ADDRESS]: () => html`\n    <ds-input name=\"street\" label=\"Street\" required></ds-input>\n    <ds-input name=\"city\" label=\"City\" required></ds-input>\n  `,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" error=\"End date must be after start date.\" gap=\"normal\">\n    ${(CHILDREN[DATE_RANGE ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
         "rn": "import { Fieldset, Input } from '@design-schema/rn';\n\n<Fieldset\n  legend=\"Shipping address\"\n  error=\"End date must be after start date.\"\n>\n  <Input label=\"Street\" name=\"street\" />\n  <Input label=\"City\" name=\"city\" />\n</Fieldset>",
         "swift": null
       },
       "stories": {
         "react": "WithError",
-        "lit": null,
+        "lit": "WithError",
         "rn": "WithError",
         "swift": null
       },
       "storyId": "fieldset-react--with-error",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -357,13 +365,13 @@
       },
       "snippets": {
         "react": "import { Fieldset, Input } from '@design-schema/react';\n\nconst addressFields = [<Input key=\"street\" label=\"Street\" name=\"street\" />, <Input key=\"city\" label=\"City\" name=\"city\" />];\n\n<Fieldset legend=\"Shipping address\" disabled>{addressFields}</Fieldset>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst NOTIFICATIONS = 'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" gap=\"normal\" disabled>\n    ${(CHILDREN[undefined ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst REQUIRED_ADDRESS = 'A required Input name=street label=Street and a required Input name=city label=City';\n\nconst NOTIFICATIONS =\n  'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [REQUIRED_ADDRESS]: () => html`\n    <ds-input name=\"street\" label=\"Street\" required></ds-input>\n    <ds-input name=\"city\" label=\"City\" required></ds-input>\n  `,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" gap=\"normal\" disabled>\n    ${(CHILDREN[ADDRESS ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
         "rn": "import { Fieldset, Input } from '@design-schema/rn';\n\n<Fieldset legend=\"Shipping address\" disabled>\n  <Input label=\"Street\" name=\"street\" />\n  <Input label=\"City\" name=\"city\" />\n</Fieldset>",
         "swift": null
       },
       "stories": {
         "react": "Disabled",
-        "lit": "DisabledTrue",
+        "lit": "Disabled",
         "rn": "Disabled",
         "swift": null
       },
@@ -373,6 +381,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -404,7 +413,7 @@
       },
       "snippets": {
         "react": "import { Fieldset, Input } from '@design-schema/react';\n\nconst addressFields = [<Input key=\"street\" label=\"Street\" name=\"street\" />, <Input key=\"city\" label=\"City\" name=\"city\" />];\n\n<Fieldset legend=\"Shipping address\">{addressFields}</Fieldset>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst NOTIFICATIONS = 'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" gap=\"normal\">\n    ${(CHILDREN[ADDRESS ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst REQUIRED_ADDRESS = 'A required Input name=street label=Street and a required Input name=city label=City';\n\nconst NOTIFICATIONS =\n  'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [REQUIRED_ADDRESS]: () => html`\n    <ds-input name=\"street\" label=\"Street\" required></ds-input>\n    <ds-input name=\"city\" label=\"City\" required></ds-input>\n  `,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Shipping address\" gap=\"normal\">\n    ${(CHILDREN[ADDRESS ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
         "rn": "import { Fieldset, Input } from '@design-schema/rn';\n\n<Fieldset legend=\"Shipping address\">\n  <Input label=\"Street\" name=\"street\" />\n  <Input label=\"City\" name=\"city\" />\n</Fieldset>",
         "swift": null
       },
@@ -417,6 +426,7 @@
       "storyId": "fieldset-react--shipping-address",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -458,7 +468,7 @@
       },
       "snippets": {
         "react": "import { Fieldset, Checkbox } from '@design-schema/react';\n\nconst notificationFields = [\n  <Checkbox key=\"email\" label=\"Email\" name=\"notifyEmail\" />,\n  <Checkbox key=\"sms\" label=\"SMS\" name=\"notifySms\" />,\n  <Checkbox key=\"push\" label=\"Push\" name=\"notifyPush\" />,\n];\n\n<Fieldset\n  legend=\"Notification preferences\"\n  gap=\"tight\"\n  description=\"You can change these at any time.\"\n>\n  {notificationFields}\n</Fieldset>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst NOTIFICATIONS = 'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset\n    legend=\"Notification preferences\"\n    description=\"You can change these at any time.\"\n    gap=\"tight\"\n  >\n    ${(CHILDREN[NOTIFICATIONS ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst REQUIRED_ADDRESS = 'A required Input name=street label=Street and a required Input name=city label=City';\n\nconst NOTIFICATIONS =\n  'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [REQUIRED_ADDRESS]: () => html`\n    <ds-input name=\"street\" label=\"Street\" required></ds-input>\n    <ds-input name=\"city\" label=\"City\" required></ds-input>\n  `,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset\n    legend=\"Notification preferences\"\n    description=\"You can change these at any time.\"\n    gap=\"tight\"\n  >\n    ${(CHILDREN[NOTIFICATIONS ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
         "rn": "import { Checkbox, Fieldset } from '@design-schema/rn';\n\n<Fieldset\n  legend=\"Notification preferences\"\n  gap=\"tight\"\n  description=\"You can change these at any time.\"\n>\n  <Checkbox label=\"Email\" name=\"email\" />\n  <Checkbox label=\"SMS\" name=\"sms\" />\n  <Checkbox label=\"Push\" name=\"push\" />\n</Fieldset>",
         "swift": null
       },
@@ -474,6 +484,7 @@
         "value": "tight"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -506,7 +517,7 @@
       },
       "snippets": {
         "react": "import { Fieldset, Input } from '@design-schema/react';\n\nconst dateFields = [<Input key=\"start\" label=\"Start date\" name=\"startDate\" />, <Input key=\"end\" label=\"End date\" name=\"endDate\" />];\n\n<Fieldset\n  legend=\"Reporting period\"\n  error=\"End date must be after start date.\"\n>\n  {dateFields}\n</Fieldset>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst NOTIFICATIONS = 'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Reporting period\" error=\"End date must be after start date.\" gap=\"normal\">\n    ${(CHILDREN[DATE_RANGE ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst REQUIRED_ADDRESS = 'A required Input name=street label=Street and a required Input name=city label=City';\n\nconst NOTIFICATIONS =\n  'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [REQUIRED_ADDRESS]: () => html`\n    <ds-input name=\"street\" label=\"Street\" required></ds-input>\n    <ds-input name=\"city\" label=\"City\" required></ds-input>\n  `,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Reporting period\" error=\"End date must be after start date.\" gap=\"normal\">\n    ${(CHILDREN[DATE_RANGE ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
         "rn": "import { Fieldset, Input } from '@design-schema/rn';\n\n<Fieldset\n  legend=\"Reporting period\"\n  error=\"End date must be after start date.\"\n>\n  <Input label=\"Start date\" name=\"startDate\" />\n  <Input label=\"End date\" name=\"endDate\" />\n</Fieldset>",
         "swift": null
       },
@@ -519,6 +530,7 @@
       "storyId": "fieldset-react--date-range-with-a-group-error",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -550,7 +562,7 @@
       },
       "snippets": {
         "react": "import { Fieldset, Input } from '@design-schema/react';\n\nconst addressFields = [<Input key=\"street\" label=\"Street\" name=\"street\" />, <Input key=\"city\" label=\"City\" name=\"city\" />];\n\n<Fieldset legend=\"Billing address\" disabled>{addressFields}</Fieldset>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst NOTIFICATIONS = 'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Billing address\" gap=\"normal\" disabled>\n    ${(CHILDREN[ADDRESS ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';\n\nconst REQUIRED_ADDRESS = 'A required Input name=street label=Street and a required Input name=city label=City';\n\nconst NOTIFICATIONS =\n  'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';\n\nconst DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';\n\nconst addressFields = (): TemplateResult => html`\n  <ds-input name=\"street\" label=\"Street\"></ds-input>\n  <ds-input name=\"city\" label=\"City\"></ds-input>\n`;\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [ADDRESS]: addressFields,\n  [REQUIRED_ADDRESS]: () => html`\n    <ds-input name=\"street\" label=\"Street\" required></ds-input>\n    <ds-input name=\"city\" label=\"City\" required></ds-input>\n  `,\n  [NOTIFICATIONS]: () => html`\n    <ds-checkbox name=\"email\" label=\"Email\"></ds-checkbox>\n    <ds-checkbox name=\"sms\" label=\"SMS\"></ds-checkbox>\n    <ds-checkbox name=\"push\" label=\"Push\"></ds-checkbox>\n  `,\n  [DATE_RANGE]: () => html`\n    <ds-input name=\"startDate\" label=\"Start date\"></ds-input>\n    <ds-input name=\"endDate\" label=\"End date\"></ds-input>\n  `,\n};\n\nhtml`\n  <ds-fieldset legend=\"Billing address\" gap=\"normal\" disabled>\n    ${(CHILDREN[ADDRESS ?? ''] ?? addressFields)()}\n  </ds-fieldset>\n`;",
         "rn": "import { Fieldset, Input } from '@design-schema/rn';\n\n<Fieldset legend=\"Billing address\" disabled>\n  <Input label=\"Street\" name=\"street\" />\n  <Input label=\"City\" name=\"city\" />\n</Fieldset>",
         "swift": null
       },
@@ -566,6 +578,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

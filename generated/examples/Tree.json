@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -70,7 +71,7 @@
       },
       "snippets": {
         "react": "import { Tree, type TreeNode } from '@design-schema/react';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree label=\"Folders\" nodes={NODES} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst FOLDER_NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    .nodes=${FOLDER_NODES}\n    .defaultExpanded=${['docs']}\n  ></ds-tree>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\nhtml`\n  <ds-tree label=\"Folders\" .nodes=${NODES}></ds-tree>\n`;",
         "rn": "import { Tree, type TreeNode } from '@design-schema/rn';\n\nconst nodes: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file', badge: '3' },\n      { id: 'archive', label: 'Archive', icon: 'folder', disabled: true },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree label=\"Folders\" nodes={nodes} />",
         "swift": null
       },
@@ -83,6 +84,7 @@
       "storyId": "tree-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -152,7 +154,7 @@
       },
       "snippets": {
         "react": "import { Tree, type TreeNode } from '@design-schema/react';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree\n  label=\"Folders\"\n  nodes={NODES}\n  selectable=\"none\"\n  defaultExpanded={['docs']}\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst FOLDER_NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    .nodes=${FOLDER_NODES}\n    selectable=\"none\"\n    .defaultExpanded=${['docs']}\n  ></ds-tree>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    .nodes=${NODES}\n    selectable=\"none\"\n    .defaultExpanded=${['docs']}\n  ></ds-tree>\n`;",
         "rn": "import { Tree, type TreeNode } from '@design-schema/rn';\n\nconst nodes: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file', badge: '3' },\n      { id: 'archive', label: 'Archive', icon: 'folder', disabled: true },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree label=\"Folders\" nodes={nodes} selectable=\"none\" />",
         "swift": null
       },
@@ -165,6 +167,7 @@
       "storyId": "tree-react--selectable-none",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -237,7 +240,7 @@
       },
       "snippets": {
         "react": "import { Tree, type TreeNode } from '@design-schema/react';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree\n  label=\"Folders\"\n  nodes={NODES}\n  selectable=\"single\"\n  defaultExpanded={['docs']}\n  defaultSelected={['invoices']}\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst FOLDER_NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    .nodes=${FOLDER_NODES}\n    selectable=\"single\"\n    .defaultExpanded=${['docs']}\n    .defaultSelected=${['invoices']}\n  ></ds-tree>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    .nodes=${NODES}\n    selectable=\"single\"\n    .defaultExpanded=${['docs']}\n    .defaultSelected=${['invoices']}\n  ></ds-tree>\n`;",
         "rn": "import { Tree, type TreeNode } from '@design-schema/rn';\n\nconst nodes: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file', badge: '3' },\n      { id: 'archive', label: 'Archive', icon: 'folder', disabled: true },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree\n  label=\"Folders\"\n  nodes={nodes}\n  selectable=\"single\"\n  defaultExpanded={['docs']}\n  defaultSelected={['invoices']}\n/>",
         "swift": null
       },
@@ -250,6 +253,7 @@
       "storyId": "tree-react--selectable-single",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -323,7 +327,7 @@
       },
       "snippets": {
         "react": "import { Tree, type TreeNode } from '@design-schema/react';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree\n  label=\"Folders\"\n  nodes={NODES}\n  selectable=\"multiple\"\n  defaultExpanded={['docs']}\n  defaultSelected={['invoices', 'notes']}\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst FOLDER_NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    .nodes=${FOLDER_NODES}\n    selectable=\"multiple\"\n    .defaultExpanded=${['docs']}\n    .defaultSelected=${['invoices']}\n  ></ds-tree>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    .nodes=${NODES}\n    selectable=\"multiple\"\n    .defaultExpanded=${['docs']}\n    .defaultSelected=${['invoices', 'notes']}\n  ></ds-tree>\n`;",
         "rn": "import { Tree, type TreeNode } from '@design-schema/rn';\n\nconst nodes: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file', badge: '3' },\n      { id: 'archive', label: 'Archive', icon: 'folder', disabled: true },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree\n  label=\"Folders\"\n  nodes={nodes}\n  selectable=\"multiple\"\n  defaultExpanded={['docs']}\n/>",
         "swift": null
       },
@@ -336,6 +340,7 @@
       "storyId": "tree-react--selectable-multiple",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -403,7 +408,7 @@
       },
       "snippets": {
         "react": "import { Tree, type TreeNode } from '@design-schema/react';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree label=\"Folders\" nodes={NODES} showLabel headingLevel=\"2\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst FOLDER_NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    show-label\n    heading-level=\"2\"\n    .nodes=${FOLDER_NODES}\n    .defaultExpanded=${['docs']}\n  ></ds-tree>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\nhtml`\n  <ds-tree label=\"Folders\" show-label heading-level=\"2\" .nodes=${NODES}></ds-tree>\n`;",
         "rn": "import { Tree, type TreeNode } from '@design-schema/rn';\n\nconst nodes: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file', badge: '3' },\n      { id: 'archive', label: 'Archive', icon: 'folder', disabled: true },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree label=\"Folders\" showLabel headingLevel=\"2\" nodes={nodes} />",
         "swift": null
       },
@@ -416,6 +421,7 @@
       "storyId": "tree-react--heading-level-2",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -483,7 +489,7 @@
       },
       "snippets": {
         "react": "import { Tree, type TreeNode } from '@design-schema/react';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree label=\"Folders\" nodes={NODES} showLabel headingLevel=\"3\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst FOLDER_NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    show-label\n    heading-level=\"3\"\n    .nodes=${FOLDER_NODES}\n    .defaultExpanded=${['docs']}\n  ></ds-tree>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\nhtml`\n  <ds-tree label=\"Folders\" show-label heading-level=\"3\" .nodes=${NODES}></ds-tree>\n`;",
         "rn": "import { Tree, type TreeNode } from '@design-schema/rn';\n\nconst nodes: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file', badge: '3' },\n      { id: 'archive', label: 'Archive', icon: 'folder', disabled: true },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree label=\"Folders\" showLabel headingLevel=\"3\" nodes={nodes} />",
         "swift": null
       },
@@ -496,6 +502,7 @@
       "storyId": "tree-react--heading-level-3",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -563,7 +570,7 @@
       },
       "snippets": {
         "react": "import { Tree, type TreeNode } from '@design-schema/react';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree label=\"Folders\" nodes={NODES} showLabel headingLevel=\"4\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst FOLDER_NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    show-label\n    heading-level=\"4\"\n    .nodes=${FOLDER_NODES}\n    .defaultExpanded=${['docs']}\n  ></ds-tree>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\nhtml`\n  <ds-tree label=\"Folders\" show-label heading-level=\"4\" .nodes=${NODES}></ds-tree>\n`;",
         "rn": "import { Tree, type TreeNode } from '@design-schema/rn';\n\nconst nodes: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file', badge: '3' },\n      { id: 'archive', label: 'Archive', icon: 'folder', disabled: true },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree label=\"Folders\" showLabel headingLevel=\"4\" nodes={nodes} />",
         "swift": null
       },
@@ -576,6 +583,7 @@
       "storyId": "tree-react--heading-level-4",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -649,7 +657,7 @@
       },
       "snippets": {
         "react": "import { Tree, type TreeNode } from '@design-schema/react';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree\n  label=\"Folders\"\n  nodes={NODES}\n  selectable=\"multiple\"\n  selectChildren\n  defaultExpanded={['*']}\n  defaultSelected={['invoices']}\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst FOLDER_NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    .nodes=${FOLDER_NODES}\n    selectable=\"multiple\"\n    select-children\n    .defaultExpanded=${['docs']}\n    .defaultSelected=${['invoices']}\n  ></ds-tree>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    .nodes=${NODES}\n    selectable=\"multiple\"\n    select-children\n    .defaultExpanded=${['*']}\n    .defaultSelected=${['invoices']}\n  ></ds-tree>\n`;",
         "rn": null,
         "swift": null
       },
@@ -662,6 +670,7 @@
       "storyId": "tree-react--select-children",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -731,19 +740,20 @@
       },
       "snippets": {
         "react": "import { Tree, type TreeNode } from '@design-schema/react';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree\n  label=\"Folders\"\n  nodes={NODES}\n  showGuides={false}\n  defaultExpanded={['*']}\n/>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    .nodes=${NODES}\n    hide-guides\n    .defaultExpanded=${['*']}\n  ></ds-tree>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "GuidesHidden",
-        "lit": null,
+        "lit": "GuidesHidden",
         "rn": null,
         "swift": null
       },
       "storyId": "tree-react--guides-hidden",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -813,19 +823,20 @@
       },
       "snippets": {
         "react": "import { Tree, type TreeNode } from '@design-schema/react';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree label=\"Folders\" nodes={NODES} defaultExpanded={['media', 'videos']} />",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    .nodes=${NODES}\n    .defaultExpanded=${['media', 'videos']}\n  ></ds-tree>\n`;",
         "rn": "import { Tree, type TreeNode } from '@design-schema/rn';\n\nconst nodes: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file', badge: '3' },\n      { id: 'archive', label: 'Archive', icon: 'folder', disabled: true },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree label=\"Folders\" nodes={nodes} defaultExpanded={['media']} />",
         "swift": null
       },
       "stories": {
         "react": "LazyLoading",
-        "lit": null,
+        "lit": "LazyLoading",
         "rn": "LazyLoading",
         "swift": null
       },
       "storyId": "tree-react--lazy-loading",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -836,7 +847,7 @@
       },
       "snippets": {
         "react": "import { Tree } from '@design-schema/react';\n\n<Tree label=\"Folders\" nodes={[]} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    .nodes=${[]}\n    .defaultExpanded=${['docs']}\n  ></ds-tree>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-tree label=\"Folders\" .nodes=${[]}></ds-tree>\n`;",
         "rn": "import { Tree } from '@design-schema/rn';\n\n<Tree label=\"Folders\" nodes={[]} />",
         "swift": null
       },
@@ -849,87 +860,7 @@
       "storyId": "tree-react--empty",
       "sweep": null,
       "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "label": "Folders",
-        "nodes": [
-          {
-            "id": "docs",
-            "label": "Documents",
-            "icon": "folder",
-            "badge": "3",
-            "children": [
-              {
-                "id": "invoices",
-                "label": "Invoices",
-                "icon": "file"
-              },
-              {
-                "id": "contracts",
-                "label": "Contracts",
-                "icon": "file"
-              },
-              {
-                "id": "archive",
-                "label": "Archive",
-                "icon": "file",
-                "disabled": true
-              }
-            ]
-          },
-          {
-            "id": "media",
-            "label": "Media",
-            "icon": "folder",
-            "children": [
-              {
-                "id": "photos",
-                "label": "Photos",
-                "icon": "folder",
-                "children": [
-                  {
-                    "id": "holiday",
-                    "label": "Holiday",
-                    "icon": "file"
-                  }
-                ]
-              },
-              {
-                "id": "videos",
-                "label": "Videos",
-                "icon": "folder",
-                "children": "lazy"
-              }
-            ]
-          },
-          {
-            "id": "notes",
-            "label": "Notes",
-            "icon": "file"
-          }
-        ],
-        "defaultExpanded": [
-          "docs"
-        ]
-      },
-      "snippets": {
-        "react": "import { Tree, type TreeNode } from '@design-schema/react';\n\nconst NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    badge: '3',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },\n    ],\n  },\n  {\n    id: 'media',\n    label: 'Media',\n    icon: 'folder',\n    children: [\n      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },\n      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },\n    ],\n  },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree label=\"Folders\" nodes={NODES} defaultExpanded={['docs']} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TreeNode } from '@design-schema/lit';\n\nconst FOLDER_NODES: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file' },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n];\n\nhtml`\n  <ds-tree\n    label=\"Folders\"\n    .nodes=${FOLDER_NODES}\n    .defaultExpanded=${['docs']}\n  ></ds-tree>\n`;",
-        "rn": "import { Tree, type TreeNode } from '@design-schema/rn';\n\nconst nodes: TreeNode[] = [\n  {\n    id: 'docs',\n    label: 'Documents',\n    icon: 'folder',\n    children: [\n      { id: 'invoices', label: 'Invoices', icon: 'file' },\n      { id: 'contracts', label: 'Contracts', icon: 'file', badge: '3' },\n      { id: 'archive', label: 'Archive', icon: 'folder', disabled: true },\n    ],\n  },\n  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },\n  { id: 'notes', label: 'Notes', icon: 'file' },\n];\n\n<Tree\n  label=\"Folders\"\n  showLabel\n  nodes={nodes}\n  selectable=\"single\"\n  defaultExpanded={['docs']}\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": "Keyboard",
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "tree-react--keyboard",
-      "sweep": null,
-      "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -980,6 +911,7 @@
       "storyId": "tree-react--folder-tree",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1004,7 +936,7 @@
       },
       "snippets": {
         "react": "import { Tree } from '@design-schema/react';\n\n<Tree\n  label=\"Settings sections\"\n  nodes={[\n    { id: 'account', label: 'Account', href: '/settings/account' },\n    { id: 'billing', label: 'Billing', href: '/settings/billing' },\n  ]}\n  showLabel\n  headingLevel=\"2\"\n  selectOnFocus\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-tree\n        label=\"Settings sections\"\n        show-label\n        heading-level=\"2\"\n        .nodes=${[\n    { id: 'account', label: 'Account', href: '/settings/account' },\n    { id: 'billing', label: 'Billing', href: '/settings/billing' },\n  ]}\n        select-on-focus\n        .defaultExpanded=${['docs']}\n      ></ds-tree>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-tree\n        label=\"Settings sections\"\n        show-label\n        heading-level=\"2\"\n        .nodes=${[\n    { id: 'account', label: 'Account', href: '/settings/account' },\n    { id: 'billing', label: 'Billing', href: '/settings/billing' },\n  ]}\n        select-on-focus\n      ></ds-tree>\n`;",
         "rn": "import { Tree } from '@design-schema/rn';\n\n<Tree\n  label=\"Settings sections\"\n  showLabel\n  headingLevel=\"2\"\n  nodes={[\n    { id: 'account', label: 'Account', href: '/settings/account' },\n    { id: 'billing', label: 'Billing', href: '/settings/billing' },\n  ]}\n  selectOnFocus\n/>",
         "swift": null
       },
@@ -1017,6 +949,7 @@
       "storyId": "tree-react--navigation-sidebar",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1060,6 +993,7 @@
       "storyId": "tree-react--category-picker-with-cascade",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1089,7 +1023,7 @@
       },
       "snippets": {
         "react": "import { Tree } from '@design-schema/react';\n\n<Tree\n  label=\"Site map\"\n  nodes={[\n    { id: 'guides', label: 'Guides', badge: '12', children: [{ id: 'start', label: 'Getting started' }] },\n    { id: 'api', label: 'API', badge: '48', children: 'lazy' },\n  ]}\n  selectable=\"none\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-tree\n        label=\"Site map\"\n        .nodes=${[\n    { id: 'guides', label: 'Guides', badge: '12', children: [{ id: 'start', label: 'Getting started' }] },\n    { id: 'api', label: 'API', badge: '48', children: 'lazy' },\n  ]}\n        selectable=\"none\"\n        .defaultExpanded=${['docs']}\n      ></ds-tree>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-tree\n        label=\"Site map\"\n        .nodes=${[\n    { id: 'guides', label: 'Guides', badge: '12', children: [{ id: 'start', label: 'Getting started' }] },\n    { id: 'api', label: 'API', badge: '48', children: 'lazy' },\n  ]}\n        selectable=\"none\"\n      ></ds-tree>\n`;",
         "rn": "import { Tree } from '@design-schema/rn';\n\n<Tree\n  label=\"Site map\"\n  nodes={[\n    { id: 'guides', label: 'Guides', badge: '12', children: [{ id: 'start', label: 'Getting started' }] },\n    { id: 'api', label: 'API', badge: '48', children: 'lazy' },\n  ]}\n  selectable=\"none\"\n/>",
         "swift": null
       },
@@ -1102,6 +1036,7 @@
       "storyId": "tree-react--read-only-site-map",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

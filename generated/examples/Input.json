@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -28,6 +29,7 @@
       "storyId": "input-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -55,6 +57,7 @@
         "value": "text"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -82,6 +85,7 @@
         "value": "email"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -109,6 +113,7 @@
         "value": "password"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -136,6 +141,7 @@
         "value": "number"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -163,6 +169,7 @@
         "value": "search"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -190,6 +197,7 @@
         "value": "tel"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -217,6 +225,7 @@
         "value": "url"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -244,6 +253,7 @@
         "value": "sm"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -271,6 +281,7 @@
         "value": "md"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -299,6 +310,7 @@
         "value": "email"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -326,6 +338,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -354,6 +367,7 @@
         "value": "email"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -380,6 +394,7 @@
       "storyId": "input-react--dense-grid-editor",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -408,6 +423,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -435,6 +451,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -460,6 +477,7 @@
       "storyId": "input-react--invalid-required-empty",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -484,6 +502,7 @@
       "storyId": "input-react--with-placeholder",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

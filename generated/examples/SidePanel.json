@@ -6,6 +6,12 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": {
+    "close": [],
+    "change": [
+      "onOpenChange"
+    ]
+  },
   "examples": [
     {
       "title": "Default",
@@ -64,19 +70,20 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\">{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel heading=\"Menu\" landmark=\"complementary\" @open-change=${followOpenChange}>\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Menu\"><Stack gap=\"tight\" align=\"start\">\n<Link href=\"#\" label=\"Home\" />\n<Link href=\"#\" label=\"Products\" />\n<Link href=\"#\" label=\"About\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": null,
+        "lit": "Default",
         "rn": "Default",
         "swift": null
       },
       "storyId": "sidepanel-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": "trigger",
       "primary": true
     },
     {
@@ -137,13 +144,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" side=\"start\">{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel\n    heading=\"Menu\"\n    side=\"start\"\n    landmark=\"complementary\"\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Menu\" side=\"start\"><Stack gap=\"tight\" align=\"start\">\n<Link href=\"#\" label=\"Home\" />\n<Link href=\"#\" label=\"Products\" />\n<Link href=\"#\" label=\"About\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "SideStart",
-        "lit": null,
+        "lit": "SideStart",
         "rn": "SideStart",
         "swift": null
       },
@@ -153,6 +160,7 @@
         "value": "start"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -213,13 +221,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" side=\"end\">{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel heading=\"Menu\" side=\"end\" landmark=\"complementary\" @open-change=${followOpenChange}>\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, SidePanel, Text } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Your cart\" side=\"end\"><Text>Cart contents go here.</Text></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "SideEnd",
-        "lit": null,
+        "lit": "SideEnd",
         "rn": "SideEnd",
         "swift": null
       },
@@ -229,6 +237,7 @@
         "value": "end"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -289,13 +298,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" width=\"narrow\">{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel\n    heading=\"Menu\"\n    width=\"narrow\"\n    landmark=\"complementary\"\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Menu\" width=\"narrow\"><Stack gap=\"tight\" align=\"start\">\n<Link href=\"#\" label=\"Home\" />\n<Link href=\"#\" label=\"Products\" />\n<Link href=\"#\" label=\"About\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "WidthNarrow",
-        "lit": null,
+        "lit": "WidthNarrow",
         "rn": "WidthNarrow",
         "swift": null
       },
@@ -305,6 +314,7 @@
         "value": "narrow"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -365,13 +375,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" width=\"default\">{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel\n    heading=\"Menu\"\n    width=\"default\"\n    landmark=\"complementary\"\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Menu\" width=\"default\"><Stack gap=\"tight\" align=\"start\">\n<Link href=\"#\" label=\"Home\" />\n<Link href=\"#\" label=\"Products\" />\n<Link href=\"#\" label=\"About\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "WidthDefault",
-        "lit": null,
+        "lit": "WidthDefault",
         "rn": "WidthDefault",
         "swift": null
       },
@@ -381,6 +391,7 @@
         "value": "default"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -441,13 +452,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" width=\"wide\">{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel\n    heading=\"Menu\"\n    width=\"wide\"\n    landmark=\"complementary\"\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, SidePanel, Text } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Filters\" width=\"wide\"><Text>A wider panel for a form of filters.</Text></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "WidthWide",
-        "lit": null,
+        "lit": "WidthWide",
         "rn": "WidthWide",
         "swift": null
       },
@@ -457,6 +468,7 @@
         "value": "wide"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -517,13 +529,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" persistent=\"never\">{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel\n    heading=\"Menu\"\n    persistent=\"never\"\n    landmark=\"complementary\"\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Menu\" persistent=\"never\"><Stack gap=\"tight\" align=\"start\">\n<Link href=\"#\" label=\"Home\" />\n<Link href=\"#\" label=\"Products\" />\n<Link href=\"#\" label=\"About\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "PersistentNever",
-        "lit": null,
+        "lit": "PersistentNever",
         "rn": "PersistentNever",
         "swift": null
       },
@@ -533,6 +545,7 @@
         "value": "never"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -593,13 +606,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" persistent=\"content\">{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel\n    heading=\"Menu\"\n    persistent=\"content\"\n    landmark=\"complementary\"\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Menu\" persistent=\"content\"><Stack gap=\"tight\" align=\"start\">\n<Link href=\"#\" label=\"Home\" />\n<Link href=\"#\" label=\"Products\" />\n<Link href=\"#\" label=\"About\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "PersistentContent",
-        "lit": null,
+        "lit": "PersistentContent",
         "rn": "PersistentContent",
         "swift": null
       },
@@ -609,6 +622,7 @@
         "value": "content"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -669,13 +683,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" persistent=\"page\">{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel\n    heading=\"Menu\"\n    persistent=\"page\"\n    landmark=\"complementary\"\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Menu\" persistent=\"page\"><Stack gap=\"tight\" align=\"start\">\n<Link href=\"#\" label=\"Home\" />\n<Link href=\"#\" label=\"Products\" />\n<Link href=\"#\" label=\"About\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "PersistentPage",
-        "lit": null,
+        "lit": "PersistentPage",
         "rn": "PersistentPage",
         "swift": null
       },
@@ -685,6 +699,7 @@
         "value": "page"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -745,13 +760,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" role=\"complementary\">{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel heading=\"Menu\" landmark=\"complementary\" @open-change=${followOpenChange}>\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Menu\" role=\"complementary\"><Stack gap=\"tight\" align=\"start\">\n<Link href=\"#\" label=\"Home\" />\n<Link href=\"#\" label=\"Products\" />\n<Link href=\"#\" label=\"About\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "RoleComplementary",
-        "lit": null,
+        "lit": "RoleComplementary",
         "rn": "RoleComplementary",
         "swift": null
       },
@@ -761,6 +776,7 @@
         "value": "complementary"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -821,13 +837,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" role=\"navigation\">{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel heading=\"Menu\" landmark=\"navigation\" @open-change=${followOpenChange}>\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Menu\" role=\"navigation\"><Stack gap=\"tight\" align=\"start\">\n<Link href=\"#\" label=\"Home\" />\n<Link href=\"#\" label=\"Products\" />\n<Link href=\"#\" label=\"About\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "RoleNavigation",
-        "lit": null,
+        "lit": "RoleNavigation",
         "rn": "RoleNavigation",
         "swift": null
       },
@@ -837,6 +853,7 @@
         "value": "navigation"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -897,13 +914,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" open>{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel open heading=\"Menu\" landmark=\"complementary\" @open-change=${followOpenChange}>\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Open",
-        "lit": null,
+        "lit": "Open",
         "rn": null,
         "swift": null
       },
@@ -913,6 +930,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": true
     },
     {
@@ -974,19 +992,20 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" open modal>{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel open heading=\"Menu\" landmark=\"complementary\" modal @open-change=${followOpenChange}>\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Menu\" modal><Stack gap=\"tight\" align=\"start\">\n<Link href=\"#\" label=\"Home\" />\n<Link href=\"#\" label=\"Products\" />\n<Link href=\"#\" label=\"About\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "Modal",
-        "lit": null,
+        "lit": "Modal",
         "rn": "Modal",
         "swift": null
       },
       "storyId": "sidepanel-react--modal",
       "sweep": null,
       "decorated": false,
+      "harness": "trigger",
       "primary": true
     },
     {
@@ -1048,19 +1067,20 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" open scrim={false}>{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel open heading=\"Menu\" landmark=\"complementary\" @open-change=${followOpenChange}>\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Menu\" scrim={false}><Stack gap=\"tight\" align=\"start\">\n<Link href=\"#\" label=\"Home\" />\n<Link href=\"#\" label=\"Products\" />\n<Link href=\"#\" label=\"About\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "NoScrim",
-        "lit": null,
+        "lit": "NoScrim",
         "rn": "NoScrim",
         "swift": null
       },
       "storyId": "sidepanel-react--no-scrim",
       "sweep": null,
       "decorated": false,
+      "harness": "trigger",
       "primary": true
     },
     {
@@ -1122,19 +1142,20 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel\n  trigger={menuTrigger}\n  heading=\"Menu\"\n  open\n  dismissible={false}\n>{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel open heading=\"Menu\" landmark=\"complementary\" @open-change=${followOpenChange}>\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled open heading=\"Menu\" dismissible={false}><Stack gap=\"tight\" align=\"start\">\n<Link href=\"#\" label=\"Home\" />\n<Link href=\"#\" label=\"Products\" />\n<Link href=\"#\" label=\"About\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "NotDismissible",
-        "lit": null,
+        "lit": "NotDismissible",
         "rn": "NotDismissible",
         "swift": null
       },
       "storyId": "sidepanel-react--not-dismissible",
       "sweep": null,
       "decorated": false,
+      "harness": "trigger",
       "primary": true
     },
     {
@@ -1196,19 +1217,20 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" open hideHeading>{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel\n    open\n    heading=\"Menu\"\n    hide-heading\n    landmark=\"complementary\"\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "HiddenHeading",
-        "lit": null,
+        "lit": "HiddenHeading",
         "rn": null,
         "swift": null
       },
       "storyId": "sidepanel-react--hidden-heading",
       "sweep": null,
       "decorated": false,
+      "harness": "trigger",
       "primary": true
     },
     {
@@ -1271,19 +1293,20 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel\n  trigger={menuTrigger}\n  heading=\"Menu\"\n  open\n  hideHeading\n  dismissible={false}\n>{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel\n    open\n    heading=\"Menu\"\n    hide-heading\n    landmark=\"complementary\"\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "HiddenHeadingNotDismissible",
-        "lit": null,
+        "lit": "HiddenHeadingNotDismissible",
         "rn": null,
         "swift": null
       },
       "storyId": "sidepanel-react--hidden-heading-not-dismissible",
       "sweep": null,
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -1346,19 +1369,20 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel\n  trigger={menuTrigger}\n  heading=\"Menu\"\n  hideHeading\n  role=\"navigation\"\n  persistent=\"content\"\n>{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel\n    heading=\"Menu\"\n    hide-heading\n    persistent=\"content\"\n    landmark=\"navigation\"\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Button, Icon, Link, SidePanel, Stack, useTheme } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nfunction MenuTrigger(): React.JSX.Element {\n  const { tokens: t } = useTheme();\n  return <Button label=\"Menu\" variant=\"ghost\" iconOnly leadingIcon={<Icon name=\"menu\" color={t.colorActionGhostForeground} />} />;\n}\n\n<Controlled\n  heading=\"Menu\"\n  persistent=\"content\"\n  role=\"navigation\"\n  trigger={<MenuTrigger />}\n  hideHeading\n><Stack gap=\"tight\" align=\"start\">\n<Link href=\"#\" label=\"Home\" />\n<Link href=\"#\" label=\"Products\" />\n<Link href=\"#\" label=\"About\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "NavigationDrawer",
-        "lit": null,
+        "lit": "NavigationDrawer",
         "rn": "NavigationDrawer",
         "swift": null
       },
       "storyId": "sidepanel-react--navigation-drawer",
       "sweep": null,
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
@@ -1431,13 +1455,13 @@
       },
       "snippets": {
         "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Checkbox, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<StatefulSidePanel\n  trigger={<Button variant=\"secondary\" label=\"Filters\" />}\n  heading=\"Filters\"\n  footer={<>\n    <Button variant=\"secondary\" label=\"Clear\" />\n    <Button variant=\"primary\" label=\"Apply\" />\n  </>}\n  width=\"wide\"\n><Stack gap=\"normal\">\n<Checkbox name=\"in-stock\" label=\"In stock\" />\n<Checkbox name=\"free-shipping\" label=\"Free shipping\" />\n<Checkbox name=\"on-sale\" label=\"On sale\" />\n</Stack></StatefulSidePanel>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel\n    heading=\"Filters\"\n    width=\"wide\"\n    landmark=\"complementary\"\n    @open-change=${followOpenChange}\n  >\n    <ds-button slot=\"trigger\" variant=\"secondary\" label=\"Filters\"></ds-button>\n    <ds-stack gap=\"normal\">\n      <ds-checkbox name=\"in-stock\" label=\"In stock\"></ds-checkbox>\n      <ds-checkbox name=\"free-shipping\" label=\"Free shipping\"></ds-checkbox>\n      <ds-checkbox name=\"on-sale\" label=\"On sale\"></ds-checkbox>\n    </ds-stack>\n    <ds-button slot=\"footer\" variant=\"secondary\" label=\"Clear\"></ds-button>\n    <ds-button slot=\"footer\" variant=\"primary\" label=\"Apply\"></ds-button>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Button, Checkbox, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled\n  heading=\"Filters\"\n  width=\"wide\"\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  footer={<>\n    <Button label=\"Clear\" variant=\"secondary\" />\n    <Button label=\"Apply\" variant=\"primary\" />\n  </>}\n><Stack gap=\"normal\">\n<Checkbox name=\"inStock\" label=\"In stock\" />\n<Checkbox name=\"freeShipping\" label=\"Free shipping\" />\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "Filters",
-        "lit": null,
+        "lit": "Filters",
         "rn": "Filters",
         "swift": null
       },
@@ -1447,28 +1471,12 @@
         "value": "wide"
       },
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
       "title": "Cart",
       "args": {
-        "trigger": {
-          "$element": "Button",
-          "props": {
-            "variant": "ghost",
-            "iconOnly": true,
-            "label": "Menu",
-            "leadingIcon": {
-              "$element": "Icon",
-              "props": {
-                "name": "menu",
-                "inline": true
-              },
-              "children": []
-            }
-          },
-          "children": []
-        },
         "heading": "Your cart",
         "children": {
           "$element": "Stack",
@@ -1521,42 +1529,26 @@
         "modal": true
       },
       "snippets": {
-        "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Card, Icon, Stack, Text } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\n<StatefulSidePanel\n  trigger={menuTrigger}\n  heading=\"Your cart\"\n  open\n  footer={<Button variant=\"primary\" label=\"Checkout\" />}\n  side=\"end\"\n  modal\n><Stack gap=\"normal\">\n<Card heading=\"Linen shirt\">\n  <Text>1 × $48.00</Text>\n</Card>\n<Card heading=\"Canvas tote\">\n  <Text>2 × $22.00</Text>\n</Card>\n</Stack></StatefulSidePanel>",
-        "lit": null,
+        "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Card, Stack, Text } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<StatefulSidePanel\n  heading=\"Your cart\"\n  open\n  footer={<Button variant=\"primary\" label=\"Checkout\" />}\n  side=\"end\"\n  modal\n><Stack gap=\"normal\">\n<Card heading=\"Linen shirt\">\n  <Text>1 × $48.00</Text>\n</Card>\n<Card heading=\"Canvas tote\">\n  <Text>2 × $22.00</Text>\n</Card>\n</Stack></StatefulSidePanel>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel\n    open\n    heading=\"Your cart\"\n    side=\"end\"\n    landmark=\"complementary\"\n    modal\n    @open-change=${followOpenChange}\n  >\n    <ds-stack gap=\"normal\">\n      <ds-card heading=\"Linen shirt\"><ds-text>1 × $48.00</ds-text></ds-card>\n      <ds-card heading=\"Canvas tote\"><ds-text>2 × $22.00</ds-text></ds-card>\n    </ds-stack>\n    <ds-button slot=\"footer\" variant=\"primary\" label=\"Checkout\"></ds-button>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, Button, Card, SidePanel, Stack, Text } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled\n  open\n  heading=\"Your cart\"\n  side=\"end\"\n  modal\n  footer={<Button label=\"Checkout\" variant=\"primary\" />}\n><Stack gap=\"normal\">\n<Card heading=\"Desk lamp\">\n  <Text>1 × $48.00</Text>\n</Card>\n<Card heading=\"Notebook\">\n  <Text>2 × $12.00</Text>\n</Card>\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "Cart",
-        "lit": null,
+        "lit": "Cart",
         "rn": "Cart",
         "swift": null
       },
       "storyId": "sidepanel-react--cart",
       "sweep": null,
       "decorated": false,
+      "harness": "trigger",
       "primary": false
     },
     {
       "title": "Detail Panel",
       "args": {
-        "trigger": {
-          "$element": "Button",
-          "props": {
-            "variant": "ghost",
-            "iconOnly": true,
-            "label": "Menu",
-            "leadingIcon": {
-              "$element": "Icon",
-              "props": {
-                "name": "menu",
-                "inline": true
-              },
-              "children": []
-            }
-          },
-          "children": []
-        },
         "heading": "Order details",
         "children": {
           "$element": "Stack",
@@ -1604,96 +1596,21 @@
         "scrim": false
       },
       "snippets": {
-        "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Stack, Text } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\n<StatefulSidePanel\n  trigger={menuTrigger}\n  heading=\"Order details\"\n  open\n  side=\"end\"\n  width=\"narrow\"\n  scrim={false}\n><Stack gap=\"tight\">\n<Text tone=\"muted\">Order</Text>\n<Text>#10482</Text>\n<Text tone=\"muted\">Status</Text>\n<Text>Shipped</Text>\n</Stack></StatefulSidePanel>",
-        "lit": null,
+        "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Stack, Text } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<StatefulSidePanel\n  heading=\"Order details\"\n  open\n  side=\"end\"\n  width=\"narrow\"\n  scrim={false}\n><Stack gap=\"tight\">\n<Text tone=\"muted\">Order</Text>\n<Text>#10482</Text>\n<Text tone=\"muted\">Status</Text>\n<Text>Shipped</Text>\n</Stack></StatefulSidePanel>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel\n    open\n    heading=\"Order details\"\n    side=\"end\"\n    width=\"narrow\"\n    landmark=\"complementary\"\n    @open-change=${followOpenChange}\n  >\n    <ds-stack gap=\"tight\">\n      <ds-text tone=\"muted\">Order</ds-text>\n      <ds-text>#10482</ds-text>\n      <ds-text tone=\"muted\">Status</ds-text>\n      <ds-text>Shipped</ds-text>\n    </ds-stack>\n  </ds-side-panel>\n`;",
         "rn": "import * as React from 'react';\nimport { type SidePanelProps, SidePanel, Stack, Text } from '@design-schema/rn';\n\nfunction Controlled(args: SidePanelProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(args.open);\n  React.useEffect(() => setOpen(args.open), [args.open]);\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        if (open !== undefined) {\n          setOpen(next);\n        }\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\n<Controlled\n  open\n  heading=\"Order details\"\n  side=\"end\"\n  width=\"narrow\"\n  scrim={false}\n><Stack gap=\"tight\">\n<Text>Order: 10482</Text>\n<Text>Status: Shipped</Text>\n<Text>Total: $72.00</Text>\n</Stack></Controlled>",
         "swift": null
       },
       "stories": {
         "react": "DetailPanel",
-        "lit": null,
+        "lit": "DetailPanel",
         "rn": "DetailPanel",
         "swift": null
       },
       "storyId": "sidepanel-react--detail-panel",
       "sweep": null,
       "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "trigger": {
-          "$element": "Button",
-          "props": {
-            "variant": "ghost",
-            "iconOnly": true,
-            "label": "Menu",
-            "leadingIcon": {
-              "$element": "Icon",
-              "props": {
-                "name": "menu",
-                "inline": true
-              },
-              "children": []
-            }
-          },
-          "children": []
-        },
-        "heading": "Menu",
-        "children": {
-          "$element": "Stack",
-          "props": {
-            "gap": "tight"
-          },
-          "children": [
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#dashboard",
-                "label": "Dashboard",
-                "aria-current": "page"
-              },
-              "children": []
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#projects",
-                "label": "Projects"
-              },
-              "children": []
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#settings",
-                "label": "Settings"
-              },
-              "children": []
-            }
-          ]
-        },
-        "open": true
-      },
-      "snippets": {
-        "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" open>{navigationLinks}</StatefulSidePanel>",
-        "lit": null,
-        "rn": "import * as React from 'react';\nimport { Button, Link, SidePanel, Stack } from '@design-schema/rn';\n\nfunction Open(): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <SidePanel\n      heading=\"Menu\"\n      trigger={<Button label=\"Menu\" variant=\"secondary\" />}\n      open={open}\n      onOpenChange={(next) => setOpen(next)}\n    >\n      <Stack gap=\"tight\" align=\"start\">\n        <Link href=\"#\" label=\"Home\" />\n        <Link href=\"#\" label=\"Products\" />\n        <Button label=\"Sign out\" variant=\"secondary\" onPress={() => setOpen(false)} />\n      </Stack>\n    </SidePanel>\n  );\n}\n\n<Open />",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": null,
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "sidepanel-react--keyboard",
-      "sweep": {
-        "prop": "open",
-        "value": true
-      },
-      "decorated": false,
+      "harness": "trigger",
       "primary": false
     }
   ]

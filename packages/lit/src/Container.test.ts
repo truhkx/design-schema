@@ -1,6 +1,7 @@
 /**
  * <ds-container> — behavior scenarios from the component doc, one test each, in the doc's order.
- * Container has no interactive behavior (a11y.role: none), so every scenario only asserts render.
+ * Container has no interactive behavior (a11y.role: none), so every scenario but the main
+ * landmark only asserts render.
  * Runs in headless Chromium (Vitest browser mode). See generated/prompts/Container.lit.md.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -29,6 +30,23 @@ beforeEach(() => {
 });
 
 describe('ds-container', () => {
+  /* Container adds no semantics unless element: main is chosen, in which case it is the
+     page's main landmark. The role is a plain attribute on the host, so it is readable
+     here and in the light-DOM tree the accessibility APIs walk. */
+  it('main-element-is-the-page-landmark', async () => {
+    const { el } = await setup({ element: 'main' });
+    expect(el).toHaveAttribute('role', 'main');
+    expect(document.querySelectorAll('[role="main"]')).toHaveLength(1);
+  });
+
+  it('adds no role for div or section', async () => {
+    const { el } = await setup({ element: 'div' });
+    expect(el).not.toHaveAttribute('role');
+    el.element = 'section';
+    await el.updateComplete;
+    expect(el).not.toHaveAttribute('role');
+  });
+
   /* derived: a11y.role */
   it('renders', async () => {
     const { el } = await setup();

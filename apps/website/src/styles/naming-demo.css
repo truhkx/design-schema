@@ -8,7 +8,8 @@
  * side-by-side comparison must not do. No appearance is set here, and the value is a token.
  * generated/gaps/Stack.web.md is where the missing grid primitive is logged.
  */
-.ds-naming-demo__pair > * {
+/* `.ds-naming-demo__pair` is a plain div around the Stack (which takes no class of ours). */
+.ds-naming-demo__pair > * > * {
   flex: 1 1 calc(var(--layout-max-width-prose) / 2); /* literal-ok: a ratio, not a dimension */
   min-inline-size: 0;
 }

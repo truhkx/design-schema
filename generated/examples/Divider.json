@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -16,19 +17,20 @@
       },
       "snippets": {
         "react": "import { Divider } from '@design-schema/react';\n\n<Divider />",
-        "lit": null,
+        "lit": "<ds-divider></ds-divider>",
         "rn": "import { Divider } from '@design-schema/rn';\n\n<Divider />",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": null,
+        "lit": "Default",
         "rn": "Default",
         "swift": null
       },
       "storyId": "divider-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -40,13 +42,13 @@
       },
       "snippets": {
         "react": "import { Divider } from '@design-schema/react';\n\n<Divider orientation=\"horizontal\" />",
-        "lit": null,
+        "lit": "<ds-divider orientation=\"horizontal\"></ds-divider>",
         "rn": "import { Divider } from '@design-schema/rn';\n\n<Divider orientation=\"horizontal\" />",
         "swift": null
       },
       "stories": {
         "react": "OrientationHorizontal",
-        "lit": null,
+        "lit": "OrientationHorizontal",
         "rn": "OrientationHorizontal",
         "swift": null
       },
@@ -56,6 +58,7 @@
         "value": "horizontal"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -67,14 +70,14 @@
       },
       "snippets": {
         "react": "import { Divider } from '@design-schema/react';\n\n<Divider orientation=\"vertical\" />",
-        "lit": null,
-        "rn": null,
+        "lit": "<ds-stack direction=\"horizontal\" align=\"stretch\" gap=\"tight\">\n  <ds-text element=\"span\">Bold Italic</ds-text>\n  <ds-divider orientation=\"vertical\"></ds-divider>\n  <ds-text element=\"span\">Align left</ds-text>\n</ds-stack>",
+        "rn": "import { Divider, Stack, Text } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" gap=\"tight\" align=\"stretch\">\n  <Text>Bold Italic</Text>\n  <Divider orientation=\"vertical\" />\n  <Text>Align left</Text>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "OrientationVertical",
-        "lit": null,
-        "rn": null,
+        "lit": "OrientationVertical",
+        "rn": "OrientationVertical",
         "swift": null
       },
       "storyId": "divider-react--orientation-vertical",
@@ -83,6 +86,7 @@
         "value": "vertical"
       },
       "decorated": true,
+      "harness": null,
       "primary": false
     },
     {
@@ -94,13 +98,13 @@
       },
       "snippets": {
         "react": "import { Divider } from '@design-schema/react';\n\n<Divider spacing=\"none\" />",
-        "lit": null,
+        "lit": "<ds-divider spacing=\"none\"></ds-divider>",
         "rn": "import { Divider } from '@design-schema/rn';\n\n<Divider spacing=\"none\" />",
         "swift": null
       },
       "stories": {
         "react": "SpacingNone",
-        "lit": null,
+        "lit": "SpacingNone",
         "rn": "SpacingNone",
         "swift": null
       },
@@ -110,6 +114,7 @@
         "value": "none"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -121,13 +126,13 @@
       },
       "snippets": {
         "react": "import { Divider } from '@design-schema/react';\n\n<Divider spacing=\"tight\" />",
-        "lit": null,
+        "lit": "<ds-divider spacing=\"tight\"></ds-divider>",
         "rn": "import { Divider } from '@design-schema/rn';\n\n<Divider spacing=\"tight\" />",
         "swift": null
       },
       "stories": {
         "react": "SpacingTight",
-        "lit": null,
+        "lit": "SpacingTight",
         "rn": "SpacingTight",
         "swift": null
       },
@@ -137,6 +142,7 @@
         "value": "tight"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -148,13 +154,13 @@
       },
       "snippets": {
         "react": "import { Divider } from '@design-schema/react';\n\n<Divider spacing=\"normal\" />",
-        "lit": null,
+        "lit": "<ds-divider spacing=\"normal\"></ds-divider>",
         "rn": "import { Divider } from '@design-schema/rn';\n\n<Divider spacing=\"normal\" />",
         "swift": null
       },
       "stories": {
         "react": "SpacingNormal",
-        "lit": null,
+        "lit": "SpacingNormal",
         "rn": "SpacingNormal",
         "swift": null
       },
@@ -164,6 +170,7 @@
         "value": "normal"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -175,13 +182,13 @@
       },
       "snippets": {
         "react": "import { Divider } from '@design-schema/react';\n\n<Divider spacing=\"loose\" />",
-        "lit": null,
+        "lit": "<ds-divider spacing=\"loose\"></ds-divider>",
         "rn": "import { Divider } from '@design-schema/rn';\n\n<Divider spacing=\"loose\" />",
         "swift": null
       },
       "stories": {
         "react": "SpacingLoose",
-        "lit": null,
+        "lit": "SpacingLoose",
         "rn": "SpacingLoose",
         "swift": null
       },
@@ -191,6 +198,7 @@
         "value": "loose"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -202,13 +210,13 @@
       },
       "snippets": {
         "react": "import { Divider } from '@design-schema/react';\n\n<Divider semantic />",
-        "lit": null,
+        "lit": "<ds-divider semantic></ds-divider>",
         "rn": "import { Divider } from '@design-schema/rn';\n\n<Divider semantic label=\"or\" />",
         "swift": null
       },
       "stories": {
         "react": "Semantic",
-        "lit": null,
+        "lit": "Semantic",
         "rn": "SemanticLabelled",
         "swift": null
       },
@@ -218,6 +226,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -230,19 +239,20 @@
       },
       "snippets": {
         "react": "import { Divider } from '@design-schema/react';\n\n<Divider label=\"or\" />",
-        "lit": null,
+        "lit": "<ds-divider label=\"or\"></ds-divider>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Labelled",
-        "lit": null,
+        "lit": "Labelled",
         "rn": null,
         "swift": null
       },
       "storyId": "divider-react--labelled",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -255,13 +265,13 @@
       },
       "snippets": {
         "react": "import { Divider } from '@design-schema/react';\n\n<Divider spacing=\"normal\" label=\"or\" />",
-        "lit": null,
+        "lit": "<ds-divider spacing=\"normal\" label=\"or\"></ds-divider>",
         "rn": "import { Divider } from '@design-schema/rn';\n\n<Divider spacing=\"normal\" label=\"or\" />",
         "swift": null
       },
       "stories": {
         "react": "OrBetweenAlternatives",
-        "lit": null,
+        "lit": "OrBetweenAlternatives",
         "rn": "OrBetweenAlternatives",
         "swift": null
       },
@@ -271,6 +281,7 @@
         "value": "normal"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -282,13 +293,13 @@
       },
       "snippets": {
         "react": "import { Divider } from '@design-schema/react';\n\n<Divider orientation=\"horizontal\" />",
-        "lit": null,
+        "lit": "<ds-divider orientation=\"horizontal\"></ds-divider>",
         "rn": "import { Divider } from '@design-schema/rn';\n\n<Divider orientation=\"horizontal\" />",
         "swift": null
       },
       "stories": {
         "react": "ListFurniture",
-        "lit": null,
+        "lit": "ListFurniture",
         "rn": "ListFurniture",
         "swift": null
       },
@@ -298,6 +309,7 @@
         "value": "horizontal"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -309,14 +321,14 @@
       },
       "snippets": {
         "react": "import { Divider } from '@design-schema/react';\n\n<Divider orientation=\"vertical\" />",
-        "lit": null,
-        "rn": null,
+        "lit": "<ds-stack direction=\"horizontal\" align=\"stretch\" gap=\"tight\">\n  <ds-text element=\"span\">Bold Italic</ds-text>\n  <ds-divider orientation=\"vertical\"></ds-divider>\n  <ds-text element=\"span\">Align left</ds-text>\n</ds-stack>",
+        "rn": "import { Divider, Stack, Text } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" gap=\"tight\" align=\"stretch\">\n  <Text>Bold Italic</Text>\n  <Divider orientation=\"vertical\" />\n  <Text>Align left</Text>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "ToolbarGroups",
-        "lit": null,
-        "rn": null,
+        "lit": "ToolbarGroups",
+        "rn": "ToolbarGroups",
         "swift": null
       },
       "storyId": "divider-react--toolbar-groups",
@@ -325,6 +337,7 @@
         "value": "vertical"
       },
       "decorated": true,
+      "harness": null,
       "primary": false
     },
     {
@@ -336,19 +349,20 @@
       },
       "snippets": {
         "react": "import { Divider } from '@design-schema/react';\n\n<Divider semantic spacing=\"loose\" />",
-        "lit": null,
+        "lit": "<ds-divider spacing=\"loose\" semantic></ds-divider>",
         "rn": "import { Divider, Stack, Text } from '@design-schema/rn';\n\n<Stack gap=\"none\">\n  <Text>Today</Text>\n  <Divider semantic spacing=\"loose\" />\n  <Text>Earlier</Text>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "SectionBoundary",
-        "lit": null,
+        "lit": "SectionBoundary",
         "rn": "SectionBoundary",
         "swift": null
       },
       "storyId": "divider-react--section-boundary",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     }
   ]

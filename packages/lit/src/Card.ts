@@ -226,11 +226,17 @@ export class DsCard extends LitElement {
       border-color: var(--color-border-focus);
     }
 
-    /* focusable: scripted focus only; an outline of focusRingWidth in focusRing, no offset */
+    /*
+     * focusable: scripted focus only; an outline of focusRingWidth in focusRing, no offset, and the
+     * host's own outline removed. Chromium does not match :focus-visible on a programmatic focus()
+     * that follows a pointer interaction — exactly the Feed's PageUp/PageDown case — so the card
+     * also keeps its own ring state from focusin/focusout and draws on either.
+     */
     :host([focusable]:not([interactive])) {
       outline: none;
     }
-    :host([focusable]:not([interactive]):focus-visible) [data-part='surface'] {
+    :host([focusable]:not([interactive]):focus-visible) [data-part='surface'],
+    :host([focusable]:not([interactive]):state(focus-ring)) [data-part='surface'] {
       /* no outline-offset: the ring sits on the card's edge */
       outline: var(--border-width-focus) solid var(--color-border-focus);
     }
@@ -283,6 +289,8 @@ export class DsCard extends LitElement {
   private ownsTabindex = false;
   private warnedTarget = false;
   private warnedFocusable = false;
+  /** A focusin that follows a pointerdown on the card is not the scripted focus the ring is for. */
+  private afterPointerDown = false;
 
   constructor() {
     super();
@@ -290,6 +298,8 @@ export class DsCard extends LitElement {
     this.addEventListener('click', this.handleHostClick);
     this.addEventListener('focusin', this.handleFocusIn);
     this.addEventListener('focusout', this.handleFocusOut);
+    this.addEventListener('pointerdown', this.handlePointerDown);
+    this.addEventListener('pointerup', this.handlePointerUp);
   }
 
   override connectedCallback(): void {
@@ -306,6 +316,7 @@ export class DsCard extends LitElement {
     super.disconnectedCallback();
     this.targetObserver.disconnect();
     this.setCustomState('target-focus', false);
+    this.setCustomState('focus-ring', false);
   }
 
   protected override willUpdate(changed: PropertyValues): void {
@@ -430,7 +441,11 @@ export class DsCard extends LitElement {
     control?.click();
   };
 
-  /** The ring shows only while the target itself has keyboard focus, never for a header-actions or footer control. */
+  /**
+   * The ring shows only while the target itself has keyboard focus, never for a header-actions or
+   * footer control. A focusable card rings whenever it takes focus by script — only a focusin that
+   * follows a pointerdown on the card is skipped.
+   */
   private readonly handleFocusIn = (event: FocusEvent): void => {
     const target = this.hitAreaTarget;
     const path = event.composedPath();
@@ -439,10 +454,25 @@ export class DsCard extends LitElement {
       'target-focus',
       this.interactive && target !== null && path.includes(target) && focused instanceof Element && focused.matches(':focus-visible'),
     );
+    const fromPointer = this.afterPointerDown;
+    this.afterPointerDown = false;
+    if (focused === this && this.focusable && !this.interactive && !fromPointer) {
+      this.setCustomState('focus-ring', true);
+    }
   };
 
-  private readonly handleFocusOut = (): void => {
+  private readonly handleFocusOut = (event: FocusEvent): void => {
     this.setCustomState('target-focus', false);
+    if (event.composedPath()[0] === this) this.setCustomState('focus-ring', false);
+  };
+
+  private readonly handlePointerDown = (): void => {
+    this.afterPointerDown = true;
+  };
+
+  /** A pointerdown that moved focus nowhere must not suppress the next scripted focus. */
+  private readonly handlePointerUp = (): void => {
+    this.afterPointerDown = false;
   };
 
   /** `role="article"` named by `aria-label` when a heading is set; plain attributes so accessible-name tests see them. */
@@ -476,7 +506,10 @@ export class DsCard extends LitElement {
     if (this.focusable && !this.interactive) {
       if (this.getAttribute('tabindex') !== '-1') this.setAttribute('tabindex', '-1');
       this.ownsTabindex = true;
-    } else if (this.ownsTabindex) {
+      return;
+    }
+    this.setCustomState('focus-ring', false);
+    if (this.ownsTabindex) {
       this.removeAttribute('tabindex');
       this.ownsTabindex = false;
     }

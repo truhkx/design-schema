@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -27,6 +28,7 @@
       "storyId": "search-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -53,6 +55,7 @@
         "value": "md"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -79,6 +82,7 @@
         "value": "lg"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -102,6 +106,7 @@
       "storyId": "search-react--header-search",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -126,6 +131,7 @@
       "storyId": "search-react--search-page-hero",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -158,6 +164,7 @@
       "storyId": "search-react--with-suggestions",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -185,6 +192,7 @@
         "value": false
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -195,19 +203,20 @@
       },
       "snippets": {
         "react": "import { Search } from '@design-schema/react';\n\n<Search label=\"Search products\" defaultValue=\"invoices\" />",
-        "lit": null,
+        "lit": "<ds-search label=\"Search products\" default-value=\"invoices\"></ds-search>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "WithValue",
-        "lit": null,
+        "lit": "WithValue",
         "rn": null,
         "swift": null
       },
       "storyId": "search-react--with-value",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -235,6 +244,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -247,7 +257,7 @@
       },
       "snippets": {
         "react": "import { Search } from '@design-schema/react';\n\n<Search\n  label=\"Search products\"\n  defaultValue=\"invoices\"\n  suggestions={[]}\n  loading\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-search label=\"Search products\" default-value=\"inv\" .suggestions=${[]} loading></ds-search>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-search label=\"Search products\" default-value=\"invoices\" .suggestions=${[]} loading></ds-search>\n`;",
         "rn": "import { Search } from '@design-schema/rn';\n\n<Search\n  label=\"Search products\"\n  placeholder={'Try \"invoices from March\"'}\n  loading\n  suggestions={[]}\n/>",
         "swift": null
       },
@@ -260,6 +270,7 @@
       "storyId": "search-react--loading",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -284,6 +295,7 @@
       "storyId": "search-react--no-suggestions",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -293,57 +305,20 @@
       },
       "snippets": {
         "react": "import { useState } from 'react';\nimport { Search, type SearchSuggestion } from '@design-schema/react';\n\nconst SUGGESTIONS: SearchSuggestion[] = [\n  { value: 'invoices-march', label: 'Invoices from March' },\n  { value: 'invoices-april', label: 'Invoices from April' },\n  { value: 'invoices-overdue', label: 'Overdue invoices', description: 'Past their due date' },\n];\n\nfunction Demo() {\n  const [suggestions, setSuggestions] = useState<SearchSuggestion[] | undefined>(undefined);\n  return (\n    <Search\n      label=\"Search products\"\n      onChange={(query) => {\n        const needle = query.trim().toLowerCase();\n        setSuggestions(needle ? SUGGESTIONS.filter((s) => s.label.toLowerCase().includes(needle)) : undefined);\n      }}\n    />\n  );\n}\n\n<Demo />",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSearch, SearchChangeDetail, SearchSuggestion } from '@design-schema/lit';\n\nconst SUGGESTIONS: SearchSuggestion[] = [\n  { value: 'invoices-march', label: 'Invoices from March' },\n  { value: 'invoices-april', label: 'Invoices from April' },\n  { value: 'invoices-overdue', label: 'Overdue invoices', description: 'Past their due date' },\n];\n\nhtml`\n      <ds-search\n        label=\"Search products\"\n        @change=${(event: CustomEvent<SearchChangeDetail>) => {\n    const search = event.currentTarget as DsSearch;\n    const needle = event.detail.value.trim().toLowerCase();\n    search.suggestions = needle\n      ? SUGGESTIONS.filter((item) => item.label.toLowerCase().includes(needle))\n      : undefined;\n  }}\n      ></ds-search>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "SuggestionsFromOnChange",
-        "lit": null,
+        "lit": "SuggestionsFromOnChange",
         "rn": null,
         "swift": null
       },
       "storyId": "search-react--suggestions-from-on-change",
       "sweep": null,
       "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "label": "Search products",
-        "defaultValue": "invoices",
-        "suggestions": [
-          {
-            "value": "invoices-march",
-            "label": "Invoices from March"
-          },
-          {
-            "value": "invoices-april",
-            "label": "Invoices from April"
-          },
-          {
-            "value": "invoices-overdue",
-            "label": "Overdue invoices",
-            "description": "Past their due date"
-          }
-        ]
-      },
-      "snippets": {
-        "react": "import { Search, type SearchSuggestion } from '@design-schema/react';\n\nconst SUGGESTIONS: SearchSuggestion[] = [\n  { value: 'invoices-march', label: 'Invoices from March' },\n  { value: 'invoices-april', label: 'Invoices from April' },\n  { value: 'invoices-overdue', label: 'Overdue invoices', description: 'Past their due date' },\n];\n\n<Search\n  label=\"Search products\"\n  defaultValue=\"invoices\"\n  suggestions={SUGGESTIONS}\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { SearchSuggestion } from '@design-schema/lit';\n\nconst SUGGESTIONS: SearchSuggestion[] = [\n  { value: 'invoices-march', label: 'Invoices from March' },\n  { value: 'invoices-april', label: 'Invoices from April' },\n  { value: 'invoice-templates', label: 'Invoice templates' },\n];\n\nhtml`\n  <ds-search label=\"Search products\" default-value=\"invoices\" .suggestions=${SUGGESTIONS}></ds-search>\n`;",
-        "rn": "import { Search } from '@design-schema/rn';\n\nconst SUGGESTIONS = [\n  { value: 'invoices-march', label: 'Invoices from March' },\n  { value: 'invoices-april', label: 'Invoices from April' },\n  { value: 'invoice-1042', label: 'Invoice No. 1042', description: 'Overdue' },\n];\n\n<Search\n  label=\"Search products\"\n  placeholder={'Try \"invoices from March\"'}\n  defaultValue=\"invoices\"\n  suggestions={SUGGESTIONS}\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": "Keyboard",
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "search-react--keyboard",
-      "sweep": null,
-      "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

@@ -10,7 +10,7 @@ import './Icon.js';
 import './Box.js';
 import './Stack.js';
 import './FocusScope.js';
-import type { DsFocusScope } from './FocusScope.js';
+import { focusableIn, type DsFocusScope } from './FocusScope.js';
 import type { StackOverridableBinding } from './Stack.js';
 import type { BoxOverridableBinding } from './Box.js';
 
@@ -79,42 +79,13 @@ const NEGATED_BOOLEAN_CONVERTER = {
   },
 };
 
-const FOCUSABLE_SELECTOR = [
-  'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  'summary',
-  '[contenteditable]:not([contenteditable="false"])',
-  '[tabindex]',
-].join(',');
-
-/** The first tabbable element in tree order, walking slot assignments and open shadow roots. */
+/**
+ * The first tabbable element in a slot's assigned content, by exactly the rules the trapped
+ * `<ds-focus-scope>` around the surface uses — `focusableIn` is shared for this, so initial focus
+ * cannot land somewhere Tab would then refuse to return to.
+ */
 function firstFocusableIn(node: Element): HTMLElement | null {
-  if (node.hasAttribute('inert') || node.getAttribute('aria-hidden') === 'true') {
-    return null;
-  }
-  if (node instanceof HTMLElement && !node.hidden && node.tabIndex >= 0 && node.matches(FOCUSABLE_SELECTOR)) {
-    return node;
-  }
-  if (node instanceof HTMLSlotElement) {
-    for (const assigned of node.assignedElements({ flatten: true })) {
-      const found = firstFocusableIn(assigned);
-      if (found) {
-        return found;
-      }
-    }
-    return null;
-  }
-  const scope = node.shadowRoot ?? node;
-  for (const child of Array.from(scope.children)) {
-    const found = firstFocusableIn(child);
-    if (found) {
-      return found;
-    }
-  }
-  return null;
+  return focusableIn(node)[0] ?? null;
 }
 
 function nextFrame(): Promise<void> {
@@ -253,7 +224,13 @@ export class DsDialog extends LitElement {
       transition: opacity var(--ds-dialog-enter) var(--motion-easing-standard);
     }
 
-    /* focusScope: the <ds-focus-scope> host is the part element. Layout only. */
+    /* The <ds-focus-scope> host carries no part: it writes its own data-part="scope", and it only
+       traps Tab and restores focus. */
+    ds-focus-scope {
+      min-inline-size: 0;
+    }
+
+    /* focusScope: the Dialog-owned part element inside the scope, wrapping the surface. */
     .scope {
       display: block;
       min-inline-size: 0;
@@ -320,6 +297,11 @@ export class DsDialog extends LitElement {
       .scrim,
       .surface {
         transition: none;
+      }
+      /* The rise is motion too: no translate at either end under reduced motion. */
+      .surface,
+      .closing .surface {
+        transform: none;
       }
     }
 
@@ -431,7 +413,7 @@ export class DsDialog extends LitElement {
   @state() private accessor headingIsFallback = false;
 
   @query('dialog') private accessor dialogEl!: HTMLDialogElement | null;
-  @query('.scope') private accessor scopeEl!: DsFocusScope | null;
+  @query('ds-focus-scope') private accessor scopeEl!: DsFocusScope | null;
   @query('.scrim') private accessor scrimEl!: HTMLElement | null;
   @query('.surface') private accessor surfaceEl!: HTMLElement | null;
   @query('ds-heading') private accessor headingEl!: HTMLElement | null;
@@ -508,6 +490,7 @@ export class DsDialog extends LitElement {
     return html`
       <dialog
         class=${classMap({ closing: this.closing })}
+        role="dialog"
         aria-modal="true"
         aria-label=${this.heading}
         aria-description=${ifDefined(description)}
@@ -515,54 +498,50 @@ export class DsDialog extends LitElement {
         @close=${this.handleNativeClose}
       >
         <div class="scrim" part="scrim" data-part="scrim" @click=${this.handleScrimClick}></div>
-        <ds-focus-scope
-          class="scope"
-          part="focusScope"
-          data-part="focusScope"
-          auto-focus="none"
-          .active=${!this.closing}
-        >
-          <div class="surface" part="surface" data-part="surface">
-            <div class="header" part="header" data-part="header">
-              <div class="titles">
-                <div
-                  class=${classMap({ heading: true, 'visually-hidden': this.hideHeading })}
-                  part="heading"
-                  data-part="heading"
-                >
-                  <ds-heading level="2" tabindex=${ifDefined(headingFocusable ? '-1' : undefined)}
-                    >${this.heading}</ds-heading
+        <ds-focus-scope auto-focus="none" .active=${!this.closing}>
+          <div class="scope" part="focusScope" data-part="focusScope">
+            <div class="surface" part="surface" data-part="surface">
+              <div class="header" part="header" data-part="header">
+                <div class="titles">
+                  <div
+                    class=${classMap({ heading: true, 'visually-hidden': this.hideHeading })}
+                    part="heading"
+                    data-part="heading"
                   >
+                    <ds-heading level="2" tabindex=${ifDefined(headingFocusable ? '-1' : undefined)}
+                      >${this.heading}</ds-heading
+                    >
+                  </div>
+                  ${description
+                    ? html`<div part="description" data-part="description">
+                        <ds-text tone="muted">${description}</ds-text>
+                      </div>`
+                    : nothing}
                 </div>
-                ${description
-                  ? html`<div part="description" data-part="description">
-                      <ds-text tone="muted">${description}</ds-text>
+                ${this.dismissible
+                  ? html`<div class="close-button" part="closeButton" data-part="closeButton">
+                      <ds-button
+                        variant="ghost"
+                        size="sm"
+                        icon-only
+                        label=${COPY_CLOSE_LABEL}
+                        @press=${this.handleCloseButtonPress}
+                        ><ds-icon slot="leading-icon" name="close"></ds-icon
+                      ></ds-button>
                     </div>`
                   : nothing}
               </div>
-              ${this.dismissible
-                ? html`<div class="close-button" part="closeButton" data-part="closeButton">
-                    <ds-button
-                      variant="ghost"
-                      size="sm"
-                      icon-only
-                      label=${COPY_CLOSE_LABEL}
-                      @press=${this.handleCloseButtonPress}
-                      ><ds-icon slot="leading-icon" name="close"></ds-icon
-                    ></ds-button>
+              <div class="body" part="body" data-part="body">
+                <ds-box .overrides=${bodyOverrides}><slot></slot></ds-box>
+              </div>
+              ${this.hasFooter
+                ? html`<div class="footer" part="footer" data-part="footer">
+                    <ds-stack direction="horizontal" justify="end" wrap .overrides=${footerOverrides}
+                      ><slot name="footer"></slot
+                    ></ds-stack>
                   </div>`
                 : nothing}
             </div>
-            <div class="body" part="body" data-part="body">
-              <ds-box .overrides=${bodyOverrides}><slot></slot></ds-box>
-            </div>
-            ${this.hasFooter
-              ? html`<div class="footer" part="footer" data-part="footer">
-                  <ds-stack direction="horizontal" justify="end" wrap .overrides=${footerOverrides}
-                    ><slot name="footer"></slot
-                  ></ds-stack>
-                </div>`
-              : nothing}
           </div>
         </ds-focus-scope>
       </dialog>
@@ -710,14 +689,30 @@ export class DsDialog extends LitElement {
       const footerFirst = this.footerSlotEl ? firstFocusableIn(this.footerSlotEl) : null;
       target = bodyFirst ?? footerFirst ?? close;
     }
-    if (!target) {
-      if (this.initialFocus !== 'title' && !this.headingIsFallback) {
-        this.headingIsFallback = true;
-        await this.updateComplete;
-      }
-      target = this.headingEl;
-    }
     target?.focus();
+    if (target && this.focusIsInside()) {
+      return;
+    }
+    // Either nothing was focusable, or the candidate refused focus (the walker matches the scope's
+    // Tab rules, which do not test visibility, so a `hidden` control can be picked). Focus must
+    // still move in: the heading takes tabindex -1 as the last fallback.
+    if (this.initialFocus !== 'title' && !this.headingIsFallback) {
+      this.headingIsFallback = true;
+      await this.updateComplete;
+    }
+    this.headingEl?.focus();
+  }
+
+  /** Focus rests on something inside the dialog — not on the scrim, and not on the page behind it. */
+  private focusIsInside(): boolean {
+    let active: Element | null = document.activeElement;
+    while (active) {
+      if (active === this) {
+        return true;
+      }
+      active = active.shadowRoot?.activeElement ?? null;
+    }
+    return false;
   }
 
   private releaseScroll(): void {

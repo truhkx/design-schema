@@ -47,7 +47,8 @@
 
 /* ---- feature cards --------------------------------------------------------------------------- */
 
-.ds-home-pillars > * {
+/* `.ds-home-pillars` is a plain div around the Stack (which takes no class of ours); these are its cards. */
+.ds-home-pillars > * > * {
   /*
    * A wrapped Stack is a flex row, and a flex row has no notion of a column: its items are sized by
    * their content, so four cards of body copy shrink toward their longest word long before the row

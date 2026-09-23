@@ -20,38 +20,67 @@
 import { createElement, type ElementType } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import { COMPONENTS, decodeArgs } from './example-args';
+import { COMPONENTS, exampleProps } from './example-args';
 import type { Example } from './examples';
 
+interface Probe {
+  /** The static markup, or `null` where mounting it throws either way. */
+  markup: string | null;
+  /** Whether it rendered only once the story's `open` was dropped — see `exampleProps`. */
+  withoutOpen: boolean;
+}
+
 /**
- * Each example's static markup, in the order given, or `null` where mounting it throws.
+ * Each example's static markup, in the order given.
+ *
+ * A harness example is probed shut, the way the page first renders it. Any other example that throws
+ * and sets `open` is tried once more without it: an overlay that opens from its own trigger (Popover,
+ * Tooltip, DatePicker) portals into `document` when open, which a server render does not have, and
+ * closed is how a visitor first meets it anyway. Asked by rendering, like everything here, so it
+ * needs no list of which components portal.
  *
  * React writes a component stack to `console.error` before rethrowing, and a page with a dozen
  * source-only stories would bury the build log in stacks for failures that are already handled. The
  * probe is the one place that is expected, so it is the one place that quiets it.
  */
-function staticMarkup(name: string, examples: Example[]): (string | null)[] {
+function probe(name: string, examples: Example[]): Probe[] {
   const Component = COMPONENTS[name];
-  if (typeof Component !== 'function') return examples.map(() => null);
+  if (typeof Component !== 'function') return examples.map(() => ({ markup: null, withoutOpen: false }));
+
+  const render = (example: Example, withoutOpen: boolean): string | null => {
+    try {
+      return renderToStaticMarkup(createElement(Component as ElementType, exampleProps(example, withoutOpen)));
+    } catch {
+      return null;
+    }
+  };
 
   const error = console.error;
   console.error = () => {};
   try {
     return examples.map((example) => {
-      try {
-        return renderToStaticMarkup(createElement(Component as ElementType, decodeArgs(example.args)));
-      } catch {
-        return null;
-      }
+      const markup = render(example, false);
+      if (markup !== null || example.harness !== null || example.args['open'] === undefined) return { markup, withoutOpen: false };
+      const closed = render(example, true);
+      return { markup: closed, withoutOpen: closed !== null };
     });
   } finally {
     console.error = error;
   }
 }
 
+function staticMarkup(name: string, examples: Example[]): (string | null)[] {
+  return probe(name, examples).map((result) => result.markup);
+}
+
 /** Whether each example renders, in the order given. */
 export function renderableExamples(name: string, examples: Example[]): boolean[] {
   return staticMarkup(name, examples).map((markup) => markup !== null);
+}
+
+/** Whether each example renders only without its story's `open`, in the order given — see `probe`. */
+export function withoutOpenExamples(name: string, examples: Example[]): boolean[] {
+  return probe(name, examples).map((result) => result.withoutOpen);
 }
 
 /**

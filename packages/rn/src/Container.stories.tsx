@@ -9,11 +9,16 @@ const meta: Meta<typeof Container> = {
   component: Container,
   decorators: [withTheme()],
   args: {
-    children: <Text>Container content.</Text>,
+    children: 'Container content.',
     width: 'content',
     gutter: 'default',
     align: 'center',
   },
+  // Native requires a string inside a Text, so string children are wrapped in the system
+  // Text at its defaults here, once, and each story keeps exactly its example's args.
+  render: ({ children, ...args }) => (
+    <Container {...args}>{typeof children === 'string' ? <Text>{children}</Text> : children}</Container>
+  ),
 };
 
 export default meta;
@@ -46,15 +51,15 @@ export const WithOverrides: Story = {
 // examples
 /** The default page column for application screens, centered at the content measure. */
 export const ApplicationScreen: Story = {
-  args: { children: <Text>A Stack of page regions</Text>, width: 'content' },
+  args: { children: 'A Stack of page regions', width: 'content' },
 };
 
 /** An article capped at the prose measure, about 65 characters a line. */
 export const ReadingMeasure: Story = {
-  args: { children: <Text>An article</Text>, width: 'prose' },
+  args: { children: 'An article', width: 'prose' },
 };
 
 /** A narrower measure inside an already padded parent, so the gutters are not applied twice. */
 export const NestedSection: Story = {
-  args: { children: <Text>A narrower section</Text>, width: 'prose', gutter: 'none' },
+  args: { children: 'A narrower section', width: 'prose', gutter: 'none' },
 };

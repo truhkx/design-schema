@@ -207,13 +207,16 @@ export class DsInput extends LitElement {
 
     /*
      * The border is the focus ring: focusRingWidth replaces borderWidth, and the
-     * padding shrinks by the difference so the field does not shift.
+     * padding shrinks by the difference on both axes so the field does not shift
+     * — compensating only the inline one would still move it vertically. The
+     * compensation is clamped at zero, so a borderWidth override wider than this
+     * locked width leaves the padding alone rather than eating into it.
      */
     [data-part='field']:focus-visible {
       border-color: var(--color-border-focus);
       border-width: var(--border-width-focus);
-      padding-inline: calc(var(--ds-input-padding-inline) - (var(--border-width-focus) - var(--ds-input-border-width)));
-      padding-block: calc(var(--ds-input-padding-block) - (var(--border-width-focus) - var(--ds-input-border-width)));
+      padding-inline: calc(var(--ds-input-padding-inline) - max(0px, var(--border-width-focus) - var(--ds-input-border-width)));
+      padding-block: calc(var(--ds-input-padding-block) - max(0px, var(--border-width-focus) - var(--ds-input-border-width)));
     }
 
     /* borderInvalid: the danger color stays while focused; only the width changes */
@@ -439,13 +442,15 @@ export class DsInput extends LitElement {
     return this.required && this.currentValue === '' ? COPY_REQUIRED(this.label) : COPY_INVALID(this.label);
   }
 
-  /** helperSize, fontFamily and lineHeight forwarded to the description and error Text. */
-  private get textOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined {
+  /**
+   * helperSize, fontFamily and lineHeight forwarded to the description and error
+   * Text. The object is always passed, with `undefined` for the keys the consumer
+   * did not set, rather than withheld — a no-op for Text and one code path
+   * instead of two.
+   */
+  private get textOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
     const o = this.overrides;
-    if (!o) {
-      return undefined;
-    }
-    return { fontSize: o.helperSize, fontFamily: o.fontFamily, lineHeight: o.lineHeight };
+    return { fontSize: o?.helperSize, fontFamily: o?.fontFamily, lineHeight: o?.lineHeight };
   }
 
   private handleInput(event: Event): void {

@@ -4,6 +4,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -156,9 +157,27 @@ function wideQuery(): MediaQueryList | null {
   return breakpoint ? window.matchMedia(`(width > ${breakpoint})`) : null;
 }
 
+/**
+ * False on the server and through hydration, true from then on (and from the first render of a
+ * client-only mount). The portaled sheet and the wide Menu both need `document`, so neither may be in
+ * the tree before this is true, or the server and client trees differ.
+ */
+const subscribeNothing = (): (() => void) => () => {};
+function useHydrated(): boolean {
+  return useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
+}
+
+/**
+ * Starts narrow on the server and during hydration — the viewport is never read during render — and
+ * settles on the real presentation in a layout effect after mount, before the browser paints.
+ */
 function useIsWide(): boolean {
-  const [isWide, setIsWide] = useState(() => wideQuery()?.matches ?? false);
-  useEffect(() => {
+  const [isWide, setIsWide] = useState(false);
+  useLayoutEffect(() => {
     let frame = 0;
     let query: MediaQueryList | null = null;
     const onChange = (): void => setIsWide(query?.matches ?? false);
@@ -287,11 +306,13 @@ export function ActionSheet({
   overrides,
   ...rest
 }: ActionSheetProps & { ref?: Ref<HTMLDialogElement> | undefined }): ReactElement | null {
+  const hydrated = useHydrated();
   const isWide = useIsWide();
 
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef(new Map<string, HTMLButtonElement>());
+  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
 
   // The element focused when `open` became true: the wide Menu anchors to it, and both
@@ -333,7 +354,7 @@ export function ActionSheet({
 
   // Enter: show the native modal dialog, focus the first enabled action, reveal on the next frame.
   useLayoutEffect(() => {
-    if (!present || isWide || !open) return undefined;
+    if (!present || isWide || !open || !hydrated) return undefined;
     const dialog = dialogRef.current;
     if (!dialog) return undefined;
     if (!dialog.open) {
@@ -364,7 +385,7 @@ export function ActionSheet({
     const frame = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [present, isWide, open]);
+  }, [present, isWide, open, hydrated]);
 
   // Exit: focus returns to the opener at the start of the transition (the FocusScope is inactive
   // from this moment, so a mounted scope never pulls it back), then close() and unmount at the end.
@@ -577,13 +598,22 @@ export function ActionSheet({
     else if (reason === 'outside' || reason === 'tab-out' || reason === 'focus-out') onClose?.('scrim');
   };
 
+  const handleCancelRowClick = (event: ReactMouseEvent<HTMLDivElement>): void => {
+    const button = cancelButtonRef.current;
+    if (!button || button.contains(event.target as Node)) return;
+    button.click();
+  };
+
   const handleMenuAction = (id: string): void => {
     choseRef.current = true;
     onAction?.(id);
   };
 
+  // Nothing renders until hydration is over: the server has no `document` to portal into.
+  if (!hydrated) return null;
+
   if (isWide) {
-    if (!open || typeof document === 'undefined') return null;
+    if (!open) return null;
     const menuOverrides: Partial<Record<MenuOverridableBinding, TokenRef | undefined>> = {};
     for (const [binding, token] of Object.entries(overrides ?? {}) as [ActionSheetOverridableBinding, TokenRef | undefined][]) {
       const forward = MENU_FORWARD[binding];
@@ -604,7 +634,7 @@ export function ActionSheet({
     );
   }
 
-  if (!present || typeof document === 'undefined') return null;
+  if (!present) return null;
 
   const rootStyle: Record<string, string> = {};
   const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
@@ -711,9 +741,11 @@ export function ActionSheet({
           {dismissible ? (
             <>
               <div className="ds-action-sheet__divider" data-part="divider" aria-hidden="true" />
-              {/* Button stamps its own data-part, so the part hook sits on the row that wraps it. */}
-              <div className="ds-action-sheet__cancel-row" data-part="cancelButton">
+              {/* Button stamps its own data-part, so the part hook sits on the row that wraps it; a
+                  press on the row that missed the Button is forwarded to it. */}
+              <div className="ds-action-sheet__cancel-row" data-part="cancelButton" onClick={handleCancelRowClick}>
                 <Button
+                  ref={cancelButtonRef}
                   variant="secondary"
                   label={cancelLabel || COPY.cancelLabel}
                   onClick={() => requestClose('cancel')}

@@ -6,6 +6,7 @@
     "rn": true,
     "swift": false
   },
+  "harnessEvents": null,
   "examples": [
     {
       "title": "Default",
@@ -105,6 +106,7 @@
       "storyId": "treegrid-react--default",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -209,6 +211,7 @@
         "value": "2"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -313,6 +316,7 @@
         "value": "3"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -417,6 +421,7 @@
         "value": "4"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -521,6 +526,7 @@
         "value": "none"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -625,6 +631,7 @@
         "value": "row"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -729,6 +736,7 @@
         "value": "cell"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -833,6 +841,7 @@
         "value": "compact"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -937,6 +946,7 @@
         "value": "comfortable"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1041,6 +1051,7 @@
         "value": "content"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1145,6 +1156,7 @@
         "value": "viewport"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1249,6 +1261,7 @@
         "value": "fixed"
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1311,6 +1324,7 @@
       "storyId": "treegrid-react--chart-of-accounts",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -1362,6 +1376,7 @@
       "storyId": "treegrid-react--lazy-folders",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -1415,6 +1430,7 @@
       "storyId": "treegrid-react--cascading-selection",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -1469,6 +1485,7 @@
       "storyId": "treegrid-react--editable-quantities",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -1573,6 +1590,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": true
     },
     {
@@ -1658,19 +1676,20 @@
       },
       "snippets": {
         "react": "import { type DataGridColumn, TreeGrid, type TreeGridRow } from '@design-schema/react';\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'account', header: 'Account', isRowHeader: true, width: 240 },\n  { key: 'code', header: 'Code', width: 100 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true },\n];\n\nconst DATA: TreeGridRow[] = [\n  {\n    id: 'assets',\n    account: 'Assets',\n    code: '1000',\n    balance: 1400,\n    children: [\n      { id: 'cash', account: 'Cash', code: '1010', balance: 400 },\n      {\n        id: 'stock',\n        account: 'Stock',\n        code: '1020',\n        balance: 1000,\n        children: [\n          { id: 'raw', account: 'Raw materials', code: '1021', balance: 600 },\n          { id: 'finished', account: 'Finished goods', code: '1022', balance: 400 },\n        ],\n      },\n    ],\n  },\n  {\n    id: 'liabilities',\n    account: 'Liabilities',\n    code: '2000',\n    balance: 300,\n    children: [{ id: 'payable', account: 'Accounts payable', code: '2010', balance: 300 }],\n  },\n  { id: 'equity', account: 'Equity', code: '3000', balance: 1100 },\n];\n\n<TreeGrid\n  caption=\"Chart of accounts\"\n  columns={COLUMNS}\n  data={DATA}\n  defaultExpanded={[]}\n/>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridColumn, TreeGridRow } from '@design-schema/lit';\n\nconst accountColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Account', isRowHeader: true, width: 240, resizable: true },\n  { key: 'code', header: 'Code', width: 96 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true, editable: true, editor: 'number', width: 144 },\n];\n\nconst accountsData: TreeGridRow[] = [\n  {\n    id: 'assets',\n    name: 'Assets',\n    code: '1000',\n    balance: 125000,\n    children: [\n      {\n        id: 'current-assets',\n        name: 'Current assets',\n        code: '1100',\n        balance: 85000,\n        children: [\n          { id: 'cash', name: 'Cash', code: '1110', balance: 50000 },\n          { id: 'receivables', name: 'Accounts receivable', code: '1120', balance: 35000 },\n        ],\n      },\n      {\n        id: 'fixed-assets',\n        name: 'Fixed assets',\n        code: '1200',\n        balance: 40000,\n        children: [{ id: 'equipment', name: 'Equipment', code: '1210', balance: 40000 }],\n      },\n    ],\n  },\n  {\n    id: 'liabilities',\n    name: 'Liabilities',\n    code: '2000',\n    balance: 42000,\n    children: [{ id: 'payables', name: 'Accounts payable', code: '2100', balance: 42000 }],\n  },\n  { id: 'equity', name: 'Equity', code: '3000', balance: 83000, children: 'lazy' },\n];\n\nhtml`\n  <ds-tree-grid\n    caption=\"Chart of accounts\"\n    .columns=${accountColumns}\n    .data=${accountsData}\n    .defaultExpanded=${[]}\n  ></ds-tree-grid>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Collapsed",
-        "lit": null,
+        "lit": "Collapsed",
         "rn": null,
         "swift": null
       },
       "storyId": "treegrid-react--collapsed",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1758,19 +1777,20 @@
       },
       "snippets": {
         "react": "import { type DataGridColumn, TreeGrid, type TreeGridRow } from '@design-schema/react';\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'account', header: 'Account', isRowHeader: true, width: 240 },\n  { key: 'code', header: 'Code', width: 100 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true },\n];\n\nconst DATA: TreeGridRow[] = [\n  {\n    id: 'assets',\n    account: 'Assets',\n    code: '1000',\n    balance: 1400,\n    children: [\n      { id: 'cash', account: 'Cash', code: '1010', balance: 400 },\n      {\n        id: 'stock',\n        account: 'Stock',\n        code: '1020',\n        balance: 1000,\n        children: [\n          { id: 'raw', account: 'Raw materials', code: '1021', balance: 600 },\n          { id: 'finished', account: 'Finished goods', code: '1022', balance: 400 },\n        ],\n      },\n    ],\n  },\n  {\n    id: 'liabilities',\n    account: 'Liabilities',\n    code: '2000',\n    balance: 300,\n    children: [{ id: 'payable', account: 'Accounts payable', code: '2010', balance: 300 }],\n  },\n  { id: 'equity', account: 'Equity', code: '3000', balance: 1100 },\n];\n\n<TreeGrid\n  caption=\"Chart of accounts\"\n  columns={COLUMNS}\n  data={DATA}\n  defaultExpanded={['*']}\n/>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridColumn, TreeGridRow } from '@design-schema/lit';\n\nconst accountColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Account', isRowHeader: true, width: 240, resizable: true },\n  { key: 'code', header: 'Code', width: 96 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true, editable: true, editor: 'number', width: 144 },\n];\n\nconst accountsData: TreeGridRow[] = [\n  {\n    id: 'assets',\n    name: 'Assets',\n    code: '1000',\n    balance: 125000,\n    children: [\n      {\n        id: 'current-assets',\n        name: 'Current assets',\n        code: '1100',\n        balance: 85000,\n        children: [\n          { id: 'cash', name: 'Cash', code: '1110', balance: 50000 },\n          { id: 'receivables', name: 'Accounts receivable', code: '1120', balance: 35000 },\n        ],\n      },\n      {\n        id: 'fixed-assets',\n        name: 'Fixed assets',\n        code: '1200',\n        balance: 40000,\n        children: [{ id: 'equipment', name: 'Equipment', code: '1210', balance: 40000 }],\n      },\n    ],\n  },\n  {\n    id: 'liabilities',\n    name: 'Liabilities',\n    code: '2000',\n    balance: 42000,\n    children: [{ id: 'payables', name: 'Accounts payable', code: '2100', balance: 42000 }],\n  },\n  { id: 'equity', name: 'Equity', code: '3000', balance: 83000, children: 'lazy' },\n];\n\nhtml`\n  <ds-tree-grid\n    caption=\"Chart of accounts\"\n    .columns=${accountColumns}\n    .data=${accountsData}\n    .defaultExpanded=${['*']}\n  ></ds-tree-grid>\n`;",
         "rn": "import { TreeGrid, type TreeGridRow, type DataGridColumn } from '@design-schema/rn';\n\nconst columns: DataGridColumn[] = [\n  { key: 'account', header: 'Account', isRowHeader: true, width: 240 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true },\n];\n\nconst data: TreeGridRow[] = [\n  {\n    id: 'assets',\n    account: 'Assets',\n    balance: 1400,\n    children: [\n      { id: 'cash', account: 'Cash', balance: 400 },\n      { id: 'stock', account: 'Stock', balance: 1000 },\n    ],\n  },\n  { id: 'liabilities', account: 'Liabilities', balance: 300, children: 'lazy' },\n  { id: 'equity', account: 'Equity', balance: 1400 },\n];\n\n<TreeGrid\n  caption=\"Chart of accounts\"\n  columns={columns}\n  data={data}\n  defaultExpanded={['*']}\n  height=\"content\"\n/>",
         "swift": null
       },
       "stories": {
         "react": "ExpandAll",
-        "lit": null,
+        "lit": "ExpandAll",
         "rn": "ExpandedAll",
         "swift": null
       },
       "storyId": "treegrid-react--expand-all",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1875,6 +1895,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1920,6 +1941,7 @@
       "storyId": "treegrid-react--empty",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -1953,19 +1975,20 @@
       },
       "snippets": {
         "react": "import { type DataGridColumn, TreeGrid } from '@design-schema/react';\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'account', header: 'Account', isRowHeader: true, width: 240 },\n  { key: 'code', header: 'Code', width: 100 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true },\n];\n\n<TreeGrid\n  caption=\"Chart of accounts\"\n  columns={COLUMNS}\n  data={[]}\n  defaultExpanded={['assets']}\n  emptyMessage=\"No accounts loaded.\"\n/>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridColumn } from '@design-schema/lit';\n\nconst accountColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Account', isRowHeader: true, width: 240, resizable: true },\n  { key: 'code', header: 'Code', width: 96 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true, editable: true, editor: 'number', width: 144 },\n];\n\nhtml`\n  <ds-tree-grid\n    caption=\"Chart of accounts\"\n    .columns=${accountColumns}\n    .data=${[]}\n    .defaultExpanded=${['assets', 'current-assets']}\n    empty-message=\"No accounts loaded.\"\n  ></ds-tree-grid>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "EmptyMessage",
-        "lit": null,
+        "lit": "EmptyMessage",
         "rn": null,
         "swift": null
       },
       "storyId": "treegrid-react--empty-message",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -2057,19 +2080,20 @@
       },
       "snippets": {
         "react": "import { type DataGridColumn, TreeGrid, type TreeGridRow } from '@design-schema/react';\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'account', header: 'Account', isRowHeader: true, width: 240 },\n  { key: 'code', header: 'Code', width: 100 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true },\n];\n\nconst DATA: TreeGridRow[] = [\n  {\n    id: 'assets',\n    account: 'Assets',\n    code: '1000',\n    balance: 1400,\n    children: [\n      { id: 'cash', account: 'Cash', code: '1010', balance: 400 },\n      {\n        id: 'stock',\n        account: 'Stock',\n        code: '1020',\n        balance: 1000,\n        children: [\n          { id: 'raw', account: 'Raw materials', code: '1021', balance: 600 },\n          { id: 'finished', account: 'Finished goods', code: '1022', balance: 400 },\n        ],\n      },\n    ],\n  },\n  {\n    id: 'liabilities',\n    account: 'Liabilities',\n    code: '2000',\n    balance: 300,\n    children: [{ id: 'payable', account: 'Accounts payable', code: '2010', balance: 300 }],\n  },\n  { id: 'equity', account: 'Equity', code: '3000', balance: 1100 },\n];\n\n<TreeGrid\n  caption=\"Chart of accounts\"\n  columns={COLUMNS}\n  data={DATA}\n  defaultExpanded={['assets']}\n  defaultSort={{ column: 'balance', direction: 'descending' }}\n/>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridColumn, TreeGridRow } from '@design-schema/lit';\n\nconst accountColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Account', isRowHeader: true, width: 240, resizable: true },\n  { key: 'code', header: 'Code', width: 96 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true, editable: true, editor: 'number', width: 144 },\n];\n\nconst accountsData: TreeGridRow[] = [\n  {\n    id: 'assets',\n    name: 'Assets',\n    code: '1000',\n    balance: 125000,\n    children: [\n      {\n        id: 'current-assets',\n        name: 'Current assets',\n        code: '1100',\n        balance: 85000,\n        children: [\n          { id: 'cash', name: 'Cash', code: '1110', balance: 50000 },\n          { id: 'receivables', name: 'Accounts receivable', code: '1120', balance: 35000 },\n        ],\n      },\n      {\n        id: 'fixed-assets',\n        name: 'Fixed assets',\n        code: '1200',\n        balance: 40000,\n        children: [{ id: 'equipment', name: 'Equipment', code: '1210', balance: 40000 }],\n      },\n    ],\n  },\n  {\n    id: 'liabilities',\n    name: 'Liabilities',\n    code: '2000',\n    balance: 42000,\n    children: [{ id: 'payables', name: 'Accounts payable', code: '2100', balance: 42000 }],\n  },\n  { id: 'equity', name: 'Equity', code: '3000', balance: 83000, children: 'lazy' },\n];\n\nhtml`\n  <ds-tree-grid\n    caption=\"Chart of accounts\"\n    .columns=${accountColumns}\n    .data=${accountsData}\n    .defaultExpanded=${['assets', 'current-assets']}\n    .defaultSort=${{ column: 'balance', direction: 'descending' }}\n  ></ds-tree-grid>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "DefaultSort",
-        "lit": null,
+        "lit": "DefaultSort",
         "rn": null,
         "swift": null
       },
       "storyId": "treegrid-react--default-sort",
       "sweep": null,
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -2174,6 +2198,7 @@
         "value": true
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -2278,6 +2303,7 @@
         "value": false
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -2366,7 +2392,7 @@
       },
       "snippets": {
         "react": "import { type DataGridColumn, TreeGrid, type TreeGridRow } from '@design-schema/react';\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'account', header: 'Account', isRowHeader: true, width: 240 },\n  { key: 'code', header: 'Code', width: 100 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true },\n];\n\nconst DATA: TreeGridRow[] = [\n  {\n    id: 'assets',\n    account: 'Assets',\n    code: '1000',\n    balance: 1400,\n    children: [\n      { id: 'cash', account: 'Cash', code: '1010', balance: 400 },\n      {\n        id: 'stock',\n        account: 'Stock',\n        code: '1020',\n        balance: 1000,\n        children: [\n          { id: 'raw', account: 'Raw materials', code: '1021', balance: 600 },\n          { id: 'finished', account: 'Finished goods', code: '1022', balance: 400 },\n        ],\n      },\n    ],\n  },\n  {\n    id: 'liabilities',\n    account: 'Liabilities',\n    code: '2000',\n    balance: 300,\n    children: [{ id: 'payable', account: 'Accounts payable', code: '2010', balance: 300 }],\n  },\n  { id: 'equity', account: 'Equity', code: '3000', balance: 1100 },\n];\n\n<TreeGrid\n  caption=\"Chart of accounts\"\n  columns={COLUMNS}\n  data={DATA}\n  defaultExpanded={['assets']}\n  stickyHeader={false}\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridColumn, TreeGridRow } from '@design-schema/lit';\n\nconst accountColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Account', isRowHeader: true, width: 240, resizable: true },\n  { key: 'code', header: 'Code', width: 96 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true, editable: true, editor: 'number', width: 144 },\n];\n\nconst accountsData: TreeGridRow[] = [\n  {\n    id: 'assets',\n    name: 'Assets',\n    code: '1000',\n    balance: 125000,\n    children: [\n      {\n        id: 'current-assets',\n        name: 'Current assets',\n        code: '1100',\n        balance: 85000,\n        children: [\n          { id: 'cash', name: 'Cash', code: '1110', balance: 50000 },\n          { id: 'receivables', name: 'Accounts receivable', code: '1120', balance: 35000 },\n        ],\n      },\n      {\n        id: 'fixed-assets',\n        name: 'Fixed assets',\n        code: '1200',\n        balance: 40000,\n        children: [{ id: 'equipment', name: 'Equipment', code: '1210', balance: 40000 }],\n      },\n    ],\n  },\n  {\n    id: 'liabilities',\n    name: 'Liabilities',\n    code: '2000',\n    balance: 42000,\n    children: [{ id: 'payables', name: 'Accounts payable', code: '2100', balance: 42000 }],\n  },\n  { id: 'equity', name: 'Equity', code: '3000', balance: 83000, children: 'lazy' },\n];\n\nhtml`\n  <ds-tree-grid\n    caption=\"Chart of accounts\"\n    .columns=${accountColumns}\n    .data=${accountsData}\n    .defaultExpanded=${['assets', 'current-assets']}\n    height=\"content\"\n    no-sticky-header\n  ></ds-tree-grid>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridColumn, TreeGridRow } from '@design-schema/lit';\n\nconst accountColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Account', isRowHeader: true, width: 240, resizable: true },\n  { key: 'code', header: 'Code', width: 96 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true, editable: true, editor: 'number', width: 144 },\n];\n\nconst accountsData: TreeGridRow[] = [\n  {\n    id: 'assets',\n    name: 'Assets',\n    code: '1000',\n    balance: 125000,\n    children: [\n      {\n        id: 'current-assets',\n        name: 'Current assets',\n        code: '1100',\n        balance: 85000,\n        children: [\n          { id: 'cash', name: 'Cash', code: '1110', balance: 50000 },\n          { id: 'receivables', name: 'Accounts receivable', code: '1120', balance: 35000 },\n        ],\n      },\n      {\n        id: 'fixed-assets',\n        name: 'Fixed assets',\n        code: '1200',\n        balance: 40000,\n        children: [{ id: 'equipment', name: 'Equipment', code: '1210', balance: 40000 }],\n      },\n    ],\n  },\n  {\n    id: 'liabilities',\n    name: 'Liabilities',\n    code: '2000',\n    balance: 42000,\n    children: [{ id: 'payables', name: 'Accounts payable', code: '2100', balance: 42000 }],\n  },\n  { id: 'equity', name: 'Equity', code: '3000', balance: 83000, children: 'lazy' },\n];\n\nhtml`\n  <ds-tree-grid\n    caption=\"Chart of accounts\"\n    .columns=${accountColumns}\n    .data=${accountsData}\n    .defaultExpanded=${['assets', 'current-assets']}\n    no-sticky-header\n  ></ds-tree-grid>\n`;",
         "rn": null,
         "swift": null
       },
@@ -2382,6 +2408,7 @@
         "value": false
       },
       "decorated": false,
+      "harness": null,
       "primary": false
     },
     {
@@ -2484,108 +2511,7 @@
       "storyId": "treegrid-react--select-children",
       "sweep": null,
       "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Keyboard",
-      "args": {
-        "caption": "Chart of accounts",
-        "columns": [
-          {
-            "key": "account",
-            "header": "Account",
-            "isRowHeader": true,
-            "width": 240
-          },
-          {
-            "key": "code",
-            "header": "Code",
-            "width": 100
-          },
-          {
-            "key": "balance",
-            "header": "Balance",
-            "align": "end",
-            "sortable": true
-          }
-        ],
-        "data": [
-          {
-            "id": "assets",
-            "account": "Assets",
-            "code": "1000",
-            "balance": 1400,
-            "children": [
-              {
-                "id": "cash",
-                "account": "Cash",
-                "code": "1010",
-                "balance": 400
-              },
-              {
-                "id": "stock",
-                "account": "Stock",
-                "code": "1020",
-                "balance": 1000,
-                "children": [
-                  {
-                    "id": "raw",
-                    "account": "Raw materials",
-                    "code": "1021",
-                    "balance": 600
-                  },
-                  {
-                    "id": "finished",
-                    "account": "Finished goods",
-                    "code": "1022",
-                    "balance": 400
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "id": "liabilities",
-            "account": "Liabilities",
-            "code": "2000",
-            "balance": 300,
-            "children": [
-              {
-                "id": "payable",
-                "account": "Accounts payable",
-                "code": "2010",
-                "balance": 300
-              }
-            ]
-          },
-          {
-            "id": "equity",
-            "account": "Equity",
-            "code": "3000",
-            "balance": 1100
-          }
-        ],
-        "defaultExpanded": [
-          "*"
-        ],
-        "selectable": "row",
-        "editable": true
-      },
-      "snippets": {
-        "react": "import { type DataGridColumn, TreeGrid, type TreeGridRow } from '@design-schema/react';\n\nconst COLUMNS: DataGridColumn[] = [\n  { key: 'account', header: 'Account', isRowHeader: true, width: 240 },\n  { key: 'code', header: 'Code', width: 100 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true },\n];\n\nconst DATA: TreeGridRow[] = [\n  {\n    id: 'assets',\n    account: 'Assets',\n    code: '1000',\n    balance: 1400,\n    children: [\n      { id: 'cash', account: 'Cash', code: '1010', balance: 400 },\n      {\n        id: 'stock',\n        account: 'Stock',\n        code: '1020',\n        balance: 1000,\n        children: [\n          { id: 'raw', account: 'Raw materials', code: '1021', balance: 600 },\n          { id: 'finished', account: 'Finished goods', code: '1022', balance: 400 },\n        ],\n      },\n    ],\n  },\n  {\n    id: 'liabilities',\n    account: 'Liabilities',\n    code: '2000',\n    balance: 300,\n    children: [{ id: 'payable', account: 'Accounts payable', code: '2010', balance: 300 }],\n  },\n  { id: 'equity', account: 'Equity', code: '3000', balance: 1100 },\n];\n\n<TreeGrid\n  caption=\"Chart of accounts\"\n  columns={COLUMNS}\n  data={DATA}\n  defaultExpanded={['*']}\n  selectable=\"row\"\n  editable\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DataGridColumn, TreeGridRow } from '@design-schema/lit';\n\nconst accountColumns: DataGridColumn[] = [\n  { key: 'name', header: 'Account', isRowHeader: true, width: 240, resizable: true },\n  { key: 'code', header: 'Code', width: 96 },\n  { key: 'balance', header: 'Balance', align: 'end', sortable: true, editable: true, editor: 'number', width: 144 },\n];\n\nconst accountsData: TreeGridRow[] = [\n  {\n    id: 'assets',\n    name: 'Assets',\n    code: '1000',\n    balance: 125000,\n    children: [\n      {\n        id: 'current-assets',\n        name: 'Current assets',\n        code: '1100',\n        balance: 85000,\n        children: [\n          { id: 'cash', name: 'Cash', code: '1110', balance: 50000 },\n          { id: 'receivables', name: 'Accounts receivable', code: '1120', balance: 35000 },\n        ],\n      },\n      {\n        id: 'fixed-assets',\n        name: 'Fixed assets',\n        code: '1200',\n        balance: 40000,\n        children: [{ id: 'equipment', name: 'Equipment', code: '1210', balance: 40000 }],\n      },\n    ],\n  },\n  {\n    id: 'liabilities',\n    name: 'Liabilities',\n    code: '2000',\n    balance: 42000,\n    children: [{ id: 'payables', name: 'Accounts payable', code: '2100', balance: 42000 }],\n  },\n  { id: 'equity', name: 'Equity', code: '3000', balance: 83000, children: 'lazy' },\n];\n\nhtml`\n  <ds-tree-grid\n    caption=\"Chart of accounts\"\n    .columns=${accountColumns}\n    .data=${accountsData}\n    .defaultExpanded=${['*']}\n    selectable=\"row\"\n    editable\n    height=\"content\"\n  ></ds-tree-grid>\n`;",
-        "rn": "import { TreeGrid, type TreeGridRow } from '@design-schema/rn';\n\nconst data: TreeGridRow[] = [\n  {\n    id: 'assets',\n    account: 'Assets',\n    balance: 1400,\n    children: [\n      { id: 'cash', account: 'Cash', balance: 400 },\n      { id: 'stock', account: 'Stock', balance: 1000 },\n    ],\n  },\n  { id: 'liabilities', account: 'Liabilities', balance: 300, children: 'lazy' },\n  { id: 'equity', account: 'Equity', balance: 1400 },\n];\n\n<TreeGrid\n  caption=\"Chart of accounts\"\n  columns={[\n    { key: 'account', header: 'Account', isRowHeader: true, width: 240 },\n    { key: 'balance', header: 'Balance', align: 'end', sortable: true, editable: true, editor: 'number' },\n  ]}\n  data={data}\n  defaultExpanded={['assets']}\n  selectable=\"row\"\n  editable\n  height=\"content\"\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "Keyboard",
-        "lit": "Keyboard",
-        "rn": "Keyboard",
-        "swift": null
-      },
-      "storyId": "treegrid-react--keyboard",
-      "sweep": null,
-      "decorated": false,
+      "harness": null,
       "primary": false
     }
   ]

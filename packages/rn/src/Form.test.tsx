@@ -1,7 +1,8 @@
 /**
  * Form — behavior scenarios from the component doc, one test each, in the doc's order.
- * `label-names-the-form-landmark` is web-only (the parser narrows it), so only the
- * derived render scenarios run here. See generated/prompts/Form.rn.md.
+ * `label-names-the-form-landmark` is assertable here: iOS and Android have no form
+ * landmark, so `accessibilityLabel` naming the group is the native alternative and is what
+ * the scenario checks. See generated/prompts/Form.rn.md.
  */
 import * as React from 'react';
 import { render, screen } from '@testing-library/react-native';
@@ -21,6 +22,11 @@ function setup(given: Partial<FormProps> = {}) {
 }
 
 describe('Form', () => {
+  it('label-names-the-form-landmark', () => {
+    const s = setup({ label: 'Sign in' });
+    expect(s.root().props.accessibilityLabel).toBe('Sign in');
+  });
+
   it('renders', () => {
     const s = setup();
     expect(s.root()).toBeTruthy();

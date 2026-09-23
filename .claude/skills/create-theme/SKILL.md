@@ -121,5 +121,5 @@ Override paths and values are validated against `schema/tokens.ts`. Use a full p
 ## 7. Finish
 
 - `node --import tsx tools/parse.ts` writes `generated/prompts/theme.<id>.md` (and refreshes the other generated prompts).
-- `pnpm tokens` builds `packages/tokens/dist/<id>/` for CSS, JS and React Native; `pnpm docs` shows the theme page with its derived swatches.
+- `pnpm tokens` builds `packages/tokens/dist/<id>/` for CSS, JS and React Native; `pnpm site:dev` shows the theme page with its derived swatches (the contributor site, `site/`).
 - Summarize what was decided, what drifted from the inspiration and why, and any overrides or tuning added. Don't commit unless asked.

@@ -91,6 +91,7 @@ describe('Select', () => {
   test('invalid-is-reported-on-the-trigger', async () => {
     const s = setup({"invalid": true, "open": true});
     expect(s.label()).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByText(new RegExp(escapeRegExp(s.props.label) + "\\ is\\ not\\ valid\\."))).toBeInTheDocument();
   });
   test('renders', async () => {
     const s = setup({"open": true});

@@ -15,12 +15,12 @@
  * built as `Map`s, because a plain JavaScript object hoists integer-like keys to the front and the token
  * files have to come out in the Python order, byte for byte.
  */
-import { mkdirSync, readdirSync } from 'node:fs';
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { themeFrontmatter } from '../schema/theme.ts';
-import { has, pyGet, pyJsonDumps, pyRound, pyRoundTo, readText, sortedNames, truthy, writeText } from './lib/py.ts';
+import { has, pyGet, pyJsonDumps, pyRound, pyRoundTo, readText, sortedNames, truthy } from './lib/py.ts';
 import { load as yamlLoad } from './lib/pyyaml.ts';
 import { REPO_ROOT } from './lib/root.ts';
 import { contrast, hexToOklch, oklchToHex } from './oklch.ts';
@@ -466,6 +466,12 @@ function themeDocs(dir: string): string[] {
   return sortedNames(names.filter((name) => extname(name) === '.md')).map((name) => join(dir, name));
 }
 
+/** Always `\n`, unlike py.ts `writeText` (the platform separator): the theme JSON is committed, and
+ *  `.gitattributes` pins `tokens/themes/**` to LF so a Windows run does not rewrite every line. */
+function writeLf(file: string, text: string): void {
+  writeFileSync(file, text, 'utf8');
+}
+
 export function main(): number {
   const errors: string[] = [];
   const built: string[] = [];
@@ -490,13 +496,13 @@ export function main(): number {
     const overrides = truthy(pyGet(t, 'overrides', null)) ? (t.overrides as Dict) : {};
     // Before base.json and before any mode is derived, so the mode choices see an overridden palette.
     applyOverrides(base, truthy(pyGet(overrides, 'base', null)) ? (overrides.base as Dict) : {});
-    writeText(join(out, 'base.json'), pyJsonDumps(base, 2) + '\n');
+    writeLf(join(out, 'base.json'), pyJsonDumps(base, 2) + '\n');
     for (const mode of t.modes.supports as string[]) {
       const tree = deriveMode(base, mode, ELEVATION[pyGet(t, 'elevation', 'subtle') as string] as number, isInk(t.seed.color as string));
       applyOverrides(tree, truthy(pyGet(overrides, mode, null)) ? (overrides[mode] as Dict) : {});
-      writeText(join(out, `${mode}.json`), pyJsonDumps(tree, 2) + '\n');
+      writeLf(join(out, `${mode}.json`), pyJsonDumps(tree, 2) + '\n');
     }
-    writeText(join(out, 'theme.json'), pyJsonDumps(t, 2) + '\n');
+    writeLf(join(out, 'theme.json'), pyJsonDumps(t, 2) + '\n');
     built.push(`${t.id} (${(t.modes.supports as string[]).join(', ')})`);
   }
   for (const e of errors) process.stderr.write(`✖ ${e}\n`);

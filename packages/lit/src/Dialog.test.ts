@@ -61,7 +61,9 @@ async function setup(given: Given = {}) {
 
   document.body.append(el);
   await el.updateComplete;
-  const scope = el.shadowRoot!.querySelector<HTMLElement & { updateComplete: Promise<boolean> }>('[data-part="focusScope"]');
+  // The scope resolves its updateComplete only once the slotted ds-input and ds-buttons have
+  // rendered their focusable internals, which is what initial focus waits for too.
+  const scope = el.shadowRoot!.querySelector<HTMLElement & { updateComplete: Promise<boolean> }>('ds-focus-scope');
   await scope?.updateComplete;
   // Initial focus is placed once the scope's slotted children have rendered.
   await new Promise((resolve) => requestAnimationFrame(resolve));

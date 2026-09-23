@@ -94,3 +94,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Feed: timestampSize/endMessageSize/emptyStateSize/articleInset/articleBodyGap/fontFamily say they are 'forwarded to the child's overrides.<binding>', which by the Overrides contract means Feed declares no hook of its own; yet they are listed as overridable Feed bindings with --ds-feed-* hooks. I chose: declare the --ds-feed-* hook and set the child's documented CSS hook from it (--ds-text-font-size, --ds-card-padding-block/-inline, --ds-stack-gap, --ds-text-font-family, --ds-button-font-family) rather than writing the child's `overrides` property, so page CSS overrides keep working.
 - Feed: the item id is used to build the timestamp's DOM id (aria-describedby target). The shape does not say whether ids may contain whitespace or must be unique across feeds on one page; I used `feed-ts-<id>` inside the shadow root, so ids only have to be unique within one feed and must not contain whitespace.
 - Feed: newItemsButton part placement while no button is shown is unspecified (the row stays in the DOM unpadded). I chose: the role="status" row always renders but carries part/data-part="newItemsButton" only while the button is shown, so a test finds the part only when it can click something.
+
+## 2026-09-23 19:44 — round 1
+
+- Feed: copy.showNew, copy.position and the relative-time strings are interpolated with plain template literals; the spec lists params but no plural forms, so no Intl.PluralRules is used and 'Show 1 new' stays as written.
+- Feed: 'a moment' of dwell for item-visible is given as one second only in the platform notes, not in the props description; I used 1000 ms as a module constant.
+- Feed: the spec says a fractional newItemsCount is interpolated as given, but a Lit `type: Number` attribute converter does not reject fractions either; I left the value untouched and did not test it.
+- Feed: the article wrapper's aria-label copies the heading, but the Card also renders the same heading inside the article, so a reader hears it twice; the spec offers no way to avoid this on Lit.
+- Feed: the spec doesn't say whether Ctrl+End with hasMore false and loading true should leave the feed. I chose to leave it, since 'does nothing while loading' is stated only for hasMore.

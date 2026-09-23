@@ -91,3 +91,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Splitter: persistKey says to write 'whenever either value settles', but a drag changes the size on every move. I write on every change after dedupe, so localStorage is written throughout a drag, not only on size-change-end. The doc should say whether 'settles' means commit (size-change-end) only.
 - Splitter: the collapsed description says the Lit property is 'reflected when true' with an absent attribute meaning uncontrolled, which a type: Boolean property can't express. I used a custom converter (present = true, absent = undefined); the platform digest should state that pattern.
 - Splitter: the web notes say persistKey reads localStorage but don't say what happens when the stored size is outside minSize–maxSize, or when a stored collapsed: true meets collapsible=false. I clamp the size and ignore the collapsed value unless collapsible.
+
+## 2026-09-23 19:43 — round 1
+
+- Splitter: `collapsed` reflects when true, but the spec does not say what happens when a controlled `collapsed` is set to `false` while the attribute is present; I treat an absent attribute as uncontrolled (undefined) and a property `false` as controlled.
+- Splitter: the spec does not say whether the Enter key is consumed (preventDefault) when the splitter is not `collapsible`; I let it through, since the scenario only asks for no collapse-change.
+- Splitter: `aria-controls` on the separator points at the primary pane's shadow-root id, which works because both are in the same shadow root, but the Lit note says the collapse Button gets no aria-controls; I set none on it and rely on its label.
+- Splitter: the spec says the primary size is clamped to minSize–maxSize for layout, but does not say what happens when minSize >= maxSize; I keep the min/max clamp order (max wins) and only warn in development.
+- Splitter: the `the-collapse-button-collapses-the-pane` scenario has no `platforms` list, so it applies to Lit, but the collapse Button's click reaches the inner ds-button through the wrapper; the doc does not say whether the test should click the wrapper or the inner button.

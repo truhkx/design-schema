@@ -108,9 +108,16 @@ export class DsSwitch extends LitElement {
       --ds-switch-line-height: var(--font-line-height-normal);
       --ds-switch-disabled-opacity: var(--opacity-disabled);
       --ds-switch-transition: var(--motion-duration-fast);
-      /* trackOff, trackOn, thumb, labelColor, focusRing, focusRingWidth and minTarget are locked, so
-         they read their token directly; helperSize and descriptionText reach the composed Text
-         through its own size and tone props and its own overrides alone. */
+      /* Locked: absent from the overrides type, but the hooks stay so page CSS can re-theme them. */
+      --ds-switch-track-off: var(--color-control-track-off);
+      --ds-switch-track-on: var(--color-control-selected-background);
+      --ds-switch-thumb: var(--color-control-selected-foreground);
+      --ds-switch-label-color: var(--color-foreground);
+      --ds-switch-focus-ring: var(--color-border-focus);
+      --ds-switch-focus-ring-width: var(--border-width-focus);
+      --ds-switch-min-target: var(--size-target-comfortable);
+      /* helperSize and descriptionText have no hook: they reach the composed Text only through its
+         tone prop and its own overrides. */
 
       /* The label's first line box, which the track slot is tall, and the thumb's travel. */
       --ds-switch-line-box: calc(var(--ds-switch-label-size) * var(--ds-switch-line-height));
@@ -130,7 +137,7 @@ export class DsSwitch extends LitElement {
       flex-direction: column;
       justify-content: center;
       inline-size: 100%;
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-switch-min-target);
       cursor: pointer;
     }
 
@@ -174,7 +181,7 @@ export class DsSwitch extends LitElement {
       font-size: var(--ds-switch-label-size);
       font-weight: var(--ds-switch-label-weight);
       line-height: var(--ds-switch-line-height);
-      color: var(--color-foreground);
+      color: var(--ds-switch-label-color);
       cursor: pointer;
     }
 
@@ -203,7 +210,7 @@ export class DsSwitch extends LitElement {
       padding: 0;
       border: 0;
       border-radius: var(--ds-switch-radius);
-      background-color: var(--color-control-track-off);
+      background-color: var(--ds-switch-track-off);
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
@@ -212,14 +219,14 @@ export class DsSwitch extends LitElement {
 
     /* trackOn: keyed off the component state, not :checked, so the look always follows checked. */
     .control[aria-checked='true'] {
-      background-color: var(--color-control-selected-background);
+      background-color: var(--ds-switch-track-on);
     }
 
     /* focusRing, focusRingWidth: drawn around the track, offset by focusRingWidth like every other
        control. Never removed. */
     .control:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-switch-focus-ring-width) solid var(--ds-switch-focus-ring);
+      outline-offset: var(--ds-switch-focus-ring-width);
     }
 
     /* thumb: a real span, not a ::before, which Firefox does not draw on an appearance: none input.
@@ -231,7 +238,7 @@ export class DsSwitch extends LitElement {
       inline-size: var(--ds-switch-thumb-size);
       block-size: var(--ds-switch-thumb-size);
       border-radius: var(--ds-switch-radius);
-      background-color: var(--color-control-selected-foreground);
+      background-color: var(--ds-switch-thumb);
       pointer-events: none;
       transition: transform var(--ds-switch-transition) var(--motion-easing-standard);
     }
@@ -308,6 +315,9 @@ export class DsSwitch extends LitElement {
   /** A switch has no required state: it never validates and never appears in an error summary. Setting it is ignored. */
   get required(): boolean {
     return false;
+  }
+  set required(_value: boolean) {
+    // Deliberately ignored: a no-op rather than a missing setter, which would throw in strict mode.
   }
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
@@ -413,7 +423,6 @@ export class DsSwitch extends LitElement {
                 data-part="track"
                 type="checkbox"
                 role="switch"
-                name=${ifDefined(this.name || undefined)}
                 .checked=${live(this.checked)}
                 aria-checked=${this.checked ? 'true' : 'false'}
                 aria-describedby=${ifDefined(this.description ? 'description' : undefined)}

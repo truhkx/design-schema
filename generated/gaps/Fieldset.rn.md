@@ -73,3 +73,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Fieldset: 'Appearing is what announces' is in the error prop's a11y text but not in the rn notes; the iOS announceForAccessibility effect now fires only when the error goes from unset to set, matching the Android live region that is already mounted.
 - Fieldset: the rn notes say the announcement is silenced 'inside a Form that renders its own error summary' without naming the signal; used FormContext.errorSummary, as Input does.
 - Fieldset: behavior prose says a field's required counts by 'the property or the attribute'; on RN only the explicit `required` prop is readable before render, so only `required === true` counts.
+
+## 2026-09-23 14:01 — round 1
+
+- Fieldset: rn notes define a field as 'a direct child that reads FieldsetContext', but that can't be known before render. Chose a fixed list of the package components that call useFieldsetContext (Input, NumberInput, Checkbox, Switch, RadioGroup, Select, Slider, DatePicker), which creates an import cycle with those modules. The doc should say whether the list is fixed or components opt in with a marker.
+- Fieldset: Switch has no `required` prop, so any group containing a Switch never shows copy.requiredIndicator. The doc doesn't say whether fields that can't be required should count toward 'every field is required'.
+- Fieldset: the a11y text says the description and error are linked with aria-describedby and the group carries aria-invalid, but the rn platform props list only role/accessibilityLabel/accessibilityHint. Chose to add aria-describedby (useId-based ids on the part Views) and aria-invalid on web only, because RN's View types have neither.
+- Fieldset: role=alert on the error wrapper is web/Lit only, and the doc doesn't say whether react-native-web should get it. Left it off (Android live region plus iOS announcement only), since a-group-error-is-announced excludes rn.
+- Fieldset: the fieldsGap description says the forward is 'always sent (the override, else the default)', but the other Text forwards (legendSize, helperSize, fontFamily, lineHeight) aren't spelled out the same way for rn. Kept sending undefined when not overridden, so Text falls back to its own size/weight defaults, which resolve to the same tokens.
+- Fieldset: another writer was editing packages/rn/src/Fieldset.tsx in the same worktree during this job. My changes were applied as targeted edits on top of theirs rather than a full rewrite.

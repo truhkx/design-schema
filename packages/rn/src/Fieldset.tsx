@@ -206,6 +206,19 @@ export function Fieldset({
   const legendOverrides = { ...typographyOverrides, fontSize: overrides?.legendSize, fontWeight: overrides?.legendWeight };
   const helperOverrides = { ...typographyOverrides, fontSize: overrides?.helperSize };
 
+  // react-native-web is the web: the description and error are linked from the group and
+  // the group is invalid while an error is set. RN's View types carry neither attribute.
+  const webGroupProps: Record<string, unknown> =
+    Platform.OS === 'web'
+      ? {
+          'aria-invalid': hasError ? 'true' : undefined,
+          'aria-describedby':
+            [hasDescription ? descriptionId : undefined, hasError ? errorId : undefined]
+              .filter((part) => part !== undefined)
+              .join(' ') || undefined,
+        }
+      : {};
+
   return (
     <View
       ref={ref}
@@ -215,6 +228,7 @@ export function Fieldset({
       aria-label={visibleLegend}
       accessibilityHint={hasDescription ? description : undefined}
       style={groupStyle}
+      {...webGroupProps}
     >
       {/*
         The two Views that carry `disabledOpacity` also carry `aria-disabled`, as Input's
@@ -230,7 +244,7 @@ export function Fieldset({
         </Text>
       </View>
       {hasDescription ? (
-        <View testID="Fieldset.description" style={dimStyle} aria-disabled={disabled}>
+        <View id={descriptionId} testID="Fieldset.description" style={dimStyle} aria-disabled={disabled}>
           <Text tone="muted" size="sm" overrides={helperOverrides}>
             {description}
           </Text>
@@ -242,7 +256,7 @@ export function Fieldset({
         </FieldsetContext.Provider>
       </View>
       {hasError ? (
-        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'} testID="Fieldset.errorMessage">
+        <View id={errorId} accessibilityLiveRegion={summarised ? 'none' : 'assertive'} testID="Fieldset.errorMessage">
           <Text tone="danger" size="sm" overrides={helperOverrides}>
             {error}
           </Text>

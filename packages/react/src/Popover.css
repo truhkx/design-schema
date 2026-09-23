@@ -1,6 +1,7 @@
 /* Popover — styled only through Design Schema token custom properties. */
 
 .ds-popover {
+  --ds-popover-surface: var(--color-overlay-surface);
   --ds-popover-border: var(--color-border);
   --ds-popover-border-width: var(--border-width-thin);
   --ds-popover-shadow: var(--shadow-overlay);
@@ -10,10 +11,15 @@
   --ds-popover-offset: var(--space-2);
   --ds-popover-arrow-size: var(--space-2);
   --ds-popover-max-width: var(--layout-max-width-prose);
+  --ds-popover-gutter: var(--layout-gutter);
+  /* breakpoint (locked): React Native only; web has no narrow presentation. */
+  --ds-popover-breakpoint: var(--layout-max-width-prose);
   --ds-popover-layer: var(--layer-dropdown);
   --ds-popover-enter: var(--motion-duration-fast);
   --ds-popover-enter-distance: var(--space-1);
   --ds-popover-exit: var(--motion-duration-fast);
+  --ds-popover-focus-ring: var(--color-border-focus);
+  --ds-popover-focus-ring-width: var(--border-width-focus);
 
   /* Coordinates come from the trigger rect in JS; this resets the UA [popover] and dialog:modal boxes. */
   position: fixed;
@@ -22,23 +28,24 @@
   box-sizing: border-box;
   inline-size: max-content;
   block-size: auto;
-  max-inline-size: var(--ds-popover-max-width);
+  /* maxWidth, clamped to the viewport less a gutter on each side. */
+  max-inline-size: min(var(--ds-popover-max-width), calc(100vw - 2 * var(--ds-popover-gutter)));
   max-block-size: none;
   margin: 0;
   padding: var(--ds-popover-inset);
   overflow: visible;
   color: var(--color-foreground);
   font-family: var(--font-family-body);
-  /* surface: locked. */
-  background-color: var(--color-overlay-surface);
+  background-color: var(--ds-popover-surface);
   border: var(--ds-popover-border-width) solid var(--ds-popover-border);
   border-radius: var(--ds-popover-radius);
   box-shadow: var(--ds-popover-shadow);
 
-  /* exit: fade out with the exit easing; enter (below) fades and slides enterDistance from the trigger side. */
+  /* exit: fade out with the exit easing and no slide; the top-layer exit plays through allow-discrete. */
   --ds-popover-slide-x: 0;
   --ds-popover-slide-y: 0;
   opacity: 0;
+  translate: var(--ds-popover-slide-x) var(--ds-popover-slide-y);
   transition-property: opacity, display, overlay;
   transition-duration: var(--ds-popover-exit);
   transition-timing-function: var(--motion-easing-exit);
@@ -46,11 +53,12 @@
 }
 
 .ds-popover:focus-visible {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: var(--border-width-focus);
+  outline: var(--ds-popover-focus-ring-width) solid var(--ds-popover-focus-ring);
+  outline-offset: var(--ds-popover-focus-ring-width);
 }
 
-.ds-popover[data-state='open'] {
+/* enter: fade and an enterDistance slide from the trigger side. */
+.ds-popover--visible {
   opacity: 1;
   translate: 0 0;
   transition-property: opacity, translate, display, overlay;
@@ -59,18 +67,18 @@
 }
 
 @starting-style {
-  .ds-popover[data-state='open'] {
+  .ds-popover--visible {
     opacity: 0;
     translate: var(--ds-popover-slide-x) var(--ds-popover-slide-y);
   }
 }
 
-/* A modal popover never dims the page: it stays anchored, not a takeover. */
+/* A modal popover never dims the page: there is no scrim. */
 .ds-popover::backdrop {
   background-color: transparent;
 }
 
-/* offset: the gap between trigger and panel, on the trigger side. */
+/* offset: the gap between trigger and panel, on the panel side facing the trigger. */
 .ds-popover[data-side='bottom'] {
   margin-top: var(--ds-popover-offset);
   --ds-popover-slide-y: calc(-1 * var(--ds-popover-enter-distance));
@@ -93,7 +101,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ds-popover,
-  .ds-popover[data-state='open'] {
+  .ds-popover--visible {
     transition: none;
     translate: none;
   }
@@ -105,10 +113,10 @@
   gap: var(--ds-popover-part-gap);
 }
 
+/* The header row: the heading fills it and the close button sits at its inline end. */
 .ds-popover__header {
   display: flex;
   align-items: flex-start;
-  /* The close button stays at the inline end even without a heading. */
   justify-content: flex-end;
   gap: var(--ds-popover-part-gap);
 }
@@ -118,10 +126,10 @@
   min-inline-size: 0;
 }
 
-/* The heading is focused only when the panel has no controls; its wrapper draws the ring. */
+/* focusRing / focusRingWidth: the heading is focused only as a fallback; its wrapper draws the ring. */
 .ds-popover__heading:has(:focus-visible) {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: var(--border-width-focus);
+  outline: var(--ds-popover-focus-ring-width) solid var(--ds-popover-focus-ring);
+  outline-offset: var(--ds-popover-focus-ring-width);
 }
 
 .ds-popover__close {
@@ -130,10 +138,10 @@
 }
 
 /*
- * arrow: a rotated square centered on the panel edge facing the trigger, filled with the surface and
- * edged on its two outer sides. It is positioned from the padding box, so the outset that puts its
- * centre on the centreline of the panel's border on that edge is half the square plus half the
- * border; being positioned, it paints above the panel, and its base covers the border beneath it.
+ * arrow: a square rotated 45°, centered on the panel edge facing the trigger, filled with the surface
+ * and edged on the two sides the rotation turns outward. It is positioned from the padding box, so
+ * the outset that puts its centre on the centreline of the panel's border is half the square plus
+ * half the border; being positioned, it paints above the panel and its base covers the border.
  */
 .ds-popover__arrow {
   --ds-popover-arrow-outset: calc(-1 * (var(--ds-popover-arrow-size) + var(--ds-popover-border-width)) / 2);
@@ -142,36 +150,45 @@
   box-sizing: border-box;
   inline-size: var(--ds-popover-arrow-size);
   block-size: var(--ds-popover-arrow-size);
-  background-color: var(--color-overlay-surface);
-  border-top: var(--ds-popover-border-width) solid var(--ds-popover-border);
-  border-left: var(--ds-popover-border-width) solid var(--ds-popover-border);
-}
-
-.ds-popover[data-side='bottom'] .ds-popover__arrow {
-  top: var(--ds-popover-arrow-outset);
-  left: calc(50% - var(--ds-popover-arrow-size) / 2);
+  background-color: var(--ds-popover-surface);
+  border: 0 solid var(--ds-popover-border);
   rotate: 45deg;
 }
 
+/* Facing edge top: edged top and left. */
+.ds-popover[data-side='bottom'] .ds-popover__arrow {
+  top: var(--ds-popover-arrow-outset);
+  left: calc(50% - var(--ds-popover-arrow-size) / 2);
+  border-top-width: var(--ds-popover-border-width);
+  border-left-width: var(--ds-popover-border-width);
+}
+
+/* Facing edge bottom: edged bottom and right. */
 .ds-popover[data-side='top'] .ds-popover__arrow {
   bottom: var(--ds-popover-arrow-outset);
   left: calc(50% - var(--ds-popover-arrow-size) / 2);
-  rotate: 225deg;
+  border-bottom-width: var(--ds-popover-border-width);
+  border-right-width: var(--ds-popover-border-width);
 }
 
+/* Facing edge right: edged top and right. */
 .ds-popover[data-side='left'] .ds-popover__arrow {
   right: var(--ds-popover-arrow-outset);
   top: calc(50% - var(--ds-popover-arrow-size) / 2);
-  rotate: 135deg;
+  border-top-width: var(--ds-popover-border-width);
+  border-right-width: var(--ds-popover-border-width);
 }
 
+/* Facing edge left: edged left and bottom. */
 .ds-popover[data-side='right'] .ds-popover__arrow {
   left: var(--ds-popover-arrow-outset);
   top: calc(50% - var(--ds-popover-arrow-size) / 2);
-  rotate: -45deg;
+  border-left-width: var(--ds-popover-border-width);
+  border-bottom-width: var(--ds-popover-border-width);
 }
 
-/* Body scroll lock while a modal Popover is open; toggled on <html> by the component. */
+/* Page scroll lock while a modal Popover is open; the gutter keeps the page from shifting. */
 html.ds-popover-lock-scroll {
   overflow: hidden;
+  scrollbar-gutter: stable;
 }

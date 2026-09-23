@@ -9,7 +9,12 @@ import { act, type ReactElement } from 'react';
 import { hydrateRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import { ActionSheet } from './ActionSheet';
+import { AlertDialog } from './AlertDialog';
+import { BottomSheet } from './BottomSheet';
 import { Button } from './Button';
+import { Dialog } from './Dialog';
+import { Menu } from './Menu';
+import { Popover } from './Popover';
 import { SidePanel } from './SidePanel';
 import { ToastRegion } from './Toast';
 import { Tooltip } from './Tooltip';
@@ -72,6 +77,56 @@ describe('hydration', () => {
       const errors = await hydrate(<ActionSheet open={open} heading="Photo.jpg" actions={ACTIONS} />);
       expect(errors).toEqual([]);
       expect(document.querySelector('[data-ds="ActionSheet"]') !== null).toBe(open);
+    });
+
+    it(`Dialog (open: ${open}) hydrates without a mismatch and portals afterwards`, async () => {
+      const errors = await hydrate(
+        <Dialog open={open} heading="Rename project">
+          <input aria-label="Project name" defaultValue="Q3 roadmap" />
+        </Dialog>,
+      );
+      expect(errors).toEqual([]);
+      expect(document.querySelector('[data-ds="Dialog"]') !== null).toBe(open);
+    });
+
+    it(`BottomSheet (open: ${open}) hydrates without a mismatch and portals afterwards`, async () => {
+      const errors = await hydrate(
+        <BottomSheet open={open} heading="Filters">
+          <input aria-label="Days" defaultValue="30" />
+        </BottomSheet>,
+      );
+      expect(errors).toEqual([]);
+      expect(document.querySelector('[data-ds="BottomSheet"]') !== null).toBe(open);
+    });
+
+    it(`AlertDialog (open: ${open}) hydrates without a mismatch and portals afterwards`, async () => {
+      const errors = await hydrate(
+        <AlertDialog
+          open={open}
+          heading="Delete 3 files?"
+          description="They will be removed from all shared folders. This cannot be undone."
+          confirmLabel="Delete files"
+        />,
+      );
+      expect(errors).toEqual([]);
+      expect(document.querySelector('[data-ds="AlertDialog"]') !== null).toBe(open);
+    });
+
+    it(`Menu (open: ${open}) hydrates without a mismatch and portals afterwards`, async () => {
+      const errors = await hydrate(<Menu open={open} label="More actions" items={ACTIONS} />);
+      expect(errors).toEqual([]);
+      expect(document.querySelector('[data-ds="Menu"]')).not.toBeNull();
+      expect(document.querySelector('[role="menu"]') !== null).toBe(open);
+    });
+
+    it(`Popover (open: ${open}) hydrates without a mismatch and portals afterwards`, async () => {
+      const errors = await hydrate(
+        <Popover open={open} heading="Filters" trigger={<Button label="Filters" />}>
+          <a href="#one">One</a>
+        </Popover>,
+      );
+      expect(errors).toEqual([]);
+      expect(document.querySelector('[data-ds="Popover"]') !== null).toBe(open);
     });
 
     it(`Tooltip (open: ${open}) hydrates without a mismatch and portals afterwards`, async () => {

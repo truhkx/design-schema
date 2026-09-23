@@ -169,7 +169,8 @@ export const ReadingDialog: Story = {
         <Text>You can close your account at any time. Your content is deleted thirty days after closure.</Text>
       </Stack>
     ),
-    footer: undefined,
+    // No footer: restated as null, since Storybook merges meta.args (the rename footer) into every story.
+    footer: null,
     size: 'lg',
     initialFocus: 'title',
   },

@@ -22,13 +22,20 @@ function setup(given: Partial<Props> = {}) {
 describe('BottomSheet', () => {
   it('close-button-fires-on-close', () => {
     const d = setup({ open: true });
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(d.sheet()!.querySelector<HTMLElement>('[data-part="closeButton"]')!);
     expect(d.onClose).toHaveBeenCalledWith('close-button');
   });
 
   it('the-close-button-works-without-the-drag-gesture', () => {
     const d = setup({ open: true, dragToDismiss: false });
+    fireEvent.click(d.sheet()!.querySelector<HTMLElement>('[data-part="closeButton"]')!);
+    expect(d.onClose).toHaveBeenCalledWith('close-button');
+  });
+
+  it('the close Button itself requests close once', () => {
+    const d = setup({ open: true });
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(d.onClose).toHaveBeenCalledTimes(1);
     expect(d.onClose).toHaveBeenCalledWith('close-button');
   });
 

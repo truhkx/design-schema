@@ -23,6 +23,17 @@
   --ds-action-sheet-layer: var(--layer-sheet);
   --ds-action-sheet-enter: var(--motion-duration-base);
   --ds-action-sheet-exit: var(--motion-duration-fast);
+  /* Locked bindings: out of the `overrides` type, but still hooks page CSS can re-theme. */
+  --ds-action-sheet-surface: var(--color-overlay-surface);
+  --ds-action-sheet-handle: var(--color-foreground-muted);
+  --ds-action-sheet-item-hover: var(--color-background-subtle);
+  --ds-action-sheet-item-color: var(--color-foreground);
+  --ds-action-sheet-item-danger-color: var(--color-foreground-danger);
+  --ds-action-sheet-title-color: var(--color-foreground-muted);
+  --ds-action-sheet-min-target: var(--size-target-comfortable);
+  --ds-action-sheet-max-width: var(--layout-max-width-prose);
+  --ds-action-sheet-focus-ring: var(--color-border-focus);
+  --ds-action-sheet-focus-ring-width: var(--border-width-focus);
   box-sizing: border-box;
   position: fixed;
   inset: 0;
@@ -38,7 +49,7 @@
   border: 0;
   overflow: hidden;
   background: transparent;
-  color: var(--color-foreground);
+  color: var(--ds-action-sheet-item-color);
   /* layer: no effect in the top layer; applies to a non-top-layer fallback only. */
   z-index: var(--ds-action-sheet-layer);
 }
@@ -73,7 +84,7 @@
   inline-size: 100%;
   max-block-size: 90dvh; /* literal-ok: BottomSheet height content cap from the doc */
   padding-block-end: env(safe-area-inset-bottom);
-  background-color: var(--color-overlay-surface);
+  background-color: var(--ds-action-sheet-surface);
   border-start-start-radius: var(--ds-action-sheet-radius);
   border-start-end-radius: var(--ds-action-sheet-radius);
   box-shadow: var(--ds-action-sheet-shadow);
@@ -122,13 +133,15 @@
   inline-size: var(--ds-action-sheet-handle-width);
   block-size: var(--ds-action-sheet-handle-height);
   border-radius: var(--ds-action-sheet-handle-radius);
-  background-color: var(--color-foreground-muted);
+  background-color: var(--ds-action-sheet-handle);
 }
 
 /* heading: the composed Text's own hooks point at the sheet's, so titleSize, fontFamily and
    lineHeight reach it by default; `overrides` is passed to Text only when the caller set one.
-   Two classes of specificity, so this wins over Text's own `.ds-text--size-sm`. */
+   Two classes of specificity, so this wins over Text's own `.ds-text--size-sm`. titleColor is
+   locked (tone="muted" realizes it); its hook points Text's color hook at the same muted token. */
 .ds-action-sheet .ds-action-sheet__header [data-part='heading'] {
+  --ds-text-color: var(--ds-action-sheet-title-color);
   --ds-text-font-size: var(--ds-action-sheet-title-size);
   --ds-text-font-family: var(--ds-action-sheet-font-family);
   --ds-text-line-height: var(--ds-action-sheet-line-height);
@@ -151,12 +164,12 @@
   align-items: center;
   gap: var(--ds-action-sheet-item-gap);
   inline-size: 100%;
-  min-block-size: var(--size-target-comfortable);
+  min-block-size: var(--ds-action-sheet-min-target);
   padding-block: var(--ds-action-sheet-item-padding-block);
   padding-inline: var(--ds-action-sheet-item-padding-inline);
   border: 0;
   background: transparent;
-  color: var(--color-foreground);
+  color: var(--ds-action-sheet-item-color);
   font-family: var(--ds-action-sheet-font-family);
   font-size: var(--ds-action-sheet-font-size);
   line-height: var(--ds-action-sheet-line-height);
@@ -167,17 +180,17 @@
 
 /* itemDangerColor (locked) */
 .ds-action-sheet__item--danger {
-  color: var(--color-foreground-danger);
+  color: var(--ds-action-sheet-item-danger-color);
 }
 
 /* itemHover (locked): paint only — hovering a row never moves focus. */
 .ds-action-sheet__item:hover:not([aria-disabled='true']) {
-  background-color: var(--color-background-subtle);
+  background-color: var(--ds-action-sheet-item-hover);
 }
 
 .ds-action-sheet__item:focus-visible {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: calc(-1 * var(--border-width-focus));
+  outline: var(--ds-action-sheet-focus-ring-width) solid var(--ds-action-sheet-focus-ring);
+  outline-offset: calc(-1 * var(--ds-action-sheet-focus-ring-width));
 }
 
 .ds-action-sheet__item--disabled {

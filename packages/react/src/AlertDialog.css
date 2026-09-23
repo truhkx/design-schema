@@ -20,6 +20,10 @@
   --ds-alert-dialog-rise: var(--space-2);
   --ds-alert-dialog-enter: var(--motion-duration-base);
   --ds-alert-dialog-exit: var(--motion-duration-fast);
+  /* Locked bindings: not in the overrides type, but themeable from page CSS through their hooks. */
+  --ds-alert-dialog-surface: var(--color-overlay-surface);
+  --ds-alert-dialog-focus-ring: var(--color-border-focus);
+  --ds-alert-dialog-focus-ring-width: var(--border-width-focus);
   box-sizing: border-box;
   position: fixed;
   inset: 0;
@@ -39,6 +43,12 @@
   font-family: var(--font-family-body);
   /* layer: no effect in the top layer; applies to a non-top-layer fallback only. */
   z-index: var(--ds-alert-dialog-layer);
+}
+
+/* focusRing / focusRingWidth: the Buttons draw their own ring; this covers the <dialog> itself if
+   the browser ever focuses it (e.g. a native re-open before Cancel takes focus). */
+.ds-alert-dialog:focus-visible {
+  outline: var(--ds-alert-dialog-focus-ring-width) solid var(--ds-alert-dialog-focus-ring);
 }
 
 .ds-alert-dialog::backdrop {
@@ -81,7 +91,7 @@
   /* width: always the small size; gutter is the least space to each viewport edge. */
   inline-size: min(var(--ds-alert-dialog-width), calc(100vw - 2 * var(--ds-alert-dialog-gutter)));
   max-block-size: calc(100dvh - 2 * var(--ds-alert-dialog-gutter));
-  background-color: var(--color-overlay-surface);
+  background-color: var(--ds-alert-dialog-surface);
   border-style: solid;
   border-width: var(--ds-alert-dialog-border-width);
   border-color: var(--ds-alert-dialog-border);

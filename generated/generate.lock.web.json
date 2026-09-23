@@ -28,20 +28,21 @@
     }
   },
   "ActionSheet.web": {
-    "hash": "36b532660cb3602c",
-    "lastAttemptHash": "36b532660cb3602c",
-    "generatedAt": "2026-09-23T08:34:05+00:00",
+    "hash": "031dc5c35b527de8",
+    "lastAttemptHash": "031dc5c35b527de8",
+    "generatedAt": "2026-09-23T19:40:02+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.0693,
+    "rounds": 2,
+    "costUsd": 2.5935,
     "files": [
       "packages/react/src/ActionSheet.css",
       "packages/react/src/ActionSheet.stories.tsx",
       "packages/react/src/ActionSheet.test.tsx",
-      "packages/react/src/ActionSheet.tsx"
+      "packages/react/src/ActionSheet.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -49,6 +50,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -83,18 +85,20 @@
     }
   },
   "AlertDialog.web": {
-    "hash": "26b1d4dd55cc55c7",
-    "lastAttemptHash": "26b1d4dd55cc55c7",
-    "generatedAt": "2026-09-21T11:02:18+00:00",
+    "hash": "fa0c84761a9f0bb9",
+    "lastAttemptHash": "fa0c84761a9f0bb9",
+    "generatedAt": "2026-09-23T19:24:28+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 4.9518,
+    "rounds": 2,
+    "costUsd": 2.1125,
     "files": [
+      "logs/alertdialog-axe.config.ts",
       "packages/react/src/AlertDialog.css",
       "packages/react/src/AlertDialog.stories.tsx",
       "packages/react/src/AlertDialog.test.tsx",
-      "packages/react/src/AlertDialog.tsx"
+      "packages/react/src/AlertDialog.tsx",
+      "packages/react/src/hydration.test.tsx"
     ],
     "gaps": 9,
     "gates": {
@@ -104,25 +108,29 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
     }
   },
   "BottomSheet.web": {
-    "hash": "7e203a39feaabe29",
-    "lastAttemptHash": "7e203a39feaabe29",
-    "generatedAt": "2026-09-21T12:51:45+00:00",
+    "hash": "5394cf687a06a636",
+    "lastAttemptHash": "5394cf687a06a636",
+    "generatedAt": "2026-09-23T19:36:46+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 6.9505,
+    "rounds": 2,
+    "costUsd": 2.96,
     "files": [
       "packages/react/src/BottomSheet.css",
       "packages/react/src/BottomSheet.stories.tsx",
-      "packages/react/src/BottomSheet.tsx"
+      "packages/react/src/BottomSheet.test.tsx",
+      "packages/react/src/BottomSheet.tsx",
+      "packages/react/src/hydration.test.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 12,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -130,6 +138,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -402,19 +411,20 @@
     }
   },
   "Dialog.web": {
-    "hash": "aefe1f63fc419a5e",
-    "lastAttemptHash": "aefe1f63fc419a5e",
-    "generatedAt": "2026-09-21T10:19:15+00:00",
+    "hash": "e5c7c3482224fa1e",
+    "lastAttemptHash": "e5c7c3482224fa1e",
+    "generatedAt": "2026-09-23T19:21:47+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 3.743,
+    "rounds": 3,
+    "costUsd": 4.1571,
     "files": [
       "packages/react/src/Dialog.css",
       "packages/react/src/Dialog.stories.tsx",
-      "packages/react/src/Dialog.tsx"
+      "packages/react/src/Dialog.tsx",
+      "packages/react/src/hydration.test.tsx"
     ],
-    "gaps": 11,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -422,6 +432,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -757,18 +768,20 @@
     }
   },
   "Menu.web": {
-    "hash": "1b5cb769052b3b8c",
-    "lastAttemptHash": "1b5cb769052b3b8c",
-    "generatedAt": "2026-09-21T11:26:38+00:00",
+    "hash": "14d114286a709caf",
+    "lastAttemptHash": "14d114286a709caf",
+    "generatedAt": "2026-09-23T19:28:09+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 2,
-    "costUsd": 12.7106,
+    "costUsd": 2.8032,
     "files": [
       "packages/react/src/Menu.css",
-      "packages/react/src/Menu.tsx"
+      "packages/react/src/Menu.stories.tsx",
+      "packages/react/src/Menu.tsx",
+      "packages/react/src/hydration.test.tsx"
     ],
-    "gaps": 20,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -776,6 +789,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -858,19 +872,21 @@
     }
   },
   "Popover.web": {
-    "hash": "9a0e6596e6d39c91",
-    "lastAttemptHash": "9a0e6596e6d39c91",
-    "generatedAt": "2026-09-21T11:54:42+00:00",
+    "hash": "94999557b832f05b",
+    "lastAttemptHash": "94999557b832f05b",
+    "generatedAt": "2026-09-23T19:33:08+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 4.346,
+    "costUsd": 2.0196,
     "files": [
       "packages/react/src/Popover.css",
       "packages/react/src/Popover.stories.tsx",
-      "packages/react/src/Popover.tsx"
+      "packages/react/src/Popover.tsx",
+      "packages/react/src/hydration.test.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 11,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -878,6 +894,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -1019,18 +1036,21 @@
     }
   },
   "SidePanel.web": {
-    "hash": "54f36b00a8bf73d2",
-    "lastAttemptHash": "54f36b00a8bf73d2",
-    "generatedAt": "2026-09-23T08:30:34+00:00",
+    "hash": "fea06c19aaf90f43",
+    "lastAttemptHash": "fea06c19aaf90f43",
+    "generatedAt": "2026-09-23T19:42:30+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 2,
-    "costUsd": 2.7578,
+    "costUsd": 1.9302,
     "files": [
       "packages/react/src/SidePanel.css",
-      "packages/react/src/SidePanel.tsx"
+      "packages/react/src/SidePanel.stories.tsx",
+      "packages/react/src/SidePanel.test.tsx",
+      "packages/react/src/SidePanel.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 12,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1038,6 +1058,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true

@@ -491,8 +491,9 @@ export function SidePanel({
     if (open) closeReasonRef.current = null;
   }, [open]);
 
-  // Non-modal close: focus inside the panel returns to the trigger, unless a followed Link owns focus
-  // (the modal's FocusScope restores on unmount, under the same rule).
+  // Non-modal close: focus inside the panel, or focus lost to <body> (a scrim click), returns to the
+  // trigger, unless a followed Link owns focus (the modal's FocusScope restores on unmount, under the
+  // same rule). Focus the user already put on another control on the page is left there.
   const wasOpenRef = useRef(open);
   useEffect(() => {
     const wasOpen = wasOpenRef.current;
@@ -500,7 +501,8 @@ export function SidePanel({
     if (!wasOpen || open || isPersistent || modalActive || !host) return;
     if (closeReasonRef.current === 'navigation') return;
     const active = document.activeElement;
-    if (active && host.contains(active)) triggerRef.current?.focus();
+    const lost = active === null || active === document.body;
+    if (lost || (active && host.contains(active))) triggerRef.current?.focus();
   }, [open, isPersistent, modalActive, host]);
 
   // Close: run the exit transition on the surface, then hide (non-modal) or close() and unmount (modal).
@@ -817,6 +819,7 @@ export function SidePanel({
           ref={triggerWrapRef}
           className={isPersistent ? 'ds-side-panel__trigger ds-side-panel__trigger--hidden' : 'ds-side-panel__trigger'}
           data-part="trigger"
+          hidden={isPersistent}
           onKeyDown={handleTriggerKeyDown}
         >
           {clonedTrigger}

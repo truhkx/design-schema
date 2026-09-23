@@ -5,6 +5,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type FocusEvent as ReactFocusEvent,
@@ -120,6 +121,12 @@ function overridesToStyle(overrides: Partial<Record<MenuOverridableBinding, Toke
 /* Only declared when the bundler defines it; never assumed. */
 declare const process: { env: Record<string, string | undefined> } | undefined;
 const isDev: boolean = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+
+/**
+ * False on the server and through hydration, true on a client-only mount: the portal needs
+ * `document`, so it renders only once hydrated (`typeof document` is true during hydration too).
+ */
+const subscribeNothing = (): (() => void) => () => {};
 
 /** jsdom (and older browsers) have no `matchMedia`; treat that as "no preference". */
 function prefersReducedMotion(): boolean {
@@ -250,9 +257,13 @@ function computePosition(
   const furthestLeft = Math.max(gutter, viewportWidth - gutter - popupRect.width);
   const left = Math.min(Math.max(preferredLeft, gutter), furthestLeft);
 
+  // The gutter is kept from the block edges too: the popup box (after its `offset` margin) is clamped
+  // between them, and the edge it grows away from wins when it cannot fit.
+  const clampBlock = (preferred: number): number =>
+    Math.max(gutter - offset, Math.min(preferred, viewportHeight - gutter - needed));
   const style: Record<string, string | number> = { left };
-  if (vertical === 'bottom') style.top = anchorRect.bottom;
-  else style.bottom = viewportHeight - anchorRect.top;
+  if (vertical === 'bottom') style.top = clampBlock(anchorRect.bottom);
+  else style.bottom = clampBlock(viewportHeight - anchorRect.top);
   return { style: style as CSSProperties, vertical };
 }
 
@@ -382,7 +393,13 @@ export function Menu({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [popupStyle, setPopupStyle] = useState<CSSProperties | undefined>(undefined);
   const [vertical, setVertical] = useState<'top' | 'bottom'>('bottom');
-  const [entered, setEntered] = useState(false);
+  // The popup mounts hidden and turns `--visible` on a frame later; the open class follows this flag.
+  const [visible, setVisible] = useState(false);
+  const hydrated = useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
     if (!isDev || warnedRef.current) return;
@@ -481,9 +498,10 @@ export function Menu({
       focusInsideRef.current = false;
       openerRef.current = null;
       lastPositionRef.current = '';
-      setEntered(false);
+      setVisible(false);
       return undefined;
     }
+    // Not in the DOM until hydrated; `hydrated` is in the deps so this runs again once it is.
     const popup = popupRef.current;
     if (!popup) return undefined;
     focusAfterCloseRef.current = null;
@@ -527,8 +545,8 @@ export function Menu({
     else popup.focus();
 
     let frame = 0;
-    if (prefersReducedMotion() || typeof requestAnimationFrame !== 'function') setEntered(true);
-    else frame = requestAnimationFrame(() => setEntered(true));
+    if (prefersReducedMotion() || typeof requestAnimationFrame !== 'function') setVisible(true);
+    else frame = requestAnimationFrame(() => setVisible(true));
 
     window.addEventListener('scroll', reposition, true);
     window.addEventListener('resize', reposition);
@@ -538,7 +556,7 @@ export function Menu({
       window.removeEventListener('resize', reposition);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, anchor]);
+  }, [open, anchor, hydrated]);
 
   // A pointer press outside the popup and trigger closes (`outside`); the window losing focus closes (`focus-out`).
   const dismissRef = useRef<(reason: 'outside' | 'focus-out') => void>(() => undefined);
@@ -549,6 +567,11 @@ export function Menu({
       const target = event.target as Node | null;
       const from = anchor?.current ?? triggerRef.current;
       if (target && (popupRef.current?.contains(target) || from?.contains(target))) return;
+      // A press on non-focusable ground would blur the item to the page body after the close has
+      // returned focus to the trigger; suppressing the pointerdown's mouse compatibility events keeps
+      // it there. A press on something focusable lets focus move on.
+      const lands = target instanceof Element ? target.closest(TABBABLE_SELECTOR) : null;
+      if (!lands && focusInsideRef.current) event.preventDefault();
       dismissRef.current('outside');
     };
     const handleWindowBlur = () => dismissRef.current('focus-out');
@@ -622,7 +645,8 @@ export function Menu({
 
     const start = Math.max(currentIndex, 0);
     // A growing buffer may keep the current item; a single character moves on to the next match.
-    const firstOffset = buffer.length > 1 ? 0 : 1;
+    // With focus on a disabled item (not in `enabled`) the search starts at the first enabled one.
+    const firstOffset = buffer.length > 1 || currentIndex < 0 ? 0 : 1;
     for (let offset = firstOffset; offset < enabled.length + firstOffset; offset++) {
       const candidate = enabled[(start + offset) % enabled.length];
       if (candidate && candidate.label.toLowerCase().startsWith(buffer)) {
@@ -723,8 +747,11 @@ export function Menu({
   const handlePopupBlur = (event: ReactFocusEvent<HTMLDivElement>) => {
     const next = event.relatedTarget as Node | null;
     if (next && popupRef.current?.contains(next)) return;
+    // No relatedTarget: focus is dropping to the page body (the popup being removed while focused, a
+    // press on non-focusable ground, the window blurring). It still counts as inside, so the close
+    // hands it to the trigger; pointerdown and the window blur listener report the close itself.
+    if (!next) return;
     focusInsideRef.current = false;
-    if (!next) return; // Pointer presses on non-focusable ground are handled by pointerdown; window blur by its listener.
     if (anchorElement()?.contains(next)) return;
     closeMenu('focus-out', 'none');
   };
@@ -805,7 +832,8 @@ export function Menu({
 
   const icon = triggerIcon === 'none' ? undefined : <Icon name={triggerIcon} inline />;
   const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const popupClasses = ['ds-menu__popup', entered ? 'ds-menu__popup--entered' : null].filter(Boolean).join(' ');
+  const shown = visible && open;
+  const popupClasses = ['ds-menu__popup', shown ? 'ds-menu__popup--visible' : null].filter(Boolean).join(' ');
   // `className` and `style` are not in MenuProps; one that arrives through an untyped spread is still
   // dropped, since `overrides` is the only per-instance styling.
   const { className: _className, style: _style, ...rootProps } = rest as typeof rest & {
@@ -835,7 +863,7 @@ export function Menu({
           />
         </span>
       )}
-      {open && typeof document !== 'undefined'
+      {open && hydrated
         ? createPortal(
             <div
               ref={setPopupRef}

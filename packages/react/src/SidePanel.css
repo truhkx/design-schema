@@ -20,6 +20,10 @@
   --ds-side-panel-layer: var(--layer-sheet);
   --ds-side-panel-enter: var(--motion-duration-base);
   --ds-side-panel-exit: var(--motion-duration-fast);
+  /* Locked bindings: not in the `overrides` type, but still hooks so page CSS can re-theme them. */
+  --ds-side-panel-surface: var(--color-overlay-surface);
+  --ds-side-panel-focus-ring: var(--color-border-focus);
+  --ds-side-panel-focus-ring-width: var(--border-width-focus);
 }
 
 /* The moving host, the in-page slot and the trigger wrapper take no box of their own. */
@@ -100,7 +104,7 @@ dialog.ds-side-panel:not([open]) {
   overflow: hidden;
   color: var(--color-foreground);
   font-family: var(--font-family-body);
-  background-color: var(--color-overlay-surface);
+  background-color: var(--ds-side-panel-surface);
   box-shadow: var(--ds-side-panel-shadow);
   /* exit: slide out over motion.duration.fast with motion.easing.exit */
   transition-property: transform;
@@ -209,8 +213,8 @@ dialog.ds-side-panel:not([open]) {
 
 /* focus-visible: the title is the last initial-focus target of a modal panel. */
 .ds-side-panel__heading:has(:focus-visible) {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: var(--border-width-focus);
+  outline: var(--ds-side-panel-focus-ring-width) solid var(--ds-side-panel-focus-ring);
+  outline-offset: var(--ds-side-panel-focus-ring-width);
 }
 
 /* hideHeading: visually hidden, still the accessible name — sanctioned 1px clip pattern. */

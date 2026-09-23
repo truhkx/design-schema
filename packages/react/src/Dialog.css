@@ -19,6 +19,10 @@
   --ds-dialog-layer: var(--layer-dialog);
   --ds-dialog-enter: var(--motion-duration-base);
   --ds-dialog-exit: var(--motion-duration-fast);
+  /* Locked bindings: not in the `overrides` type, but still hooks so page CSS and the naming codemod reach them. */
+  --ds-dialog-surface: var(--color-overlay-surface);
+  --ds-dialog-focus-ring: var(--color-border-focus);
+  --ds-dialog-focus-ring-width: var(--border-width-focus);
   box-sizing: border-box;
   position: fixed;
   inset: 0;
@@ -79,7 +83,7 @@
   /* gutter: the minimum space between the surface and the viewport edge. */
   max-inline-size: calc(100vw - 2 * var(--ds-dialog-gutter));
   max-block-size: calc(100dvh - 2 * var(--ds-dialog-gutter));
-  background-color: var(--color-overlay-surface);
+  background-color: var(--ds-dialog-surface);
   border-style: solid;
   border-width: var(--ds-dialog-border-width);
   border-color: var(--ds-dialog-border);
@@ -128,8 +132,8 @@
 
 /* focusRing / focusRingWidth (locked): drawn by the heading wrapper when the heading holds focus. */
 .ds-dialog__heading:has(:focus-visible) {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: var(--border-width-focus);
+  outline: var(--ds-dialog-focus-ring-width) solid var(--ds-dialog-focus-ring);
+  outline-offset: var(--ds-dialog-focus-ring-width);
 }
 
 .ds-dialog__heading :focus-visible {

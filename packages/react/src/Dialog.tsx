@@ -5,9 +5,11 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type ReactElement,
   type ReactNode,
   type Ref,
@@ -120,6 +122,11 @@ function lockScroll(): () => void {
   };
 }
 
+/** False on the server and through hydration, true on a client-only mount and after hydration. */
+function subscribeNothing(): () => void {
+  return () => {};
+}
+
 export interface DialogProps
   extends Omit<ComponentPropsWithoutRef<'dialog'>, 'children' | 'title' | 'onCancel' | 'onClose' | 'open'> {
   /** Controlled only — there is no uncontrolled mode and no initial-state prop; the consumer owns `open` and the dialog never closes itself, it requests changes through `onClose`. */
@@ -142,7 +149,7 @@ export interface DialogProps
   initialFocus?: DialogInitialFocus | undefined;
   /** Fired when the user requests to close, with a reason: `escape`, `close-button`, `scrim`, or `action`. The consumer sets `open` to false (or not). */
   onClose?: ((reason: DialogCloseReason) => void) | undefined;
-  /** Fired after the open transition ends and focus has moved in. When there is no transition to wait for (reduced motion, or a zero computed duration), it fires on the next frame after focus moves in. Use to start work that needs the dialog visible. */
+  /** Fired after the open transition ends and focus has moved in. When there is no transition to wait for (reduced motion, or a zero computed duration), it fires on the next frame (requestAnimationFrame) after focus moves in. It does not fire when `open` becomes false before the enter transition finishes. Use to start work that needs the dialog visible. */
   onOpened?: (() => void) | undefined;
   /** Portal target. Defaults to `document.body`. A platform prop, not part of the schema. */
   container?: HTMLElement | undefined;
@@ -186,6 +193,13 @@ export function Dialog({
   const headingId = `ds-dialog${generatedId}-heading`;
   const descriptionId = `ds-dialog${generatedId}-description`;
 
+  // The portal needs `document`: render nothing until hydrated, exactly as the server did.
+  const hydrated = useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
+
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const setDialogNode = useCallback(
     (node: HTMLDialogElement | null): void => {
@@ -208,7 +222,7 @@ export function Dialog({
 
   // Mounted while open, and while the exit transition finishes after `open` goes false.
   const [present, setPresent] = useState(open);
-  // Drives the entered/exited CSS state; set a frame after mount so the enter transition runs.
+  // Drives the entered/exited CSS state; turned on a frame after the surface is in the DOM.
   const [visible, setVisible] = useState(false);
 
   const latest = useRef({ open, initialFocus, dismissible, onOpened });
@@ -236,15 +250,17 @@ export function Dialog({
       target.focus();
       return;
     }
+    // The heading is the last fallback (and the `title` target): focusable by script only, even when visually hidden.
     if (!headingElement) return;
     if (headingElement.tabIndex !== -1) headingElement.tabIndex = -1;
     headingElement.focus();
   };
 
-  // Open: showModal(), move focus in per `initialFocus`, then reveal on the next frame. It also runs
-  // when `open` returns true while the exit transition is still running, which reveals the surface again.
+  // Open: showModal(), move focus in per `initialFocus`, then reveal on the next frame. Keyed on
+  // everything that decides whether the surface exists, so the flip is never scheduled before it is in
+  // the DOM; it also runs when `open` returns true while the exit transition is still running.
   useLayoutEffect(() => {
-    if (!present || !open) return undefined;
+    if (!hydrated || !present || !open) return undefined;
     const dialog = dialogRef.current;
     const surface = surfaceRef.current;
     if (!dialog || !surface) return undefined;
@@ -276,7 +292,7 @@ export function Dialog({
       cancelAnimationFrame(frame);
       surface.removeEventListener('transitionend', handleEntered);
     };
-  }, [present, open]);
+  }, [hydrated, present, open]);
 
   // Close: run the exit transition, then close() and unmount (FocusScope restores the opener).
   useEffect(() => {
@@ -306,9 +322,9 @@ export function Dialog({
 
   // Scroll lock on <html> while the dialog is present.
   useEffect(() => {
-    if (!present) return undefined;
+    if (!hydrated || !present) return undefined;
     return lockScroll();
-  }, [present]);
+  }, [hydrated, present]);
 
   /** Each Escape is reported exactly once, whichever of keydown, `cancel` or `close` reaches us first. */
   const reportEscape = (): void => {
@@ -360,18 +376,18 @@ export function Dialog({
     reopenAfterNativeClose();
   };
 
-  const handleScrimClick = (): void => {
-    if (!open || !dismissible) return;
+  // A scrim click is a click whose target is the scrim element itself.
+  const handleScrimClick = (event: ReactMouseEvent<HTMLDivElement>): void => {
+    if (event.target !== event.currentTarget || !open || !dismissible) return;
     onClose?.('scrim');
   };
 
-  if (!present) return null;
+  if (!present || !hydrated) return null;
 
   const classes = ['ds-dialog', `ds-dialog--${size}`, visible && open ? 'ds-dialog--visible' : null]
     .filter(Boolean)
     .join(' ');
 
-  const insetOverride = overrides?.inset;
   const footerGapOverride = overrides?.footerGap;
   const hasFooter = footer !== undefined && footer !== null && footer !== false;
 
@@ -389,7 +405,7 @@ export function Dialog({
       onCancel={handleCancel}
       onClose={handleNativeClose}
     >
-      <div className="ds-dialog__scrim" data-part="scrim" onClick={handleScrimClick} />
+      <div className="ds-dialog__scrim" data-part="scrim" aria-hidden="true" onClick={handleScrimClick} />
       {/* FocusScope writes its own data-part="scope", so the focusScope part is this wrapper inside it. */}
       <FocusScope trapped autoFocus="none" restoreFocus>
         <div className="ds-dialog__scope" data-part="focusScope">
@@ -425,10 +441,10 @@ export function Dialog({
                 </span>
               ) : null}
             </div>
-            {/* body: the Dialog-owned scroll container, since Box never scrolls. */}
+            {/* body: the Dialog-owned scroll container, since Box never scrolls. `inset` reaches the Box
+                through the stylesheet (`--ds-box-padding-inline`), which is the whole delivery. */}
             <div className="ds-dialog__body" data-part="body" ref={bodyRef}>
-              {/* inset reaches the Box through the stylesheet; the override is passed only when the caller sets it. */}
-              <Box overrides={insetOverride ? { paddingInline: insetOverride } : undefined}>{children}</Box>
+              <Box>{children}</Box>
             </div>
             {hasFooter ? (
               <div className="ds-dialog__footer" data-part="footer" ref={footerRef}>

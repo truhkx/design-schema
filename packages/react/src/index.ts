@@ -151,6 +151,8 @@ export type {
   PopoverProps,
   PopoverPlacement,
   PopoverHeadingLevel,
+  PopoverInitialFocus,
+  PopoverCloseReason,
   PopoverOpenChangeReason,
   PopoverOverridableBinding,
 } from './Popover';

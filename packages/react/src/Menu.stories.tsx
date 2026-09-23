@@ -65,11 +65,23 @@ export const TriggerIconEllipsis: Story = { args: { triggerIcon: 'ellipsis' } };
 export const TriggerIconChevronDown: Story = { args: { triggerIcon: 'chevron-down' } };
 export const TriggerIconNone: Story = { args: { triggerIcon: 'none' } };
 
-/* placement */
-export const PlacementBottomStart: Story = { args: { placement: 'bottom-start' } };
-export const PlacementBottomEnd: Story = { args: { placement: 'bottom-end' } };
-export const PlacementTopStart: Story = { args: { placement: 'top-start' } };
-export const PlacementTopEnd: Story = { args: { placement: 'top-end' } };
+/* placement — rendered open: a closed story would show nothing of the rule it illustrates. */
+export const PlacementBottomStart: Story = {
+  args: { placement: 'bottom-start', open: true },
+  render: (args) => <OpenMenu {...args} />,
+};
+export const PlacementBottomEnd: Story = {
+  args: { placement: 'bottom-end', open: true },
+  render: (args) => <OpenMenu {...args} />,
+};
+export const PlacementTopStart: Story = {
+  args: { placement: 'top-start', open: true },
+  render: (args) => <OpenMenu {...args} />,
+};
+export const PlacementTopEnd: Story = {
+  args: { placement: 'top-end', open: true },
+  render: (args) => <OpenMenu {...args} />,
+};
 
 /* notable states */
 export const IconOnly: Story = { args: { iconOnly: true, triggerIcon: 'ellipsis' } };

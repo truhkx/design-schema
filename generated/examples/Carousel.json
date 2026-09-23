@@ -12,9 +12,80 @@
       "title": "Default",
       "args": {
         "label": "Featured products",
-        "children": {
-          "$unsupported": "slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])"
-        }
+        "children": [
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 1",
+              "label": "Product 1"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 1"
+                },
+                "children": [
+                  "Product 1"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 2",
+              "label": "Product 2"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 2"
+                },
+                "children": [
+                  "Product 2"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 3",
+              "label": "Product 3"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 3"
+                },
+                "children": [
+                  "Product 3"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 4",
+              "label": "Product 4"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 4"
+                },
+                "children": [
+                  "Product 4"
+                ]
+              }
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Featured products\">{slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])}</Carousel>",
@@ -38,9 +109,80 @@
       "title": "Picker Dots",
       "args": {
         "label": "Featured products",
-        "children": {
-          "$unsupported": "slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])"
-        },
+        "children": [
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 1",
+              "label": "Product 1"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 1"
+                },
+                "children": [
+                  "Product 1"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 2",
+              "label": "Product 2"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 2"
+                },
+                "children": [
+                  "Product 2"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 3",
+              "label": "Product 3"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 3"
+                },
+                "children": [
+                  "Product 3"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 4",
+              "label": "Product 4"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 4"
+                },
+                "children": [
+                  "Product 4"
+                ]
+              }
+            ]
+          }
+        ],
         "picker": "dots"
       },
       "snippets": {
@@ -68,9 +210,80 @@
       "title": "Picker Tabs",
       "args": {
         "label": "Featured products",
-        "children": {
-          "$unsupported": "slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])"
-        },
+        "children": [
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 1",
+              "label": "Product 1"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 1"
+                },
+                "children": [
+                  "Product 1"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 2",
+              "label": "Product 2"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 2"
+                },
+                "children": [
+                  "Product 2"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 3",
+              "label": "Product 3"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 3"
+                },
+                "children": [
+                  "Product 3"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 4",
+              "label": "Product 4"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 4"
+                },
+                "children": [
+                  "Product 4"
+                ]
+              }
+            ]
+          }
+        ],
         "picker": "tabs"
       },
       "snippets": {
@@ -98,9 +311,80 @@
       "title": "Picker None",
       "args": {
         "label": "Featured products",
-        "children": {
-          "$unsupported": "slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])"
-        },
+        "children": [
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 1",
+              "label": "Product 1"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 1"
+                },
+                "children": [
+                  "Product 1"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 2",
+              "label": "Product 2"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 2"
+                },
+                "children": [
+                  "Product 2"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 3",
+              "label": "Product 3"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 3"
+                },
+                "children": [
+                  "Product 3"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 4",
+              "label": "Product 4"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 4"
+                },
+                "children": [
+                  "Product 4"
+                ]
+              }
+            ]
+          }
+        ],
         "picker": "none"
       },
       "snippets": {
@@ -128,9 +412,80 @@
       "title": "Loop",
       "args": {
         "label": "Featured products",
-        "children": {
-          "$unsupported": "slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])"
-        },
+        "children": [
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 1",
+              "label": "Product 1"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 1"
+                },
+                "children": [
+                  "Product 1"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 2",
+              "label": "Product 2"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 2"
+                },
+                "children": [
+                  "Product 2"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 3",
+              "label": "Product 3"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 3"
+                },
+                "children": [
+                  "Product 3"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 4",
+              "label": "Product 4"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 4"
+                },
+                "children": [
+                  "Product 4"
+                ]
+              }
+            ]
+          }
+        ],
         "loop": true
       },
       "snippets": {
@@ -158,9 +513,80 @@
       "title": "No Snap",
       "args": {
         "label": "Featured products",
-        "children": {
-          "$unsupported": "slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])"
-        },
+        "children": [
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 1",
+              "label": "Product 1"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 1"
+                },
+                "children": [
+                  "Product 1"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 2",
+              "label": "Product 2"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 2"
+                },
+                "children": [
+                  "Product 2"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 3",
+              "label": "Product 3"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 3"
+                },
+                "children": [
+                  "Product 3"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 4",
+              "label": "Product 4"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 4"
+                },
+                "children": [
+                  "Product 4"
+                ]
+              }
+            ]
+          }
+        ],
         "snap": false
       },
       "snippets": {
@@ -188,9 +614,80 @@
       "title": "Controlled",
       "args": {
         "label": "Featured products",
-        "children": {
-          "$unsupported": "slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])"
-        },
+        "children": [
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 1",
+              "label": "Product 1"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 1"
+                },
+                "children": [
+                  "Product 1"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 2",
+              "label": "Product 2"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 2"
+                },
+                "children": [
+                  "Product 2"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 3",
+              "label": "Product 3"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 3"
+                },
+                "children": [
+                  "Product 3"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 4",
+              "label": "Product 4"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 4"
+                },
+                "children": [
+                  "Product 4"
+                ]
+              }
+            ]
+          }
+        ],
         "activeIndex": 1
       },
       "snippets": {
@@ -215,9 +712,80 @@
       "title": "Autoplay",
       "args": {
         "label": "Featured products",
-        "children": {
-          "$unsupported": "slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])"
-        },
+        "children": [
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 1",
+              "label": "Product 1"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 1"
+                },
+                "children": [
+                  "Product 1"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 2",
+              "label": "Product 2"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 2"
+                },
+                "children": [
+                  "Product 2"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 3",
+              "label": "Product 3"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 3"
+                },
+                "children": [
+                  "Product 3"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 4",
+              "label": "Product 4"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 4"
+                },
+                "children": [
+                  "Product 4"
+                ]
+              }
+            ]
+          }
+        ],
         "autoplay": true
       },
       "snippets": {
@@ -245,9 +813,80 @@
       "title": "Featured Products",
       "args": {
         "label": "Featured products",
-        "children": {
-          "$unsupported": "slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])"
-        }
+        "children": [
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 1",
+              "label": "Product 1"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 1"
+                },
+                "children": [
+                  "Product 1"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 2",
+              "label": "Product 2"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 2"
+                },
+                "children": [
+                  "Product 2"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 3",
+              "label": "Product 3"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 3"
+                },
+                "children": [
+                  "Product 3"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Product 4",
+              "label": "Product 4"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Product 4"
+                },
+                "children": [
+                  "Product 4"
+                ]
+              }
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Carousel, CarouselSlide, Card } from '@design-schema/react';\n\nfunction slides(names: string[]): ReactElement[] {\n  return names.map((name) => (\n    <CarouselSlide key={name} label={name}>\n      <Card heading={name}>{name}</Card>\n    </CarouselSlide>\n  ));\n}\n\n<Carousel label=\"Featured products\">{slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'])}</Carousel>",
@@ -271,9 +910,62 @@
       "title": "Named Slides With Tabs",
       "args": {
         "label": "Plans",
-        "children": {
-          "$unsupported": "slides(['Starter', 'Team', 'Enterprise'])"
-        },
+        "children": [
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Starter",
+              "label": "Starter"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Starter"
+                },
+                "children": [
+                  "Starter"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Team",
+              "label": "Team"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Team"
+                },
+                "children": [
+                  "Team"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Enterprise",
+              "label": "Enterprise"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Enterprise"
+                },
+                "children": [
+                  "Enterprise"
+                ]
+              }
+            ]
+          }
+        ],
         "picker": "tabs"
       },
       "snippets": {
@@ -301,9 +993,62 @@
       "title": "Ambient Hero",
       "args": {
         "label": "Customer stories",
-        "children": {
-          "$unsupported": "slides(['Story 1', 'Story 2', 'Story 3'])"
-        },
+        "children": [
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Story 1",
+              "label": "Story 1"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Story 1"
+                },
+                "children": [
+                  "Story 1"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Story 2",
+              "label": "Story 2"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Story 2"
+                },
+                "children": [
+                  "Story 2"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Story 3",
+              "label": "Story 3"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Story 3"
+                },
+                "children": [
+                  "Story 3"
+                ]
+              }
+            ]
+          }
+        ],
         "autoplay": true,
         "interval": 8000,
         "loop": true
@@ -330,9 +1075,116 @@
       "title": "Three Up Gallery",
       "args": {
         "label": "Gallery",
-        "children": {
-          "$unsupported": "slides(['Image 1', 'Image 2', 'Image 3', 'Image 4', 'Image 5', 'Image 6'])"
-        },
+        "children": [
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Image 1",
+              "label": "Image 1"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Image 1"
+                },
+                "children": [
+                  "Image 1"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Image 2",
+              "label": "Image 2"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Image 2"
+                },
+                "children": [
+                  "Image 2"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Image 3",
+              "label": "Image 3"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Image 3"
+                },
+                "children": [
+                  "Image 3"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Image 4",
+              "label": "Image 4"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Image 4"
+                },
+                "children": [
+                  "Image 4"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Image 5",
+              "label": "Image 5"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Image 5"
+                },
+                "children": [
+                  "Image 5"
+                ]
+              }
+            ]
+          },
+          {
+            "$element": "CarouselSlide",
+            "props": {
+              "key": "Image 6",
+              "label": "Image 6"
+            },
+            "children": [
+              {
+                "$element": "Card",
+                "props": {
+                  "heading": "Image 6"
+                },
+                "children": [
+                  "Image 6"
+                ]
+              }
+            ]
+          }
+        ],
         "perView": 3,
         "picker": "none"
       },

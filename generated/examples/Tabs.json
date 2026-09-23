@@ -37,9 +37,52 @@
         "orientation": "horizontal",
         "fit": "start",
         "keepMounted": false,
-        "children": {
-          "$unsupported": "panelsFor(TABS)"
-        }
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Overview",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Activity",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Settings",
+              " panel."
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nfunction panelsFor(tabs: TabsItem[]): ReactElement[] {\n  return tabs.map((tab) => (\n    <TabPanel key={tab.id} id={tab.id}>\n      {tab.label} panel.\n    </TabPanel>\n  ));\n}\n\n<Tabs tabs={TABS} label=\"Project sections\">{panelsFor(TABS)}</Tabs>",
@@ -88,9 +131,52 @@
         "orientation": "horizontal",
         "fit": "start",
         "keepMounted": false,
-        "children": {
-          "$unsupported": "panelsFor(TABS)"
-        }
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Overview",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Activity",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Settings",
+              " panel."
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nfunction panelsFor(tabs: TabsItem[]): ReactElement[] {\n  return tabs.map((tab) => (\n    <TabPanel key={tab.id} id={tab.id}>\n      {tab.label} panel.\n    </TabPanel>\n  ));\n}\n\n<Tabs tabs={TABS} label=\"Project sections\" activation=\"automatic\">{panelsFor(TABS)}</Tabs>",
@@ -142,9 +228,52 @@
         "orientation": "horizontal",
         "fit": "start",
         "keepMounted": false,
-        "children": {
-          "$unsupported": "panelsFor(TABS)"
-        }
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Overview",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Activity",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Settings",
+              " panel."
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nfunction panelsFor(tabs: TabsItem[]): ReactElement[] {\n  return tabs.map((tab) => (\n    <TabPanel key={tab.id} id={tab.id}>\n      {tab.label} panel.\n    </TabPanel>\n  ));\n}\n\n<Tabs tabs={TABS} label=\"Project sections\" activation=\"manual\">{panelsFor(TABS)}</Tabs>",
@@ -196,9 +325,52 @@
         "orientation": "horizontal",
         "fit": "start",
         "keepMounted": false,
-        "children": {
-          "$unsupported": "panelsFor(TABS)"
-        }
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Overview",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Activity",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Settings",
+              " panel."
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nfunction panelsFor(tabs: TabsItem[]): ReactElement[] {\n  return tabs.map((tab) => (\n    <TabPanel key={tab.id} id={tab.id}>\n      {tab.label} panel.\n    </TabPanel>\n  ));\n}\n\n<Tabs tabs={TABS} label=\"Project sections\" orientation=\"horizontal\">{panelsFor(TABS)}</Tabs>",
@@ -250,9 +422,52 @@
         "orientation": "vertical",
         "fit": "start",
         "keepMounted": false,
-        "children": {
-          "$unsupported": "panelsFor(TABS)"
-        }
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Overview",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Activity",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Settings",
+              " panel."
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nfunction panelsFor(tabs: TabsItem[]): ReactElement[] {\n  return tabs.map((tab) => (\n    <TabPanel key={tab.id} id={tab.id}>\n      {tab.label} panel.\n    </TabPanel>\n  ));\n}\n\n<Tabs tabs={TABS} label=\"Project sections\" orientation=\"vertical\">{panelsFor(TABS)}</Tabs>",
@@ -304,9 +519,52 @@
         "orientation": "horizontal",
         "fit": "start",
         "keepMounted": false,
-        "children": {
-          "$unsupported": "panelsFor(TABS)"
-        }
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Overview",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Activity",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Settings",
+              " panel."
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nfunction panelsFor(tabs: TabsItem[]): ReactElement[] {\n  return tabs.map((tab) => (\n    <TabPanel key={tab.id} id={tab.id}>\n      {tab.label} panel.\n    </TabPanel>\n  ));\n}\n\n<Tabs tabs={TABS} label=\"Project sections\" fit=\"start\">{panelsFor(TABS)}</Tabs>",
@@ -353,9 +611,41 @@
         "orientation": "horizontal",
         "fit": "fill",
         "keepMounted": false,
-        "children": {
-          "$unsupported": "panelsFor(TABS.slice(0, 3))"
-        }
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Overview",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Activity",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files",
+              " panel."
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nfunction panelsFor(tabs: TabsItem[]): ReactElement[] {\n  return tabs.map((tab) => (\n    <TabPanel key={tab.id} id={tab.id}>\n      {tab.label} panel.\n    </TabPanel>\n  ));\n}\n\n<Tabs tabs={TABS.slice(0, 3)} label=\"Project sections\" fit=\"fill\">{panelsFor(TABS.slice(0, 3))}</Tabs>",
@@ -404,9 +694,52 @@
         "orientation": "horizontal",
         "fit": "start",
         "keepMounted": true,
-        "children": {
-          "$unsupported": "panelsFor(TABS)"
-        }
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Overview",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Activity",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Settings",
+              " panel."
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nconst TABS: TabsItem[] = [\n  { id: 'overview', label: 'Overview' },\n  { id: 'activity', label: 'Activity', badge: '3' },\n  { id: 'files', label: 'Files', icon: 'external' },\n  { id: 'settings', label: 'Settings', disabled: true },\n];\n\nfunction panelsFor(tabs: TabsItem[]): ReactElement[] {\n  return tabs.map((tab) => (\n    <TabPanel key={tab.id} id={tab.id}>\n      {tab.label} panel.\n    </TabPanel>\n  ));\n}\n\n<Tabs tabs={TABS} label=\"Project sections\" keepMounted>{panelsFor(TABS)}</Tabs>",
@@ -458,9 +791,52 @@
         "orientation": "horizontal",
         "fit": "start",
         "keepMounted": false,
-        "children": {
-          "$unsupported": "panelsFor(TABS)"
-        },
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Overview",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Activity",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "files",
+              "id": "files"
+            },
+            "children": [
+              "Files",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "settings",
+              "id": "settings"
+            },
+            "children": [
+              "Settings",
+              " panel."
+            ]
+          }
+        ],
         "value": "activity"
       },
       "snippets": {
@@ -510,9 +886,30 @@
         "orientation": "horizontal",
         "fit": "start",
         "keepMounted": false,
-        "children": {
-          "$unsupported": "panelsFor(TABS.slice(0, 2))"
-        },
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "overview",
+              "id": "overview"
+            },
+            "children": [
+              "Overview",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "activity",
+              "id": "activity"
+            },
+            "children": [
+              "Activity",
+              " panel."
+            ]
+          }
+        ],
         "defaultValue": "files"
       },
       "snippets": {
@@ -555,9 +952,41 @@
         "orientation": "horizontal",
         "fit": "start",
         "keepMounted": false,
-        "children": {
-          "$unsupported": "panelsFor(ACCOUNT)"
-        }
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "profile",
+              "id": "profile"
+            },
+            "children": [
+              "Profile",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "billing",
+              "id": "billing"
+            },
+            "children": [
+              "Billing",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "security",
+              "id": "security"
+            },
+            "children": [
+              "Security",
+              " panel."
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nfunction panelsFor(tabs: TabsItem[]): ReactElement[] {\n  return tabs.map((tab) => (\n    <TabPanel key={tab.id} id={tab.id}>\n      {tab.label} panel.\n    </TabPanel>\n  ));\n}\n\nconst ACCOUNT: TabsItem[] = [\n  { id: 'profile', label: 'Profile' },\n  { id: 'billing', label: 'Billing' },\n  { id: 'security', label: 'Security' },\n];\n\n<Tabs tabs={ACCOUNT} label=\"Account sections\">{panelsFor(ACCOUNT)}</Tabs>",
@@ -595,9 +1024,30 @@
         "orientation": "horizontal",
         "fit": "start",
         "keepMounted": false,
-        "children": {
-          "$unsupported": "panelsFor(REPORT)"
-        }
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "summary",
+              "id": "summary"
+            },
+            "children": [
+              "Summary",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "details",
+              "id": "details"
+            },
+            "children": [
+              "Details",
+              " panel."
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nfunction panelsFor(tabs: TabsItem[]): ReactElement[] {\n  return tabs.map((tab) => (\n    <TabPanel key={tab.id} id={tab.id}>\n      {tab.label} panel.\n    </TabPanel>\n  ));\n}\n\nconst REPORT: TabsItem[] = [\n  { id: 'summary', label: 'Summary' },\n  { id: 'details', label: 'Details' },\n];\n\n<Tabs tabs={REPORT} label=\"Report sections\" activation=\"manual\">{panelsFor(REPORT)}</Tabs>",
@@ -635,9 +1085,30 @@
         "orientation": "vertical",
         "fit": "start",
         "keepMounted": false,
-        "children": {
-          "$unsupported": "panelsFor(SETTINGS)"
-        }
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "general",
+              "id": "general"
+            },
+            "children": [
+              "General",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "members",
+              "id": "members"
+            },
+            "children": [
+              "Members",
+              " panel."
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nfunction panelsFor(tabs: TabsItem[]): ReactElement[] {\n  return tabs.map((tab) => (\n    <TabPanel key={tab.id} id={tab.id}>\n      {tab.label} panel.\n    </TabPanel>\n  ));\n}\n\nconst SETTINGS: TabsItem[] = [\n  { id: 'general', label: 'General' },\n  { id: 'members', label: 'Members' },\n];\n\n<Tabs tabs={SETTINGS} label=\"Settings sections\" orientation=\"vertical\">{panelsFor(SETTINGS)}</Tabs>",
@@ -676,9 +1147,30 @@
         "orientation": "horizontal",
         "fit": "fill",
         "keepMounted": true,
-        "children": {
-          "$unsupported": "panelsFor(INBOX)"
-        }
+        "children": [
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "inbox",
+              "id": "inbox"
+            },
+            "children": [
+              "Inbox",
+              " panel."
+            ]
+          },
+          {
+            "$element": "TabPanel",
+            "props": {
+              "key": "archive",
+              "id": "archive"
+            },
+            "children": [
+              "Archive",
+              " panel."
+            ]
+          }
+        ]
       },
       "snippets": {
         "react": "import type { ReactElement } from 'react';\nimport { Tabs, TabPanel, type TabsItem } from '@design-schema/react';\n\nfunction panelsFor(tabs: TabsItem[]): ReactElement[] {\n  return tabs.map((tab) => (\n    <TabPanel key={tab.id} id={tab.id}>\n      {tab.label} panel.\n    </TabPanel>\n  ));\n}\n\nconst INBOX: TabsItem[] = [\n  { id: 'inbox', label: 'Inbox', badge: '3' },\n  { id: 'archive', label: 'Archive' },\n];\n\n<Tabs tabs={INBOX} label=\"Inbox sections\" fit=\"fill\" keepMounted>{panelsFor(INBOX)}</Tabs>",

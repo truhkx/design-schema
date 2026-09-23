@@ -959,9 +959,88 @@
         "justify": "start",
         "wrap": true,
         "element": "div",
-        "children": {
-          "$unsupported": "['All', 'Open', 'Closed', 'Mine', 'Unassigned', 'Urgent', 'This week', 'Archived'].map((label) => (\n  <Button key={label} label={label} variant=\"secondary\" size=\"sm\" />\n))"
-        }
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "All",
+              "label": "All",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "Open",
+              "label": "Open",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "Closed",
+              "label": "Closed",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "Mine",
+              "label": "Mine",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "Unassigned",
+              "label": "Unassigned",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "Urgent",
+              "label": "Urgent",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "This week",
+              "label": "This week",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "Archived",
+              "label": "Archived",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
         "react": "import { Stack, Button } from '@design-schema/react';\n\nconst filters = ['All', 'Open', 'Closed', 'Mine', 'Unassigned', 'Urgent', 'This week', 'Archived'].map((label) => (\n  <Button key={label} label={label} variant=\"secondary\" size=\"sm\" />\n));\n\n<Stack direction=\"horizontal\" align=\"start\" wrap>{filters}</Stack>",
@@ -1476,9 +1555,88 @@
         "justify": "start",
         "wrap": true,
         "element": "div",
-        "children": {
-          "$unsupported": "['All', 'Open', 'Closed', 'Mine', 'Unassigned', 'Urgent', 'This week', 'Archived'].map((label) => (\n  <Button key={label} label={label} variant=\"secondary\" size=\"sm\" />\n))"
-        }
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "All",
+              "label": "All",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "Open",
+              "label": "Open",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "Closed",
+              "label": "Closed",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "Mine",
+              "label": "Mine",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "Unassigned",
+              "label": "Unassigned",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "Urgent",
+              "label": "Urgent",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "This week",
+              "label": "This week",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "Archived",
+              "label": "Archived",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
         "react": "import { Stack, Button } from '@design-schema/react';\n\nconst filters = ['All', 'Open', 'Closed', 'Mine', 'Unassigned', 'Urgent', 'This week', 'Archived'].map((label) => (\n  <Button key={label} label={label} variant=\"secondary\" size=\"sm\" />\n));\n\n<Stack direction=\"horizontal\" gap=\"tight\" align=\"center\" wrap>{filters}</Stack>",

@@ -1408,7 +1408,7 @@
             "size": "sm"
           },
           "children": [
-            " Filters apply to every view in this project. ",
+            "Filters apply to every view in this project. ",
             {
               "$element": "Link",
               "props": {

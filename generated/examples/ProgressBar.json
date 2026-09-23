@@ -463,7 +463,7 @@
         "tone": "neutral",
         "announce": "complete",
         "formatValue": {
-          "$unsupported": "(value, _min, max) => `${value} of ${max} files`"
+          "$unsupported": "formatValue"
         }
       },
       "snippets": {

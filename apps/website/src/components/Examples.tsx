@@ -1,7 +1,7 @@
 import { Component as ReactComponent, createElement, useState, type ElementType, type ErrorInfo, type ReactNode } from 'react';
 import { Alert, Box, Button, Card, Disclosure, Heading, Link, Stack, TabPanel, Tabs, Text } from '@design-schema/react';
 
-import { COMPONENTS, exampleProps } from '../example-args';
+import { COMPONENTS, contentGaps, exampleProps } from '../example-args';
 import type { Caption } from '../example-sweep';
 import { PLATFORM_ORDER, storybookLink, type ExampleView, type HarnessEvents, type Layout, type Platform } from '../examples';
 import type { PlatformCode } from '../highlight';
@@ -25,6 +25,14 @@ const COPY = {
   decorated:
     'This story frames the component in a decorator — a background, a width — that this page does not ' +
     'run, so it is shown as source rather than rendered without its frame.',
+  /**
+   * An example whose content is the part that could not be carried (see `contentGaps`). Rendering it
+   * would be a working-looking shell with nothing in it, which reads as a broken component; the
+   * source below is the real thing.
+   */
+  contentOnlyBefore: 'This example’s ',
+  contentOnlyOne: ' is built in code rather than data, so it is shown as source below rather than as a component with nothing in it.',
+  contentOnlyMany: ' are built in code rather than data, so it is shown as source below rather than as a component with nothing in it.',
   pageHeading:
     'Not rendered here: this example renders a level-1 heading, and a page has one of those — the ' +
     'title at the top of this one. Its source stands in, and it says the same thing either way: ' +
@@ -167,6 +175,11 @@ export interface ExamplesProps {
   /** The events a `trigger` harness wires, from `generated/examples/<Name>.json`, or `null` when it needs none. */
   harnessEvents: HarnessEvents | null;
   /**
+   * The component's required props, from its schema. An example that lost one of those — or its
+   * `children` — to `{ $unsupported }` is shown as source rather than as a shell; see `contentGaps`.
+   */
+  required: string[];
+  /**
    * Whether each example would put an `<h1>` on this page, in the same order — from
    * ../example-probe.ts, which answered it by rendering them at build time. Those are shown as
    * source: the page's own title is its one level-1 heading, and an embedded example must not be a
@@ -281,6 +294,7 @@ export function Examples({
   renderable,
   withoutOpen,
   harnessEvents,
+  required,
   pageHeading,
   headingLevel,
   storybookUrl,
@@ -323,6 +337,15 @@ export function Examples({
     </Text>
   );
 
+  /* An example whose content, or a required prop, is what the extractor could not carry. */
+  const contentNote = (props: string[]) => (
+    <Text size="sm" tone="muted">
+      {COPY.contentOnlyBefore}
+      <Mono>{props.join(', ')}</Mono>
+      {props.length === 1 ? COPY.contentOnlyOne : COPY.contentOnlyMany}
+    </Text>
+  );
+
   /**
    * The story rendered live, or the note that says why its source stands in. A harness example is
    * the story behind a button that opens it (`TriggerHarness`) — decorated or not, since the harness
@@ -332,6 +355,10 @@ export function Examples({
     const example = examples[index] as ExampleView;
     if (pageHeading[index] === true) return outlineNote;
     if (renderable[index] !== true) return sourceOnly;
+    // Rendering would succeed and show nothing: the args carry `{ $unsupported }` where the
+    // example's content is. A harness example is exempt — what it renders first is its button.
+    const gaps = example.harness === 'trigger' ? [] : contentGaps(example.args, required);
+    if (gaps.length > 0) return contentNote(gaps);
     const props = exampleProps(example, withoutOpen[index] === true);
     const harnessed = example.harness === 'trigger' && harnessEvents !== null;
     return (

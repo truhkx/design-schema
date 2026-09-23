@@ -303,7 +303,7 @@
           "$element": "Fragment",
           "props": {},
           "children": [
-            " Your card was declined. ",
+            "Your card was declined. ",
             {
               "$element": "Link",
               "props": {
@@ -313,7 +313,7 @@
               },
               "children": []
             },
-            " to keep your plan. "
+            " to keep your plan."
           ]
         },
         "heading": "Payment failed"

@@ -387,7 +387,7 @@
         "name": "due",
         "description": "Weekdays only.",
         "isDateDisabled": {
-          "$unsupported": "(isoDate: string) => {\n      const [year, month, day] = isoDate.split('-').map(Number);\n      const weekday = new Date(Date.UTC(year ?? 0, (month ?? 1) - 1, day ?? 1)).getUTCDay();\n      return weekday === 0 || weekday === 6;\n    }"
+          "$unsupported": "isDateDisabled"
         }
       },
       "snippets": {

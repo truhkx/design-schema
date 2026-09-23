@@ -1334,7 +1334,7 @@
             "header": "Invoice",
             "isRowHeader": true,
             "render": {
-              "$unsupported": "(row) => <Link href={`#${row.id}`} label={String(row['invoice'])} />"
+              "$unsupported": "render"
             }
           },
           {
@@ -1418,7 +1418,7 @@
           }
         ],
         "onRowPress": {
-          "$unsupported": "() => undefined"
+          "$unsupported": "onRowPress"
         }
       },
       "snippets": {
@@ -1475,7 +1475,7 @@
           }
         ],
         "rowActions": {
-          "$unsupported": "(row) => (\n      <Button variant=\"ghost\" size=\"sm\" iconOnly label={`More for ${String(row['invoice'])}`} leadingIcon={<Icon name=\"ellipsis\" />} />\n    )"
+          "$unsupported": "rowActions"
         }
       },
       "snippets": {
@@ -1594,7 +1594,7 @@
             "tone": "muted"
           },
           "children": [
-            " 2 rows "
+            "2 rows"
           ]
         }
       },

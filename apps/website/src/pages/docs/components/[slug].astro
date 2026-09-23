@@ -108,6 +108,14 @@ const sweepCode = sweep
 const exampleViews = examples.map(({ snippets: _snippets, stories: _stories, ...view }) => view);
 /** Which of them render from args alone, established by rendering them — see ../../../example-probe.ts. */
 const renderable = renderableExamples(name, examples);
+/**
+ * The props the schema marks required. An example that lost one of them — or its `children` — to an
+ * arg the extractor could not carry would render as a working-looking shell with nothing in it, so
+ * the island shows its source instead (see ../../../example-args.ts, `contentGaps`).
+ */
+const required = Object.entries(definition.props)
+  .filter(([, prop]) => prop.required)
+  .map(([prop]) => prop);
 /** Which of them render only closed, from their own trigger, without the story's `open` — see the same file. */
 const withoutOpen = withoutOpenExamples(name, examples);
 /**
@@ -211,6 +219,7 @@ const keyboard: KeyboardLine[] | undefined = spec?.rules.map((rule) => ({
       renderable={renderable}
       withoutOpen={withoutOpen}
       harnessEvents={harnessEvents}
+      required={required}
       pageHeading={pageHeading}
       headingLevel={headingLevel}
       storybookUrl={storybookUrl}

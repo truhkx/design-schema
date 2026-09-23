@@ -662,3 +662,30 @@ export const Default: Story = { args: { size: 'sm' }, render: wrapped };
     expect(code.snippets.react).not.toContain('const wrapped');
   });
 });
+
+describe('withRuntimeArgs', () => {
+  // The evaluation is what makes `children: slides([…])` an element tree rather than a marker (job
+  // 546, ../story_args.ts). Everything else a story carries is still the parse's to say.
+  const story = (): examples.StoryExport => ({
+    exportName: 'Default',
+    args: { label: 'Save', children: { $unsupported: "slides(['One'])" } },
+    set: ['children'],
+    code: false,
+    decorated: false,
+  });
+
+  test('replaces the args and nothing else', () => {
+    const evaluated = new Map([['Default', { label: 'Save', children: [{ $element: 'Slide', props: {}, children: ['One'] }] }]]);
+    const [merged] = examples.withRuntimeArgs([story()], evaluated) as [examples.StoryExport];
+    expect(merged.args['children']).toEqual([{ $element: 'Slide', props: {}, children: ['One'] }]);
+    expect(merged).toMatchObject({ exportName: 'Default', set: ['children'], code: false, decorated: false });
+  });
+
+  test('a directory that cannot be evaluated keeps the parse’s args', () => {
+    expect(examples.withRuntimeArgs([story()], undefined)[0]?.args).toEqual(story().args);
+  });
+
+  test('an export the evaluation has no entry for keeps its own', () => {
+    expect(examples.withRuntimeArgs([story()], new Map())[0]?.args).toEqual(story().args);
+  });
+});

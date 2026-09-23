@@ -98,3 +98,45 @@ export function exampleProps(example: Pick<Example, 'args' | 'harness'>, without
   const { open: _open, ...rest } = props;
   return rest;
 }
+
+/** Whether an encoded value holds an `{ $unsupported }` marker anywhere inside it. */
+function holdsUnsupported(value: Value): boolean {
+  if (typeof value !== 'object' || value === null) return false;
+  if (Array.isArray(value)) return value.some(holdsUnsupported);
+  if (isUnsupported(value)) return true;
+  if (isElement(value)) return holdsUnsupported(value.props) || value.children.some(holdsUnsupported);
+  return Object.values(value as Record<string, Value>).some(holdsUnsupported);
+}
+
+/** Whether decoding leaves nothing at all: the prop is dropped, or it is a list with nothing left in it. */
+function decodesToNothing(value: Value): boolean {
+  const decoded = decode(value);
+  return decoded === DROP || (Array.isArray(decoded) && decoded.length === 0);
+}
+
+/**
+ * The props an example cannot be shown without, where `decode` would leave nothing of them.
+ *
+ * Dropping part of an arg is usually harmless — a Table column with no `render` shows its raw cell
+ * value, which is still a table, and a DataGrid column with no `validate` is still a column. Losing
+ * the *whole* of one is not, in two places: an example whose `children` were code is the component
+ * with nothing in it (a Carousel that is two arrow buttons around a 0px track), and one whose
+ * schema-required prop went with them is the component without the thing it is for. Both render as
+ * a working-looking shell, which reads as a broken component and is worse than no demo, so
+ * ./components/Examples.tsx shows the story's source and a note instead.
+ *
+ * Both conditions have to hold: something was lost (`holdsUnsupported`) *and* nothing survived it
+ * (`decodesToNothing`). A story that passes an empty list on purpose is not a gap, and neither is
+ * one element of four that could not be carried.
+ *
+ * `children` is checked whether or not the schema lists it: it is content by definition.
+ */
+export function contentGaps(args: Record<string, Value>, required: readonly string[]): string[] {
+  const gaps: string[] = [];
+  for (const prop of ['children', ...required]) {
+    const value = args[prop];
+    if (value === undefined || gaps.includes(prop)) continue;
+    if (holdsUnsupported(value) && decodesToNothing(value)) gaps.push(prop);
+  }
+  return gaps;
+}

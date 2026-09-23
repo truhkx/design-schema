@@ -13,8 +13,11 @@
 // before and after a change — can be compared; `node logs/542-audit-summary.mjs <label>…` tabulates.
 //
 // What it gates: job 542's — no component the examples pipeline gives a trigger harness may show a
-// notice instead of its overlay — and job 544's: no example is `empty`, none paints past its card
-// (`overflowX`), and the page logs no React key warning. The other notices are reported, not failed.
+// notice instead of its overlay — job 544's: no example is `empty`, none paints past its card
+// (`overflowX`), and the page logs no React key warning — and job 546's: an example whose args carry
+// content shows it (`CONTENT`), and the `{ $unsupported }` args that remain across
+// `generated/examples/*.json` are function props only, listed with their stories at the end of this
+// file. The other notices are reported, not failed.
 // The key warning only has teeth against a dev server (production React does not emit it): point
 // WEBSITE_GATE_PORT at a running `astro dev` to check it.
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -29,19 +32,78 @@ const MODULES = readdirSync(fileURLToPath(new URL('packages/react/src', ROOT)))
   .map((file) => file.slice(0, -'.stories.tsx'.length))
   .sort();
 
-const SLUGS = new Map<string, string>(
-  (JSON.parse(read('generated/components.json')) as { id: string; component: { name: string } }[]).map((entry) => [
+const SCHEMA = JSON.parse(read('generated/components.json')) as {
+  id: string;
+  component: { name: string; props: Record<string, { required?: boolean }> };
+}[];
+
+const SLUGS = new Map<string, string>(SCHEMA.map((entry) => [entry.component.name, entry.id]));
+
+/** Each component's required props, for the `$unsupported` gate below. */
+const REQUIRED = new Map<string, string[]>(
+  SCHEMA.map((entry) => [
     entry.component.name,
-    entry.id,
+    Object.entries(entry.component.props)
+      .filter(([, prop]) => prop.required === true)
+      .map(([prop]) => prop),
   ]),
 );
+
+type Value = string | number | boolean | null | Value[] | { [key: string]: Value };
 
 interface Example {
   title: string;
   storyId: string;
+  args: Record<string, Value>;
   harness?: 'trigger' | null;
 }
 const exampleSet = (name: string) => JSON.parse(read(`generated/examples/${name}.json`)) as { layout: 'sweep' | 'scenarios'; examples: Example[] };
+
+/**
+ * What an example has to *show*, per component, and the arg that says it has something to show.
+ *
+ * Job 546's regression class: `tools/docs_examples.ts` parsed the stories instead of evaluating
+ * them, so `children: slides([…])` became `{ $unsupported }`, the island dropped it, and every
+ * Carousel example rendered as two arrow buttons around a 0px track — visible, so the `empty` check
+ * above passed it, and useless. The fix is in the extractor; this is what holds it fixed.
+ *
+ * The rule is the same for all four: an example whose args carry a non-empty `arg` must paint at
+ * least one `selector` inside its card. Tied to the args rather than applied flatly, so DataGrid's
+ * "Empty" and "Loading" stories — which carry no rows on purpose — are not failures.
+ */
+const CONTENT: Record<string, { arg: string; selector: string; what: string; shows?: (example: Example) => boolean }> = {
+  Carousel: { arg: 'children', selector: '[data-part="slide"]', what: 'a slide' },
+  Tabs: { arg: 'children', selector: '[role="tabpanel"]', what: 'a tab panel', shows: opensOnAPanel },
+  Table: { arg: 'data', selector: '[data-part="body"] [data-part="row"]', what: 'a body row' },
+  DataGrid: { arg: 'data', selector: '[data-part="body"] [data-part="row"]', what: 'a body row' },
+  Stack: { arg: 'children', selector: '[data-part="container"] > *', what: 'a child' },
+};
+
+/**
+ * Whether the tab a Tabs story opens on has a panel among its children.
+ *
+ * "Tab Without Panel" opens on `files` and supplies panels for the first two tabs only — a tab with
+ * no panel is the thing it is demonstrating, so showing none is the correct render, not a hollow one.
+ */
+function opensOnAPanel(example: Example): boolean {
+  const open = example.args['defaultValue'] ?? example.args['value'];
+  const children = example.args['children'];
+  if (typeof open !== 'string' || !Array.isArray(children)) return true;
+  return children.some((child) => {
+    if (typeof child !== 'object' || child === null || Array.isArray(child)) return false;
+    const props = (child as { props?: Record<string, Value> }).props;
+    return props !== undefined && props['id'] === open;
+  });
+}
+
+/** Whether an example carries content in the arg its component shows it through. */
+function carriesContent(name: string, example: Example): boolean {
+  const rule = CONTENT[name];
+  if (rule === undefined) return false;
+  const value = example.args[rule.arg];
+  const carries = Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null;
+  return carries && (rule.shows?.(example) ?? true);
+}
 
 type Status = 'live' | 'harness' | 'empty' | 'notice-only' | 'source-note';
 interface Row {
@@ -49,6 +111,8 @@ interface Row {
   storyId: string;
   status: Status;
   overflowX: boolean;
+  /** How many `CONTENT[name].selector` elements the card paints, or `null` where the component has no rule. */
+  content: number | null;
 }
 
 const LABEL = process.env['EXAMPLE_AUDIT_LABEL'] ?? 'latest';
@@ -58,16 +122,21 @@ const OUT = fileURLToPath(new URL(`logs/example-audit/${LABEL}/`, ROOT));
  * What one panel or tile shows. Arrow-only on purpose: the body is serialized into the page, and a
  * named declaration can drag a transform helper along with it.
  */
-async function classify(container: Locator): Promise<Omit<Row, 'title' | 'storyId'>> {
-  return container.evaluate((root) => {
+async function classify(container: Locator, selector: string | null = null): Promise<Omit<Row, 'title' | 'storyId'>> {
+  return container.evaluate((root, contentSelector) => {
     const card = root.querySelector('[data-example]');
     if (card === null) {
       const text = root.textContent ?? '';
-      const notice = text.includes('does not render from its args alone') || text.includes('frames the component in a decorator');
-      return { status: notice ? 'notice-only' : 'source-note', overflowX: false } as const;
+      const notice =
+        text.includes('does not render from its args alone') ||
+        text.includes('frames the component in a decorator') ||
+        text.includes('built in code rather than data');
+      return { status: notice ? 'notice-only' : 'source-note', overflowX: false, content: null } as const;
     }
+    // Job 546: what the example is supposed to be showing, counted where its component has a rule.
+    const content = contentSelector === null ? null : card.querySelectorAll(contentSelector).length;
     if (card.hasAttribute('data-example-harness')) {
-      return { status: 'harness', overflowX: card.scrollWidth > card.clientWidth + 1 } as const;
+      return { status: 'harness', overflowX: card.scrollWidth > card.clientWidth + 1, content } as const;
     }
     const shown = (el: Element) => el.checkVisibility({ opacityProperty: true, visibilityProperty: true });
     const sized = (rect: DOMRect) => rect.width > 1 && rect.height > 1;
@@ -115,12 +184,12 @@ async function classify(container: Locator): Promise<Omit<Row, 'title' | 'storyI
         return range.getBoundingClientRect().right > edge;
       });
     });
-    return { status: visible ? 'live' : 'empty', overflowX } as const;
-  });
+    return { status: visible ? 'live' : 'empty', overflowX, content } as const;
+  }, selector);
 }
 
 /** Every tab in one strip, selected in turn, and its panel classified. */
-async function walkStrip(page: Page, strip: Locator, rows: Row[]) {
+async function walkStrip(page: Page, strip: Locator, rows: Row[], selector: string | null) {
   const tabs = strip.getByRole('tab');
   const count = await tabs.count();
   for (let index = 0; index < count; index++) {
@@ -132,7 +201,7 @@ async function walkStrip(page: Page, strip: Locator, rows: Row[]) {
     const storyId = (await tab.getAttribute('data-tab-id')) ?? '';
     const panel = page.locator(`[role="tabpanel"][aria-labelledby="${await tab.getAttribute('id')}"]`);
     await expect(panel).toBeVisible();
-    rows.push({ title: (await tab.textContent()) ?? '', storyId, ...(await classify(panel)) });
+    rows.push({ title: (await tab.textContent()) ?? '', storyId, ...(await classify(panel, selector)) });
   }
 }
 
@@ -152,17 +221,22 @@ test.describe('the example-render audit', () => {
       await expect(page.locator('astro-island[ssr][component-url*="Examples"]')).toHaveCount(0);
 
       const { layout, examples } = exampleSet(name);
+      const selector = CONTENT[name]?.selector ?? null;
       const rows: Row[] = [];
       if (layout === 'sweep') {
         for (const example of examples) {
-          rows.push({ title: example.title, storyId: example.storyId, ...(await classify(page.locator(`[data-example-tile="${example.storyId}"]`))) });
+          rows.push({
+            title: example.title,
+            storyId: example.storyId,
+            ...(await classify(page.locator(`[data-example-tile="${example.storyId}"]`), selector)),
+          });
         }
       } else {
-        await walkStrip(page, page.getByRole('tablist', { name: `${name} examples`, exact: true }), rows);
+        await walkStrip(page, page.getByRole('tablist', { name: `${name} examples`, exact: true }), rows, selector);
         const more = page.getByRole('button', { name: /^More examples \(\d+\)$/ });
         if ((await more.count()) > 0) {
           await more.evaluate((el) => (el as HTMLElement).click());
-          await walkStrip(page, page.getByRole('tablist', { name: `More ${name} examples`, exact: true }), rows);
+          await walkStrip(page, page.getByRole('tablist', { name: `More ${name} examples`, exact: true }), rows, selector);
         }
       }
 
@@ -183,6 +257,70 @@ test.describe('the example-render audit', () => {
       expect(rows.filter((row) => row.status === 'empty').map((row) => row.title), 'empty examples').toEqual([]);
       expect(rows.filter((row) => row.overflowX).map((row) => row.title), 'examples painting past their card').toEqual([]);
       expect(errors.filter((error) => /same key/.test(error)), 'React key warnings').toEqual([]);
+
+      // Job 546: an example whose args carry content shows it. `empty` above only asks whether
+      // *something* painted, and a Carousel with no slides paints its arrows.
+      const byId = new Map(examples.map((example) => [example.storyId, example]));
+      const hollow = rows.filter((row) => {
+        const example = byId.get(row.storyId);
+        return example !== undefined && carriesContent(name, example) && row.status !== 'notice-only' && (row.content ?? 0) === 0;
+      });
+      expect(hollow.map((row) => row.title), `examples showing no ${CONTENT[name]?.what ?? 'content'}`).toEqual([]);
     });
   }
+});
+
+/**
+ * The `{ $unsupported }` residue, which is job 546's other half.
+ *
+ * `tools/docs_examples.ts` evaluates the story modules, so an arg is only a marker when it is
+ * genuinely not data. What survives must therefore be a function — a column's `validate`, a
+ * `formatValue` — named rather than quoted, and never the thing the example is *for*: not its
+ * `children`, and not a prop the schema marks required. Both of those render as a working-looking
+ * shell, and the extractor going back to guessing at values is exactly how that comes back.
+ *
+ * The listing is the `grep -c '$unsupported' generated/examples/*.json` the job asks the summary to
+ * carry, with each survivor named with its story rather than counted.
+ */
+test.describe('the args the extractor could not carry', () => {
+  /** Every marker in a value, as `path -> name`. Mirrors `unsupportedIn` in tools/docs_examples.ts. */
+  const markers = (value: Value, path = ''): [string, string][] => {
+    if (typeof value !== 'object' || value === null) return [];
+    if (Array.isArray(value)) return value.flatMap((item, index) => markers(item, `${path}[${index}]`));
+    const text = (value as { $unsupported?: unknown })['$unsupported'];
+    if (typeof text === 'string') return [[path, text]];
+    return Object.entries(value).flatMap(([key, item]) => markers(item, path === '' ? key : `${path}.${key}`));
+  };
+
+  test('every one of them is a function prop, and none of them is the example’s content', () => {
+    const counts: Record<string, number> = {};
+    const survivors: { component: string; story: string; path: string; name: string }[] = [];
+    for (const name of MODULES) {
+      const { examples } = exampleSet(name);
+      for (const example of examples) {
+        for (const [path, text] of markers(example.args)) {
+          counts[name] = (counts[name] ?? 0) + 1;
+          survivors.push({ component: name, story: example.title, path, name: text });
+        }
+      }
+    }
+    mkdirSync(OUT, { recursive: true });
+    writeFileSync(`${OUT}unsupported.json`, JSON.stringify({ counts, survivors }, null, 2) + '\n');
+    for (const [component, count] of Object.entries(counts).sort()) console.log(`  generated/examples/${component}.json: ${count}`);
+    for (const row of survivors) console.log(`  · ${row.component}/${row.story}: ${row.path} = ${row.name}`);
+
+    // A function serializes to its own name; source text, a call, anything with a space in it is the
+    // parse having stood in for an evaluation that did not happen.
+    const notFunctions = survivors.filter((row) => !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(row.name));
+    expect(notFunctions, 'markers that are not a function’s name').toEqual([]);
+
+    // The two places a dropped arg is not survivable — see apps/website/src/example-args.ts. Under
+    // `children` the whole subtree counts: every element there is content. A required prop counts
+    // only when the *prop itself* is the marker, because a marker inside one leaves the prop standing
+    // (DataGrid's `columns` keeps all five columns when the fourth loses its `validate`).
+    const content = survivors.filter((row) => row.path === 'children' || row.path.startsWith('children.') || row.path.startsWith('children['));
+    expect(content, 'markers under `children`').toEqual([]);
+    const requiredGaps = survivors.filter((row) => (REQUIRED.get(row.component) ?? []).includes(row.path));
+    expect(requiredGaps, 'markers that are a required prop').toEqual([]);
+  });
 });

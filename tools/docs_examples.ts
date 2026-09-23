@@ -8,13 +8,17 @@
  * export that Storybook already renders, so the docs site shows the same example set Storybook does
  * and a new story reaches the website with `pnpm docs:examples` and nothing else.
  *
- * Two sources, and neither is executed:
+ * Two sources:
  *
- * 1. `packages/react/src/<Name>.stories.tsx` — parsed with the TypeScript compiler API, never
- *    imported. A story module pulls in React, the component and its CSS; importing it into a Node
- *    tool would need a bundler and a DOM, and would make a tool that reads source depend on source
- *    that runs. The parse walks the named exports that sit beside `export default meta` and merges
- *    each one's `args` over the meta's (Storybook's own precedence).
+ * 1. `packages/react/src/<Name>.stories.tsx` — read twice, because a story has two halves. Everything
+ *    about how it is *written* (whether it has a `render` or `decorators`, its source text, which
+ *    args it sets itself) is parsed with the TypeScript compiler API. Its `args` *values* are
+ *    evaluated: the module is imported in a child process by ./story_args.ts, and each named export's
+ *    `args` is read merged over the meta's (Storybook's own precedence). A parse cannot call
+ *    `slides(['Product 1', …])`, and a Carousel example without its slides is two arrow buttons
+ *    around a 0px track — see ./story_args.ts for why that is the whole reason the second read exists.
+ *    Where the modules cannot be evaluated (no `packages/react/node_modules` beside them, which is
+ *    the tool's own tests in a sandbox) the parse's own encoding of the args stands in.
  * 2. `packages/react/storybook-static/index.json` — the manifest `storybook build` writes, which
  *    is where `storyId` comes from. Storybook's ID algorithm (title + export name, sluggified, with
  *    its own collision rules) is Storybook's to change; re-deriving it here would produce deep links
@@ -57,20 +61,22 @@
  *     `MAX_TABS`.
  *
  * `args` is JSON, because the website renders it in a React island built from the JSON alone — the
- * examples must work with every Storybook instance unreachable. Story args are ordinary data most of
- * the time; where they are not, this encoder covers two more shapes rather than giving up:
+ * examples must work with every Storybook instance unreachable. Primitives, arrays and objects are
+ * themselves; a React element is a `{ "$element", "props", "children" }` descriptor the island
+ * rebuilds with `createElement`.
  *
- *   - module-level `const`s referenced by name (`args: { columns: COLUMNS }`), resolved by walking
- *     the declaration, so the JSON holds the value the story actually renders with;
- *   - JSX (`children: <TabPanel id="a">…</TabPanel>`), encoded as `{ "$element", "props",
- *     "children" }` descriptors the island rebuilds with `createElement`.
+ * What is genuinely code — a function prop: a column's `validate`, a `formatValue` — is encoded as
+ * `{ "$unsupported": "<name>" }` and dropped by the island. That is deliberate: the entry stays
+ * honest about what it could not carry rather than omitting the story, the example still renders (a
+ * `render` callback missing from a Table column means a plain cell, not a blank page), and the
+ * snippet beside it shows the reader the real thing. The island does draw a line at an example whose
+ * *content* is what went missing — see apps/website/src/components/Examples.tsx. `--report` lists
+ * every marker, and every scenario a Lit or RN story does not cover.
  *
- * What is genuinely code — an arrow function, a call this tool cannot evaluate — is encoded as
- * `{ "$unsupported": "<source text>" }` and dropped by the island. That is deliberate: the entry
- * stays honest about what it could not carry rather than omitting the story, the example still
- * renders (a `render` callback missing from a Table column means a plain cell, not a blank page),
- * and the snippet beside it shows the reader the real thing. `--report` lists them, and every
- * scenario a Lit or RN story does not cover.
+ * The parse's own encoder (`encodeValue`) is the fallback for a directory whose modules cannot be
+ * imported, and covers the two shapes a story module reaches for most: module-level `const`s
+ * referenced by name (`args: { columns: COLUMNS }`) and inline JSX. It encodes anything else —
+ * including the helper calls the evaluation exists to resolve — as `{ "$unsupported": "<source>" }`.
  *
  * Usage:  node tools/docs_examples.ts [--check] [--report]
  *
@@ -98,6 +104,7 @@ import {
 } from './docs_snippets.ts';
 import { readText, writeTextAtomic } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
+import { evaluateStoryArgs, StoryArgsError } from './story_args.ts';
 
 /** Every path the tool reads or writes. The tests point these at a sandbox. */
 export const paths = {
@@ -606,6 +613,25 @@ export function parseStories(fileName: string, text: string): StoryExport[] {
   return exports;
 }
 
+/**
+ * The parsed exports with their `args` replaced by the evaluated ones.
+ *
+ * Only `args`. Everything else a `StoryExport` carries — `set`, `code`, `decorated` — is a fact about
+ * how the story is written, which the parse is the right reader for and a running module has thrown
+ * away: a story that sets `label` and one that inherits it from the meta have the same value at
+ * runtime, and only one of them is a step in a sweep.
+ *
+ * An export the evaluation has no entry for keeps the parse's args. That is a story whose module
+ * exported something other than an object, which the manifest will not list as a story anyway.
+ */
+export function withRuntimeArgs(exports: StoryExport[], evaluated: Map<string, Record<string, Value>> | undefined): StoryExport[] {
+  if (evaluated === undefined) return exports;
+  return exports.map((story) => {
+    const args = evaluated.get(story.exportName);
+    return args === undefined ? story : { ...story, args: normalizeArgs(args) };
+  });
+}
+
 /* ------------------------------------------------------------------ the run */
 
 /** `Name` for every `packages/react/src/<Name>.stories.tsx`, sorted. */
@@ -938,6 +964,8 @@ export function main(argv: string[] = process.argv.slice(2)): number {
   let grids = 0;
   const gaps: string[] = [];
   const snippetGaps: string[] = [];
+  /** Story modules the evaluation could not import, which fell back to the parse. */
+  const evaluated: string[] = [];
   const counts: Record<Platform, number> = { react: 0, lit: 0, rn: 0, swift: 0 };
   try {
     if (!existsSync(paths.INDEX)) {
@@ -949,6 +977,10 @@ export function main(argv: string[] = process.argv.slice(2)): number {
     const stories = manifestStories(JSON.parse(readText(paths.INDEX)));
     const components = componentInfo(JSON.parse(readText(paths.COMPONENTS)));
     const options = snippetOptions();
+    // The args, evaluated — see ./story_args.ts. One child process for the whole run, and `null`
+    // where the modules cannot be imported, which is when the parse's own encoding stands in.
+    const runtime = evaluateStoryArgs(paths.STORIES);
+    evaluated.push(...(runtime?.problems ?? []));
     for (const name of storyModules(paths.STORIES)) {
       const file = join(paths.STORIES, `${name}.stories.tsx`);
       const component = components.get(name);
@@ -956,7 +988,8 @@ export function main(argv: string[] = process.argv.slice(2)): number {
         throw new ExamplesError(`${name}.stories.tsx has no component in generated/components.json — there is no page to put its examples on`);
       }
       const text = readText(file);
-      const set = examplesFor(name, parseStories(file, text), stories, component, codeSource(name, text, component, options));
+      const parsed = withRuntimeArgs(parseStories(file, text), runtime?.modules.get(name));
+      const set = examplesFor(name, parsed, stories, component, codeSource(name, text, component, options));
       written.set(join(paths.OUT, `${name}.json`), render(set));
       total += set.examples.length;
       if (set.layout === 'sweep') grids += 1;
@@ -969,10 +1002,16 @@ export function main(argv: string[] = process.argv.slice(2)): number {
       }
     }
   } catch (e) {
-    if (!(e instanceof ExamplesError)) throw e;
+    // A story module that will not evaluate is the same class of input problem as a missing manifest:
+    // it is reported and the run stops, rather than quietly shipping examples built from the parse.
+    if (!(e instanceof ExamplesError) && !(e instanceof StoryArgsError)) throw e;
     process.stderr.write(`✖ ${e.message}\n`);
     return 1;
   }
+
+  // A single module that would not import: the rest of the run is still correct, and the one that
+  // fell back to the parse is named rather than left to be noticed as a hollow example on the site.
+  for (const problem of evaluated) process.stderr.write(`⚠ ${problem}\n`);
 
   const out = relToRoot(paths.OUT);
   if (check) {

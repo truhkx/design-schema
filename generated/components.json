@@ -26072,7 +26072,7 @@
         "markLabelColor": {
           "token": "color.foreground.muted",
           "part": "tickMarks",
-          "description": "Realised by the mark label Text's tone muted; no hook of its own.",
+          "description": "Realised by the mark label Text's tone muted. Locked, it keeps its `--ds-slider-mark-label-color` hook on web and Lit, as every locked binding does; the tick marks pass it to the mark label Text through the colour that Text resolves (its own `--ds-text-color`, or a re-scoped `--color-foreground-muted`), never by restyling the Text.",
           "locked": true
         },
         "markLabelSize": {

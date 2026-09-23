@@ -120,7 +120,7 @@ component:
     haloSpread: { token: space.2, part: thumb, description: 'How far the pressed-thumb halo extends beyond the knob on each side.' }
     mark: { token: color.border.strong, part: tickMarks, description: 'Mark dot colour.' }
     markSize: { token: space.2, part: tickMarks, description: 'Mark dot diameter. Deliberately larger than trackHeight so a mark reads as a tick standing proud of the rail rather than a bump on it.' }
-    markLabelColor: { token: color.foreground.muted, part: tickMarks, description: 'Realised by the mark label Text''s tone muted; no hook of its own.' }
+    markLabelColor: { token: color.foreground.muted, part: tickMarks, description: 'Realised by the mark label Text''s tone muted. Locked, it keeps its `--ds-slider-mark-label-color` hook on web and Lit, as every locked binding does; the tick marks pass it to the mark label Text through the colour that Text resolves (its own `--ds-text-color`, or a re-scoped `--color-foreground-muted`), never by restyling the Text.' }
     markLabelSize: { token: font.size.xs, part: tickMarks, description: 'Forwarded to each mark label Text''s fontSize override (fontFamily is forwarded too); never styles the Text directly.' }
     markLabelGap: { token: space.1, part: tickMarks, description: 'Gap between the bottom of the track area (after trackPaddingBlock) and the mark label row; `partGap` does not apply between them (on React Native, a column wraps the track area and the label row with this gap). The slider grows by the label line (markLabelSize × font.lineHeight.normal) only when some mark has a label.' }
     valueColor: { token: color.foreground, part: valueText, description: 'Realised by the value Text''s tone default; no hook of its own.' }

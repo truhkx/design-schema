@@ -82,14 +82,15 @@ function parseTimeMs(raw: string): number {
 /** Shared "warm" state: until this timestamp a newly hovered tooltip shows with no delay. Set whenever any tooltip hides. */
 let warmUntil = 0;
 
-const BUBBLE_CLASS = 'ds-tooltip-bubble';
-const DESCRIPTION_CLASS = 'ds-tooltip-description';
+const BUBBLE_CLASS = 'ds-tooltip';
+const DESCRIPTION_CLASS = 'ds-tooltip__description';
 const LIGHT_STYLE_MARKER = 'data-ds-tooltip-style';
 
 /* The description copy and the bubble live in the light DOM (so the trigger's ID reference resolves), which
    `ds-tooltip`'s shadow stylesheet cannot reach; their rules are injected into the tree they live in.
-   surface: color.inverse.surface and text: color.inverse.foreground are locked. Text's color is locked too,
-   so the bubble re-scopes --color-foreground on its own container and composes <ds-text> unchanged.
+   surface and text are locked (not in `overrides`) but read their :host hooks, which the light-DOM bubble
+   inherits from the host. Text's color is locked too, so the bubble re-scopes --color-foreground from the
+   `text` hook on its own container and composes <ds-text> unchanged.
    fontFamily, fontSize and lineHeight are absent here on purpose: they are forwarded to that <ds-text>. */
 const LIGHT_STYLE_CSS = `
 .${DESCRIPTION_CLASS} {
@@ -105,7 +106,7 @@ const LIGHT_STYLE_CSS = `
   border: 0;
 }
 .${BUBBLE_CLASS} {
-  --color-foreground: var(--color-inverse-foreground);
+  --color-foreground: var(--ds-tooltip-text);
   position: fixed;
   inset: auto;
   box-sizing: border-box;
@@ -114,8 +115,8 @@ const LIGHT_STYLE_CSS = `
   padding-block: var(--ds-tooltip-padding-block);
   padding-inline: var(--ds-tooltip-padding-inline);
   border-radius: var(--ds-tooltip-radius);
-  background: var(--color-inverse-surface);
-  color: var(--color-inverse-foreground);
+  background: var(--ds-tooltip-surface);
+  color: var(--ds-tooltip-text);
   box-shadow: var(--ds-tooltip-shadow);
   inline-size: max-content;
   max-inline-size: calc(var(--ds-tooltip-max-width) * 3);
@@ -218,6 +219,9 @@ export class DsTooltip extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: contents;
+      /* surface and text are locked: out of the overrides API, still themeable from page CSS. */
+      --ds-tooltip-surface: var(--color-inverse-surface);
+      --ds-tooltip-text: var(--color-inverse-foreground);
       --ds-tooltip-radius: var(--radius-sm);
       --ds-tooltip-padding-block: var(--space-1);
       --ds-tooltip-padding-inline: var(--space-2);

@@ -2,8 +2,8 @@
  * <ds-toast> — behavior scenarios from the component doc, one test each, in the doc's order.
  * Runs in headless Chromium (Vitest browser mode).
  *
- * `dismiss` fires after the exit transition ends (the doc's timing), and the token stylesheet is
- * loaded here, so every dismissal assertion polls rather than reading the mock straight away.
+ * `dismiss` fires synchronously when the toast begins to leave (the doc's timing); the element is
+ * removed only after the exit transition, so the assertions read the mock straight away.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
@@ -46,7 +46,7 @@ describe('ds-toast', () => {
   it('the-dismiss-button-fires-on-dismiss', async () => {
     const t = await setup({ dismissible: true });
     await userEvent.click(t.part('dismissButton')!);
-    await expect.poll(() => t.dismiss.mock.calls.length).toBe(1);
+    expect(t.dismiss).toHaveBeenCalledTimes(1);
     expect(t.dismiss.mock.calls[0]![0].detail).toEqual({ reason: 'dismiss-button' });
   });
 
@@ -54,7 +54,7 @@ describe('ds-toast', () => {
     const t = await setup({ actionLabel: 'Undo' });
     await userEvent.click(t.part('actionButton')!);
     expect(t.action).toHaveBeenCalledTimes(1);
-    await expect.poll(() => t.dismiss.mock.calls.length).toBe(1);
+    expect(t.dismiss).toHaveBeenCalledTimes(1);
     expect(t.dismiss.mock.calls[0]![0].detail).toEqual({ reason: 'action' });
     expect(t.calls).toEqual(['action', 'dismiss']);
   });
@@ -65,7 +65,7 @@ describe('ds-toast', () => {
     t.el.focus();
     expect(t.el.matches(':focus-within')).toBe(true);
     await userEvent.keyboard('{Escape}');
-    await expect.poll(() => t.dismiss.mock.calls.length).toBe(1);
+    expect(t.dismiss).toHaveBeenCalledTimes(1);
     expect(t.dismiss.mock.calls[0]![0].detail).toEqual({ reason: 'escape' });
   });
 

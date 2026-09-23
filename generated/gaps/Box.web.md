@@ -86,3 +86,18 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Box: the doc doesn't say which wins when a consumer `style` and `overrides` set the same `--ds-box-*` hook. I let `style` win.
 - Box: `border` is a boolean, so 'one story per enum value' doesn't name its story. I kept a single `Border` story with `border: true`.
 - Box: the `renders-*` scenarios apply their `given` on top of the Default args (inset md), so nothing tests that setting only one axis leaves `inset` in place on the other.
+
+## 2026-09-23 13:50 — round 1
+
+- Box: `children` is required with no schema default, and the meta may not carry the highlighted-panel children, so the per-value stories (InsetSm, SurfaceNone, …) would render an empty box. Chose to spread `Default.args` into each one; the doc should say what args those stories build on.
+- Box: the doc asks for a `WithOverrides` story but gives no values. Chose `border: true` plus overrides `paddingBlock: layout.inset.lg`, `border: color.border.strong`, `radius: radius.sm`, so every override is visible (the border override needs `border` on); the doc could name them.
+- Box: meta args may list 'the schema defaults', but the example in parentheses names only `border` and `element`. Left inset/surface/radius `none` out of meta so the per-value stories and the Default story don't depend on meta; unclear whether all defaults or only those two were meant.
+- Box: the behavior scenarios say to render 'the Default story's args'; on web a string child needs no Text wrapper, so the tests render Box directly rather than through the meta render. The doc only says the meta render is required on React Native.
+
+## 2026-09-23 13:51 — round 2
+
+- Box: the round-2 typecheck failure was in DataGrid.tsx (pluralForm missing its locale argument), not in any Box file. Another process is editing DataGrid.tsx during this run: the rerun showed the locale fix already in and six new unresolved names (selectModifierRef, pressSelectCell, SELECT_CHECKBOX_OVERRIDES) at lines 1285–1302. Left DataGrid.tsx untouched and Box unchanged; the gate needs a rerun once the DataGrid edit is complete.
+
+## 2026-09-23 13:51 — round 3
+
+- Box: rounds 2 and 3 failed typecheck on a half-written DataGrid.tsx from a concurrent edit, never on a Box file. A rerun now passes with no Box changes. The gate runs package-wide `tsc`, so a job on one component fails while a sibling file is mid-edit; scoping the gate or running the jobs one after another would stop it failing unrelated targets.

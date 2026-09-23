@@ -15,9 +15,10 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
+import { flushSync } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button, type ButtonOverridableBinding } from './Button';
-import { Checkbox } from './Checkbox';
+import { Checkbox, type CheckboxOverridableBinding } from './Checkbox';
 import { DatePicker, type DatePickerValue } from './DatePicker';
 import { Heading } from './Heading';
 import { Icon } from './Icon';
@@ -106,10 +107,11 @@ export type DataGridOverridableBinding =
   | 'numericFont'
   | 'transition';
 
-/** Root CSS hooks, one per overridable binding. The bindings a composed child draws are also
- * forwarded to its own `overrides`: `captionSize`/`captionWeight` to the caption Heading,
- * `statusBarSize` to the status bar Texts, `headerSize`/`headerWeight` to the sort Button. */
-const OVERRIDE_HOOKS: Record<DataGridOverridableBinding, string> = {
+/** Root CSS hooks, one per overridable binding the grid draws itself. A binding only a composed child
+ * draws declares no hook and goes to that child's `overrides`: `captionSize`/`captionWeight` to the
+ * caption Heading, `statusBarSize` to the status bar Texts. `headerSize`/`headerWeight` style the
+ * header part and are also forwarded to the sort Button. */
+const OVERRIDE_HOOKS: Partial<Record<DataGridOverridableBinding, string>> = {
   headerWeight: '--ds-data-grid-header-weight',
   headerSize: '--ds-data-grid-header-size',
   headerBorder: '--ds-data-grid-header-border',
@@ -124,11 +126,8 @@ const OVERRIDE_HOOKS: Record<DataGridOverridableBinding, string> = {
   resizeHandle: '--ds-data-grid-resize-handle',
   resizeHandleWidth: '--ds-data-grid-resize-handle-width',
   resizeStep: '--ds-data-grid-resize-step',
-  statusBarSize: '--ds-data-grid-status-bar-size',
   statusBarPadding: '--ds-data-grid-status-bar-padding',
   statusBarGap: '--ds-data-grid-status-bar-gap',
-  captionSize: '--ds-data-grid-caption-size',
-  captionWeight: '--ds-data-grid-caption-weight',
   captionGap: '--ds-data-grid-caption-gap',
   fixedHeight: '--ds-data-grid-fixed-height',
   fontFamily: '--ds-data-grid-font-family', // literal-ok: custom-property hook name, not a font stack
@@ -162,14 +161,18 @@ const COPY = {
 const DEFAULT_COLUMN_SIZE = 'var(--ds-data-grid-column-size)';
 /** Rows rendered before one row has been measured (a row count, not a size). */
 const UNMEASURED_ROW_LIMIT = 50;
-/** The selection column: a minimum target plus the cell's own inline padding on both sides. */
-const SELECT_COLUMN_SIZE = 'calc(var(--size-target-min) + 2 * var(--ds-data-grid-cell-padding-inline))';
+/** The selection column: selectColumnWidth plus 2 × cellPaddingInline (the cell itself has no padding). */
+const SELECT_COLUMN_SIZE = 'var(--ds-data-grid-select-column-size)';
 /** The row block size, from the locked rowHeight / rowHeightComfortable bindings (set per density in CSS). */
 const ROW_SIZE = 'var(--ds-data-grid-row-size)';
+/** minTarget (locked) forwarded to the select Checkboxes' controlSize, set on the Checkbox itself. */
+const SELECT_CHECKBOX_OVERRIDES: Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>> = {
+  controlSize: 'size.target.min',
+};
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-/** Interactive content a cell's `render` may hold, whatever its tabindex. */
-const CONTROL_SELECTOR = 'a[href], button, input, select, textarea, [contenteditable="true"]';
+/** A control inside a cell's `render`, whatever its tabindex: link, button, input, select, textarea, any tabindex. */
+const CONTROL_SELECTOR = 'a[href], button, input, select, textarea, [tabindex]';
 const NAVIGATION_KEYS = new Set(['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End', 'PageDown', 'PageUp']);
 
 declare const process: { env: Record<string, string | undefined> } | undefined;
@@ -181,9 +184,19 @@ function interpolate(template: string, values: Record<string, string | number>):
   return text;
 }
 
-function pluralForm(forms: { one: string; other: string }, count: number): string {
-  const locale = typeof document !== 'undefined' ? document.documentElement.lang || undefined : undefined;
+/** Plural copy at `document.documentElement.lang`, read after mount (see `locale` in the component). */
+function pluralForm(forms: { one: string; other: string }, count: number, locale: string | undefined): string {
   return new Intl.PluralRules(locale).select(count) === 'one' ? forms.one : forms.other;
+}
+
+function sameCell(a: DataGridCellRef | null | undefined, b: DataGridCellRef | null | undefined): boolean {
+  return !!a && !!b && a.rowId === b.rowId && a.column === b.column;
+}
+
+function sameIds(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) return false;
+  const set = new Set(a);
+  return b.every((id) => set.has(id));
 }
 
 function compareValues(a: unknown, b: unknown): number {
@@ -317,6 +330,13 @@ export function DataGrid({
   const targetSizerRef = useRef<HTMLSpanElement | null>(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
 
+  /* Plural copy reads the page language after mount, so the server and the hydrating client agree. */
+  const [locale, setLocale] = useState<string | undefined>(undefined);
+  useLayoutEffect(() => {
+    const lang = document.documentElement.lang || undefined;
+    setLocale((prev) => (prev === lang ? prev : lang));
+  }, []);
+
   /* ---------- development warnings (once) ---------- */
   const warnedRef = useRef(false);
   if (isDev && !warnedRef.current) {
@@ -404,7 +424,9 @@ export function DataGrid({
   const anchorRef = useRef<DataGridCellRef | null>(null);
   const rowAnchorRef = useRef<string | null>(null);
 
+  /** Reports a row selection only when it differs from the current one. */
   const commitRows = (ids: string[]): void => {
+    if (sameIds(ids, selectedIds)) return;
     if (!selectedControlled) setInternalSelected(ids);
     onSelectionChange?.(ids);
     setAnnouncement(interpolate(COPY.selectedRows, { count: ids.length, total }));
@@ -419,6 +441,12 @@ export function DataGrid({
     if (anchor === undefined || target === undefined) return toggleRow(id);
     const span = rows.slice(Math.min(anchor, target), Math.max(anchor, target) + 1).map((row) => row.id);
     commitRows([...selectedIds.filter((existing) => !span.includes(existing)), ...span]);
+  };
+  /** Pointer on the select cell or its Checkbox: a click toggles, Shift+click adds anchor → row. */
+  const selectModifierRef = useRef<{ shift: boolean }>({ shift: false });
+  const pressSelectCell = (id: string, shift: boolean): void => {
+    if (shift) extendRows(id);
+    else toggleRow(id);
   };
   const allIds = rows.map((row) => row.id);
   const allSelected = loaded > 0 && allIds.every((id) => selectedSet.has(id));
@@ -437,8 +465,10 @@ export function DataGrid({
   };
   const bounds = selectable === 'range' ? rangeBounds(range) : null;
 
+  /** Reports a range only when it differs from the current one (a collapse to one cell still fires once). */
   const commitRange = (next: DataGridRangeRef): void => {
     const b = rangeBounds(next);
+    if (range && sameCell(range.from, next.from) && sameCell(range.to, next.to)) return;
     setRange(next);
     onSelectionChange?.(next);
     if (b) setAnnouncement(interpolate(COPY.selectedRange, { rows: b.bottom - b.top + 1, columns: b.right - b.left + 1 }));
@@ -531,6 +561,14 @@ export function DataGrid({
 
   const focusGrid = (): void => gridRef.current?.focus();
 
+  /** `cell` mode: the focused body data cell is the selection; reported only when it changes. */
+  const selectedCellRef = useRef<DataGridCellRef | null>(null);
+  const selectCell = (ref: DataGridCellRef): void => {
+    if (sameCell(selectedCellRef.current, ref)) return;
+    selectedCellRef.current = ref;
+    onSelectionChange?.(ref);
+  };
+
   const moveTo = (row: number, col: number, extend = false): void => {
     const r = Math.max(-1, Math.min(row, loaded - 1));
     const c = Math.max(0, Math.min(col, colCount - 1));
@@ -551,7 +589,7 @@ export function DataGrid({
     const rowData = r >= 0 ? rows[r] : undefined;
     if (!column || !rowData) return;
     const ref: DataGridCellRef = { rowId: rowData.id, column: column.key };
-    if (selectable === 'cell') onSelectionChange?.(ref);
+    if (selectable === 'cell') selectCell(ref);
     if (selectable === 'range') {
       if (extending) commitRange({ from: anchorRef.current!, to: ref });
       else {
@@ -570,6 +608,7 @@ export function DataGrid({
   };
   const editValueRef = useRef<unknown>(undefined);
   const pickerOpenRef = useRef(false);
+  const [selectOpen, setSelectOpen] = useState(false);
   const [editError, setEditError] = useState<string | undefined>(undefined);
 
   const openEditor = (rowIndex: number, col: number, seed?: string): boolean => {
@@ -580,7 +619,9 @@ export function DataGrid({
     const kind = column.editor ?? 'text';
     const seeded = seed !== undefined && (kind === 'text' || kind === 'number');
     editValueRef.current = seeded ? (kind === 'number' ? (Number.isFinite(Number(seed)) ? Number(seed) : undefined) : seed) : row[column.key];
-    pickerOpenRef.current = false;
+    // A select editor opens its popup at once.
+    pickerOpenRef.current = kind === 'select';
+    setSelectOpen(kind === 'select');
     setActive({ row: rowIndex, col });
     setEditing({ rowId: row.id, column: column.key, seed: seeded ? seed : undefined });
     setEditError(undefined);
@@ -634,7 +675,10 @@ export function DataGrid({
       event.preventDefault();
       cancelEdit();
     } else if (event.key === 'Enter') {
-      if (kind === 'select' || (kind === 'date' && pickerOpenRef.current)) return;
+      // Enter belongs to a select; a date editor commits only from its text field, told apart by
+      // the event's own target — an Enter raised inside the calendar is the calendar's.
+      if (kind === 'select') return;
+      if (kind === 'date' && !(event.target instanceof HTMLInputElement)) return;
       event.preventDefault();
       if (commitEdit()) {
         focusGrid();
@@ -647,7 +691,13 @@ export function DataGrid({
       const row = activeRow;
       const cols = editableCols();
       const next = event.shiftKey ? [...cols].reverse().find((c) => c < activeCol) : cols.find((c) => c > activeCol);
-      if (!commitEdit()) {
+      // The editor is removed in this same task, so from the last (or first) editable cell the
+      // browser's own Tab starts from the grid and lands outside it.
+      let committed = false;
+      flushSync(() => {
+        committed = commitEdit();
+      });
+      if (!committed) {
         event.preventDefault();
         return;
       }
@@ -656,7 +706,6 @@ export function DataGrid({
         event.preventDefault();
         if (!openEditor(row, next)) setActive({ row, col: next });
       }
-      // From the last (or first) editable cell the default Tab now leaves the grid.
     }
   };
 
@@ -667,6 +716,13 @@ export function DataGrid({
     const kind = columns.find((column) => column.key === cell.column)?.editor ?? 'text';
     if (kind === 'text' || kind === 'number' || kind === 'date') commitEdit();
   };
+
+  /* An open editor whose row leaves `data` drops its draft silently, as if cancelled. */
+  if (editing && !rowIndexById.has(editing.rowId)) {
+    editingRef.current = null;
+    setEditingState(null);
+    setEditError(undefined);
+  }
 
   useEffect(() => {
     if (!editing) return;
@@ -746,7 +802,7 @@ export function DataGrid({
     const cells = (bounds.bottom - bounds.top + 1) * span.length;
     void navigator.clipboard
       ?.writeText(lines.join('\n'))
-      .then(() => setAnnouncement(interpolate(pluralForm(COPY.copied, cells), { cells })))
+      .then(() => setAnnouncement(interpolate(pluralForm(COPY.copied, cells, locale), { cells })))
       .catch(() => undefined);
   };
 
@@ -780,6 +836,7 @@ export function DataGrid({
       // Real focus is inside a cell's control (APG "focus inside the cell").
       if (event.key === 'Escape' || event.key === 'F2') {
         event.preventDefault();
+        event.stopPropagation();
         focusGrid();
         return;
       }
@@ -860,8 +917,10 @@ export function DataGrid({
         if (row >= 0) openEditor(row, col);
         return;
       case 'Escape':
+        // Clears a range without firing (the union has no empty range); with no range the key bubbles.
         if (selectable === 'range' && range) {
           event.preventDefault();
+          event.stopPropagation();
           setRange(null);
         }
         return;
@@ -959,7 +1018,7 @@ export function DataGrid({
     if (!row || !column) return;
     const ref: DataGridCellRef = { rowId: row.id, column: column.key };
     const ctrl = event.ctrlKey || event.metaKey;
-    if (selectable === 'cell') onSelectionChange?.(ref);
+    if (selectable === 'cell') selectCell(ref);
     else if (selectable === 'row') {
       if (event.shiftKey) extendRows(row.id);
       else if (ctrl) toggleRow(row.id);
@@ -1043,9 +1102,17 @@ export function DataGrid({
             options={column.options ?? []}
             defaultValue={textOf(current)}
             container={container}
+            open={selectOpen}
             overrides={{ triggerPaddingInline: 'space.0', triggerPaddingBlock: 'space.0' }}
             onOpenChange={(open) => {
               pickerOpenRef.current = open;
+              setSelectOpen(open);
+              // Closing the popup without a choice cancels the edit (a choice commits first, in onChange).
+              if (!open) {
+                queueMicrotask(() => {
+                  if (sameCell(editingRef.current, cell)) cancelEdit();
+                });
+              }
             }}
             onChange={(value) => commitOnChange(Array.isArray(value) ? value[0] : value)}
           />
@@ -1224,8 +1291,12 @@ export function DataGrid({
               activeRow === rowIndex && activeCol === 0 && 'ds-data-grid__cell--active',
             )}
             style={{ insetInlineStart: 0 }}
+            onPointerDown={(event) => {
+              selectModifierRef.current = { shift: event.shiftKey };
+            }}
             onClick={(event) => {
-              if (!(event.target as Element).closest('[data-ds="Checkbox"]')) toggleRow(row.id);
+              // A click on the Checkbox itself arrives through its onChange; anywhere else in the cell toggles here.
+              if (!(event.target as Element).closest('[data-ds="Checkbox"]')) pressSelectCell(row.id, event.shiftKey);
             }}
           >
             <Checkbox
@@ -1235,7 +1306,11 @@ export function DataGrid({
               value={row.id}
               checked={isSelected}
               tabIndex={-1}
-              onChange={() => toggleRow(row.id)}
+              overrides={SELECT_CHECKBOX_OVERRIDES}
+              onChange={() => {
+                pressSelectCell(row.id, selectModifierRef.current.shift);
+                selectModifierRef.current = { shift: false };
+              }}
             />
           </div>
         ) : null}
@@ -1262,24 +1337,20 @@ export function DataGrid({
         insetInlineStart: widthSpan(0, bounds.left),
         inlineSize: widthSpan(bounds.left, bounds.right + 1),
       };
-      overlay = (
-        <div aria-hidden="true" className="ds-data-grid__range-overlay" data-part="rangeOverlay">
-          <div className="ds-data-grid__range-fill" style={rect} />
-          <div className="ds-data-grid__range-border" style={rect} />
-        </div>
-      );
+      // One element carries fill and edge, beneath the rows, so cell text sits on rangeBackground.
+      overlay = <div aria-hidden="true" className="ds-data-grid__range-overlay" data-part="rangeOverlay" style={rect} />;
     }
   }
 
   /* ---------- status bar ---------- */
-  const liveText = loading ? COPY.loading : editError ? interpolate(COPY.invalid, { message: editError }) : announcement;
+  const liveText = loading ? COPY.loading : announcement;
   const activeColumn = dataColumnAt(activeCol);
   const position = activeRow >= 0 && activeColumn ? interpolate(COPY.position, { row: activeRow + 1, column: activeColumn.header }) : '';
   const statusTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
     fontSize: overrides?.statusBarSize ?? 'font.size.xs',
   };
   /** Beside the live span, in this order and no other: row count, selection count, scroll hint, position. */
-  const statusItems = [interpolate(pluralForm(COPY.rowCount, total), { count: total })];
+  const statusItems = [interpolate(pluralForm(COPY.rowCount, total, locale), { count: total })];
   if (selectable === 'row' && selectedIds.length > 0) {
     statusItems.push(interpolate(COPY.selectedRows, { count: selectedIds.length, total }));
   }
@@ -1303,6 +1374,8 @@ export function DataGrid({
         'ds-data-grid',
         `ds-data-grid--density-${density}`,
         `ds-data-grid--height-${height}`,
+        // A selection column needs a full minTarget Checkbox: comfortable rows at both densities.
+        hasSelectColumn && 'ds-data-grid--select-column',
         virtualize && 'ds-data-grid--virtual',
         (stickyHeader || virtualize) && 'ds-data-grid--sticky-header',
         scrollTop > 0 && 'ds-data-grid--scrolled-y',
@@ -1313,7 +1386,7 @@ export function DataGrid({
     >
       <span ref={stepSizerRef} aria-hidden="true" className="ds-data-grid__sizer ds-data-grid__sizer--step" />
       <span ref={targetSizerRef} aria-hidden="true" className="ds-data-grid__sizer ds-data-grid__sizer--target" />
-      <div data-part="caption" className={hideCaption ? 'ds-data-grid__visually-hidden' : 'ds-data-grid__caption'}>
+      <span data-part="caption" className={hideCaption ? 'ds-data-grid__visually-hidden' : 'ds-data-grid__caption'}>
         <Heading
           id={captionId}
           level={captionLevel}
@@ -1326,7 +1399,7 @@ export function DataGrid({
         >
           {caption}
         </Heading>
-      </div>
+      </span>
       <div ref={scrollRef} data-part="scrollRegion" className="ds-data-grid__scroll-region" onScroll={handleScroll}>
         <div
           ref={gridRef}
@@ -1379,6 +1452,7 @@ export function DataGrid({
                     checked={allSelected}
                     indeterminate={someSelected}
                     tabIndex={-1}
+                    overrides={SELECT_CHECKBOX_OVERRIDES}
                     onChange={toggleAll}
                   />
                 </div>
@@ -1420,7 +1494,17 @@ export function DataGrid({
           aria-live="polite"
           overrides={statusTextOverrides}
         >
-          {liveText}
+          {editError && !loading ? (
+            // cellInvalidForeground: a cellInvalidBackground span re-scoping --color-foreground around a
+            // default-tone Text, since Text.color is locked.
+            <span className="ds-data-grid__invalid">
+              <Text element="span" size="xs" overrides={statusTextOverrides}>
+                {interpolate(COPY.invalid, { message: editError })}
+              </Text>
+            </span>
+          ) : (
+            liveText
+          )}
         </Text>
         {showStatusBar
           ? statusItems.map((text) => (

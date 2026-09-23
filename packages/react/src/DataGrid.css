@@ -1,6 +1,10 @@
-/* DataGrid — styled only through Design Schema token custom properties. */
+/* DataGrid — styled only through Design Schema token custom properties. Every binding is a hook on
+   the root; locked bindings keep theirs (themeable from page CSS, never through `overrides`).
+   captionSize/captionWeight and statusBarSize are forwarded to the composed Heading/Text and
+   declare no hook here. */
 
 .ds-data-grid {
+  /* overridable */
   --ds-data-grid-header-weight: var(--font-weight-semibold);
   --ds-data-grid-header-size: var(--font-size-sm);
   --ds-data-grid-header-border: var(--color-border-strong);
@@ -15,12 +19,8 @@
   --ds-data-grid-resize-handle: var(--color-border-strong);
   --ds-data-grid-resize-handle-width: var(--space-1);
   --ds-data-grid-resize-step: var(--space-4);
-  --ds-data-grid-status-bar-size: var(--font-size-xs);
   --ds-data-grid-status-bar-padding: var(--space-2);
   --ds-data-grid-status-bar-gap: var(--space-2);
-  /* captionSize / captionWeight are forwarded to the caption Heading's own overrides. */
-  --ds-data-grid-caption-size: var(--font-size-md);
-  --ds-data-grid-caption-weight: var(--font-weight-semibold);
   --ds-data-grid-caption-gap: var(--space-2);
   --ds-data-grid-fixed-height: var(--space-20);
   --ds-data-grid-font-family: var(--font-family-body);
@@ -28,26 +28,57 @@
   --ds-data-grid-line-height: var(--font-line-height-tight);
   --ds-data-grid-numeric-font: var(--font-family-mono);
   --ds-data-grid-transition: var(--motion-duration-fast);
-  /* Internal, not an override hook: the locked rowHeight / rowHeightComfortable binding for the density. */
-  --ds-data-grid-row-size: var(--size-target-min);
-  /* Internal: the columnWidth binding as the rule uses it — an override replaces the base, the × 2 stays. */
+  /* locked */
+  --ds-data-grid-surface: var(--color-background);
+  --ds-data-grid-header-surface: var(--color-background-subtle);
+  --ds-data-grid-header-color: var(--color-foreground);
+  --ds-data-grid-row-height: var(--size-target-min);
+  --ds-data-grid-row-height-comfortable: var(--size-target-comfortable);
+  --ds-data-grid-row-selected: var(--color-background-subtle);
+  --ds-data-grid-row-selected-border: var(--color-control-selected-background);
+  --ds-data-grid-row-selected-border-width: var(--border-width-focus);
+  --ds-data-grid-cell-color: var(--color-foreground);
+  --ds-data-grid-cell-muted-color: var(--color-foreground-muted);
+  --ds-data-grid-select-column-width: var(--size-target-min);
+  --ds-data-grid-cell-focus-ring: var(--color-border-focus);
+  --ds-data-grid-cell-focus-ring-width: var(--border-width-focus);
+  --ds-data-grid-cell-editing-background: var(--color-control-background);
+  --ds-data-grid-cell-editing-border: var(--color-border-focus);
+  --ds-data-grid-cell-invalid-border: var(--color-border-danger);
+  --ds-data-grid-cell-invalid-background: var(--color-status-danger-background);
+  --ds-data-grid-cell-invalid-foreground: var(--color-status-danger-foreground);
+  --ds-data-grid-range-background: var(--color-background-strong);
+  --ds-data-grid-range-border: var(--color-control-selected-background);
+  --ds-data-grid-range-border-width: var(--border-width-focus);
+  --ds-data-grid-status-bar-surface: var(--color-background-subtle);
+  --ds-data-grid-status-bar-color: var(--color-foreground-muted);
+  --ds-data-grid-min-target: var(--size-target-min);
+  --ds-data-grid-focus-ring: var(--color-border-focus);
+  --ds-data-grid-focus-ring-width: var(--border-width-focus);
+  /* Internal, not hooks: the density-selected row height, the doubled columnWidth, the select column. */
+  --ds-data-grid-row-size: var(--ds-data-grid-row-height);
   --ds-data-grid-column-size: calc(var(--ds-data-grid-column-width) * 2);
+  --ds-data-grid-select-column-size: calc(
+    var(--ds-data-grid-select-column-width) + 2 * var(--ds-data-grid-cell-padding-inline)
+  );
   position: relative;
   display: flex;
   flex-direction: column;
   font-family: var(--ds-data-grid-font-family);
   font-size: var(--ds-data-grid-font-size);
   line-height: var(--ds-data-grid-line-height);
-  /* surface / cellColor: locked */
-  background-color: var(--color-background);
-  color: var(--color-foreground);
+  background-color: var(--ds-data-grid-surface);
+  color: var(--ds-data-grid-cell-color);
 }
 
-.ds-data-grid--density-comfortable {
-  --ds-data-grid-row-size: var(--size-target-comfortable);
+/* rowHeightComfortable: the comfortable density, and every grid with a selection column. */
+.ds-data-grid--density-comfortable,
+.ds-data-grid--select-column {
+  --ds-data-grid-row-size: var(--ds-data-grid-row-height-comfortable);
 }
 
 .ds-data-grid__caption {
+  display: block;
   padding-block-end: var(--ds-data-grid-caption-gap);
 }
 
@@ -76,8 +107,7 @@
   inline-size: var(--ds-data-grid-resize-step);
 }
 .ds-data-grid__sizer--target {
-  /* minTarget: locked */
-  inline-size: var(--size-target-min);
+  inline-size: var(--ds-data-grid-min-target);
 }
 
 .ds-data-grid__scroll-region {
@@ -86,6 +116,12 @@
   border: var(--ds-data-grid-grid-line-width) solid var(--ds-data-grid-grid-line);
   /* Cells scrolled into view clear the sticky header row. */
   scroll-padding-block-start: var(--ds-data-grid-row-size);
+}
+
+/* focusRing: drawn by the scroll region while the grid inside it is :focus-visible, never clipped. */
+.ds-data-grid__scroll-region:has(> .ds-data-grid__grid:focus-visible) {
+  outline: var(--ds-data-grid-focus-ring-width) solid var(--ds-data-grid-focus-ring);
+  outline-offset: 0;
 }
 
 /* `viewport` and `fixed` size the whole component; the scroll region takes what the caption
@@ -107,18 +143,12 @@
 .ds-data-grid__grid {
   position: relative;
   min-inline-size: max-content;
-}
-
-/* focusRing / focusRingWidth: locked */
-.ds-data-grid__grid:focus-visible {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: calc(-1 * var(--border-width-focus));
+  outline: none;
 }
 
 .ds-data-grid__header {
-  /* headerSurface / headerColor: locked */
-  background-color: var(--color-background-subtle);
-  color: var(--color-foreground);
+  background-color: var(--ds-data-grid-header-surface);
+  color: var(--ds-data-grid-header-color);
   font-weight: var(--ds-data-grid-header-weight);
   font-size: var(--ds-data-grid-header-size);
   border-block-end: var(--ds-data-grid-header-border-width) solid var(--ds-data-grid-header-border);
@@ -139,7 +169,6 @@
   display: grid;
   inline-size: max-content;
   min-inline-size: 100%;
-  /* rowHeight / rowHeightComfortable: locked */
   block-size: var(--ds-data-grid-row-size);
 }
 
@@ -167,18 +196,18 @@
   }
 }
 
-/* rowSelected / rowSelectedBorder / rowSelectedBorderWidth: locked */
-.ds-data-grid__row[aria-selected='true'],
-.ds-data-grid__row[aria-selected='true'] .ds-data-grid__cell--pinned {
-  background-color: var(--color-background-subtle);
+/* rowSelected wins over rowHover; rowSelectedBorder is the start-edge bar. */
+.ds-data-grid__body > .ds-data-grid__row[aria-selected='true'],
+.ds-data-grid__body > .ds-data-grid__row[aria-selected='true'] .ds-data-grid__cell--pinned {
+  background-color: var(--ds-data-grid-row-selected);
 }
 .ds-data-grid__row[aria-selected='true']::before {
   content: '';
   position: absolute;
   inset-block: 0;
   inset-inline-start: 0;
-  inline-size: var(--border-width-focus);
-  background-color: var(--color-control-selected-background);
+  inline-size: var(--ds-data-grid-row-selected-border-width);
+  background-color: var(--ds-data-grid-row-selected-border);
   z-index: calc(var(--layer-raised) + 1);
 }
 
@@ -218,46 +247,46 @@
 
 /* cellMutedColor: existing rows while loading. */
 .ds-data-grid--loading .ds-data-grid__body .ds-data-grid__cell {
-  color: var(--color-foreground-muted);
+  color: var(--ds-data-grid-cell-muted-color);
 }
 
+/* selectColumnWidth: the cell has no inline padding of its own; the Checkbox is centred. */
 .ds-data-grid__cell--select {
   justify-content: center;
+  padding-inline: 0;
 }
 
 .ds-data-grid__cell--pinned {
   position: sticky;
   z-index: var(--layer-raised);
-  background-color: var(--color-background);
+  background-color: var(--ds-data-grid-surface);
 }
 .ds-data-grid__header .ds-data-grid__cell--pinned {
-  background-color: var(--color-background-subtle);
+  background-color: var(--ds-data-grid-header-surface);
 }
 .ds-data-grid--scrolled-x .ds-data-grid__cell--pinned {
   box-shadow: var(--ds-data-grid-pinned-shadow);
 }
 
-/* cellFocusRing / cellFocusRingWidth: locked; inset so neighbors and the scroll region never clip it. */
+/* cellFocusRing: inset so neighbors and the scroll region never clip it; pointer focus included. */
 .ds-data-grid__grid:focus-within .ds-data-grid__cell--active {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: calc(-1 * var(--border-width-focus));
+  outline: var(--ds-data-grid-cell-focus-ring-width) solid var(--ds-data-grid-cell-focus-ring);
+  outline-offset: calc(-1 * var(--ds-data-grid-cell-focus-ring-width));
 }
 
-/* cellEditingBackground / cellEditingBorder: locked */
 .ds-data-grid__cell--editing,
 .ds-data-grid__grid:focus-within .ds-data-grid__cell--editing {
-  background-color: var(--color-control-background);
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: calc(-1 * var(--border-width-focus));
+  background-color: var(--ds-data-grid-cell-editing-background);
+  outline: var(--ds-data-grid-cell-focus-ring-width) solid var(--ds-data-grid-cell-editing-border);
+  outline-offset: calc(-1 * var(--ds-data-grid-cell-focus-ring-width));
   overflow: visible;
 }
 
-/* cellInvalidBorder / cellInvalidBackground / cellInvalidForeground: locked */
+/* The invalid cell shows only cellInvalidBackground and cellInvalidBorder; the editor is untouched. */
 .ds-data-grid__cell--invalid,
 .ds-data-grid__grid:focus-within .ds-data-grid__cell--invalid {
-  background-color: var(--color-status-danger-background);
-  color: var(--color-status-danger-foreground);
-  outline-color: var(--color-border-danger);
+  background-color: var(--ds-data-grid-cell-invalid-background);
+  outline-color: var(--ds-data-grid-cell-invalid-border);
 }
 
 .ds-data-grid__editor {
@@ -277,7 +306,7 @@
   cursor: col-resize;
   touch-action: none;
 }
-.ds-data-grid__cell--active .ds-data-grid__resize-handle {
+.ds-data-grid__grid:focus-within .ds-data-grid__cell--active .ds-data-grid__resize-handle {
   background-color: var(--ds-data-grid-resize-handle);
 }
 @media (hover: hover) {
@@ -297,35 +326,30 @@
   padding-inline: var(--ds-data-grid-cell-padding-inline);
 }
 
-/* rangeBackground / rangeBorder / rangeBorderWidth: locked. The fill sits under the rows, the border above. */
+/* rangeBackground / rangeBorder / rangeBorderWidth: one overlay element beneath the rows. */
 .ds-data-grid__range-overlay {
-  display: contents;
-}
-.ds-data-grid__range-fill,
-.ds-data-grid__range-border {
   position: absolute;
   box-sizing: border-box;
   pointer-events: none;
-}
-.ds-data-grid__range-fill {
-  background-color: var(--color-background-strong);
-}
-.ds-data-grid__range-border {
-  border: var(--border-width-focus) solid var(--color-control-selected-background);
-  z-index: calc(var(--layer-raised) + 1);
+  background-color: var(--ds-data-grid-range-background);
+  border: var(--ds-data-grid-range-border-width) solid var(--ds-data-grid-range-border);
 }
 
-/* statusBarSurface / statusBarColor: locked. statusBarGap sits between the items, which are laid
-   out in the declared order with no separator characters. */
+/* The bar the grid owns: statusBarSurface/Padding/Gap. Items in the declared order, no separators. */
 .ds-data-grid__status-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--ds-data-grid-status-bar-gap);
   padding: var(--ds-data-grid-status-bar-padding);
-  background-color: var(--color-background-subtle);
-  color: var(--color-foreground-muted);
-  font-size: var(--ds-data-grid-status-bar-size);
+  background-color: var(--ds-data-grid-status-bar-surface);
+  color: var(--ds-data-grid-status-bar-color);
   border: var(--ds-data-grid-grid-line-width) solid var(--ds-data-grid-grid-line);
   border-block-start: 0;
+}
+
+/* cellInvalidForeground: re-scopes the foreground around a default-tone Text. */
+.ds-data-grid__invalid {
+  --color-foreground: var(--ds-data-grid-cell-invalid-foreground);
+  background-color: var(--ds-data-grid-cell-invalid-background);
 }

@@ -309,7 +309,9 @@ export function NumberInput({
   const formatNumber = (num: number): string => formatter.format(format === 'percent' ? num / 100 : num);
 
   const prefixText = format === 'currency' || leadingText === '' ? undefined : leadingText;
-  const suffixText = trailingText !== undefined && trailingText !== '' ? trailingText : unitFallback ? unit : undefined;
+  // Percent draws its own sign, as currency draws its own symbol: a field never shows two.
+  const suffixText =
+    format === 'percent' ? undefined : trailingText !== undefined && trailingText !== '' ? trailingText : unitFallback ? unit : undefined;
 
   // A controlled value that moves away from what is typed takes over the display.
   React.useEffect(() => {
@@ -382,15 +384,18 @@ export function NumberInput({
   const ownError = error !== undefined && error !== '' ? error : undefined;
   const markedInvalid = invalid || formMarked;
   // What the errorMessage part draws: `error`, else the Form's message, else — only while the field is
-  // marked invalid — the derived copy, else committed non-numeric text, else the clamp. An untouched
-  // empty required field is never flagged, so `copy.required` needs the mark too.
-  const derivedError = markedInvalid
-    ? required && currentValue === undefined
-      ? COPY.required(label)
-      : COPY.invalid(label)
-    : textInvalid
-      ? COPY.invalid(label)
-      : (clampMessage ?? undefined);
+  // marked invalid — `copy.required` for an empty required field or `copy.invalid` when there is no
+  // number, else committed non-numeric text, else the clamp. An untouched empty required field is never
+  // flagged, so `copy.required` needs the mark too; `invalid` over a valid number draws nothing, since
+  // `copy.invalid` would claim a number is not a number (the danger border carries the state).
+  const derivedError =
+    markedInvalid && currentValue === undefined
+      ? required && !textInvalid
+        ? COPY.required(label)
+        : COPY.invalid(label)
+      : textInvalid
+        ? COPY.invalid(label)
+        : (clampMessage ?? undefined);
   const displayedError = ownError ?? (formError !== undefined && formError !== '' ? formError : derivedError);
   const isInvalid = markedInvalid || displayedError !== undefined;
   const summarised = form !== null && form.errorSummary;
@@ -521,6 +526,8 @@ export function NumberInput({
   };
 
   const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
+  // RN has no aria-describedby on a TextInput: the description and the drawn error reach the field as its hint.
+  const hint = [description, displayedError].filter((part) => part !== undefined && part !== '').join(' ');
   const accessibleName = fieldset !== null ? `${fieldset.legend}, ${visibleLabel}` : visibleLabel;
 
   const borderInvalidColor = overrides?.borderInvalid ? (resolveToken(t, overrides.borderInvalid) as string) : t.colorBorderDanger;
@@ -653,11 +660,13 @@ export function NumberInput({
             testID="NumberInput.input"
             accessibilityRole="adjustable"
             accessibilityLabel={accessibleName}
-            accessibilityHint={description === '' ? undefined : description}
+            aria-label={accessibleName}
+            accessibilityHint={hint === '' ? undefined : hint}
             accessibilityState={{ disabled: isDisabled }}
             aria-disabled={isDisabled}
             // Only `text`: Android takes integers in min/max/now and the value may be fractional.
             accessibilityValue={{ text: valueText }}
+            aria-valuetext={valueText}
             accessibilityActions={STEP_ACTIONS}
             onAccessibilityAction={handleAccessibilityAction}
             keyboardType={keyboardType}

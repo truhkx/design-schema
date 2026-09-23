@@ -50,3 +50,24 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - ProgressBar: on RN, `hideLabel` with `showValue: false` leaves no header content, so the header View is not rendered at all and `testID="ProgressBar.header"` is absent in that configuration. The spec only states that the `label` part has no native home while hidden; it does not say whether `header` must still exist as a part.
 - ProgressBar: nothing in the schema covers a label longer than the header row. Added `flexShrink: 1` on the label wrapper so it wraps instead of pushing the value text out — layout, no token involved, so it is invisible to the overrides contract.
 - ProgressBar: the 10 behavior scenarios are 8 derived render/name checks plus two label checks — they gate none of the announcement tiers, the indeterminate copy, the backward reset, the invalid range, the non-finite bounds, or the reduced-motion fill, which is where all the real logic is. I verified those with a throwaway suite that I deleted; the doc needs scenarios for them or the next regeneration can silently lose the state machine.
+
+## 2026-09-23 14:42 — round 1
+
+- ProgressBar: the invalid-range rule says aria-valuetext is "0%", but formatValue says the formatter is called with the clamped value; it doesn't say whether a custom formatValue is used when max <= min. I always use the default percentage there ("0%" in the device locale) and never call the custom formatter.
+- ProgressBar: 'Repeats' (announce again even if the text is the same) and 'Backward' only make sense when the value moves, but a re-render with the same value and a changed label or formatValue (so a new valueText) is not covered. Announcements run only when the tier changes, so a label change alone is silent.
+- ProgressBar: Guidance › React Native says `accessibilityRole="progressbar"` while platforms.rn.notes says the `role="progressbar"` prop and not accessibilityRole. I followed the notes (role prop plus aria-label), as Meter does.
+- ProgressBar: the 'transition' binding's easing is fixed to motion.easing.standard with no override hook, but sweepEasing is overridable. It isn't stated whether a sweepEasing override should also apply to the determinate fill. I kept it on the sweep only.
+- ProgressBar: 'announced once after mount' is defined for web/Lit (next animation frame) but not for RN. I call announceForAccessibility from the mount effect, with no extra delay.
+- ProgressBar: hideLabel with showValue still shows the value text at the end of the row, but the spec doesn't give RN alignItems for the header. I kept 'baseline', as Meter does.
+- ProgressBar: the spec says the announcement state machine is covered by each platform package's own tests, but ProgressBar.test.tsx is meant to hold the behavior scenarios. I put those tests in a second describe block in the same file rather than a separate file.
+
+## 2026-09-23 14:42 — round 1
+
+- ProgressBar: the Guidance's React Native section says `accessibilityRole="progressbar"`, but platforms.rn.notes says to use the `role="progressbar"` prop and not accessibilityRole. I followed the notes (role prop); the Guidance line should be updated to match.
+- ProgressBar: platforms.rn.props doesn't list `aria-label`, but the package convention says to mirror accessibilityLabel as aria-label. I added aria-label to the root beside accessibilityLabel; the rn props list could name it.
+- ProgressBar: the composition props give `element: span` for both Texts, but the RN Text has no element concept. I left it out; the doc could say `element` is web/Lit-only.
+- ProgressBar: the Invalid range rule says a bar that was invalid records its first valid value silently. It doesn't say what happens if the bar goes invalid → indeterminate → valid. Entering the indeterminate state re-arms announcing (per the Indeterminate rule), so here the first valid value announces its tier. The doc should say which rule wins.
+- ProgressBar: it isn't stated what the determinate fill animates from when the bar switches from indeterminate to determinate (the old width, or 0). The code animates from the last determinate width, and snaps if the track hasn't been laid out yet.
+- ProgressBar: the header's cross-axis alignment between label and value text isn't specified. I used alignItems 'baseline' (layout only, no token).
+- ProgressBar: the value text's wrapping isn't specified. Its wrapper has flexShrink 0 so only the label wraps; Meter's doc could share the same wording.
+- ProgressBar: formatValue for an invalid range must show "0%". The code always uses the default percentage formatter there, even when a custom formatValue is passed; the doc only implies this.

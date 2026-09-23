@@ -117,4 +117,33 @@ describe('Stepper', () => {
     const s = setup({ label: 'Accessible name' });
     expect(s.container()).toHaveAccessibleName('Accessible name');
   });
+
+  // The status-word scenarios are scoped to web and Lit; on native the word lives in each step's accessibilityLabel.
+  it('step-status-is-said-in-words (native accessibilityLabel)', () => {
+    setup({
+      navigable: 'none',
+      current: 'payment',
+      steps: [
+        { id: 'shipping', label: 'Shipping address' },
+        { id: 'payment', label: 'Payment' },
+        { id: 'review', label: 'Review order' },
+      ],
+    });
+    expect(screen.getByLabelText('Step 1: Shipping address, completed')).toBeTruthy();
+    expect(screen.getByLabelText('Step 2: Payment, current step')).toBeTruthy();
+    expect(screen.getByLabelText('Step 3: Review order')).toBeTruthy();
+  });
+
+  it('an-errored-step-says-so (native accessibilityLabel)', () => {
+    setup({
+      navigable: 'none',
+      current: 'review',
+      steps: [
+        { id: 'shipping', label: 'Shipping address', status: 'complete' },
+        { id: 'payment', label: 'Payment', status: 'error' },
+        { id: 'review', label: 'Review order' },
+      ],
+    });
+    expect(screen.getByLabelText('Step 2: Payment, has an error')).toBeTruthy();
+  });
 });

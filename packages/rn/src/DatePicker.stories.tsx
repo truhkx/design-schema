@@ -76,6 +76,24 @@ export const AppointmentWithWeekNumbers: Story = {
 /** A small field inside a grid cell, named by its column. */
 export const CompactCellEditor: Story = { args: { label: 'Due date', name: 'due', size: 'sm', hideLabel: true } };
 
+/** A field that already holds a date, shown in the locale's pattern. */
+export const WithAValue: Story = { args: { label: 'Due date', name: 'due', defaultValue: '2026-09-10' } };
+
+/** A range that already holds both ends, so the calendar shows the bar between them. */
+export const RangeWithDates: Story = {
+  args: { label: 'Stay', name: 'stay', range: true, defaultValue: { start: '2026-09-10', end: '2026-09-14' } },
+};
+
+/** A field whose value was rejected, with the message under it. */
+export const WithAnError: Story = {
+  args: { label: 'Due date', name: 'due', defaultValue: '2026-09-10', error: 'Choose a date at least two days from now.' },
+};
+
+/** The same field in a locale whose pattern, month names and first day of the week all differ. */
+export const GermanLocale: Story = {
+  args: { label: 'Fälligkeitsdatum', name: 'due', locale: 'de-DE', defaultValue: '2026-09-10' },
+};
+
 /**
  * Starts open with at least three focusable children in the sheet — the previous/next
  * month Buttons, the month and year Selects, the day grid and Today/Clear — for the axe

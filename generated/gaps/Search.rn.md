@@ -55,3 +55,21 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Search: the clear button is specified to return focus to the input, but nothing is said about focus after the submit button or after choosing a suggestion. I refocus only after clear and leave focus where it is otherwise.
 - Search: an empty trimmed query does not fire onSubmit, but the doc does not say whether that attempt should still close an open suggestions list. I close the list on every submit attempt, empty or not.
 - Search: the keyboard table's Tab rule ("to the clear button, then the submit button") has no native equivalent and on react-native-web falls out of DOM order, so nothing is implemented for it; likewise Escape and ArrowDown only reach the field through onKeyPress from a hardware keyboard.
+
+## 2026-09-23 14:45 — round 1
+
+- Search: the disabled prop and Form-level disabled say to unregister from the Form, but the RN FormContext says a disabled field 'stays registered and reports isDisabled()'. I kept the unregister the Search spec asks for; one of the two docs should give way.
+- Search: 'a blur with no new focus target, such as a window switch, does not close it' can't be told apart from a real blur on React Native (onBlur carries no relatedTarget). Every blur outside a press in the list closes it.
+- Search: the plural form should follow 'the locale of the nearest [lang] ancestor, falling back to the device locale'. Native has no [lang] ancestor, so it uses new Intl.PluralRules(undefined), the runtime default. The rn notes could say this.
+- Search: the rn props list has role=searchbox, while the web notes switch the input to role=combobox whenever suggestions is set. The rn notes don't say whether native switches too. I kept searchbox and exposed the open state through accessibilityState.expanded / aria-expanded, which on react-native-web puts aria-expanded on a searchbox role (not a valid ARIA pairing).
+- Search: popupShadow resolves to the RN shadow style object, but the docs don't say which RN shadow props (shadowColor/Offset/Opacity/Radius, elevation, boxShadow) the shadow.overlay token carries. It is spread into the inline list's style as is.
+- Search: the 'target-24px' requirement and the 'minTarget: size.target.comfortable' binding pull in different directions for the field row. The row uses minHeight t.sizeTargetComfortable; the Buttons bring their own targets.
+- Search: disabled says 'every key is inert and no event fires', and the controlled contract says 'the event fired in both modes'. The docs don't say whether a controlled disabled Search that the caller changes programmatically should report anything. It doesn't.
+
+## 2026-09-23 14:45 — round 1
+
+- Search: platforms.rn.props lists `accessibilityRole=search` among the TextInput's props, but the notes say it goes only on the container View and never on the TextInput; the notes win (the existing file already does this).
+- Search: the input's role is `searchbox` on native (platforms.rn.props), but with `suggestions` it also carries `accessibilityState.expanded`. The mirror-every-prop rule calls for `aria-expanded`, which ARIA does not allow on `searchbox`, so axe's aria-allowed-attr would fail. The spec should say whether native switches to `role="combobox"` while `suggestions` is set (as web does) or leaves `expanded` unmirrored. I would have left it unmirrored.
+- Search: the `aria-disabled` on the dimmed root is required only by the disabledOpacity description, not by the platforms.rn notes; the rn notes should name it.
+- Search: the Keyboard story must use the `with-suggestions` example's suggestions (from the Behavior prose), but the Keyboard rules in the spec don't say so.
+- Search: blur-with-no-new-focus-target (a window switch does not close the list) has no native equivalent; native closes on every blur except during a press inside the list. The notes don't say whether that web exemption applies on react-native-web.

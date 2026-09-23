@@ -99,6 +99,12 @@ function statusFor(step: Step, index: number, currentIndex: number): StepperStep
   return index < currentIndex ? 'complete' : 'current';
 }
 
+/**
+ * The DOM mirror of `accessibilityState.selected`, which react-native-web does not map. The web contract marks the
+ * current step with aria-current="step" (aria-selected is not allowed on a button); View's types omit aria-current.
+ */
+const CURRENT_STEP_ATTRS: Record<string, unknown> = { 'aria-current': 'step' };
+
 const STATUS_WORD = {
   complete: COPY.complete,
   current: COPY.current,
@@ -254,6 +260,7 @@ export function Stepper({
         testID="Stepper.list"
         accessibilityRole="list"
         accessibilityLabel={label || COPY.navLabel}
+        aria-label={label || COPY.navLabel}
         style={isHorizontal ? { flexDirection: 'row', alignItems: 'flex-start' } : { flexDirection: 'column' }}
       >
         {nodes}
@@ -333,7 +340,13 @@ function StepControl({
   };
 
   const indicator = (
-    <View testID="Stepper.indicator" style={indicatorStyle} accessibilityElementsHidden importantForAccessibility="no">
+    <View
+      testID="Stepper.indicator"
+      style={indicatorStyle}
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+      aria-hidden
+    >
       {status === 'complete' ? (
         <Icon name="check" size="sm" overrides={{ color: 'color.control.selectedForeground', size: f.indicatorFontSize }} />
       ) : status === 'error' ? (
@@ -392,7 +405,14 @@ function StepControl({
   // The `step` part is the list item, as it is the <li> on web: a list role owns list items and nothing else, so
   // the control (Pressable or plain View) sits inside it rather than being the item itself.
   const control = !isNavigable ? (
-    <View accessible accessibilityLabel={accessibleName} accessibilityState={{ selected: isCurrent }} style={containerStyle(false)}>
+    <View
+      accessible
+      accessibilityLabel={accessibleName}
+      aria-label={accessibleName}
+      accessibilityState={{ selected: isCurrent }}
+      {...(isCurrent ? CURRENT_STEP_ATTRS : null)}
+      style={containerStyle(false)}
+    >
       {indicator}
       {textBlock}
     </View>
@@ -400,7 +420,9 @@ function StepControl({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibleName}
+      aria-label={accessibleName}
       accessibilityState={{ selected: isCurrent }}
+      {...(isCurrent ? CURRENT_STEP_ATTRS : null)}
       onPress={() => onStepSelect?.(step.id)}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
@@ -478,7 +500,7 @@ function Connector({ isHorizontal, complete, reducedMotion, t, r }: ConnectorPro
     : { flex: 1, width: t.borderWidthFocus, backgroundColor };
 
   return (
-    <View testID="Stepper.connector" accessibilityElementsHidden importantForAccessibility="no" style={track}>
+    <View testID="Stepper.connector" accessibilityElementsHidden importantForAccessibility="no" aria-hidden style={track}>
       <Animated.View style={line} />
     </View>
   );

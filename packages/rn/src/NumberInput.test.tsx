@@ -1,9 +1,10 @@
 /**
  * NumberInput — behavior scenarios from the component doc, one test each, in the doc's order.
  * `onChange` is emitted as `onChangeText`; a click is `fireEvent.press` on the stepper's
- * Button, found with `includeHiddenElements` because the steppers are hidden from assistive
- * technology (the adjustable actions cover them). Arrow-key and aria-value* scenarios are
- * web/Lit only (the parser narrows them). See generated/prompts/NumberInput.rn.md.
+ * Button, found inside the wrapper View carrying the part testID (Button takes none). Parts are
+ * queried with `includeHiddenElements` because the affix Texts are hidden from assistive
+ * technology. Arrow-key and aria-value* scenarios are web/Lit only (the parser narrows them).
+ * See generated/prompts/NumberInput.rn.md.
  */
 import * as React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
@@ -105,6 +106,7 @@ describe('NumberInput', () => {
   it('has-accessible-name', () => {
     const s = setup();
     expect(s.input().props.accessibilityLabel).toBe(s.props.label);
+    expect(s.input().props['aria-label']).toBe(s.props.label);
   });
 
   /* derived: error-identification */

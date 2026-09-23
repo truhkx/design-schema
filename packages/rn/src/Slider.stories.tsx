@@ -6,14 +6,10 @@ const meta: Meta<typeof Slider> = {
   title: 'Slider/React Native',
   component: Slider,
   decorators: [withTheme()],
+  // Only the required props, so each example story below is exactly its `given`.
   args: {
     label: 'Volume',
     name: 'volume',
-    min: 0,
-    max: 100,
-    step: 1,
-    defaultValue: 40,
-    showValue: 'always',
   },
 };
 
@@ -30,32 +26,30 @@ export const ShowValueNever: Story = { args: { showValue: 'never' } };
 
 // Examples from the doc: each renders exactly its `given`.
 export const Volume: Story = {
-  render: () => <Slider label="Volume" name="volume" defaultValue={30} />,
+  args: { label: 'Volume', name: 'volume', defaultValue: 30 },
 };
 
 export const PriceRange: Story = {
-  render: () => <Slider label="Price range" name="price" range defaultValue={[20, 80]} />,
+  args: { label: 'Price range', name: 'price', range: true, defaultValue: [20, 80] },
 };
 
 export const EffortWithMarks: Story = {
-  render: () => (
-    <Slider
-      label="Effort"
-      name="effort"
-      min={1}
-      max={5}
-      marks={[
-        { value: 1, label: 'Low' },
-        { value: 3, label: 'Medium' },
-        { value: 5, label: 'High' },
-      ]}
-      snapToMarks
-    />
-  ),
+  args: {
+    label: 'Effort',
+    name: 'effort',
+    min: 1,
+    max: 5,
+    marks: [
+      { value: 1, label: 'Low' },
+      { value: 3, label: 'Medium' },
+      { value: 5, label: 'High' },
+    ],
+    snapToMarks: true,
+  },
 };
 
 export const PairedWithANumberInput: Story = {
-  render: () => <Slider label="Zoom" name="zoom" min={50} max={200} step={10} defaultValue={100} showValue="never" />,
+  args: { label: 'Zoom', name: 'zoom', min: 50, max: 200, step: 10, defaultValue: 100, showValue: 'never' },
 };
 
 // States

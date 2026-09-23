@@ -162,7 +162,10 @@ function snapValue(raw: number, min: number, max: number, step: number, snapMark
   if (step <= 0) {
     return clamped;
   }
-  return clamp(tidy(min + Math.round((clamped - min) / step) * step), min, max);
+  const onGrid = clamp(tidy(min + Math.round((clamped - min) / step) * step), min, max);
+  // When (max - min) is not a whole number of steps, the last partial step still snaps to `max`,
+  // so the maximum is reachable by drag and press and not only by the `end` action.
+  return max - clamped < Math.abs(clamped - onGrid) ? max : onGrid;
 }
 
 /** Ten steps in `direction`; with `snapToMarks`, the next mark, and past the last mark the bound. */
@@ -218,7 +221,12 @@ interface SliderThumbProps {
   showBubble: boolean;
   bubbleTypography: { fontFamily: TokenRef | undefined; fontSize: TokenRef | undefined };
   reducedMotion: boolean;
-  onGrant: (kind: ThumbKind) => void;
+  /** The label's nativeID; a single thumb is labelled by it, a range thumb by its own copy label. */
+  labelledBy: string | undefined;
+  /** ARIA the native props have no spelling for (aria-invalid, aria-required, aria-describedby, aria-orientation); web only. */
+  webProps: Record<string, unknown>;
+  /** `offset` is the press position relative to the knob's centre, in physical pixels along the track. */
+  onGrant: (kind: ThumbKind, offset: number) => void;
   onDrag: (dx: number) => void;
   onRelease: () => void;
   onAction: (kind: ThumbKind, action: string) => void;
@@ -265,6 +273,8 @@ function SliderThumb({
   showBubble,
   bubbleTypography,
   reducedMotion,
+  labelledBy,
+  webProps,
   onGrant,
   onDrag,
   onRelease,
@@ -272,17 +282,25 @@ function SliderThumb({
   styleTokens: st,
   ref,
 }: SliderThumbProps): React.JSX.Element {
+  // Any focus shows the bubble; only keyboard focus shows the ring. A pointer press grants the
+  // responder before the focus it causes arrives, so focus following a press is not "visible".
   const [focused, setFocused] = React.useState(false);
+  const [focusVisible, setFocusVisible] = React.useState(false);
+  const pointerRef = React.useRef(false);
 
-  const latest = React.useRef({ disabled, onGrant, onDrag, onRelease });
-  latest.current = { disabled, onGrant, onDrag, onRelease };
+  const latest = React.useRef({ disabled, onGrant, onDrag, onRelease, minTarget: st.minTarget });
+  latest.current = { disabled, onGrant, onDrag, onRelease, minTarget: st.minTarget };
 
   const panResponder = React.useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => !latest.current.disabled,
+      onStartShouldSetPanResponder: () => {
+        pointerRef.current = true;
+        return !latest.current.disabled;
+      },
       onMoveShouldSetPanResponder: () => !latest.current.disabled,
       onPanResponderTerminationRequest: () => false,
-      onPanResponderGrant: () => latest.current.onGrant(kind),
+      onPanResponderGrant: (evt: GestureResponderEvent) =>
+        latest.current.onGrant(kind, evt.nativeEvent.locationX - latest.current.minTarget / 2),
       onPanResponderMove: (_evt, gesture) => latest.current.onDrag(gesture.dx),
       onPanResponderRelease: () => latest.current.onRelease(),
       onPanResponderTerminate: () => latest.current.onRelease(),
@@ -344,15 +362,26 @@ function SliderThumb({
     ...st.thumbShadow,
   };
 
-  const bubbleStyle: Animated.WithAnimatedValue<ViewStyle> = {
+  // The bubble sizes to its content on one line, centred on the thumb, and may overflow the hit
+  // area: an invisible strip five hit areas wide gives it room so a short value does not wrap
+  // inside the thumb's own width.
+  const bubbleStripStyle: ViewStyle = {
     position: 'absolute',
     bottom: st.minTarget + st.bubbleOffset,
+    start: '-200%',
+    end: '-200%',
+    alignItems: 'center',
+  };
+
+  const bubbleStyle: Animated.WithAnimatedValue<ViewStyle> = {
     paddingVertical: st.bubblePaddingBlock,
     paddingHorizontal: st.bubblePaddingInline,
     borderRadius: st.bubbleRadius,
     backgroundColor: st.bubbleSurface,
     opacity: bubbleAnim,
   };
+
+  const valueText = formatValue(value);
 
   return (
     <View
@@ -363,41 +392,47 @@ function SliderThumb({
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
-      accessibilityValue={{ min, max, now: value, text: formatValue(value) }}
+      accessibilityValue={{ min, max, now: value, text: valueText }}
       accessibilityState={{ disabled }}
-      // The aria-* aliases carry the same value and state. React Native merges them into
+      // The aria-* aliases carry the same name, value and state. React Native merges them into
       // `accessibilityValue`/`accessibilityState`; react-native-web has neither prop and forwards
       // only these, and role="slider" (its mapping of `adjustable`) requires aria-valuenow.
+      aria-label={accessibilityLabel}
+      aria-labelledby={labelledBy}
       aria-valuemin={min}
       aria-valuemax={max}
       aria-valuenow={value}
-      aria-valuetext={formatValue(value)}
+      aria-valuetext={valueText}
       aria-disabled={disabled ? true : undefined}
       accessibilityActions={THUMB_ACTIONS}
       onAccessibilityAction={handleAccessibilityAction}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
+      onFocus={() => {
+        setFocused(true);
+        setFocusVisible(!pointerRef.current);
+      }}
+      onBlur={() => {
+        setFocused(false);
+        setFocusVisible(false);
+        pointerRef.current = false;
+      }}
+      {...webProps}
       {...panResponder.panHandlers}
       style={hitStyle}
     >
       {showBubble ? (
-        <Animated.View
-          testID="Slider.bubble"
-          pointerEvents="none"
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          style={bubbleStyle}
-        >
-          {/* bubbleText is locked to color.inverse.foreground; Text reads it from the surface context. */}
-          <TextForegroundContext.Provider value={st.bubbleText}>
-            <Text size="sm" tone="default" overrides={bubbleTypography}>
-              {formatValue(value)}
-            </Text>
-          </TextForegroundContext.Provider>
-        </Animated.View>
+        <View pointerEvents="none" style={bubbleStripStyle}>
+          <Animated.View testID="Slider.bubble" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden style={bubbleStyle}>
+            {/* bubbleText is locked to color.inverse.foreground; Text reads it from the surface context. */}
+            <TextForegroundContext.Provider value={st.bubbleText}>
+              <Text size="sm" tone="default" overrides={bubbleTypography}>
+                {valueText}
+              </Text>
+            </TextForegroundContext.Provider>
+          </Animated.View>
+        </View>
       ) : null}
       <Animated.View pointerEvents="none" style={haloStyle} />
-      {focused ? <View pointerEvents="none" style={ringStyle} /> : null}
+      {focusVisible ? <View pointerEvents="none" style={ringStyle} /> : null}
       <View pointerEvents="none" style={knobStyle} />
     </View>
   );
@@ -454,13 +489,24 @@ export function Slider({
   const fieldset = useFieldsetContext();
   const reducedMotion = useReducedMotion();
   const rtl = I18nManager.isRTL;
+  const baseId = React.useId();
+  const labelId = `${baseId}-label`;
+  const descriptionId = `${baseId}-description`;
+  const errorId = `${baseId}-error`;
 
   const snapMarks = snapToMarks && marks !== undefined && marks.length > 0 ? marks : undefined;
 
   // "The default": `defaultValue` when set, otherwise what `value` itself falls back to — `min`, or
   // `[min, max]` for a range — clamped to [min, max] so `required` and the initial value share one
   // notion of it.
-  const given: SliderValue = defaultValue ?? (range ? [min, max] : min);
+  // A `defaultValue` whose shape does not match `range` falls back silently to that mode's default.
+  const given: SliderValue = range
+    ? Array.isArray(defaultValue)
+      ? defaultValue
+      : [min, max]
+    : typeof defaultValue === 'number'
+      ? defaultValue
+      : min;
   const fallback: SliderValue = Array.isArray(given) ? [clamp(given[0], min, max), clamp(given[1], min, max)] : clamp(given, min, max);
 
   const [internalValue, setInternalValue] = React.useState<SliderValue>(fallback);
@@ -480,9 +526,18 @@ export function Slider({
   const rangeHigh = clamp(Math.max(rangeLowRaw, rangeHighRaw), min, max);
   const normalized: SliderValue = range ? [rangeLow, rangeHigh] : singleValue;
 
-  // The value as last reported, so a gesture's next move and its end see its changes before a re-render.
+  // Gesture state shared by the thumbs' and the track area's responders.
+  const [activeKind, setActiveKind] = React.useState<ThumbKind | null>(null);
+  const gesture = React.useRef<{ kind: ThumbKind; origin: number; start: SliderValue } | null>(null);
+  const trackWidthRef = React.useRef(0);
+
+  // The value as last reported. Within one gesture the comparison is against the last value emitted,
+  // not the displayed one, so a controlled owner that never updates `value` gets each new target once;
+  // outside a gesture the displayed value resets it from the prop on render.
   const reportedRef = React.useRef<SliderValue>(normalized);
-  reportedRef.current = normalized;
+  if (gesture.current === null) {
+    reportedRef.current = normalized;
+  }
 
   const validateValue = (candidate: SliderValue): string | null => {
     if (error !== undefined && error !== '') {
@@ -543,11 +598,6 @@ export function Slider({
       form.reportValidity(name, validateValue(final));
     }
   };
-
-  // Gesture state shared by the thumbs' and the track area's responders.
-  const [activeKind, setActiveKind] = React.useState<ThumbKind | null>(null);
-  const gesture = React.useRef<{ kind: ThumbKind; origin: number; start: SliderValue } | null>(null);
-  const trackWidthRef = React.useRef(0);
 
   const rawFromDx = (origin: number, dx: number): number => {
     const width = trackWidthRef.current;
@@ -621,6 +671,21 @@ export function Slider({
       return 'max';
     }
     return raw - low <= high - raw ? 'min' : 'max';
+  };
+
+  /**
+   * The thumb a press inside a thumb's hit area drags. When both range thumbs share a value the
+   * upper one paints on top and receives every press, so the press side decides: before the
+   * value (logical, mirrored in right-to-left) the low thumb, after it the high thumb, exactly on
+   * it the low thumb.
+   */
+  const grabbedKind = (kind: ThumbKind, offset: number): ThumbKind => {
+    const base = reportedRef.current;
+    if (!Array.isArray(base) || base[0] !== base[1]) {
+      return kind;
+    }
+    const logical = rtl ? -offset : offset;
+    return logical > 0 ? 'max' : 'min';
   };
 
   const latest = React.useRef({ isDisabled, rtl, min, max, nearestKind, beginGesture, dragGesture, endGesture });
@@ -706,7 +771,7 @@ export function Slider({
   const trackHeight = resolveOr(t, overrides?.trackHeight, t.space1);
   const trackRadius = resolveOr(t, overrides?.trackRadius, t.radiusFull);
   const markColor = resolveOr(t, overrides?.mark, t.colorBorderStrong);
-  const markSize = resolveOr(t, overrides?.markSize, t.space1);
+  const markSize = resolveOr(t, overrides?.markSize, t.space2);
   const markLabelSize = resolveOr(t, overrides?.markLabelSize, t.fontSizeXs);
   const markLabelGap = resolveOr(t, overrides?.markLabelGap, t.space1);
   const partGap = resolveOr(t, overrides?.partGap, t.space1);
@@ -747,15 +812,33 @@ export function Slider({
   const helperTypography = { fontFamily, fontSize: overrides?.helperSize };
   const valueTypography = { fontFamily, fontSize: overrides?.valueSize };
 
+  const hasError = displayedError !== undefined;
+  const hasDescription = description !== undefined && description !== '';
+  // RN has no aria-describedby, aria-invalid or aria-required: the hint is what ties the error, else
+  // the description, to the thumb natively; on react-native-web the ids resolve in the DOM, and
+  // aria-invalid is true whenever `invalid` or an error is in effect.
+  const webThumbProps: Record<string, unknown> =
+    Platform.OS === 'web'
+      ? {
+          'aria-orientation': 'horizontal',
+          'aria-invalid': invalid || hasError ? 'true' : undefined,
+          'aria-required': required ? 'true' : undefined,
+          'aria-describedby': hasError ? errorId : hasDescription ? descriptionId : undefined,
+        }
+      : {};
+
   const thumbShared = {
     disabled: isDisabled,
-    // RN has no aria-describedby: the hint is what ties the error, else the description, to the thumb.
-    accessibilityHint: displayedError !== undefined ? displayedError : description,
+    accessibilityHint: hasError ? displayedError : hasDescription ? description : undefined,
+    webProps: webThumbProps,
     formatValue,
     showBubble: showValue === 'hover',
     bubbleTypography: valueTypography,
     reducedMotion,
-    onGrant: (kind: ThumbKind) => beginGesture(kind, valueOf(kind)),
+    onGrant: (kind: ThumbKind, offset: number) => {
+      const grabbed = grabbedKind(kind, offset);
+      beginGesture(grabbed, valueOf(grabbed));
+    },
     onDrag: dragGesture,
     onRelease: endGesture,
     onAction: handleAction,
@@ -778,8 +861,10 @@ export function Slider({
       aria-disabled={isDisabled ? true : undefined}
       style={{ flexDirection: 'column', gap: partGap, opacity: isDisabled ? disabledOpacity : 1 }}
     >
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: labelGap }}>
-        <View testID="Slider.label">
+      {/* The label row, the mark label row and the messages paint above the thumbs and take any
+          press that lands on them, which is how the thumbs' overflowing minTarget is resolved. */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: labelGap, zIndex: 1 }}>
+        <View testID="Slider.label" nativeID={labelId}>
           <Text size="md" weight="medium" tone="default" overrides={{ fontFamily, fontSize: overrides?.fontSize, fontWeight: overrides?.labelWeight }}>
             {label}
           </Text>
@@ -849,6 +934,7 @@ export function Slider({
                 max={rangeHigh}
                 pressed={activeKind === 'min'}
                 accessibilityLabel={COPY.minimumLabel(label)}
+                labelledBy={undefined}
               />
               <SliderThumb
                 {...thumbShared}
@@ -859,6 +945,7 @@ export function Slider({
                 max={max}
                 pressed={activeKind === 'max'}
                 accessibilityLabel={COPY.maximumLabel(label)}
+                labelledBy={undefined}
               />
             </>
           ) : (
@@ -872,16 +959,17 @@ export function Slider({
               max={max}
               pressed={activeKind === 'single'}
               accessibilityLabel={label}
+              labelledBy={labelId}
             />
           )}
         </View>
         {/* The slider grows by the label line only when some mark has a label. */}
         {markLabels.length > 0 ? (
           <View
-            pointerEvents="none"
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
-            style={{ height: toLineHeight(markLabelSize, t.fontLineHeightNormal) }}
+            aria-hidden
+            style={{ height: toLineHeight(markLabelSize, t.fontLineHeightNormal), zIndex: 1 }}
           >
             {markLabels.map((mark) => (
               <View
@@ -900,15 +988,15 @@ export function Slider({
           </View>
         ) : null}
       </View>
-      {description !== undefined ? (
-        <View testID="Slider.description">
+      {hasDescription ? (
+        <View testID="Slider.description" nativeID={descriptionId} style={{ zIndex: 1 }}>
           <Text size="sm" tone="muted" overrides={helperTypography}>
             {description}
           </Text>
         </View>
       ) : null}
-      {displayedError !== undefined ? (
-        <View testID="Slider.errorMessage" accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
+      {hasError ? (
+        <View testID="Slider.errorMessage" nativeID={errorId} accessibilityLiveRegion={summarised ? 'none' : 'assertive'} style={{ zIndex: 1 }}>
           <Text size="sm" tone="danger" overrides={helperTypography}>
             {displayedError}
           </Text>

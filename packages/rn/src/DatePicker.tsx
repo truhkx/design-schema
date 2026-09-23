@@ -111,7 +111,10 @@ export interface DatePickerProps {
   hideLabel?: boolean | undefined;
   /** `sm` for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
   size?: DatePickerSize | undefined;
-  /** Not editable, still readable. The calendar does not open. */
+  /**
+   * Not editable, still readable. Every user-driven open is blocked (the calendar Button,
+   * ArrowDown in the input), but a controlled `open: true` still renders the calendar.
+   */
   disabled?: boolean | undefined;
   /** Error message; implies invalid. */
   error?: string | undefined;
@@ -370,6 +373,12 @@ function endOf(value: DatePickerValue | undefined): string {
   return typeof value === 'string' ? value : value.end;
 }
 
+/**
+ * The DOM mirror of today's state for react-native-web: the web contract marks today with
+ * aria-current="date" (aria-selected is not allowed on a button); Pressable's types omit aria-current.
+ */
+const TODAY_ATTRS: Record<string, unknown> = { 'aria-current': 'date' };
+
 interface DayCellProps {
   iso: string;
   /** The number shown in the cell. */
@@ -389,6 +398,7 @@ interface DayCellProps {
   dayHover: string;
   fontFamily: string;
   lineHeight: number;
+  disabledOpacity: number;
   duration: number;
   onPress: (iso: string) => void;
 }
@@ -415,6 +425,7 @@ function DayCell({
   dayHover,
   fontFamily,
   lineHeight,
+  disabledOpacity,
   duration,
   onPress,
 }: DayCellProps): React.JSX.Element {
@@ -461,9 +472,9 @@ function DayCell({
       borderRadius: dayRadius,
       alignItems: 'center',
       justifyContent: 'center',
-      opacity: disabled ? t.opacityDisabled : 1,
+      opacity: disabled ? disabledOpacity : 1,
     }),
-    [daySize, dayRadius, disabled, t],
+    [daySize, dayRadius, disabled, disabledOpacity],
   );
 
   // The focus ring replaces the today ring while the day has focus, so only one draws.
@@ -475,8 +486,11 @@ function DayCell({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected, disabled }}
-      // react-native-web 0.21 drops `accessibilityState.disabled`; this mirror is what reaches the DOM.
+      // react-native-web maps only some accessibility props; these mirrors are what reach the DOM.
+      aria-label={label}
+      aria-selected={selected}
       aria-disabled={disabled}
+      {...(today ? TODAY_ATTRS : undefined)}
       style={cellStyle}
       onHoverIn={() => setHovered(true)}
       onHoverOut={() => setHovered(false)}
@@ -977,10 +991,11 @@ export function DatePicker({
 
   // The composed children realise the root's own bindings through their `overrides`; a
   // token is never resolved on a child's behalf.
+  // Only helperSize and fontFamily reach the description and error Texts; their line
+  // height is their own.
   const helperOverrides = {
     fontSize: overrides?.helperSize,
     fontFamily: overrides?.fontFamily,
-    lineHeight: overrides?.lineHeight,
   };
   const labelOverrides = {
     fontSize: overrides?.fontSize,
@@ -1066,7 +1081,8 @@ export function DatePicker({
         accessibilityLabel={name2}
         accessibilityHint={hint === '' ? undefined : hint}
         accessibilityState={{ disabled: isDisabled }}
-        // react-native-web 0.21 drops `accessibilityState`; this mirror is what reaches the DOM.
+        // react-native-web maps only some accessibility props; these mirrors are what reach the DOM.
+        aria-label={name2}
         aria-disabled={isDisabled}
         onChangeText={(next) => handleTyped(next, which)}
         onKeyPress={(event) => handleInputKeyPress(event, which)}
@@ -1151,6 +1167,7 @@ export function DatePicker({
           // Android announces through the live region; iOS through the effect above. A Form
           // with its own error summary announces instead, so both are silenced there.
           accessibilityLiveRegion={summarised ? 'none' : 'assertive'}
+          aria-live={summarised ? 'off' : 'assertive'}
         >
           <Text size="sm" tone="danger" overrides={helperOverrides}>
             {displayedError}
@@ -1230,7 +1247,11 @@ export function DatePicker({
                 </View>
               </View>
 
-              <View testID="DatePicker.grid" accessibilityLabel={gridLabel} style={{ gap: dayGap }}>
+              {/*
+                Deliberately not `accessible`: that would swallow all 42 day buttons, so the
+                label is set but exposes no name; the month announcement stands in for it.
+              */}
+              <View testID="DatePicker.grid" accessibilityLabel={gridLabel} aria-label={gridLabel} style={{ gap: dayGap }}>
                 <View style={{ flexDirection: 'row', gap: dayGap }}>
                   {showWeekNumbers ? (
                     // The week column's header carries no part name, as on web.
@@ -1258,6 +1279,7 @@ export function DatePicker({
                           testID="DatePicker.weekNumber"
                           accessible
                           accessibilityLabel={`${COPY.weekNumber} ${isoWeekOf(first)}`}
+                          aria-label={`${COPY.weekNumber} ${isoWeekOf(first)}`}
                           style={{ width: daySize, alignItems: 'center', justifyContent: 'center' }}
                         >
                           <Text size="xs" tone="muted" weight="regular" overrides={weekNumberOverrides}>
@@ -1288,6 +1310,7 @@ export function DatePicker({
                             dayHover={dayHover}
                             fontFamily={fontFamily}
                             lineHeight={lineHeight}
+                            disabledOpacity={disabledOpacity}
                             duration={transition}
                             onPress={pickDay}
                           />

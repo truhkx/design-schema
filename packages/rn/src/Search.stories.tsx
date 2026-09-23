@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Search } from './Search';
 import { withTheme } from './decorators';
 
+/** The `with-suggestions` example's suggestions, which the Keyboard story reuses. */
 const SUGGESTIONS = [
   { value: 'invoices-march', label: 'Invoices from March' },
   { value: 'invoices-april', label: 'Invoices from April' },
-  { value: 'invoice-1042', label: 'Invoice No. 1042', description: 'Overdue' },
 ];
 
 const meta: Meta<typeof Search> = {
@@ -40,13 +40,7 @@ export const HeaderSearch: Story = { args: { label: 'Search this site', placehol
 export const SearchPageHero: Story = { args: { label: 'Search orders', showLabel: true, size: 'lg' } };
 
 export const WithSuggestions: Story = {
-  args: {
-    label: 'Search products',
-    suggestions: [
-      { value: 'invoices-march', label: 'Invoices from March' },
-      { value: 'invoices-april', label: 'Invoices from April' },
-    ],
-  },
+  args: { label: 'Search products', suggestions: SUGGESTIONS },
 };
 
 export const FilterWithinAResultsPage: Story = { args: { label: 'Filter results', landmark: false, name: 'filter' } };

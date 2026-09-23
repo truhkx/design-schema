@@ -24,6 +24,7 @@ export type ProgressBarOverridableBinding =
   | 'labelGap'
   | 'transition'
   | 'indeterminateLoop'
+  | 'indeterminateReducedOpacity'
   | 'sweepEasing';
 
 export interface ProgressBarProps {
@@ -72,6 +73,9 @@ const COPY = {
 /** Announcement tiers are quarters of the range: 1–3 announce `copy.progress`, 4 is `max` (completion). */
 const TIERS = 4;
 
+/** Invalid min/max pairs already warned about, for the life of the process: a second bar with the same bad range, or a remount, stays silent. */
+const warnedRanges = new Set<string>();
+
 function defaultFormatValue(value: number, min: number, max: number): string {
   const fraction = max > min ? (value - min) / (max - min) : 0;
   return new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 0 }).format(fraction);
@@ -86,7 +90,7 @@ function defaultFormatValue(value: number, min: number, max: number): string {
  * overall completion. Not a measured quantity that can go up or down (Meter), not a
  * value the user sets (Slider).
  *
- * Renders an `accessible` `View` with `accessibilityRole="progressbar"`,
+ * Renders an `accessible` `View` with `role="progressbar"`,
  * `accessibilityLabel` (the accessible name even when `hideLabel` hides the visible
  * label) and `accessibilityValue={{ min, max, now, text }}` — an indeterminate bar
  * carries `min` and `max` only and sets `accessibilityState={{ busy: true }}`. The bar
@@ -94,7 +98,7 @@ function defaultFormatValue(value: number, min: number, max: number): string {
  * `transition`, snapping under reduced motion. Indeterminate: a one-third-width fill
  * sweeps from wholly before the track's inline start to wholly past its inline end
  * (leftward under `I18nManager.isRTL`) over `indeterminateLoop` with `sweepEasing`; under
- * reduced motion no loop starts and the fill is drawn full-width at `opacity.disabled`.
+ * reduced motion no loop starts and the fill is drawn full-width at `indeterminateReducedOpacity`.
  *
  * Announcements (`AccessibilityInfo.announceForAccessibility`): the tier is
  * `floor(fraction × 4)` and is tracked whatever `announce` is. The state at mount is
@@ -132,20 +136,24 @@ export function ProgressBar({
   const validRange = safeMax > safeMin;
 
   // Development warning: an inverted or empty range is not a range. Warned once per distinct pair.
-  const warnedRef = React.useRef<string | null>(null);
   React.useEffect(() => {
     if (!__DEV__ || validRange) return;
     const key = `${safeMin}/${safeMax}`;
-    if (warnedRef.current === key) return;
-    warnedRef.current = key;
+    if (warnedRanges.has(key)) return;
+    warnedRanges.add(key);
     console.warn(`ProgressBar: \`max\` (${safeMax}) must be greater than \`min\` (${safeMin}); the bar renders empty.`);
-  });
+  }, [validRange, safeMin, safeMax]);
 
   const safeValue = typeof value === 'number' && Number.isFinite(value) ? value : safeMin;
   const clamped = validRange ? Math.min(safeMax, Math.max(safeMin, safeValue)) : safeMin;
   const fraction = validRange ? (clamped - safeMin) / (safeMax - safeMin) : 0;
-  // Rounding is for the text only; the fill width uses the exact fraction.
-  const valueText = formatValue(clamped, safeMin, safeMax);
+  // Rounding is for the text only; the fill width uses the exact fraction. Nothing formats
+  // a value while indeterminate, and a range that is not a range reads "0%".
+  const valueText = indeterminate
+    ? ''
+    : validRange
+      ? formatValue(clamped, safeMin, safeMax)
+      : defaultFormatValue(safeMin, safeMin, safeMax);
 
   const trackColor = overrides?.track ? (resolveToken(t, overrides.track) as string) : t.colorBackgroundStrong;
   const trackHeight = overrides?.trackHeight ? (resolveToken(t, overrides.trackHeight) as number) : t.space2;
@@ -159,6 +167,9 @@ export function ProgressBar({
   const sweepEasing = overrides?.sweepEasing
     ? (resolveToken(t, overrides.sweepEasing) as Tokens['motionEasingStandard'])
     : t.motionEasingStandard;
+  const reducedOpacity = overrides?.indeterminateReducedOpacity
+    ? (resolveToken(t, overrides.indeterminateReducedOpacity) as number)
+    : t.opacityDisabled;
 
   const fillColor = t[FILL_TOKEN[tone]];
 
@@ -286,20 +297,22 @@ export function ProgressBar({
       alignItems: 'baseline',
       gap: labelGap,
     };
-    // A long label wraps onto more lines inside the row rather than truncating.
-    const labelWrapper: ViewStyle = { flexShrink: 1 };
+    // A long label wraps onto more lines inside the row rather than pushing the value text out.
+    const labelWrapper: ViewStyle = { flexShrink: 1, minWidth: 0 };
+    // The value text never wraps; the label gives way instead.
+    const valueWrapper: ViewStyle = { flexShrink: 0 };
     const track: ViewStyle = {
       height: trackHeight,
       borderRadius: radius,
       backgroundColor: trackColor,
       overflow: 'hidden',
     };
-    return { container, header, labelWrapper, track };
+    return { container, header, labelWrapper, valueWrapper, track };
   }, [partGap, labelGap, hideLabel, trackHeight, radius, trackColor]);
 
   const fillStyle: Animated.WithAnimatedValue<ViewStyle> = indeterminate
     ? reducedMotion
-      ? { height: trackHeight, borderRadius: radius, backgroundColor: fillColor, width: '100%', opacity: t.opacityDisabled }
+      ? { height: trackHeight, borderRadius: radius, backgroundColor: fillColor, width: '100%', opacity: reducedOpacity }
       : {
           height: trackHeight,
           borderRadius: radius,
@@ -317,8 +330,9 @@ export function ProgressBar({
       // One accessibility element: the name, value and busy state announce together.
       accessible
       focusable={false}
-      accessibilityRole="progressbar"
+      role="progressbar"
       accessibilityLabel={label}
+      aria-label={label}
       // An indeterminate bar carries the bounds only: it never names a progress it does not know.
       accessibilityValue={indeterminate ? { min: safeMin, max: safeMax } : { min: safeMin, max: safeMax, now: clamped, text: valueText }}
       accessibilityState={indeterminate ? { busy: true } : undefined}
@@ -351,7 +365,7 @@ export function ProgressBar({
             </View>
           )}
           {showValueText ? (
-            <View testID="ProgressBar.valueText">
+            <View testID="ProgressBar.valueText" style={styles.valueWrapper}>
               <Text
                 size="sm"
                 tone="muted"

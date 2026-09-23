@@ -47,7 +47,7 @@ export interface SearchProps {
   showLabel?: boolean | undefined;
   /**
    * Field name; the query key when the form submits to a URL. Native has no URL forms, so
-   * this only names the value inside a Form.
+   * here it is the key the query registers under in an enclosing Form.
    */
   name?: string | undefined;
   /**
@@ -160,8 +160,8 @@ const ICON_OVERRIDES = { color: 'color.foreground.muted' as TokenRef };
  * `AccessibilityInfo.announceForAccessibility` after `statusDebounce`, there being no
  * visually-hidden primitive to hold a live region.
  *
- * `name` and `action` are a URL query key and a GET target — neither exists on native — so
- * both are accepted for parity and do nothing; `action` warns under `__DEV__`. The caller's
+ * `name` is the Form registration key, as on every platform. `action` is a GET target, which
+ * has no meaning on native: it is accepted for parity, does nothing, and warns under `__DEV__`. The caller's
  * ScrollView needs `keyboardShouldPersistTaps="handled"` so a suggestion tap is not
  * swallowed by keyboard dismissal; Search has no ScrollView of its own to set it on.
  */
@@ -236,6 +236,7 @@ export function Search({
 
   const handle = React.useMemo<FormFieldHandle>(
     () => ({
+      label,
       // The trimmed query, "" when empty and never omitted; validation always passes.
       getValue: () => latest.current.trim(),
       validate: () => null,
@@ -251,7 +252,7 @@ export function Search({
         }
       },
     }),
-    [],
+    [label],
   );
 
   const register = form?.register;
@@ -436,7 +437,15 @@ export function Search({
   };
 
   return (
-    <View ref={ref} testID="Search" accessibilityRole={landmark ? 'search' : undefined} style={rootStyle}>
+    <View
+      ref={ref}
+      testID="Search"
+      accessibilityRole={landmark ? 'search' : undefined}
+      // The dimmed root is marked inactive too, so the disabled contrast exemption is machine-visible.
+      accessibilityState={isDisabled ? { disabled: true } : undefined}
+      aria-disabled={isDisabled ? true : undefined}
+      style={rootStyle}
+    >
       {showLabel ? (
         <View testID="Search.label" style={dimStyle} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <Text
@@ -460,10 +469,12 @@ export function Search({
             // `role` carries the schema's `searchbox`; the `search` landmark stays on the root View.
             role="searchbox"
             accessibilityLabel={label}
+            aria-label={label}
             accessibilityState={{ disabled: isDisabled, expanded: hasSuggestions ? showList : undefined }}
             // react-native-web 0.21 drops `accessibilityState`, and a read-only field that only
             // dims through `opacity.disabled` reads as a contrast failure unless it is marked inactive.
             aria-disabled={isDisabled}
+            aria-expanded={hasSuggestions ? showList : undefined}
             editable={!isDisabled}
             value={currentValue}
             placeholder={placeholder}

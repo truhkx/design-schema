@@ -1,10 +1,17 @@
-# Gap digest
+# Gap digest — phase final
 
-Generated 2026-09-23T18:34 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-23T19:48 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
 Doc: `site/src/content/docs/components/accordion.md`
+
+### 2026-09-23 19:17 — rn round 1
+
+- **DOC** Accordion: `platforms.rn.props` is empty, so nothing says which native props (e.g. `accessibilityLabel`) the root View should accept; I added none beyond `testID`, `ref` and `overrides`. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: the RN notes say no keyboard scenario is generated, yet the `keyboard` block still requires a `Keyboard` story; I shipped one with three enabled items and no disabled item, on the assumption the axe gate needs it. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: `headingLevel` is typed as string or number for ergonomics; the spec only lists the string values '2'..'6'. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: the spec doesn't say whether `exclusive` trimming of a controlled `value` should be tracked by the `controlled` diff; I diff only `value` changes, so a trim alone reports nothing. → `site/src/content/docs/components/accordion.md`
 
 ### 2026-09-23 16:02 — web round 2
 
@@ -211,6 +218,14 @@ Doc: `site/src/content/docs/components/accordion.md`
 ## ActionSheet
 
 Doc: `site/src/content/docs/components/actionsheet.md`
+
+### 2026-09-23 19:11 — rn round 1
+
+- **DOC** ActionSheet: the spec says the composed heading Text gets `element: p`, but rn Text has no element prop; the note covers it and I passed only tone and size. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the item row label is a plain RN Text, not the system Text, because the rows need explicit fontFamily, fontSize, lineHeight and danger color from the sheet's own bindings. The spec does not say whether rows should compose Text. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the `non-dismissible-still-reports-escape` scenario is limited to web and Lit, so on rn Escape is only reachable through `onRequestClose`. I covered it with a `Modal` `onRequestClose` test, but the spec gives no rn scenario for it. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the spec gives no token for the `height: content` cap (90% of the viewport), so I kept a documented `literal-ok` module constant (`contentCap`). → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the `Keyboard` story's arrow, Home and End rules describe the web Menu presentation and have no rn implementation. The note says so, but the `keyboard` block still requires the story. → `site/src/content/docs/components/actionsheet.md`
 
 ### 2026-09-23 15:39 — web round 2
 
@@ -474,6 +489,11 @@ Doc: `site/src/content/docs/components/actionsheet.md`
 
 Doc: `site/src/content/docs/components/alert.md`
 
+### 2026-09-23 19:02 — rn round 1
+
+- **DOC** Alert: `live=alert` sets both accessibilityRole="alert" and accessibilityLiveRegion="assertive", while `status` has no role. The spec doesn't say what the `aria-*` mirror should be for `status`, so I mirror only `aria-live` and set no `role` prop. That leaves react-native-web with a plain live region and no status role. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: copy.dismissLabel has no exported copy constant to import, so the component holds its own COPY table with 'Dismiss'. A shared copy source would remove the duplication. → `site/src/content/docs/components/alert.md`
+
 ### 2026-09-23 15:00 — web round 1
 
 - **DOC** Alert: the web notes say 'no role when off' and give the root a name either way, but they don't say whether the icon span and content column need data-part hooks beyond the anatomy; only the anatomy parts (container, icon, heading, body, dismissButton) got data-part, and the content column wrapper has none. → `site/src/content/docs/components/alert.md`
@@ -659,6 +679,14 @@ Doc: `site/src/content/docs/components/alert.md`
 ## AlertDialog
 
 Doc: `site/src/content/docs/components/alertdialog.md`
+
+### 2026-09-23 19:08 — rn round 1
+
+- **DOC** AlertDialog: the spec says initial accessibility focus goes to the heading wrapper 'after the enter animation' but gives no fallback when findNodeHandle returns null or animation is skipped (reduced motion); I focus immediately in that case and skip focus if there is no node. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: the a-scrim-click-does-nothing scenario uses `click: scrim`, but on native the scrim has no handler, so the test fires `press` on a view that ignores it and can only pass trivially; the doc does not say how to assert 'nothing reachable' on native. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: the accessible-name scenario is targeted at AlertDialog.surface per the notes, but the derived `has-accessible-name` scenario does not name a part, so the test finds it by label text; the doc should state the part for derived name checks. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: the spec says the surface carries accessibilityHint={description} and also that aria-describedby is used; on react-native-web I add aria-describedby via Platform.OS === 'web' because no RN prop covers it, which the doc does not mention. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: `layer` is documented as a no-op inside a Modal; I still apply it as zIndex on the centring View as the doc says. → `site/src/content/docs/components/alertdialog.md`
 
 ### 2026-09-23 15:24 — web round 2
 
@@ -901,6 +929,13 @@ Doc: `site/src/content/docs/components/alertdialog.md`
 ## BottomSheet
 
 Doc: `site/src/content/docs/components/bottomsheet.md`
+
+### 2026-09-23 19:10 — rn round 1
+
+- **DOC** BottomSheet: the spec says the body is a Box inside an unnamed scroll element with the body part hook, but Box writes its own testID on rn; I put `testID="BottomSheet.body"` on a wrapper View inside the ScrollView. The doc should say which element owns the rn body testID. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: the spec does not say where `BottomSheet.header`, `BottomSheet.heading`, `BottomSheet.handle` and `BottomSheet.scrim` testIDs go on rn; I put them on the header View, a wrapper View around Heading, the handle View and the scrim Pressable. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: `drag` and the derived scenarios cannot be exercised in Jest, because PanResponder gestures are not driven by testing-library; the spec says nothing about how to test the drag on rn, so no drag test exists. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: the spec gives no rn-specific reduced-motion behaviour for the drag release beyond 'instant'; I set the offset to 0 without animation. → `site/src/content/docs/components/bottomsheet.md`
 
 ### 2026-09-23 15:36 — web round 2
 
@@ -1152,6 +1187,18 @@ Doc: `site/src/content/docs/components/bottomsheet.md`
 ## Box
 
 Doc: `site/src/content/docs/components/box.md`
+
+### 2026-09-23 18:53 — rn round 1
+
+- **DOC** Box: the spec allows meta args of schema defaults but the existing meta also sets `children: 'Box content'`, which is not a default; the Default story and tests override it, so I left it, but the doc could say whether meta may carry placeholder children. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the rn behavior scenarios are all `renders: true`, so nothing checks the resolved styles (padding axis precedence, transparent for none, border only when `border`, override ignored at radius none); the doc could add scenarios with expectations that a native test can assert. → `site/src/content/docs/components/box.md`
+
+### 2026-09-23 18:41 — web round 1
+
+- **DOC** Box: the `children` prop description mixes the prop's meaning with instructions for writing stories and tests (Text wrapping, meta args, React Native render), so a generator has to guess where the JSDoc should stop; I kept only the first two sentences as the prop's JSDoc. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the `highlighted-panel` example has to be both the Default story and the HighlightedPanel story, so the two are identical; the doc doesn't say whether that duplicate is intended or whether Default should reuse the example story. I kept both. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the doc asks for a `WithOverrides` story but doesn't say which overrides to show or whether it should turn `border` on (the border overrides do nothing without it). The existing story sets border: true and overrides paddingBlock, border (color.border.strong) and radius (radius.sm). → `site/src/content/docs/components/box.md`
+- **DOC** Box: the doc doesn't say whether the behavior tests render through the meta render on web (it only says so for React Native), so on web the test renders <Box> directly with a bare string child. That is harmless because the tests check only rendering and roles. → `site/src/content/docs/components/box.md`
 
 ### 2026-09-23 13:51 — web round 3
 
@@ -1441,6 +1488,12 @@ Doc: `site/src/content/docs/components/box.md`
 
 Doc: `site/src/content/docs/components/breadcrumb.md`
 
+### 2026-09-23 19:03 — rn round 1
+
+- **DOC** Breadcrumb: the spec says the current item is the last one but never says whether `aria-current="page"` should also be set on native; I mirrored it onto the platform Text via a spread because Text's types omit it, so it reaches the DOM on react-native-web. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the spec says the Text around each Link receives `overrides` for the four type bindings, but not what to pass when the caller gave no override; I passed the default token names ('font.size.sm' and so on) as explicit refs. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: no `Keyboard` story is required because there is no `keyboard` block, and the doc says nothing about the ellipsis being keyboard-reachable on native beyond Button's own behaviour. → `site/src/content/docs/components/breadcrumb.md`
+
 ### 2026-09-23 15:03 — web round 1
 
 - **DOC** Breadcrumb: collapse is a boolean, so there is no enum; the rule 'one story per enum value' was read as CollapseTrue/CollapseFalse, which repeat the DeepTrailCollapsed example's items — the doc does not say which items those two stories should use. → `site/src/content/docs/components/breadcrumb.md`
@@ -1608,6 +1661,13 @@ Doc: `site/src/content/docs/components/breadcrumb.md`
 ## Button
 
 Doc: `site/src/content/docs/components/button.md`
+
+### 2026-09-23 18:54 — rn round 1
+
+- **DOC** Button: the spec does not say whether the loading spinner wrapper should carry `aria-hidden`. I hid it like the other decorative icon wrappers, since it has no label and is not an anatomy part. → `site/src/content/docs/components/button.md`
+- **DOC** Button: `iconOnly` with `loading` and no `leadingIcon` is not spelled out for rn. I render the spinner alone and the label is absent, which matches 'replaces the sole glyph'. → `site/src/content/docs/components/button.md`
+- **DOC** Button: `inverseHoverOpacity` is `opacity.disabled × 0.25`, but the doc does not say whether an override of `inverseBackgroundHover` applies when `inverse` is set on a non-ghost variant. I applied it to inverse ghost only, per 'Only ghost changes its fill'. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the doc names Tooltip's forwarded props (`accessibilityHint`, `accessibilityLabel`, `onHoverIn`, `onHoverOut`, `onLongPress`, `onPressOut`, `onFocus`, `onBlur`) only in prose. They are not in the `props` schema, so their types are my choice: the matching `PressableProps` entries. → `site/src/content/docs/components/button.md`
 
 ### 2026-09-23 13:54 — web round 2
 
@@ -2275,6 +2335,13 @@ Doc: `site/src/content/docs/components/button.md`
 
 Doc: `site/src/content/docs/components/card.md`
 
+### 2026-09-23 18:57 — rn round 1
+
+- **DOC** Card: the whole-card-is-a-link example gives `children` as a plain string but says to render a Link labelled with it; the story renders `<Link href="#" label="A Link to the invoice" />` by hand rather than with exactly its `given` args, so a generator has to guess the string-to-Link translation. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the spec doesn't say whether the interactive Pressable's aria-* mirrors (aria-label, aria-disabled) are expected, since the `rn.props` list only names accessibilityRole and accessibilityLabel; I mirrored them per the package convention. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the `heading` anatomy part has no testID of its own and the spec says it keeps Heading's own hook; header, headerActions, body and footer testIDs (`Card.header` etc.) are inferred from the anatomy-names rule, not stated for this component. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the `focusable` behavior scenarios (tabindex -1, focusable: true) are web/lit only, so nothing tests the rn `focusable` path (tabIndex -1, focus ring) in Jest. → `site/src/content/docs/components/card.md`
+
 ### 2026-09-23 14:46 — web round 2
 
 - **DOC** Card: the axe gate failure is in the test setup, not the component. playwright.config.ts starts the React Storybook on fixed port 6007 with reuseExistingServer: true, and another checkout took 6007 while the gate was starting. This worktree's Storybook died with EADDRINUSE and Playwright tested the other checkout's server, which went away or hung (a timeout in round 2; ERR_CONNECTION_REFUSED and a hang in my reruns). Card's 22 stories pass axe in light and dark against this worktree's own Storybook on a private port (logs/card-axe.config.ts), so I changed no component code. The gate needs a port per worktree or reuseExistingServer: false. → `site/src/content/docs/components/card.md`
@@ -2729,6 +2796,15 @@ Doc: `site/src/content/docs/components/card.md`
 
 Doc: `site/src/content/docs/components/carousel.md`
 
+### 2026-09-23 19:25 — rn round 1
+
+- **DOC** Carousel: the tabs picker is described as a Tabs-style tablist controlling slides, but the RN notes give no aria-controls or accessibilityControls wiring between a tab and its slide; I set role=tab and selected state only. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: 'slide movement is instant under reduced motion' is written for web scroll-snap; for RN I chose scrollToOffset with animated=false under reduced motion and on first positioning, since the doc names no RN equivalent. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the RN notes say the arrow wrapper is inert, but not what a disabled arrow looks like beyond Button's own disabled state; I rely on Button's disabled handling (opacity.disabled) and add nothing on the wrapper. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: on RN, what a controlled activeIndex above total minus page does is not stated; I clamp it to total minus page, as the picker rule does. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the Keyboard story's focusable count is described for the web (controls, tabs, viewport); the RN doc says nothing is focusable natively, so the story only exists for the axe gate on react-native-web. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the tab label's a11y name uses the slide label, but the doc does not say whether a missing label should also drop the aria-selected mirror; I keep both and fall back to copy.goTo as the text. → `site/src/content/docs/components/carousel.md`
+
 ### 2026-09-23 16:23 — web round 1
 
 - **DOC** Carousel: 'Reaching the last page without loop counts as stopped' does not say whether it applies when every slide fits on one page (total ≤ page) — chose: yes, rotation shows copy.play at once and a timer is never started. → `site/src/content/docs/components/carousel.md`
@@ -3003,6 +3079,13 @@ Doc: `site/src/content/docs/components/carousel.md`
 
 Doc: `site/src/content/docs/components/checkbox.md`
 
+### 2026-09-23 18:59 — rn round 1
+
+- **DOC** Checkbox: the rn notes say the drawn control is hidden with accessibilityElementsHidden and importantForAccessibility="no" but do not mention aria-hidden, which react-native-web needs to hide it in the DOM; I added it per the package conventions. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the rn platform notes list `aria-checked` and `aria-disabled` as the react-native-web mirrors but say nothing about `aria-label`, `aria-required` or `aria-describedby` for description/error; I mirrored only `aria-label` and `aria-checked` (plus `aria-disabled` set on the DOM node in an effect) and left `aria-required`/`aria-describedby` out. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the spec says the error's live region is "none" inside a Form with errorSummary, but does not say whether to use `assertive` or `polite` otherwise; I kept `assertive`, matching Input. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the behavior scenarios are platform-neutral 'click' interactions, and 'click control' on RN needs the control queried by testID even though the control is hidden from accessibility; the tests use `getByTestId('Checkbox.control', { includeHiddenElements: true })` and `fireEvent.press`. → `site/src/content/docs/components/checkbox.md`
+
 ### 2026-09-23 14:51 — web round 2
 
 - **DOC** Checkbox: the spec contradicts the hooks gate. indicatorStroke ('It declares no --ds-checkbox-* hook on any platform: Icon already applies it'), descriptionText and errorText ('Realised by the composed Text's muted/danger tone; no --ds-checkbox-* hook') are locked but not in composition.forwards, so tools/check_hooks.ts, which only exempts forwarded bindings, requires a hook for each. Chose to declare all three on the root with their tokens, as DatePicker already does, and have no rule read them, because the composed Icon and Texts realise these bindings and must not be restyled. The doc should either drop the 'no hook' wording for these three or the gate should exempt bindings realised by a composed child's props or tone. As it stands, these hooks exist but changing them has no visible effect. → `site/src/content/docs/components/checkbox.md`
@@ -3217,6 +3300,11 @@ Doc: `site/src/content/docs/components/checkbox.md`
 ## Combobox
 
 Doc: `site/src/content/docs/components/combobox.md`
+
+### 2026-09-23 19:16 — rn round 1
+
+- **DOC** Combobox: the spec doesn't say whether the clear button fires onChange when the value is already empty and only the text is cleared; I kept firing it, so a consumer sees a no-op onChange. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the a11y requirement `arrow-navigation` and the scenarios `enter-commits-the-active-option` and `escape-closes-the-list` are web/lit only, and there's no rn equivalent. That is stated in the rn notes, so no test was written for them. → `site/src/content/docs/components/combobox.md`
 
 ### 2026-09-23 16:00 — web round 2
 
@@ -3475,6 +3563,13 @@ Doc: `site/src/content/docs/components/combobox.md`
 ## Container
 
 Doc: `site/src/content/docs/components/container.md`
+
+### 2026-09-23 18:56 — rn round 1
+
+- **DOC** Container: the doc says the responsive `default` gutter is `layout.gutter.default`, but the token for that value is the bare `layout.gutter` (`layoutGutter`), and the doc doesn't say so on the RN side. I used `t.layoutGutter`. → `site/src/content/docs/components/container.md`
+- **DOC** Container: no scenario checks the RN style output (maxWidth, alignSelf, paddingHorizontal, or the gutter switching at the content and page widths). The derived scenarios only assert `renders: true`, so the responsive gutter and the `>=` boundaries are untested on RN. → `site/src/content/docs/components/container.md`
+- **DOC** Container: the doc doesn't say what an override does to the `default` gutter on RN. I applied it at every window width, matching the web statement, and ignored it when `gutter` is `none`. → `site/src/content/docs/components/container.md`
+- **DOC** Container: the `Keyboard` story rule doesn't apply, since there is no keyboard block. The doc doesn't say whether the string-in-Text wrapper also applies to a non-string `children` example. I wrap only strings. → `site/src/content/docs/components/container.md`
 
 ### 2026-09-23 14:17 — web round 1
 
@@ -3830,6 +3925,21 @@ Doc: `site/src/content/docs/components/container.md`
 
 Doc: `site/src/content/docs/components/datagrid.md`
 
+### 2026-09-23 19:42 — rn round 2
+
+- **DOC** DataGrid: the rn notes say cells use role `cell` and the doc mirrors every accessibilityState as aria-*, but ARIA forbids aria-selected on `cell` and RN's Role has no `gridcell`; in cell mode only the row-header cell carries aria-selected and plain cells carry the native accessibilityState.selected only, so react-native-web exposes no selected state on them. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: TreeGrid (same cell-selection pattern) and Tree still fail aria-allowed-attr in the same gate; they are outside this job and were not changed. → `site/src/content/docs/components/datagrid.md`
+
+### 2026-09-23 19:35 — rn round 1
+
+- **DOC** DataGrid: the schema has a `Keyboard` story rule but the rn platform notes say no keyboard model is wired, so it is unclear what the `Keyboard` story must exercise; the existing story just renders enough rows and columns for touch use. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: `copy.rowCount` says plural forms use `new Intl.PluralRules(locale)`, but rn has no locale source beyond the runtime default; the runtime default is used. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: the `statusBar` part is said to sit on the live status Text, but the live region needs a wrapper View with `role="status"` and `accessibilityLiveRegion`; the `DataGrid.statusBar` testID is on that wrapper, not on the Text. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: `captionLevel` is declared as the strings '2'|'3'|'4' while the generator rules say quoted-digit enums also accept numbers; the type accepts both. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: `onEditStart` is cancelable by returning false, but the rn events section does not say whether a `void` return also allows the edit; only an explicit `false` refuses. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: the platform notes say the `escape` accessibility action cancels an edit, but do not say what a failed `validate` on the `activate` action does; the editor stays open and the message goes to the status bar. → `site/src/content/docs/components/datagrid.md`
+- **DOC** DataGrid: `selectable: range` degrades to `row`, so `onSelectionChange` never reports a range on rn, but the shared payload type still includes the range shape; it is kept in the type for parity. → `site/src/content/docs/components/datagrid.md`
+
 ### 2026-09-23 16:35 — web round 1
 
 - **DOC** DataGrid: the package digest gives no API for the composed children (Input/NumberInput/Select/DatePicker/Checkbox/Button/Text/Heading props and override binding names), and the generator may open only one file; I read Table.tsx and searched the others' prop interfaces. The doc or digest should list each composed child's props used (hideLabel, size, defaultValue, open/onOpenChange, container, overrides keys). → `site/src/content/docs/components/datagrid.md`
@@ -4162,6 +4272,16 @@ Doc: `site/src/content/docs/components/datagrid.md`
 
 Doc: `site/src/content/docs/components/datepicker.md`
 
+### 2026-09-23 19:24 — rn round 1
+
+- **DOC** DatePicker: the `calendarInset` binding says it is forwarded to the BottomSheet as `overrides.inset`, but the parts section lists it only under the Popover's forwards. I followed the rn platform notes and forwarded it to the sheet. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `open` says every change focuses the selected day, but the rn notes say focus lands on the sheet's first focusable. The two contradict on rn, and I followed the notes. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the spec does not say which of `min`, `max` and `isDateDisabled` may block a typed value. The prose says typed text outside the bounds commits and surfaces tooEarly/tooLate, so `isDayDisabled` only guards picks. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: it is unspecified whether Today's disabled state should also set `aria-disabled` on rn. I pass `disabled` to Button and assume Button conveys accessibilityState. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `hideLabel` on rn drops the label Text and leaves the name in `accessibilityLabel`, but `label` also feeds the sheet heading. The spec does not say whether a hidden label should still show as the sheet heading, and I kept it. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the spec does not say how a range input's accessible name is built when a Fieldset legend is present. I used `{legend}, {label}, {Start date|End date}`. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the spec does not say what a controlled `open` does with a pending range draft when the parent closes and reopens it. I discard the draft on every close. → `site/src/content/docs/components/datepicker.md`
+
 ### 2026-09-23 16:20 — web round 1
 
 - **DOC** DatePicker: `value` says 'on blur ... the inputs show the formatted value', but that would erase unparseable text (so `copy.invalid` could never be reported on blur-validated forms) and a typed end of an incomplete range (so the range `required` message could never fire). Chose: on blur, reformat only an input whose text parses (single), or both inputs when both parse (range); unparseable text and one-sided ranges are kept. → `site/src/content/docs/components/datepicker.md`
@@ -4421,6 +4541,15 @@ Doc: `site/src/content/docs/components/datepicker.md`
 ## Dialog
 
 Doc: `site/src/content/docs/components/dialog.md`
+
+### 2026-09-23 19:07 — rn round 1
+
+- **DOC** Dialog: no `aria-describedby` can be written on rn because the description has no id, and the spec says the description is only the surface's accessibilityHint. That leaves react-native-web with no accessible description, which conflicts with the rule to mirror every accessibility prop as aria-*. Kept the hint only, and no `aria-description` was added. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: the spec says `initialFocus: first` looks in the body, then the footer, then the close button, then the heading. The rn note says it always lands on the body wrapper, since children is required. Followed the rn note, so the fallback order is dead code on rn. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: the spec doesn't say what setAccessibilityFocus targets when `hideHeading` is true and `initialFocus` is `title`. Chose the surface View, following the rn note. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: the spec doesn't say whether the close button wrapper View that receives focus should hide the composed Button's own accessibility. Left the Button labelled with copy.closeLabel, with no aria-hidden on the wrapper, per the no-hide-descendants rule. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: the spec doesn't say how `reducedMotion` and a zero `enter` or `exit` duration interact with an override. Treated either one as instant, the same way the reduced-motion path works. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: `layer` is written as zIndex on the centring container as the spec asks, but a Modal window ignores it, so no test can observe it. → `site/src/content/docs/components/dialog.md`
 
 ### 2026-09-23 15:20 — web round 2
 
@@ -4734,6 +4863,13 @@ Doc: `site/src/content/docs/components/dialog.md`
 
 Doc: `site/src/content/docs/components/disclosure.md`
 
+### 2026-09-23 19:01 — rn round 1
+
+- **DOC** Disclosure: `headingLevel` is typed as '2'..'6' plus the numbers 2..6. The rn notes say the level only sets the header role, but the prop schema lists strings only, so the number form is an assumption carried over from the web notes. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the spec says the summary Text uses the header role but never says whether `headingLevel` should wrap the trigger. I put the role on the summary Text inside the Pressable, as the rn notes state. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the `triggerBackgroundHover` state is named `hover`, but the rn notes say RN uses `pressed` or `onHoverIn`/`onHoverOut`. I applied it for either and suppressed it while disabled. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: no `chevron-left` or `chevron-right` glyph is confirmed in the Icon name list by the spec. I assumed both exist in `tools/icon-paths.json`. → `site/src/content/docs/components/disclosure.md`
+
 ### 2026-09-23 14:59 — web round 1
 
 - **DOC** Disclosure: fullWidth says 'Accordion sets it on every section it renders', but the existing packages/react/src/Accordion.tsx does not pass fullWidth and the Disclosure-only generation scope did not allow editing it; Accordion sections stay content-width until Accordion is regenerated. → `site/src/content/docs/components/disclosure.md`
@@ -4918,6 +5054,13 @@ Doc: `site/src/content/docs/components/disclosure.md`
 ## Divider
 
 Doc: `site/src/content/docs/components/divider.md`
+
+### 2026-09-23 18:58 — rn round 1
+
+- **DOC** Divider: the spec's `spacing` override case (an `overrides.spacing` under `spacing: none` is a no-op) has no behavior scenario, so it is untested on rn. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the labelled row applies `spacing` as `paddingVertical`, but the spec never says whether a labelled divider can be vertical. I treated a vertical label as ignored, so there is no vertical labelled row. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the `label` prop declares the vertical-ignored dev warning, but no behavior scenario checks the two dev warnings, so they are untested. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: `composition.label.forwards` names `labelSize` and `fontFamily` as overrides for Text's `fontSize` and `fontFamily`. Undefined entries are passed when neither is overridden, which relies on Text ignoring undefined overrides; the spec does not say to omit them. → `site/src/content/docs/components/divider.md`
 
 ### 2026-09-23 14:48 — web round 3
 
@@ -5196,6 +5339,11 @@ Doc: `site/src/content/docs/components/divider.md`
 
 Doc: `site/src/content/docs/components/feed.md`
 
+### 2026-09-23 19:47 — rn round 1
+
+- **DOC** Feed: the spec says copy strings are used verbatim but gives no i18n mechanism on rn, so the copy is hard-coded in a local COPY table; showNew, position and the relative-time strings are plain template literals, not Intl.PluralRules selections, because the spec lists one form for each. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the `behavior` scenario `loading-marks-the-feed-busy` is limited to web and lit, so there is no rn test for `accessibilityState.busy`; I left it untested rather than invent an rn expectation. → `site/src/content/docs/components/feed.md`
+
 ### 2026-09-23 16:43 — web round 1
 
 - **DOC** Feed: the web notes say the loading indicator is 'not live, aria-busy covers loading', but the ProgressBar they specify (`label={copy.loading} hideLabel`) announces `copy.indeterminate` by default (announce defaults to `complete`). I passed `announce="none"`; the notes should list that prop on the composed ProgressBar. → `site/src/content/docs/components/feed.md`
@@ -5467,6 +5615,12 @@ Doc: `site/src/content/docs/components/feed.md`
 
 Doc: `site/src/content/docs/components/fieldset.md`
 
+### 2026-09-23 19:04 — rn round 1
+
+- **DOC** Fieldset: the spec's `partGap` says the group root holds the gap, but `disabledOpacity` names part `legend` while the notes say it also dims the description; I dimmed both wrappers. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: `platforms.rn.props` lists only role, accessibilityLabel and accessibilityHint, while the a11y text asks for `aria-invalid` and `aria-describedby` on the group; I emit those only under Platform.OS === 'web' because RN's View types lack them. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the spec doesn't say which components count as a 'field' on RN beyond 'reads FieldsetContext'. I used Input, NumberInput, Checkbox, Switch, RadioGroup, Select, Slider and DatePicker, which is a guess for the last four. → `site/src/content/docs/components/fieldset.md`
+
 ### 2026-09-23 15:09 — web round 2
 
 - **DOC** Fieldset: the spec says legendColor, descriptionText and errorText have 'no --ds-fieldset-* hook' because the Texts' tones realise them. That contradicts the package convention (locked closes the override API, not the hook; only forwarded bindings are exempt) and the check_hooks gate, which does not count tone-realised bindings as forwarded. Chose: follow the convention, as Meter does. The root declares --ds-fieldset-legend-color / -description-text / -error-text, and each Fieldset-owned wrapper points the token its Text's tone reads (--color-foreground / -muted / -danger) at that hook. The hooks are live and the Text is not restyled. The doc should drop 'no --ds-fieldset-* hook' for these three and describe the token re-scope. → `site/src/content/docs/components/fieldset.md`
@@ -5692,6 +5846,12 @@ Doc: `site/src/content/docs/components/fieldset.md`
 
 Doc: `site/src/content/docs/components/focusscope.md`
 
+### 2026-09-23 19:05 — rn round 1
+
+- **DOC** FocusScope: the `the-scope-adds-no-role` scenario says `attribute: role is null`, but the rn notes say the test must assert role, accessibilityRole and accessibilityLabel are all absent. I asserted all three undefined, following the notes. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the spec says `ref` exposes the wrapper root, while the conventions say to pass `ref` straight through. The wrapper needs an internal ref for setAccessibilityFocus, so I used useImperativeHandle rather than attaching the caller's ref directly. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the `Platform.OS === 'web'` branch that omits accessibilityViewIsModal has no test, because Jest runs under `ios`. The spec says as much, so I left it uncovered. → `site/src/content/docs/components/focusscope.md`
+
 ### 2026-09-23 15:11 — web round 1
 
 - **DOC** FocusScope: the notes say a reactivated scope is re-inserted 'directly below the lowest stacked scope it contains — rather than on top', but not where it goes when it contains no stacked scope; I put it on top (activation order), which is the only position that keeps every containing scope below it without inventing an order among unrelated siblings. → `site/src/content/docs/components/focusscope.md`
@@ -5894,6 +6054,13 @@ Doc: `site/src/content/docs/components/focusscope.md`
 ## Form
 
 Doc: `site/src/content/docs/components/form.md`
+
+### 2026-09-23 18:56 — rn round 1
+
+- **DOC** Form: the spec says the summary box sets line height for the item Links to inherit, but RN has no cascade; the doc never says how to express errorSummaryLineHeight on native. I pass `lineHeight: 'font.lineHeight.normal'` through Text's `overrides` to the heading and to each item's wrapping Text. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the copy block lists `summaryHeadingOne` and `invalidSummary`, but the Guidance says RN does not render them. I kept them in a COPY constant only for completeness and never render them. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the RN spec never says whether `validateMode` in the context should read `change` after a failed submit or stay as configured. I report `change` after failure alongside `submitFailed`, so a field that reads only the mode still re-validates. → `site/src/content/docs/components/form.md`
+- **DOC** Form: `name` is inert on RN per the spec, so it is destructured to an unused `_name`; the spec does not say whether a lint-clean pattern is preferred for that. → `site/src/content/docs/components/form.md`
 
 ### 2026-09-23 14:16 — web round 2
 
@@ -6434,6 +6601,11 @@ Doc: `site/src/content/docs/components/form.md`
 
 Doc: `site/src/content/docs/components/heading.md`
 
+### 2026-09-23 18:51 — rn round 1
+
+- **DOC** Heading: the spec covers everything I needed, so I made no changes. One small ambiguity: 'once per element for its lifetime' could be read as per mount or per instance, and I read it as per mounted instance, using a ref guard inside an effect. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: `overrides.fontSize`, `overrides.lineHeight` and `overrides.fontWeight` are resolved with `resolveToken` and cast to `number`. The spec doesn't say what to do if an override names a token of another type (for example a colour), so I did not guard against it. → `site/src/content/docs/components/heading.md`
+
 ### 2026-09-23 13:46 — web round 2
 
 - **DOC** Heading: the spec contradicts itself on the locked `color` binding. Its description says there is no `--ds-heading-color` hook, the rule reads `var(--color-foreground-strong)` directly, and consumer CSS has no hook to break the pair with. But the prompt's Overrides section, the package conventions and the check_hooks gate all say a locked binding keeps its hook ('locked closes the override API, not the styling hook'). I followed the Overrides section and the gate: the hook exists with the token as its default and the rule reads it; `color` stays out of the `overrides` type and is ignored if passed. The color description should be rewritten to say the binding is locked out of `overrides` but keeps its hook for page CSS and naming. → `site/src/content/docs/components/heading.md`
@@ -6669,6 +6841,12 @@ Doc: `site/src/content/docs/components/heading.md`
 ## Icon
 
 Doc: `site/src/content/docs/components/icon.md`
+
+### 2026-09-23 18:49 — rn round 1
+
+- **DOC** Icon: the spec says paths.ts copies a `grid` field from icon-paths.json, but the file had no such field. I added a `grid` export, which is not part of the JSON's per-glyph shape, so the doc should say whether it is a named export or a table field. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the rn notes put `testID` and the accessibility props on the `Svg`, but react-native-web spreads them onto the DOM svg and axe fails. The conventions say to put them on a wrapping View, so the View carries testID="Icon" and the a11y props. The spec should name the wrapper as the root. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the decorative-beside-a-label example says the story wraps the glyph in a Text of the same size, but does not say whether the Text's size prop should be set on the Icon or only on the Text. I set size=sm on both. → `site/src/content/docs/components/icon.md`
 
 ### 2026-09-23 13:40 — lit round 1
 
@@ -6974,6 +7152,17 @@ Doc: `site/src/content/docs/components/icon.md`
 ## Input
 
 Doc: `site/src/content/docs/components/input.md`
+
+### 2026-09-23 18:43 — web round 2
+
+- **DOC** Input: styles.errorText and styles.descriptionText say 'no --ds-input-* hook, since a hook could not reach the child', but the hooks gate (tools/check_hooks.ts) and the web conventions require a hook for every locked binding unless the doc lists it under composition.<part>.forwards, and Input has no composition block. I followed the sibling fields (Select, Combobox, NumberInput) and declared --ds-input-description-text and --ds-input-error-text on the root with their tokens. Nothing reads them yet, because the composed Text draws the color from its tone, so setting either hook from page CSS does nothing. The doc should either drop the 'no hook' wording or add a composition entry (description/errorMessage → Text) that makes the exemption explicit, and it should say whether these hooks are expected to actually re-theme the helper text. → `site/src/content/docs/components/input.md`
+
+### 2026-09-23 18:42 — web round 1
+
+- **DOC** Input: the focusRingWidth padding compensation is clamped at zero, which on web needs a `max(0px, …)` literal inside calc(). The doc requires the clamp but does not list it as a sanctioned literal exception; it passes lint_literals today, so I kept it as-is. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the form block (discovery: context) does not mention the context members the web field relies on: `form.idBase` for the field id, `form.errors[name]` as the Form's invalid mark, `form.disabled` for a disabled Form, and `isDisabled()` on the registration. They appear only in the platform notes and Behavior prose; I kept the existing wiring. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the Default story's args are not stated (label, name are required). I kept `label: 'Email address', name: 'email'`, which the scenarios build on. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the `focus-is-reported` scenario says `focus: field` without saying whether that means Tab or programmatic focus. The test tabs into the field. → `site/src/content/docs/components/input.md`
 
 ### 2026-09-23 13:59 — web round 3
 
@@ -7527,6 +7716,12 @@ Doc: `site/src/content/docs/components/input.md`
 
 Doc: `site/src/content/docs/components/landmark.md`
 
+### 2026-09-23 19:02 — rn round 1
+
+- **DOC** Landmark: The spec has no Keyboard block, so no Keyboard story was added. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: The RN `aria-label` mirror is applied only where `accessibilityLabel` is, matching the notes. The doc does not say whether `aria-label` should follow the same restriction. I assumed it should. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: The Default story uses role navigation with label Main, per the guidance. The spec does not say whether the RN stories must model two same-role landmarks for the shared-label duplicate check, which does not run on native. I did not add one. → `site/src/content/docs/components/landmark.md`
+
 ### 2026-09-23 15:02 — web round 1
 
 - **DOC** Landmark: the doc disagrees on whether `search` is in the shared-label/both-unlabelled duplicate check. The Behavior warning list names only navigation, complementary, region and form. The Behavior paragraph on stories says complementary and search 'are in the shared-label duplicate check', and the `label` description says a page with two searches needs a label. I added `search` to the check; the Behavior warning list should name it (or the other two statements should drop it). → `site/src/content/docs/components/landmark.md`
@@ -7673,6 +7868,12 @@ Doc: `site/src/content/docs/components/landmark.md`
 ## Link
 
 Doc: `site/src/content/docs/components/link.md`
+
+### 2026-09-23 18:54 — rn round 1
+
+- **DOC** Link: `current` has no example or `given` story in the spec, so I kept the existing `Current` state story on native, but the doc does not say whether a state story is wanted. → `site/src/content/docs/components/link.md`
+- **DOC** Link: the spec says the `focus-visible` requirement is met natively only under react-native-web, but gives no test or scenario for it, so nothing verifies it. → `site/src/content/docs/components/link.md`
+- **DOC** Link: `LINK_EXTERNAL_SUFFIX` is described as 'package-internal' but the doc does not say how to keep it out of the public entry point; I export it from Link.tsx and leave it out of index.ts. → `site/src/content/docs/components/link.md`
 
 ### 2026-09-23 13:56 — web round 2
 
@@ -8169,6 +8370,16 @@ Doc: `site/src/content/docs/components/link.md`
 
 Doc: `site/src/content/docs/components/listbox.md`
 
+### 2026-09-23 19:14 — rn round 1
+
+- **DOC** Listbox: the composed emptyState and errorMessage Texts are said to render as element="p" and get a data-part hook, but the RN Text has no such prop and the doc does not say whether that applies on native; I applied it to neither and kept testIDs on wrapping Views. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the RN notes say the active/focused row gets a border, but not what an activeValue-driven pre-highlight looks like without focus; I applied only the active background, no border. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the behavior scenario `loading-replaces-the-empty-message` expects aria-busy, but that is expressible on RN only as accessibilityState.busy and aria-busy on the list; the test checks the copy alone. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the doc says the optionIcon takes `optionColor` as Icon overrides.color, but `optionColor` is locked and has no override key, so I passed the 'color.foreground' token ref directly. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `maxVisible` is an enum of quoted digits, but the Enum-digits rule covers only Heading level and Stack gap; I accepted both string and number anyway. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the selectedCount text is a single form with no plural rules, yet the Copy contract says to use Intl.PluralRules for counts; I interpolated {count} directly as the spec says '1 selected' is intended. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the RN notes do not say what the empty/loading row's accessibility role should be when the list is `disabled`; I left it as a plain readable stop. → `site/src/content/docs/components/listbox.md`
+
 ### 2026-09-23 15:51 — web round 2
 
 - **DOC** Listbox: conflict between the spec and the hooks gate. `errorText` and `emptyColor` are documented as 'Realised by the composed Text's tone …; declares no hook of its own', but tools/check_hooks.ts only exempts bindings listed under `composition.<part>.forwards`, and the doc lists these only as Text `props` (tone). Chose the Fieldset pattern: declare `--ds-listbox-error-text` / `--ds-listbox-empty-color` on the root and re-bind `--color-foreground-danger` / `--color-foreground-muted` to them on plain wrappers the list owns, so the Text keeps its tone and is not restyled. The doc should either drop 'declares no hook of its own' or the gate should treat a binding realised by a composed prop as exempt. → `site/src/content/docs/components/listbox.md`
@@ -8448,6 +8659,14 @@ Doc: `site/src/content/docs/components/listbox.md`
 ## Menu
 
 Doc: `site/src/content/docs/components/menu.md`
+
+### 2026-09-23 19:08 — rn round 1
+
+- **DOC** Menu: the spec says the trigger part is a wrapping View with testID Menu.trigger and that the popup is named by its trigger, but on rn the popup takes accessibilityLabel/aria-label=label rather than an accessibilityLabelledBy reference; I kept the label string, since the two agree and the trigger Button has no stable id. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: `minWidth` says an override replaces the base and the × 2.5 stays, but does not say whether the override token is itself the base (space.20 equivalent) or the final width; I treated it as the base, so an override of space.24 gives 2.5 × space.24. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: `popupOffset` and `gutter` say web/Lit read the token in px, and rn uses the resolved theme value, but the doc does not say how a phone-width ActionSheet presentation should treat placement, gutter and overrides; I ignored them there, since ActionSheet takes no overrides from Menu. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: the Keyboard story requirement says to render enough items for every rule, but on rn there are no arrow keys or typeahead, so the number of items only matters for the axe gate; I reused the Default story's four actions with a group, a separator and a disabled item. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: the doc says focus returns to the anchor View, which the consumer must make focusable, but does not say what Menu should do when the anchor ref is null at close time; I silently skip the focus move. → `site/src/content/docs/components/menu.md`
 
 ### 2026-09-23 15:27 — web round 2
 
@@ -8753,6 +8972,11 @@ Doc: `site/src/content/docs/components/menu.md`
 
 Doc: `site/src/content/docs/components/meter.md`
 
+### 2026-09-23 19:03 — rn round 1
+
+- **DOC** Meter: the styles list `track` and `fill` as parts but the RN notes only give testIDs for `Meter.label` and `Meter.valueText`; I kept `Meter.header`, `Meter.track` and `Meter.fill` (anatomy names verbatim) — the doc should say whether those are part of the contract. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the RN notes say `accessibilityValue` is not asserted by the scenarios, so no test covers the clamp, the percentage fallback or the invalid-range 'now = min' behaviour on RN; the scenarios are web/lit-only for those, and I did not add tests beyond the doc's 8. → `site/src/content/docs/components/meter.md`
+
 ### 2026-09-23 15:05 — web round 2
 
 - **DOC** Meter: the spec says `labelColor` and `valueColor` are 'Realised by the label Text's tone default; no hook of its own' (and 'tone muted' for the value), but both are locked and not forwarded. The package convention and tools/check_hooks.ts say every locked, non-forwarded binding keeps a `--ds-<component>-<binding>` hook. I followed the convention: `--ds-meter-label-color` and `--ds-meter-value-color` are declared on `.ds-meter`, and each part wrapper span sets the token its Text's tone reads (`--color-foreground` on `.ds-meter__label`, `--color-foreground-muted` on `.ds-meter__value-text`) to that hook. This is the same inverse-surface pattern Toast and Tooltip use. The doc should drop 'no hook of its own' and describe this re-scope, or list these two bindings under composition forwards if Text gains a color override (Text's `color` is locked, so today it can't be forwarded). → `site/src/content/docs/components/meter.md`
@@ -8936,6 +9160,14 @@ Doc: `site/src/content/docs/components/meter.md`
 ## NumberInput
 
 Doc: `site/src/content/docs/components/numberinput.md`
+
+### 2026-09-23 19:19 — rn round 1
+
+- **DOC** NumberInput: the spec says the steppers' wrapper is a 'plain wrapper' and that Buttons are named from copy, but not whether the stepper View should carry `accessible={false}` or similar; I left it with no accessibility props so the Buttons stay in the tree. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the RN notes say the description is reached via a wrapper but RN has no aria-describedby on TextInput; I put description plus the drawn error into accessibilityHint. The spec does not say whether the hint should include the error. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: labelWeight/helperSize are forwarded to Text via its `overrides` (fontWeight, fontSize); the spec names the child bindings only for description and errorMessage, not for the label Text, so the label's forward mapping (fontSize/fontWeight/fontFamily/lineHeight) is my inference. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the behavior scenario 'typing-a-number-reports-it' has no `given`, so the test relies on the Default story's (empty) value; the spec does not say what happens to the displayed text when uncontrolled typing '7' is followed by blur. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: under format percent, `precision` on the displayed side interacts with Intl percent formatting (which divides by 100 and can round 10.5 at precision 0); the spec gives examples but not the rounding order, so I round the stored number to precision first, then format. → `site/src/content/docs/components/numberinput.md`
 
 ### 2026-09-23 16:08 — web round 2
 
@@ -9339,6 +9571,14 @@ Doc: `site/src/content/docs/patterns/settings-page.md`
 
 Doc: `site/src/content/docs/components/popover.md`
 
+### 2026-09-23 19:09 — rn round 1
+
+- **DOC** Popover: the tablet panel's name chain is stated as `accessibleName`, else string `label`, but the phone chain also includes `accessibilityLabel`; I used the phone chain (accessibleName, accessibilityLabel, label) in both presentations so one trigger names both. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: 'a controlled consumer sets open false with no reason: focus returns only if it is inside the panel' has no native equivalent (no way to ask whether focus is inside). I restore focus only for the trigger, escape and close-button reasons, and never for an externally driven close. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: the panel's exit fade uses motion.easing.exit and `exit` duration, but the spec does not say what happens to an open-again during the exit; I stop the exit animation and re-enter from the current progress. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: the arrow before the panel is measured is centered assuming a panel two arrows wide; the spec gives no pre-measure rule, but the panel is opacity 0 then so it is not visible. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: the notes contain a duplicated phrase ('The composed parts' the composed parts' testIDs') — a typo in the doc. → `site/src/content/docs/components/popover.md`
+
 ### 2026-09-23 15:32 — web round 1
 
 - **DOC** Popover: the doc says the reason type 'keeps its existing exported name, PopoverCloseReason', but the React package's existing export was PopoverOpenChangeReason (Lit and RN use PopoverCloseReason). Chose PopoverCloseReason as the primary type and kept PopoverOpenChangeReason as a @deprecated alias so nothing breaks; the doc should say which name React exports and whether the alias stays. → `site/src/content/docs/components/popover.md`
@@ -9575,6 +9815,13 @@ Doc: `site/src/content/docs/components/popover.md`
 
 Doc: `site/src/content/docs/components/progressbar.md`
 
+### 2026-09-23 19:19 — rn round 1
+
+- **DOC** ProgressBar: composition props `element: span` on the label and valueText Texts have no counterpart on the RN Text (it takes no `element`); ignored, and the wrapper Views carry the testIDs as the rn notes say. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the 'value: 1 fraction crosses tier 4 only when clamped === max' rule is implied by floor(fraction × 4); floating-point fractions just below 1 (e.g. 0.9999999) stay tier 3 — I relied on the fraction arithmetic and did not add an epsilon. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the a-hidden-label-is-still-the-accessible-name scenario says `name: true` without saying whether the visible label part must be absent on rn; the test asserts both the missing `ProgressBar.label` and the accessibilityLabel. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the spec does not say whether the determinate fill's animation easing is overridable; only `sweepEasing` is a binding, so the fill uses motion.easing.standard directly (as the transition binding text states). → `site/src/content/docs/components/progressbar.md`
+
 ### 2026-09-23 16:10 — web round 2
 
 - **DOC** ProgressBar: the spec says `labelColor` and `valueColor` are 'realised by the label/value Text's tone … no hook of its own', but check_hooks requires every locked binding that is not forwarded to declare `--ds-progress-bar-<binding>`. They are not in `composition.forwards`, and Text's `color` is locked, so they can't be forwarded. I followed the gate: the root declares `--ds-progress-bar-label-color` / `--ds-progress-bar-value-color` (defaults `--color-foreground` / `--color-foreground-muted`). Wrapper spans around each Text re-set that token from the hook (the inverse-surface re-scoping Text.css documents), so the Text is never restyled. The doc should either drop 'no hook of its own' and describe this token re-scope, or have check_hooks exempt bindings the spec realises through a composed child's tone. → `site/src/content/docs/components/progressbar.md`
@@ -9780,6 +10027,13 @@ Doc: `site/src/content/docs/components/progressbar.md`
 
 Doc: `site/src/content/docs/components/radiogroup.md`
 
+### 2026-09-23 19:00 — rn round 1
+
+- **DOC** RadioGroup: the conventions say to mirror every accessibilityValue as aria-valuetext, but copy.position ('1 of 3') sits on a role=radio row, where aria-valuetext is not an allowed ARIA attribute (axe aria-allowed-attr). I did not mirror it, so on web the position is not exposed. The spec should say whether position is native-only on rn-web. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the rn notes say the decorative circle is 'hidden from accessibility' but do not list the three props (aria-hidden, accessibilityElementsHidden, importantForAccessibility). The existing code lacked aria-hidden, which react-native-web needs; the doc should spell it out. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the rn notes give no aria-required or aria-invalid mirror for the group. The web section says aria-invalid/aria-required go on the fieldset, and the rn notes say there is no invalid state. I chose no aria-invalid or aria-required on rn; the doc should state that explicitly. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the group has role radiogroup and aria-label but no aria-describedby wiring on rn. The description goes on accessibilityHint only and the error is announced through a live region. The spec never says whether the rn description and error need nativeID links. → `site/src/content/docs/components/radiogroup.md`
+
 ### 2026-09-23 14:56 — web round 2
 
 - **DOC** RadioGroup: the schema says descriptionText and errorText are 'realised by the composed Text's tone … no --ds-radio-group-* hook', but the hooks gate (tools/check_hooks.ts) requires every locked binding that isn't passed on to a child to declare its hook, and these two are realised through a tone, not passed on. I followed the gate and Checkbox's precedent: both hooks are declared on the root, defaulting to their tokens, and nothing reads them, because the Texts take their colour from their tones and restyling a child isn't allowed. Either the doc should drop 'no hook', or the gate should also exempt bindings realised by a composed child's props. → `site/src/content/docs/components/radiogroup.md`
@@ -9974,6 +10228,19 @@ Doc: `site/src/content/docs/components/radiogroup.md`
 ## Search
 
 Doc: `site/src/content/docs/components/search.md`
+
+### 2026-09-23 19:22 — rn round 2
+
+- **DOC** Search: platforms.rn says the TextInput takes role="searchbox", but the schema also puts aria-expanded on it when suggestions are set, and searchbox does not allow aria-expanded (axe aria-allowed-attr). The web note says combobox wins whenever `suggestions` is set; the rn notes never say so. I applied the web rule on native: role is combobox with suggestions, searchbox without. The rn notes should state it. → `site/src/content/docs/components/search.md`
+- **DOC** Search: aria-autocomplete="list" is required by the web combobox note, but RN TextInput does not obviously type that prop, so I did not set it on native. The doc should say whether native needs it. → `site/src/content/docs/components/search.md`
+
+### 2026-09-23 19:22 — rn round 1
+
+- **DOC** Search: the guidance says clear returns focus to the input, but on native a Button press cannot be verified in the test renderer; I call inputRef.focus() after clear and left it untested. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the spec says a `suggestions` array arriving while the field is focused but untouched must not open the list, yet also that the list closes on blur to an element outside Search. Native has no 'element outside Search' notion, so I close on any input blur except during a list press. → `site/src/content/docs/components/search.md`
+- **DOC** Search: 'locale of the nearest [lang] ancestor' has no native equivalent; I use Intl.PluralRules(undefined), the runtime locale. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the Escape rule says 'closes suggestions if open', but with the list opened by ArrowDown and no rows highlighted on native it was unclear whether an empty list counts as open; I treat any shown list as open. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the schema lists an `open` state only implicitly. The Keyboard story cannot start open, so I render a closed field with defaultValue and suggestions as the guidance says. → `site/src/content/docs/components/search.md`
 
 ### 2026-09-23 16:16 — web round 1
 
@@ -10210,6 +10477,14 @@ Doc: `site/src/content/docs/components/search.md`
 
 Doc: `site/src/content/docs/components/segmentedcontrol.md`
 
+### 2026-09-23 19:14 — rn round 1
+
+- **DOC** SegmentedControl: the behavior list for click-selects-a-segment says `then: event: onChange` twice (second one carries `with: list`) — I read it as one call with 'list' and asserted toHaveBeenCalledTimes(1); the duplicate entry is ambiguous. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: `segmentShadow` resolves to an object; the doc says it is spread into the pill's style (shadowColor, shadowOffset, shadowRadius, elevation) but does not name the resolved token shape or say whether shadowOpacity is included; I spread t.shadowRaised as-is and cast an override to the same type. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: the doc says the group's direction is read at keydown but gives no RN source for it; I used the computed style of currentTarget on react-native-web and I18nManager.isRTL elsewhere (same as Tabs). → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: the Keyboard story has no `given`, so it is just Default with three options; the doc does not say whether it should include a disabled segment to exercise skipping. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: pill vertical placement (top/height from the selected segment's layout) is not specified; I copy y and height from onLayout and only animate x and width. → `site/src/content/docs/components/segmentedcontrol.md`
+
 ### 2026-09-23 15:45 — web round 1
 
 - **DOC** SegmentedControl: `options` says the icon colour is segmentColor / segmentSelectedColor 'forwarded as the Icon's overrides.color', but those bindings are locked, and page CSS is the only sanctioned way to re-theme them (`--ds-segmented-control-segment-color`). Overrides take a TokenRef, not a CSS variable, so the forwarded icon colour is fixed to the default tokens (color.foreground.muted / .strong) and does not follow a page-CSS re-theme of the hook, while the label text does. Chose the literal TokenRefs. The doc should say whether the icon should follow the hook (e.g. inherit currentColor on web) or keep the token. → `site/src/content/docs/components/segmentedcontrol.md`
@@ -10399,6 +10674,12 @@ Doc: `site/src/content/docs/components/segmentedcontrol.md`
 ## Select
 
 Doc: `site/src/content/docs/components/select.md`
+
+### 2026-09-23 19:15 — rn round 1
+
+- **DOC** Select: the spec gives the popup part no accessibility role, yet the popup View is modal (`accessibilityViewIsModal`) and could reasonably carry a label. A label needs a role on react-native-web, so I dropped the popup's label and left the Listbox to name the list. → `site/src/content/docs/components/select.md`
+- **DOC** Select: `chevronReserve` is overridable but has no effect on React Native, since `native: always` means `auto` here. I accept the override and do nothing with it, as the doc says. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the doc lists `accessibilityHint` for the description but names no `aria-describedby` mirror on React Native, so I mirrored only `aria-label` and `aria-expanded`. → `site/src/content/docs/components/select.md`
 
 ### 2026-09-23 15:56 — web round 2
 
@@ -10659,6 +10940,12 @@ Doc: `site/src/content/docs/components/select.md`
 ## SidePanel
 
 Doc: `site/src/content/docs/components/sidepanel.md`
+
+### 2026-09-23 19:12 — rn round 1
+
+- **DOC** SidePanel: `copy.expanded` is said to be carried in COPY but never rendered on rn; I added it as an unused constant, and nothing in the schema says how an unused copy key should be exempted from an unused-symbol lint. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the `Keyboard` story requirement (Enter/Space, Tab, Escape, Shift+Tab) describes web keyboard rules that mostly have no native meaning; the rn notes give only Escape/back = dismiss, so I did not implement Tab or Shift+Tab stitching and treated `expect: manual` as web-only. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: `non-dismissible-still-reports-escape` is scoped to web and lit, so rn has no test for it even though the rn code implements it via onRequestClose; the scenario list does not say whether the back-button path should be covered. → `site/src/content/docs/components/sidepanel.md`
 
 ### 2026-09-23 15:42 — web round 2
 
@@ -11243,6 +11530,13 @@ Doc: `site/src/content/docs/components/slider.md`
 
 Doc: `site/src/content/docs/components/splitter.md`
 
+### 2026-09-23 19:47 — rn round 1
+
+- **DOC** Splitter: the schema never says whether the separator should also carry `aria-orientation` on react-native-web; rn props omit it, so it is not set (axe passes for role=slider without it). → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: `collapseButtonOffset` is described as distance from the separator's start edge along the separator; I applied it as `top` (horizontal) or `left` (vertical) on the button's wrapper View, and the schema does not say whether RTL should flip the vertical case. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: stackBelow reads `layoutMaxWidthProse`/`layoutMaxWidthContent` as numbers in the RN tokens; the spec's px/rem/em unit-parsing wording does not say what a non-number RN token should do, so any non-number never stacks. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the spec says a collapse fires no size events but is silent on whether `persistKey` should record `collapsed` while `collapsible` is false; I record the pinned value (false). → `site/src/content/docs/components/splitter.md`
+
 ### 2026-09-23 16:42 — web round 1
 
 - **DOC** Splitter: onSizeChange 'never repeats the size it last reported' is undefined for a controlled splitter whose parent ignores the report — pressing End twice re-reports maxSize because the comparison is against the rendered (prop) size, not the last reported value; chose to compare against the rendered size → `site/src/content/docs/components/splitter.md`
@@ -11506,6 +11800,11 @@ Doc: `site/src/content/docs/components/splitter.md`
 
 Doc: `site/src/content/docs/components/stack.md`
 
+### 2026-09-23 18:52 — rn round 1
+
+- **DOC** Stack: the `wrap` a11y note asks that a wrapped row still fits when the platform's text size is turned up, but gives no testable criterion on native, so no test asserts it; the `renders-*` scenarios only check that the component renders, not that the flex styles or gap token are applied. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the spec does not say whether the `WithOverrides` story (gap: 'space.lg') should exist; it is not an enum, boolean or example story, so I kept the existing one. → `site/src/content/docs/components/stack.md`
+
 ### 2026-09-23 13:48 — web round 2
 
 - **DOC** Stack: not a spec gap, a gate-infrastructure conflict. playwright.config.ts reuses any server already on port 6007 (`reuseExistingServer: true`), so in a worktree the axe gate can run against another checkout's Storybook and fail with ERR_CONNECTION_REFUSED when that server stops. Nothing in the component caused it. The same spec, run against this worktree's own Storybook on a private port (logs/stack-axe.config.ts, DS_GATE_COMPONENT=Stack), passes axe in light and dark. I changed no component code for this round. → `site/src/content/docs/components/stack.md`
@@ -11765,6 +12064,18 @@ Doc: `site/src/content/docs/components/stack.md`
 
 Doc: `site/src/content/docs/components/stepper.md`
 
+### 2026-09-23 19:21 — rn round 2
+
+- **DOC** Stepper: the doc doesn't say what role a display-only step gets on React Native when compact removes its label text. A role-less View with aria-label fails axe aria-prohibited-attr, so I used role="img" and dropped selected state there. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: the doc says compact reveals the first step's label when `current` matches no id, but its RN notes only mention the current step's label. I implemented the reveal from the property doc. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: the spec's RN notes give a display-only step `accessibilityState.selected` and a label, but axe rejects both on a role-less View once its text is not rendered. → `site/src/content/docs/components/stepper.md`
+
+### 2026-09-23 19:20 — rn round 1
+
+- **DOC** Stepper: composition lists `element: span` for the label, description and count Text, but the RN Text component has no `element` prop, so it was ignored. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: the doc does not say how aria-current="step" is mirrored on RN, because View's types omit `aria-current`. I spread `{'aria-current': 'step'}` through an untyped record on the current step's control. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: `accessibilityState.selected` on a non-navigable step is a plain `accessible` View with no role. The doc does not say whether that needs a role, so I kept it role-less. → `site/src/content/docs/components/stepper.md`
+
 ### 2026-09-23 16:13 — web round 2
 
 - **DOC** Stepper: labelColor, labelUpcomingColor, descriptionColor and countColor say 'no --ds-stepper-* hook' (realised by the composed Text's tone), but tools/check_hooks.ts only exempts bindings listed under composition forwards, not tone-realised ones, so it requires a hook for all four. Chose to declare the four hooks on .ds-stepper as naming-only hooks, as Tree.css does for --ds-tree-badge-color; no rule reads them, because feeding them into Text would restyle a child. Either the doc should drop the 'no hook' wording and say the hook exists only for naming, or check_hooks should exempt bindings the doc marks as realised by a composed child's tone. As it stands, setting these hooks from page CSS changes nothing on screen, which contradicts the gate's stated reason for requiring them (re-theming from page CSS). → `site/src/content/docs/components/stepper.md`
@@ -11981,6 +12292,13 @@ Doc: `site/src/content/docs/components/stepper.md`
 
 Doc: `site/src/content/docs/components/switch.md`
 
+### 2026-09-23 18:59 — rn round 1
+
+- **DOC** Switch: the spec says the Form contract is `discovery: context` and says a disabled Switch stays registered, but not how the Form's own `disabled` (form?.disabled) should combine with the Switch's. I treated it as OR-ed with the prop and the Fieldset's `disabled`, as Checkbox does. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: `labelColor` is locked and listed among the bindings forwarded through Text `overrides`, but Text's default tone already resolves to color.foreground and locked bindings are not in the overrides type. I passed no colour override. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: `aria-*` mirrors are required by the package conventions, but the spec says accessibilityRole is set only off web. I read that as covering the aria-label/checked/disabled mirrors too and applied them on native only, since the web input already carries them. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: `overrides.lineHeight` and `labelSize` size the track slot (labelSize × lineHeight) as well as the label Text. The spec states this, but not that the same override must feed both, so I resolve them once and use them for both. → `site/src/content/docs/components/switch.md`
+
 ### 2026-09-23 14:53 — web round 2
 
 - **DOC** Switch: the spec contradicts itself on `descriptionText`. Its binding description says it is 'Realised by the composed Text's muted tone; no --ds-switch-* hook', and helperSize's note groups it with the forwarded-only bindings that get no hook. But `platforms.web.notes` says 'Locked bindings keep their --ds-switch-* hooks', the Overrides section says the same, and the hooks gate fails without one: descriptionText is locked but not forwarded to the Text's `overrides`, so the gate does not exempt it. I declared `--ds-switch-description-text` on the root and no rule reads it, as Checkbox does. The binding description and helperSize's note should drop descriptionText from the no-hook group. → `site/src/content/docs/components/switch.md`
@@ -12165,6 +12483,19 @@ Doc: `site/src/content/docs/components/switch.md`
 ## Table
 
 Doc: `site/src/content/docs/components/table.md`
+
+### 2026-09-23 19:34 — rn round 2
+
+- **DOC** Table: the convention to mirror every accessibilityState prop as aria-* conflicts with axe for `selected`: aria-selected is not allowed on role=listitem, role=button or a role-less div, so on react-native-web selection is conveyed by the Checkbox and the start-edge bar only. The spec's rowSelected/aria-selected wording should say the RN row carries the native selected trait alone. → `site/src/content/docs/components/table.md`
+- **DOC** Table: the RN spec never says which role a selected row takes, so `aria-selected` is unsupported on it; a `row`/`option` role would allow it but breaks the required ul/li list structure. → `site/src/content/docs/components/table.md`
+
+### 2026-09-23 19:26 — rn round 1
+
+- **DOC** Table: `numericFont` says body cells of `align: end` columns use the mono family plus tabular figures, but RN Text's `overrides` has no font-variant binding and Table may not restyle a child, so only the family is applied and tabular-nums is not. The spec should say whether Text grows a `fontVariant` binding or Table accepts the limit. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `scrollFade` fades the edges for RTL 'mask flipped', but the RN spec gives no mirroring rule for the SVG gradient. I used logical `start`/`end` positions and left it at that. → `site/src/content/docs/components/table.md`
+- **DOC** Table: the scroll region on react-native-web needs `aria-describedby`, but RN has no such prop; I add it only when `Platform.OS === 'web'`. The spec does not say how `copy.rowCount` and `copy.scrollHint` reach the DOM on RN, beyond `accessibilityHint`. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `rowCount` says it uses the runtime default locale on RN, which I followed with `new Intl.PluralRules()` and no locale argument. The spec does not say whether a non-English locale should still get the `one`/`other` English text. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `stickyHeader` on a stacked table sticks the Toolbar band, but the spec does not say whether `headerShadow` applies to that band; I applied it, since the band is the stacked table's header. → `site/src/content/docs/components/table.md`
 
 ### 2026-09-23 16:24 — web round 1
 
@@ -12434,6 +12765,12 @@ Doc: `site/src/content/docs/components/table.md`
 
 Doc: `site/src/content/docs/components/tabs.md`
 
+### 2026-09-23 19:13 — rn round 1
+
+- **DOC** Tabs: the spec's `TabsTab` alias rule says 'a package that actually shipped it keeps it', but nothing in the doc says which packages did (it only names Lit). I kept it on RN because `packages/rn/dist/index.d.ts` still contains it; the doc should list the packages that shipped it. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the RN notes say each tab's decorative parts (icon, badge) are hidden, but not which hiding props to use on which parts; I applied the package's three-prop convention (`aria-hidden`, `accessibilityElementsHidden`, `importantForAccessibility`) to the icon wrapper, badge and indicator. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the doc does not say whether `keepMounted` hidden panels should be hidden with `aria-hidden` on react-native-web as well as `display: 'none'`; I kept `display: 'none'` plus the native hiding props, which hides them on web through the CSS alone. → `site/src/content/docs/components/tabs.md`
+
 ### 2026-09-23 15:44 — web round 1
 
 - **DOC** Tabs: web notes give the RTL indicator offset as `list.clientWidth - tab.offsetLeft - tab.offsetWidth` plus the list's scroll offset, but offsetLeft does not change when the list scrolls, so it is unclear what adding scrollLeft corrects for (and the value would drift during the smooth first-render scroll). Chose getBoundingClientRect measured within the list's client box, plus scrollLeft in LTR and minus it in RTL, which gives the same inline-start position at any scroll offset; the doc should state the requirement (distance from the inline-start edge of the scrolled content), not an offsetLeft formula. → `site/src/content/docs/components/tabs.md`
@@ -12657,6 +12994,12 @@ Doc: `site/src/content/docs/components/tabs.md`
 ## Text
 
 Doc: `site/src/content/docs/components/text.md`
+
+### 2026-09-23 18:50 — rn round 1
+
+- **DOC** Text: the `inline-error-wording` example is limited to web and Lit, but the spec also says `ToneDanger` uses its children verbatim on every platform. I kept the ToneDanger story on that string and added no separate rn example story. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the spec asks for no `Keyboard` story and none for `title`, which fits Text having no keyboard block. `truncate` on native has no sighted way to reach the clipped text, and the doc already says so. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the doc describes `TextForegroundContext` as read only while `tone` is `default`. It does not say whether an `onAction` or `danger` tone inside an inverse surface should win. I kept the existing behaviour, where the non-default tone wins. → `site/src/content/docs/components/text.md`
 
 ### 2026-09-23 13:43 — web round 3
 
@@ -12903,6 +13246,14 @@ Doc: `site/src/content/docs/components/text.md`
 ## Toast
 
 Doc: `site/src/content/docs/components/toast.md`
+
+### 2026-09-23 19:06 — rn round 1
+
+- **DOC** Toast: the spec says `dismiss(toastId?)` is exported beside `toast()`, but its own RN platform notes name only `useToast()` / `toast()` in the API line, and the props/events tables say nothing about a module-level export. I exported `dismiss` from the package next to `toast`. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the `Keyboard` story rule (trigger button plus two persistent action toasts, the second danger) is written for the web/Lit region. The RN spec does not say whether the toasts should render through `ToastProvider` or directly as `<Toast>`. I render them directly, so the story needs no provider. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the spec does not say which element carries `aria-live` and `aria-label` on the RN toast root, since `accessibilityRole` has no `status` value. I mirrored `accessibilityLiveRegion` as `aria-live` and `accessibilityLabel` (the message) as `aria-label` on the root, and added `aria-hidden` on the icon wrapper. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: it is unclear whether a standalone `<Toast>` should forward the region-only overrides (`stackGap`, `regionInset`, `layer`). The spec says a standalone Toast accepts them and they do nothing. I kept them in `ToastOverridableBinding` and ignore them on the toast itself. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the spec gives no fallback if `AppState.currentState` is null or undefined in the test environment. I treat it as active. → `site/src/content/docs/components/toast.md`
 
 ### 2026-09-23 15:16 — web round 2
 
@@ -13172,6 +13523,13 @@ Doc: `site/src/content/docs/components/toast.md`
 
 Doc: `site/src/content/docs/components/toolbar.md`
 
+### 2026-09-23 19:24 — rn round 1
+
+- **DOC** Toolbar: the FormattingToolbar and VerticalToolPalette examples give three Buttons with no overflowLabel, while Default and Keyboard give each an overflowLabel; on React Native the label is never used (no overflow Menu), so I left it off the examples and kept it on Default and Keyboard. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the 'has-accessible-name' scenario has no rn-specific check; I assert accessibilityRole, accessibilityLabel and aria-label on the root, because the spec doesn't say which name the test should read on native. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the fade's hiding props are not stated for the decorative gradient View; I applied the package's three-prop convention (aria-hidden, accessibilityElementsHidden, importantForAccessibility=no), which the doc could name. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the spec asks the Keyboard story to exercise keyboard rules, but on RN there is no roving focus or arrow handling; Keyboard is Default with overflow: wrap and only exercises Tab order and activation. → `site/src/content/docs/components/toolbar.md`
+
 ### 2026-09-23 16:21 — web round 1
 
 - **DOC** Toolbar: 'A group takes its orientation, wrapping and gaps from the Toolbar' does not say how a ToolbarGroup wraps under `overflow: wrap` — as one unit, or with its own controls wrapping when the group is wider than a line. Chose the second: under wrap the group is `flex: 0 1 auto; flex-wrap: wrap`, and in the other modes it stays rigid (`flex: 0 0 auto`). → `site/src/content/docs/components/toolbar.md`
@@ -13403,6 +13761,11 @@ Doc: `site/src/content/docs/components/toolbar.md`
 ## Tooltip
 
 Doc: `site/src/content/docs/components/tooltip.md`
+
+### 2026-09-23 19:05 — rn round 1
+
+- **DOC** Tooltip: the spec says a non-focusable child is an error, but native exposes no way to read focusability from an element, so the __DEV__ warning fires only when children is not exactly one element; the doc should state that limit for rn. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the seven behavior scenarios are all renders:true, so hover delay, warm window, pointerGrace, long-press and Escape dismissal have no scenario and no test on rn; the doc could declare click/hover/press scenarios so they are covered. → `site/src/content/docs/components/tooltip.md`
 
 ### 2026-09-23 15:13 — web round 1
 
@@ -13674,6 +14037,17 @@ Doc: `site/src/content/docs/components/tooltip.md`
 ## Tree
 
 Doc: `site/src/content/docs/components/tree.md`
+
+### 2026-09-23 19:46 — rn round 2
+
+- **DOC** Tree: the rn notes require accessibilityState.selected/checked on rows of role button/link, and the conventions say to mirror every accessibility prop as aria-*. But aria-selected and aria-checked are not allowed on those roles, so axe's aria-allowed-attr fails, and react-native-web ignores accessibilityState. I kept native accessibilityState and dropped the DOM mirrors, so on react-native-web selection and checked state are visual only. The doc should either pick a role that allows them (a treeitem-like role that Role lacks) or allow aria-current/aria-pressed as the DOM form. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: the row's `aria-label` on the Pressable is still emitted; if the doc's reading of 'level n' in the label conflicts with aria-level on web, that is unspecified for rn. → `site/src/content/docs/components/tree.md`
+
+### 2026-09-23 19:45 — rn round 1
+
+- **DOC** Tree: the guideLine description says a line runs 'down that parent's group', but rn flattens groups, so each row draws one full-height line per open ancestor. The result looks the same, but the doc never says how a flattened platform should draw it, and I kept the existing approach. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: Enter is listed with no platforms, so it applies to rn, but the rn notes say a tap does what Enter does and give no separate Enter path. I treated it as satisfied by the tap. → `site/src/content/docs/components/tree.md`
+- **DOC** Tree: the doc does not say whether the selected-count live region is rendered when `selectable` is `multiple` and `nodes` is empty. The existing code renders it ('0 selected'), following the web guidance, and I kept that. → `site/src/content/docs/components/tree.md`
 
 ### 2026-09-23 16:40 — web round 1
 
@@ -13978,6 +14352,14 @@ Doc: `site/src/content/docs/components/tree.md`
 
 Doc: `site/src/content/docs/components/treegrid.md`
 
+### 2026-09-23 19:44 — rn round 3
+
+- **DOC** TreeGrid: RN 0.87's `Role` union has no `gridcell`, yet a cell carrying aria-selected (selectable=cell) needs it for axe; the spec names neither, so the role is cast (`'gridcell' as 'cell'`) and only react-native-web honours it. → `site/src/content/docs/components/treegrid.md`
+
+### 2026-09-23 19:43 — rn round 2
+
+- **DOC** TreeGrid: the spec gives cells aria-selected in selectable=cell mode but does not say which role carries it; a plain `cell` fails axe aria-allowed-attr, so data cells use role=gridcell in that mode and cell otherwise. → `site/src/content/docs/components/treegrid.md`
+
 ### 2026-09-23 16:38 — web round 1
 
 - **DOC** TreeGrid: onEditStart is declared `cancelable` ('skips the default action when the handler returns false or calls preventDefault() on the event it receives'), but its payload is positional (rowId, column) with no event object, so on web only `return false` cancels; kept that, as DataGrid does. → `site/src/content/docs/components/treegrid.md`
@@ -14270,7 +14652,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 9335 · CODE: 151 · TOOLING: 7 · NOISE: 749
+DOC: 9543 · CODE: 151 · TOOLING: 7 · NOISE: 749
 
 Not per-target gap files, skipped: CODE.2026-09-23.md, FOLDS.md, TEST-FAILURES.md, TOOLING.2026-09-23.md.
 
@@ -14328,5 +14710,4 @@ Not per-target gap files, skipped: CODE.2026-09-23.md, FOLDS.md, TEST-FAILURES.m
 
 ## Gates to fix
 
-- [ ] Box.web — axe
-- [ ] Input.web — axe, hooks
+- none: every recorded target passed its gates

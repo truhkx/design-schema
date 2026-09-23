@@ -84,3 +84,25 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - DataGrid: copy.resize has no per-direction form, but rn's resize is a pair of accessibility actions (increment/decrement) that each need their own label. Used copy.resize verbatim for both, so a screen reader announces two identically named actions on a resizable header cell.
 - DataGrid: rn's commit timing says NumberInput and DatePicker "commit when another cell or a sort header is pressed", with no rule for the grid unmounting or the data changing under an open editor. Chose to drop the draft silently in both cases (no onCellChange), consistent with "an open editor stays open if focus leaves the grid".
 - DataGrid: `selectable: cell` says "a move ... to the selection column selects nothing", but the selection column only exists in `row` mode, so that clause is unreachable on every platform.
+
+## 2026-09-23 14:55 — round 1
+
+- DataGrid: job collision — peer session ds-regen-rn-6a was regenerating the same file in the same worktree at the same time; I stopped after one conflicting write (a duplicated pressedRow line, now removed), so this run's output is that session's file, not mine
+- DataGrid: the parts contract says a composed part gets exactly the listed forwards ('add no other'), but the web notes give the sort Button overrides.paddingInline space.0 and captionGap's description gives the caption Heading marginBlockEnd space.0; the existing file passes both, plus fontFamily to Heading and fontFamily/lineHeight to the status bar Texts — the doc should say whether these extras are allowed
+- DataGrid: platforms.rn.notes says the grid's accessibilityLabel is 'the caption followed by copy.rowCount' but gives no joiner; the file uses ', ' — the copy should be a param template (e.g. '{caption}, {rowCount}')
+- DataGrid: fixedHeight 'sizes the whole component' but surface is on the `container` part while the root carries testID=DataGrid; the anatomy doesn't say whether `container` is the root or the bordered view around the scroll region (the file has both)
+- DataGrid: rowHover on native is 'the pressed fill', but in row/none mode 'no body cell is pressable', so on a device a non-editable row has no pressed fill except through its select cell; the doc should say whether that is intended
+- DataGrid: FlatList getItemLayout offsets are measured from the top of the list content, including ListHeaderComponent; the doc says 'fixed getItemLayout from rowHeight' without the header row's offset
+- DataGrid: swiftui asks for a debug warning when range degrades to row; the rn notes don't — say whether rn warns
+
+## 2026-09-23 14:56 — round 1
+
+- DataGrid: the rn notes say the grid's accessibilityLabel is 'the caption followed by copy.rowCount' but give no separator and no copy key for joining them; I used `${caption}, ${rowCount}`.
+- DataGrid: statusBarGap says 'in row and none no body cell is pressable', but editable cells must open on tap in every mode ('tapping a cell selects or edits it'); I kept editable cells (and any cell while an editor is open, so pressing it commits) pressable in row/none mode.
+- DataGrid: the parts contract says sortButton receives exactly fontWeight/fontSize, but the web notes add `overrides.paddingInline` space.0 so the header text lines up with the cells; I kept paddingInline on rn.
+- DataGrid: the parts contract gives caption only captionSize/captionWeight, while captionGap requires `marginBlockEnd: 'space.0'` on the Heading; I passed the margin reset too, and dropped fontFamily from the Heading, so the fontFamily override does not reach the caption, the status bar or the empty state. The spec says fontFamily is 'inherited' from the container, which RN has no way to do without forwarding.
+- DataGrid: captionGap is 'below the caption', but margins are not allowed and no Stack gap is named; I put it on the grid-owned caption wrapper as paddingBottom (dropped when hideCaption).
+- DataGrid: getItemLayout's 'fixed' layout doesn't say whether offsets include the ListHeaderComponent; I add the measured header height (falling back to rowHeight + headerBorderWidth before layout).
+- DataGrid: rowHover on native is 'the pressed fill', but the doc doesn't say which elements report the press; I tint on pressIn of the select cell and of interactive cells, and on hover (react-native-web) of any cell.
+- DataGrid: behaviour scenario 'click: sortButton' / 'click: selectCell' targets the part, which on rn is a wrapper around the composed Button/Checkbox; I made both wrappers Pressables with accessible={false} so a press on the part itself acts, mirroring the web note that the part 'takes the click'.
+- DataGrid: cellContent, editor, rangeOverlay and body have no rn element or only a plain wrapper; rangeOverlay and body are omitted per the rn notes, copy.sortedAnnouncement direction is interpolated as the raw enum value ('ascending'/'descending') since no localized direction copy exists.

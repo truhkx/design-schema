@@ -1,8 +1,8 @@
 /**
  * TreeGrid — behavior scenarios from the component doc, one test each, in the doc's order.
  * The aria-expanded and aria-selected scenarios are web only (the parser narrows them). A click is a `press`.
- * The expand control is hidden from assistive technology on this platform (the row header's
- * accessibility actions are the screen-reader path), so its queries opt hidden elements back in.
+ * The expand Button stays in the accessibility tree; its queries still opt hidden elements in so
+ * a row header scrolled out of the virtualized window cannot hide it from the query.
  */
 import * as React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';

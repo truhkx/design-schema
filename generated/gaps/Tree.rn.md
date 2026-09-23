@@ -87,3 +87,35 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tree: behavior scenario `clicking-a-node-selects-it` (selectable single) asserts only `onSelectionChange`, but the rn platform notes require a tap to also activate, so the same tap fires `onActivate` too. The scenario does not mention it; the notes win.
 - Tree: `onExpand` 'fires each time a node whose `children` is still "lazy" is opened' — read as firing again after a collapse and reopen, with the caller replacing `children` as the only stop condition. A once-per-mount reading is equally available from the sentence.
 - Tree: `headingLevel` has no meaning on rn (no heading levels); it reaches the composed Heading for typography only, and `headingSize` overrides the size regardless — so all three enum values render identically apart from whatever Heading itself does with `level`.
+
+## 2026-09-23 15:01 — round 1
+
+- Tree: platforms.rn gives each row accessibilityRole="button" (or "link") carrying accessibilityState.selected/checked, but the digest says to mirror them as aria-selected/aria-checked. ARIA allows neither on role=button or role=link, so axe's aria-allowed-attr would fail. Chose to mirror only aria-label/aria-expanded/aria-busy (as Button leaves out aria-valuetext) and leave selected/checked in accessibilityState, so react-native-web's DOM shows no selection state.
+- Tree: an id that is literally "*" inside a controlled `expanded` cannot be told apart from the sentinel. The spec only defines the sentinel for defaultExpanded ('the same rule covers the controlled expanded' refers to held-lazy ids). Chose TreeGrid's approach: resolve "*" at render in both modes.
+- Tree: 'When a controlled expanded change closes an ancestor of the focused node, focus moves up to that ancestor' has no rn form in platforms.rn (no roving focus). Not implemented; AccessibilityInfo.setAccessibilityFocus would be the candidate.
+- Tree: selectOnFocus is 'wired to the Pressable's onFocus', but the global rule says Tab entry and pointer focus never select. On react-native-web, tabbing onto a row fires onFocus and selects it. Followed the rn note.
+- Tree: the navigation-sidebar example uses app-relative hrefs (/settings/account), which the rn notes say Linking.openURL cannot open. The story renders them as given, the rejected promise is swallowed, and no __DEV__ warning is asked for.
+- Tree: this run was stopped midway because another session (ds-regen-rn-19) was regenerating the same file at the same time; the file's final state belongs to that session, not this report.
+
+## 2026-09-23 15:01 — round 1
+
+- Tree: `"*"` is defined as a sentinel only for `defaultExpanded`; whether a controlled `expanded` containing `"*"` means the same is not stated. Chose to resolve it identically in both, since the doc says lazy-hold rules are shared.
+- Tree: after a user opens a lazy node whose id is literally `"*"`, onExpandChange reports `"*"`, which the next render reads as the sentinel. The doc says `"*"` is never matched against an id but doesn't cover this round trip. Left as is.
+- Tree: 'the first user toggle resolves `"*"` to the concrete ids then open' does not say where in the array those ids go relative to other listed ids. Chose to splice them in at the sentinel's position, keeping every other id (held-lazy and disabled ones included) in place.
+- Tree: 'disabled nodes cannot be expanded by any means' — whether a disabled parent listed in `defaultExpanded`/`expanded` (or covered by `"*"`) renders open is only implied by the web note 'a disabled parent stays closed'. Chose: never renders open; `"*"` resolves to enabled loaded parents only; an explicitly listed disabled id stays in the reported array like a held-lazy id.
+- Tree: selectChildren says 'a disabled node is skipped as a target' but also 'a parent's id is in selected exactly when all its enabled loaded descendants are'. It is unclear whether a disabled ancestor's own id joins the selection when its subtree fills. Kept the literal invariant: it does.
+- Tree: expandButtonSize says 'the chevron takes the Button's own color', but RN has no currentColor, so Button cannot tint a caller-supplied leadingIcon. Passed `t.colorActionGhostForeground` (Button's ghost foreground) to the Chevron's Icon, as TreeGrid does; the doc could name that token for rn.
+- Tree: the rn notes list accessibilityState {expanded, selected, checked, disabled} but the web notes put aria-busy on an open lazy parent. Kept `busy` in accessibilityState and mirrored aria-busy on rn too.
+- Tree: fontFamily/fontSize/lineHeight 'set the container's font', but RN has no inheritance, so there is nothing to set on the root View. They are forwarded to the label, placeholder and empty-state Text only.
+- Tree: rowGap sits between the chevron and the icon/label, and guideLine's position formula (rowPaddingInline + indent × (level − 1) + expandButtonSize / 2) only holds if nothing separates the indent from the chevron. Chose to group indent + chevron with no gap between them; the doc could state that the indent is not followed by rowGap.
+- Tree: the web notes say the lazy placeholder has 'no data-part'; the rn notes are silent. Removed the `Tree.node`/`Tree.indent` testIDs from the rn placeholder for parity.
+- Tree: the rn notes put the root `testID="Tree"` on the container View while the declared element is FlatList; the accessible name therefore lives on the FlatList (role list), not on the node carrying the root hook.
+
+## 2026-09-23 15:01 — round 2
+
+- Tree: platforms.rn gives each row accessibilityRole="button" (or "link") carrying accessibilityState.selected/checked, but the package convention says to mirror them as aria-selected/aria-checked. ARIA allows neither on role=button or role=link, so axe's aria-allowed-attr would fail. The mirrors stay limited to label/expanded/busy, so react-native-web's DOM shows no selection state; the doc should pick a role that allows them or drop the mirror requirement for this row.
+- Tree: an id that is literally "*" inside a controlled `expanded` cannot be told apart from the sentinel; the doc defines the sentinel only for defaultExpanded. The code resolves "*" at render in both modes, as TreeGrid does.
+- Tree: 'a controlled expanded change that closes an ancestor of the focused node moves focus to that ancestor' has no rn form in platforms.rn (no roving focus); not implemented.
+- Tree: selectOnFocus is 'wired to the Pressable's onFocus', but the selectOnFocus description says Tab entry never selects. On react-native-web, tabbing onto a row fires onFocus and selects it. The rn note was followed.
+- Tree: the navigation-sidebar example uses app-relative hrefs, which the rn notes say Linking.openURL cannot open; the story renders them as given and no __DEV__ warning is asked for.
+- Tree: this round was fixed by the concurrent session ds-regen-rn-19 re-adding ICON_COLOR, not by this session; two generator sessions are writing the same file in one worktree.

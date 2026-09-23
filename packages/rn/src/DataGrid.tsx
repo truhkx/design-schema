@@ -192,10 +192,11 @@ const HEADER_WEIGHT: TokenRef = 'font.weight.semibold';
 const HEADER_SIZE: TokenRef = 'font.size.sm';
 const CAPTION_SIZE: TokenRef = 'font.size.md';
 const CAPTION_WEIGHT: TokenRef = 'font.weight.semibold';
-const CAPTION_GAP: TokenRef = 'space.2';
 const LINE_HEIGHT: TokenRef = 'font.lineHeight.tight';
 const NUMERIC_FONT: TokenRef = 'font.family.mono';
 const INSET_ZERO: TokenRef = 'space.0';
+/** minTarget, forwarded to the select Checkboxes' `controlSize` (locked, so never an override). */
+const MIN_TARGET: TokenRef = 'size.target.min';
 
 type Shadow = Tokens['shadowRaised'];
 
@@ -326,7 +327,8 @@ function ResizeHandle({ width, minWidth, color, handleWidth, hitSlop, onResize, 
  *
  * There is no grid element on native. The caption is a `Heading` at `captionLevel` (visually
  * hidden with `hideCaption`). A horizontal `ScrollView` (the scroll region) holds a `FlatList`
- * with `role="grid"`, the caption as its `accessibilityLabel`, and a fixed `getItemLayout`
+ * with `role="grid"`, the caption followed by `copy.rowCount` as its `accessibilityLabel`
+ * (native has no aria-rowcount, so the total is at least spoken on focus), and a fixed `getItemLayout`
  * from the density's row height, so rows virtualize; the header row (`role="rowgroup"` >
  * `row` > `columnheader`) is its sticky list header, sharing the horizontal scroll with the
  * body and casting `headerShadow` once the body scrolls beneath it. `FlatList` gives the body
@@ -370,7 +372,9 @@ export function DataGrid({
   selected,
   editable = false,
   density = 'compact',
-  stickyHeader = true,
+  // Every `height` but `content` virtualizes (always sticky) and `content` lets the page scroll
+  // (never sticky), so the prop changes nothing here: accepted for parity, `false` not warned about.
+  stickyHeader: _stickyHeader = true,
   height = 'viewport',
   loading = false,
   emptyMessage,
@@ -398,6 +402,8 @@ export function DataGrid({
   const [activeCell, setActiveCell] = React.useState<DataGridCellSelection | null>(null);
   const [focusedCell, setFocusedCell] = React.useState<string | null>(null);
   const [hoveredRow, setHoveredRow] = React.useState<string | null>(null);
+  // rowHover is the pressed fill on native (and the pointer hover on react-native-web).
+  const [pressedRow, setPressedRow] = React.useState<string | null>(null);
   const [editing, setEditing] = React.useState<DataGridCellSelection | null>(null);
   const [draft, setDraft] = React.useState<DataGridCellValue>(undefined);
   const [editError, setEditError] = React.useState<string | undefined>(undefined);
@@ -407,6 +413,7 @@ export function DataGrid({
   const [regionWidth, setRegionWidth] = React.useState<number | null>(null);
   const [listHeight, setListHeight] = React.useState<number | null>(null);
   const [announcement, setAnnouncement] = React.useState('');
+  const [headerHeight, setHeaderHeight] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     if (!__DEV__) {
@@ -414,12 +421,6 @@ export function DataGrid({
     }
     if (caption === '') {
       console.warn('DataGrid: `caption` is required; the grid falls back to an empty accessible name.');
-    }
-    if (selectable === 'range') {
-      console.warn('DataGrid: `selectable="range"` has no touch model on React Native and degrades to `"row"`.');
-    }
-    if (!stickyHeader && height !== 'content') {
-      console.warn('DataGrid: the header is always sticky while the grid virtualizes; `stickyHeader={false}` only applies to `height="content"`, where it has no effect anyway.');
     }
     // The two column rules with no runtime consequence — exactly one `isRowHeader`, pinned columns
     // contiguous at one end — are development warnings, never thrown errors.
@@ -434,7 +435,7 @@ export function DataGrid({
     if (!contiguous) {
       console.warn('DataGrid: pinned columns must be contiguous at the start or the end of `columns`, in their order there.');
     }
-  }, [caption, selectable, columns, stickyHeader, height]);
+  }, [caption, columns]);
 
   /** Puts a message in the status bar's live region, and speaks it on iOS, which has no live regions. */
   const announce = (message: string): void => {
@@ -485,17 +486,15 @@ export function DataGrid({
   const statusBarPadding = tokenOr<number>(t, overrides?.statusBarPadding, t.space2);
   const statusBarGap = tokenOr<number>(t, overrides?.statusBarGap, t.space2);
   const fixedHeight = tokenOr<number>(t, overrides?.fixedHeight, t.space20);
+  const captionGap = tokenOr<number>(t, overrides?.captionGap, t.space2);
   const transition = tokenOr<number>(t, overrides?.transition, t.motionDurationFast);
   // Locked: the scroll region's ring, drawn by the region so its own overflow cannot clip it.
   const focusRing = t.colorBorderFocus;
   const focusRingWidth = t.borderWidthFocus;
   const densityRowHeight = density === 'comfortable' ? t.sizeTargetComfortable : t.sizeTargetMin;
-  // A compact row is the minimum target tall, but the selection column holds a Checkbox, and this
-  // package's Checkbox is a whole comfortable-target row that cannot be made shorter: its height is
-  // not one of its overridable bindings, and a composed child is never restyled. Left at the
-  // minimum, every row's Checkbox would overlap the next row's — `target-24px`, and a getItemLayout
-  // that no longer matches what a row measures. So a selection column raises the row to the
-  // comfortable target at both densities, and the virtualizer is told the same height.
+  // The select Checkbox is a full minTarget, and a compact row — the same minimum, less its grid
+  // lines — cannot hold one. So a selection column gives comfortable rows at both densities rather
+  // than a clipped or overlapping target, and the virtualizer is told the same height.
   const rowHeight = mode === 'row' ? Math.max(densityRowHeight, t.sizeTargetComfortable) : densityRowHeight;
   // selectColumnWidth plus the cell's own inline padding on both sides.
   const selectColumnWidth = t.sizeTargetMin + 2 * cellPaddingInline;
@@ -503,7 +502,8 @@ export function DataGrid({
   const bodyText = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight ?? LINE_HEIGHT };
   const numericText = { ...bodyText, fontFamily: overrides?.numericFont ?? NUMERIC_FONT };
   const headerText = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight ?? LINE_HEIGHT, fontSize: headerSize, fontWeight: headerWeight };
-  const statusBarText = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight ?? LINE_HEIGHT, fontSize: overrides?.statusBarSize };
+  // The statusBar part forwards statusBarSize → fontSize and nothing else.
+  const statusBarText = { fontSize: overrides?.statusBarSize };
   const editorInset = { paddingInline: INSET_ZERO, paddingBlock: INSET_ZERO };
 
   const widthFor = (column: DataGridColumn): number => widths[column.key] ?? column.width ?? columnWidth;
@@ -576,6 +576,14 @@ export function DataGrid({
     }
     return commitEdit(row, column, draft);
   }
+
+  // An open editor whose row leaves `data` drops its draft silently: no onCellChange, as a cancel.
+  const editingRowLoaded = editing === null || rows.some((row) => row.id === editing.rowId);
+  React.useEffect(() => {
+    if (!editingRowLoaded) {
+      closeEditor();
+    }
+  }, [editingRowLoaded]);
 
   const startEdit = (row: DataGridRow, column: DataGridColumn): void => {
     if (sameCell(editing, row.id, column.key) || !commitOpenEdit()) {
@@ -672,6 +680,7 @@ export function DataGrid({
     <View
       testID="DataGrid.header"
       role="rowgroup"
+      onLayout={(event: LayoutChangeEvent) => setHeaderHeight(event.nativeEvent.layout.height)}
       style={{ backgroundColor: t.colorBackgroundSubtle, ...(headerScrolled ? headerShadow : null) }}
     >
       <View
@@ -689,7 +698,15 @@ export function DataGrid({
               pinnedCellStyle(null),
             ]}
           >
-            <Checkbox label={COPY.selectAll} hideLabel name={`${baseId}-all`} checked={allSelected} indeterminate={someSelected} onChange={toggleAll} />
+            <Checkbox
+              label={COPY.selectAll}
+              hideLabel
+              name={`${baseId}-all`}
+              checked={allSelected}
+              indeterminate={someSelected}
+              overrides={{ controlSize: MIN_TARGET }}
+              onChange={toggleAll}
+            />
           </View>
         ) : null}
         {columns.map((column) => {
@@ -735,7 +752,9 @@ export function DataGrid({
             >
               <View style={{ flexGrow: 1, flexShrink: 1, alignItems: JUSTIFY[column.align ?? 'start'] }}>
                 {column.sortable === true ? (
-                  <View testID="DataGrid.sortButton">
+                  // The sortButton part is the grid's own wrapper around the Button and takes the press
+                  // too; `accessible={false}` keeps the Button its own accessibility element.
+                  <Pressable testID="DataGrid.sortButton" accessible={false} onPress={() => handleSortPress(column.key)}>
                     <Button
                       label={column.header}
                       accessibleName={sorted && activeSort.direction === 'ascending' ? COPY.sortDescending(column.header) : COPY.sortAscending(column.header)}
@@ -749,10 +768,10 @@ export function DataGrid({
                       overrides={{ fontWeight: headerWeight, fontSize: headerSize, paddingInline: INSET_ZERO }}
                       onPress={() => handleSortPress(column.key)}
                     />
-                  </View>
+                  </Pressable>
                 ) : (
                   // `abbr` is the spoken name; the visible header is hidden behind it, as on web.
-                  <View accessible accessibilityLabel={column.abbr ?? column.header}>
+                  <View accessible accessibilityLabel={column.abbr ?? column.header} aria-label={column.abbr ?? column.header}>
                     <Text size="sm" weight="semibold" align={column.align ?? 'start'} overrides={headerText}>
                       {column.header}
                     </Text>
@@ -787,6 +806,7 @@ export function DataGrid({
         testID="DataGrid.row"
         role="row"
         accessibilityState={mode === 'row' ? { selected: rowSelected } : undefined}
+        aria-selected={mode === 'row' ? rowSelected : undefined}
         style={{
           flexDirection: 'row',
           alignItems: 'stretch',
@@ -798,19 +818,36 @@ export function DataGrid({
           borderStartColor: rowSelected ? t.colorControlSelectedBackground : background,
         }}
       >
-        <RowTint visible={hoveredRow === row.id} color={rowHover} duration={transition} />
+        {/* A selected row keeps rowSelected: the hover/pressed tint is not drawn over it. */}
+        <RowTint visible={!rowSelected && (hoveredRow === row.id || pressedRow === row.id)} color={rowHover} duration={transition} />
         {mode === 'row' ? (
-          <View
+          // The selectCell part is the cell holding the Checkbox, so a press anywhere on it toggles
+          // the row; `accessible={false}` leaves the Checkbox its own accessibility element.
+          <Pressable
             testID="DataGrid.selectCell"
             role="cell"
+            accessible={false}
+            onPress={() => toggleRow(row.id)}
+            onPressIn={() => setPressedRow(row.id)}
+            onPressOut={() => setPressedRow((current) => (current === row.id ? null : current))}
+            onHoverIn={() => setHoveredRow(row.id)}
+            onHoverOut={() => setHoveredRow((current) => (current === row.id ? null : current))}
             style={[
               selectColumnStyle,
-              { backgroundColor: background, borderEndWidth: gridLineWidth, borderEndColor: gridLine },
+              // Transparent so the row tint shows through, opaque only while it casts the pinned shadow.
+              { backgroundColor: scrolledX ? background : 'transparent', borderEndWidth: gridLineWidth, borderEndColor: gridLine },
               pinnedCellStyle(null),
             ]}
           >
-            <Checkbox label={COPY.selectRow(rowName(row))} hideLabel name={`${baseId}-${row.id}`} checked={rowSelected} onChange={() => toggleRow(row.id)} />
-          </View>
+            <Checkbox
+              label={COPY.selectRow(rowName(row))}
+              hideLabel
+              name={`${baseId}-${row.id}`}
+              checked={rowSelected}
+              overrides={{ controlSize: MIN_TARGET }}
+              onChange={() => toggleRow(row.id)}
+            />
+          </Pressable>
         ) : null}
         {columns.map((column) => {
           const key = `${row.id} ${column.key}`;
@@ -892,8 +929,10 @@ export function DataGrid({
               testID={isRowHeader ? 'DataGrid.rowHeader' : 'DataGrid.cell'}
               role={role}
               accessibilityLabel={COPY.cellLabel(column.header, value)}
+              aria-label={COPY.cellLabel(column.header, value)}
               accessibilityHint={canEdit ? COPY.editHint : undefined}
               accessibilityState={mode === 'cell' ? { selected: cellSelected } : undefined}
+              aria-selected={mode === 'cell' ? cellSelected : undefined}
               onPress={
                 interactive
                   ? () => {
@@ -910,6 +949,8 @@ export function DataGrid({
                     }
                   : undefined
               }
+              onPressIn={interactive ? () => setPressedRow(row.id) : undefined}
+              onPressOut={interactive ? () => setPressedRow((current) => (current === row.id ? null : current)) : undefined}
               onFocus={() => setFocusedCell(key)}
               onBlur={() => setFocusedCell((current) => (current === key ? null : current))}
               onHoverIn={() => setHoveredRow(row.id)}
@@ -936,12 +977,13 @@ export function DataGrid({
   React.useEffect(() => {
     requestedEnd.current = null;
   }, [data.length]);
-  const pageRows = Math.max(1, Math.ceil((listHeight ?? viewport.height) / rowHeight));
+  // One visible page, the sticky header's row left out so a paged request keeps a row of context.
+  const rowsPerPage = Math.max(1, Math.floor((listHeight ?? viewport.height) / rowHeight) - 1);
   const handleEndReached = (): void => {
     if (!hasScrolled.current || rowCount === undefined || data.length >= rowCount) {
       return;
     }
-    const end = Math.min(rowCount, data.length + pageRows) - 1;
+    const end = Math.min(rowCount - 1, data.length + rowsPerPage - 1);
     if (requestedEnd.current === end) {
       return;
     }
@@ -961,7 +1003,8 @@ export function DataGrid({
 
   const emptyState = (
     <View testID="DataGrid.emptyState" style={{ paddingHorizontal: cellPaddingInline, minHeight: rowHeight, justifyContent: 'center' }}>
-      <Text size="sm" tone="muted" overrides={bodyText}>
+      {/* emptyState composes Text with no forwards. */}
+      <Text size="sm" tone="muted">
         {emptyMessage ?? COPY.empty}
       </Text>
     </View>
@@ -976,20 +1019,26 @@ export function DataGrid({
         ? COPY.editing(columnByKey.get(editing.column)?.header ?? editing.column)
         : announcement;
   const activeIndex = activeCell === null ? -1 : rows.findIndex((row) => row.id === activeCell.rowId);
+  const gridLabel = `${caption}, ${COPY.rowCount(total)}`;
 
   const list = (
     <FlatList
       testID="DataGrid.grid"
       role="grid"
-      accessibilityLabel={caption}
+      // Native has no aria-rowcount, so the total is spoken with the name.
+      accessibilityLabel={gridLabel}
+      aria-label={gridLabel}
       accessibilityState={{ busy: loading }}
+      aria-busy={loading}
       data={rows}
-      extraData={[selectedIds, activeSort, activeCell, focusedCell, hoveredRow, editing, draft, editError, widths, scrolledX, density, loading]}
+      extraData={[selectedIds, activeSort, activeCell, focusedCell, hoveredRow, pressedRow, editing, draft, editError, widths, scrolledX, density, loading]}
       keyExtractor={(row) => row.id}
       renderItem={renderRow}
-      getItemLayout={(_items, index) => ({ length: rowHeight, offset: rowHeight * index, index })}
+      // Offsets start below the list header (the header row), measured once laid out.
+      getItemLayout={(_items, index) => ({ length: rowHeight, offset: (headerHeight ?? rowHeight + headerBorderWidth) + rowHeight * index, index })}
       ListHeaderComponent={headerRow}
-      ListEmptyComponent={emptyState}
+      // Suppressed while loading: a first page in flight shows copy.loading and no empty message.
+      ListEmptyComponent={loading ? undefined : emptyState}
       // Always sticky when virtualized; with `height: content` the page scrolls, so it has no effect.
       stickyHeaderIndices={bounded ? [0] : undefined}
       scrollEnabled={bounded}
@@ -1012,19 +1061,25 @@ export function DataGrid({
       testID="DataGrid"
       style={{
         backgroundColor: t.colorBackground,
-        // `viewport` sizes the whole component; the scroll region takes what the caption and status bar leave.
-        ...(height === 'viewport' ? { height: viewport.height - 2 * t.layoutGapSection } : null),
+        // `viewport` and `fixed` size the whole component; the scroll region takes what the caption
+        // and status bar leave. Without an `overrides.fixedHeight` a fixed grid has no room for rows.
+        ...(height === 'viewport'
+          ? { height: viewport.height - 2 * t.layoutGapSection }
+          : height === 'fixed'
+            ? { height: fixedHeight }
+            : null),
       }}
     >
-      <View testID="DataGrid.caption" style={hideCaption ? HIDDEN_STYLE : undefined}>
+      {/* captionGap is the grid's own inset below the caption; the Heading's margin is turned off, as Table. */}
+      <View testID="DataGrid.caption" style={hideCaption ? HIDDEN_STYLE : { paddingBottom: captionGap }}>
         <Heading
           level={captionLevel}
           size="md"
+          // Exactly the parts contract's forwards, plus the margin reset the captionGap binding asks for.
           overrides={{
-            fontFamily: overrides?.fontFamily,
             fontSize: overrides?.captionSize ?? CAPTION_SIZE,
             fontWeight: overrides?.captionWeight ?? CAPTION_WEIGHT,
-            marginBlockEnd: overrides?.captionGap ?? CAPTION_GAP,
+            marginBlockEnd: INSET_ZERO,
           }}
         >
           {caption}
@@ -1036,13 +1091,12 @@ export function DataGrid({
           borderStartWidth: gridLineWidth,
           borderTopWidth: gridLineWidth,
           borderColor: gridLine,
-          ...(height === 'viewport' ? flexStyle : height === 'fixed' ? { height: fixedHeight } : null),
+          ...(bounded ? flexStyle : null),
         }}
       >
         <ScrollView
           testID="DataGrid.scrollRegion"
           horizontal
-          accessibilityHint={COPY.scrollHint}
           onScroll={(event) => setScrolledX(event.nativeEvent.contentOffset.x > 0)}
           scrollEventThrottle={16} // literal-ok: one frame between the pinned shadow and the scroll position
           onLayout={(event: LayoutChangeEvent) => setRegionWidth(event.nativeEvent.layout.width)}

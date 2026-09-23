@@ -4,7 +4,7 @@
  * `loading-marks-the-grid-busy` are web/Lit only (the parser narrows them). A click is a `press`.
  */
 import * as React from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import { DataGrid } from './DataGrid';
 import type { DataGridProps } from './DataGrid';
 import meta from './DataGrid.stories';
@@ -43,8 +43,7 @@ describe('DataGrid', () => {
       ],
       onSortChange,
     });
-    const sortButton = screen.getAllByTestId('DataGrid.sortButton')[0]!;
-    fireEvent.press(within(sortButton).getByRole('button'));
+    fireEvent.press(screen.getAllByTestId('DataGrid.sortButton')[0]!);
     expect(onSortChange).toHaveBeenCalledWith('price', 'ascending');
   });
 
@@ -59,8 +58,7 @@ describe('DataGrid', () => {
       ],
       onSelectionChange,
     });
-    const selectCell = screen.getAllByTestId('DataGrid.selectCell')[0]!;
-    fireEvent.press(within(selectCell).getByRole('checkbox'));
+    fireEvent.press(screen.getAllByTestId('DataGrid.selectCell')[0]!);
     expect(onSelectionChange).toHaveBeenCalledWith(['a']);
   });
 
@@ -157,6 +155,7 @@ describe('DataGrid', () => {
     const s = setup();
     const grid = screen.getByTestId('DataGrid.grid');
     expect(grid.props.role).toBe('grid');
-    expect(grid.props.accessibilityLabel).toBe(s.props.caption);
+    // The caption followed by copy.rowCount: native has no aria-rowcount.
+    expect(grid.props.accessibilityLabel).toBe(`${s.props.caption}, 2 rows`);
   });
 });

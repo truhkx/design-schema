@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { AccessibilityInfo, Animated, FlatList, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, FlatList, I18nManager, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import type { AccessibilityActionEvent, ListRenderItemInfo, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
@@ -96,6 +96,11 @@ const BADGE_SIZE: TokenRef = 'font.size.xs';
 const FONT_FAMILY: TokenRef = 'font.family.body';
 const FONT_SIZE: TokenRef = 'font.size.sm';
 const LINE_HEIGHT: TokenRef = 'font.lineHeight.normal';
+/** iconColor, locked: forwarded to the composed Icon as `overrides.color`. */
+const ICON_COLOR: TokenRef = 'color.foreground.muted';
+
+/** The `defaultExpanded` sentinel for "every loaded parent"; never matched against an id. */
+const ALL = '*';
 
 /** Clips content to one point while keeping it in the accessibility tree (the Android live region). */
 const HIDDEN_STYLE: ViewStyle = { position: 'absolute', width: 1, height: 1, overflow: 'hidden' };
@@ -173,12 +178,34 @@ function flattenNodes(nodes: TreeNode[], expanded: Set<string>, level: number, o
   return out;
 }
 
-/** Every loaded parent, at any depth — what `["*"]` expands; never a `"lazy"` node. */
+/** Every enabled loaded parent, at any depth — what `["*"]` expands; never a `"lazy"` node. */
 function expandableIds(nodes: TreeNode[], out: string[] = []): string[] {
   for (const node of nodes) {
     if (Array.isArray(node.children) && node.children.length > 0) {
-      out.push(node.id);
+      if (node.disabled !== true) {
+        out.push(node.id);
+      }
       expandableIds(node.children, out);
+    }
+  }
+  return out;
+}
+
+/**
+ * The expanded ids with the `"*"` sentinel replaced in place by the concrete parents it opens,
+ * duplicates dropped; every other listed id (a held-lazy one included) keeps its place. This is
+ * what the first user toggle reports.
+ */
+function resolveExpanded(ids: string[], nodes: TreeNode[]): string[] {
+  if (!ids.includes(ALL)) {
+    return ids;
+  }
+  const out: string[] = [];
+  for (const id of ids) {
+    for (const each of id === ALL ? expandableIds(nodes) : [id]) {
+      if (!out.includes(each)) {
+        out.push(each);
+      }
     }
   }
   return out;
@@ -241,8 +268,9 @@ function Chevron({ expanded, color, duration }: { expanded: boolean; color: stri
     }
     Animated.timing(rotation, { toValue, duration, easing: toEasing(t.motionEasingStandard), useNativeDriver: false }).start();
   }, [expanded, reducedMotion, duration, rotation, t.motionEasingStandard]);
+  // The collapsed chevron is mirrored in RTL: it points toward the logical end, then turns down.
   const style: Animated.WithAnimatedValue<ViewStyle> = {
-    transform: [{ rotate: rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '90deg'] }) }],
+    transform: [{ rotate: rotation.interpolate({ inputRange: [0, 1], outputRange: [I18nManager.isRTL ? '180deg' : '0deg', '90deg'] }) }],
   };
   return (
     <Animated.View style={style}>
@@ -342,14 +370,24 @@ export function Tree({
   const index = React.useMemo(() => indexNodes(nodes, undefined, new Map<string, NodeEntry>()), [nodes]);
 
   // ---- Expansion ----
-  const [internalExpanded, setInternalExpanded] = React.useState<string[]>(() => (defaultExpanded?.includes('*') ? expandableIds(nodes) : (defaultExpanded ?? [])));
+  const [internalExpanded, setInternalExpanded] = React.useState<string[]>(defaultExpanded ?? []);
   const expandedIds = expanded ?? internalExpanded;
+  /** Lazy ids the user opened and has not closed since; any other still-lazy id is held shut. */
   const [openedLazy, setOpenedLazy] = React.useState<string[]>([]);
   const lazySet = React.useMemo(() => new Set(lazyIds(nodes)), [nodes]);
-  /** What is actually open: a still-lazy id the caller listed stays shut until the user opens it, so `onExpand` follows a user act. */
+  const resolvedExpanded = React.useMemo(() => resolveExpanded(expandedIds, nodes), [expandedIds, nodes]);
+  /**
+   * What is actually open: a still-lazy id the caller listed stays shut until the user opens it,
+   * so `onExpand` follows a user act, and a disabled parent stays closed by any means.
+   */
   const expandedSet = React.useMemo(
-    () => new Set(expandedIds.filter((id) => !lazySet.has(id) || openedLazy.includes(id))),
-    [expandedIds, lazySet, openedLazy],
+    () =>
+      new Set(
+        resolvedExpanded.filter(
+          (id) => index.get(id)?.node.disabled !== true && (!lazySet.has(id) || openedLazy.includes(id)),
+        ),
+      ),
+    [resolvedExpanded, index, lazySet, openedLazy],
   );
 
   const commitExpanded = (next: string[]): void => {
@@ -364,14 +402,17 @@ export function Tree({
       return;
     }
     if (expandedSet.has(node.id)) {
-      commitExpanded(expandedIds.filter((id) => id !== node.id));
+      // Closing a lazy node puts it back on hold, so reopening it fires onExpand again.
+      setOpenedLazy((prev) => prev.filter((id) => id !== node.id));
+      commitExpanded(resolvedExpanded.filter((id) => id !== node.id));
       return;
     }
     if (node.children === 'lazy') {
       setOpenedLazy((prev) => (prev.includes(node.id) ? prev : [...prev, node.id]));
       onExpand?.(node.id);
     }
-    commitExpanded(expandedIds.includes(node.id) ? expandedIds : [...expandedIds, node.id]);
+    // A held-lazy id is already in the array the caller passed: it stays where it is.
+    commitExpanded(resolvedExpanded.includes(node.id) ? resolvedExpanded : [...resolvedExpanded, node.id]);
   };
 
   const visible = React.useMemo(() => flattenNodes(nodes, expandedSet, 1), [nodes, expandedSet]);
@@ -538,18 +579,18 @@ export function Tree({
     </View>
   );
 
+  /** The lazy placeholder: not a node, so no level and no part hook, as on web. */
   const renderPlaceholder = (item: FlatNode): React.JSX.Element => (
     <View
-      testID="Tree.node"
       role="listitem"
       accessible
       accessibilityLabel={COPY.loading}
+      aria-label={COPY.loading}
       style={{ flexDirection: 'row', alignItems: 'center', minHeight: rowHeight, paddingHorizontal: rowPaddingInline, gap: rowGap }}
     >
       {guides(item.level)}
-      <View testID="Tree.indent" style={{ width: (item.level - 1) * indent }} />
-      <View style={{ width: expandButtonSize }} />
-      <Text size="sm" tone="muted">
+      <View style={{ width: (item.level - 1) * indent + expandButtonSize }} />
+      <Text size="sm" tone="muted" overrides={labelTypography}>
         {COPY.loading}
       </Text>
     </View>
@@ -566,6 +607,9 @@ export function Tree({
     const checkState = selectable === 'multiple' ? checkStateOf(node) : 'unchecked';
     const isSelected = selectable === 'single' ? selectedSet.has(node.id) : selectable === 'multiple' && checkState === 'checked';
     const highlighted = !disabled && hoveredId === node.id;
+    const rowLabel = node.badge === undefined ? `${node.label}, level ${level}` : `${node.label}, ${node.badge}, level ${level}`;
+    const checked = selectable === 'multiple' ? (checkState === 'mixed' ? 'mixed' : checkState === 'checked') : undefined;
+    const busy = isExpanded && node.children === 'lazy' ? true : undefined;
 
     const actions: { name: string; label?: string }[] = [];
     if (parent && !disabled) {
@@ -604,20 +648,24 @@ export function Tree({
         {isSelected ? (
           <View accessibilityElementsHidden importantForAccessibility="no" style={{ position: 'absolute', top: 0, bottom: 0, start: 0, width: rowSelectedBorderWidth, backgroundColor: rowSelectedBorder, pointerEvents: 'none' }} />
         ) : null}
-        <View testID="Tree.indent" style={{ width: (level - 1) * indent }} />
-        <View testID="Tree.expandButton" style={{ width: expandButtonSize, minHeight: expandButtonSize, alignItems: 'center', justifyContent: 'center' }}>
-          {parent ? (
-            <Button
-              label={isExpanded ? COPY.collapse(node.label) : COPY.expand(node.label)}
-              variant="ghost"
-              size="sm"
-              iconOnly
-              expanded={isExpanded}
-              disabled={disabled}
-              leadingIcon={<Chevron expanded={isExpanded} color={t.colorForeground} duration={transition} />}
-              onPress={() => toggleExpand(node)}
-            />
-          ) : null}
+        {/* Indent and chevron share no gap, so the chevron's centre is where the guide lines put it. */}
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View testID="Tree.indent" style={{ width: (level - 1) * indent }} />
+          <View testID="Tree.expandButton" style={{ width: expandButtonSize, minHeight: expandButtonSize, alignItems: 'center', justifyContent: 'center' }}>
+            {parent ? (
+              <Button
+                label={isExpanded ? COPY.collapse(node.label) : COPY.expand(node.label)}
+                variant="ghost"
+                size="sm"
+                iconOnly
+                expanded={isExpanded}
+                disabled={disabled}
+                // No currentColor on native: the chevron takes the ghost Button's own foreground.
+                leadingIcon={<Chevron expanded={isExpanded} color={t.colorActionGhostForeground} duration={transition} />}
+                onPress={() => toggleExpand(node)}
+              />
+            ) : null}
+          </View>
         </View>
         <Pressable
           testID="Tree.nodeRow"
@@ -626,14 +674,20 @@ export function Tree({
           }}
           accessibilityRole={node.href !== undefined ? 'link' : 'button'}
           // The label replaces the row's rendered content for a screen reader, so the badge is folded in.
-          accessibilityLabel={node.badge === undefined ? `${node.label}, level ${level}` : `${node.label}, ${node.badge}, level ${level}`}
+          accessibilityLabel={rowLabel}
+          aria-label={rowLabel}
           accessibilityState={{
             disabled,
             expanded: parent ? isExpanded : undefined,
             selected: selectable === 'single' ? isSelected : undefined,
-            checked: selectable === 'multiple' ? (checkState === 'mixed' ? 'mixed' : checkState === 'checked') : undefined,
-            busy: isExpanded && node.children === 'lazy' ? true : undefined,
+            checked,
+            busy,
           }}
+          aria-disabled={disabled || undefined}
+          aria-expanded={parent ? isExpanded : undefined}
+          aria-selected={selectable === 'single' ? isSelected : undefined}
+          aria-checked={checked}
+          aria-busy={busy}
           accessibilityActions={actions.length > 0 ? actions : undefined}
           onAccessibilityAction={actions.length > 0 ? handleAction : undefined}
           onPress={() => press(node)}
@@ -650,7 +704,7 @@ export function Tree({
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: rowGap }}>
             {node.icon !== undefined ? (
               <View testID="Tree.icon">
-                <Icon name={node.icon} size="sm" color={t.colorForegroundMuted} />
+                <Icon name={node.icon} size="sm" overrides={{ color: ICON_COLOR }} />
               </View>
             ) : null}
             {/*
@@ -708,7 +762,8 @@ export function Tree({
     <View ref={ref} testID="Tree">
       {showLabel ? (
         <View testID="Tree.heading">
-          <Heading level={headingLevel} overrides={{ fontSize: headingSize }}>
+          {/* On native the level has no observable effect (every level is a header); it is forwarded for parity. */}
+          <Heading level={headingLevel} size="md" overrides={{ fontSize: headingSize }}>
             {label}
           </Heading>
         </View>
@@ -716,8 +771,9 @@ export function Tree({
       <FlatList
         accessibilityRole="list"
         accessibilityLabel={label}
+        aria-label={label}
         data={visible}
-        extraData={[selectedIds, expandedIds, focusedId, hoveredId, selectable, selectChildren, showGuides]}
+        extraData={[selectedIds, expandedSet, focusedId, hoveredId, selectable, selectChildren, showGuides]}
         keyExtractor={(item) => item.key}
         renderItem={renderNode}
         ListEmptyComponent={
@@ -726,7 +782,7 @@ export function Tree({
             role="listitem"
             style={{ minHeight: rowHeight, paddingHorizontal: rowPaddingInline, justifyContent: 'center' }}
           >
-            <Text size="sm" tone="muted">
+            <Text size="sm" tone="muted" overrides={labelTypography}>
               {COPY.empty}
             </Text>
           </View>

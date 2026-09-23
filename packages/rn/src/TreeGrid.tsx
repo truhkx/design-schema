@@ -174,10 +174,11 @@ const HEADER_WEIGHT: TokenRef = 'font.weight.semibold';
 const HEADER_SIZE: TokenRef = 'font.size.sm';
 const CAPTION_SIZE: TokenRef = 'font.size.md';
 const CAPTION_WEIGHT: TokenRef = 'font.weight.semibold';
-const CAPTION_GAP: TokenRef = 'space.2';
 const LINE_HEIGHT: TokenRef = 'font.lineHeight.tight';
 const NUMERIC_FONT: TokenRef = 'font.family.mono';
 const INSET_ZERO: TokenRef = 'space.0';
+/** minTarget, forwarded to the select Checkboxes' `controlSize` (locked, so never an override). */
+const MIN_TARGET: TokenRef = 'size.target.min';
 
 function tokenOr<T>(t: Tokens, ref: TokenRef | undefined, fallback: T): T {
   return ref === undefined ? fallback : (resolveToken(t, ref) as T);
@@ -516,6 +517,9 @@ export function TreeGrid({
   const [activeCell, setActiveCell] = React.useState<TreeGridCellSelection | null>(null);
   const [focusedCell, setFocusedCell] = React.useState<string | null>(null);
   const [hoveredRow, setHoveredRow] = React.useState<string | null>(null);
+  // rowHover is the pressed fill on native (and the pointer hover on react-native-web), as DataGrid.
+  const [pressedRow, setPressedRow] = React.useState<string | null>(null);
+  const [headerHeight, setHeaderHeight] = React.useState<number | null>(null);
   const [editing, setEditing] = React.useState<TreeGridCellSelection | null>(null);
   const [draft, setDraft] = React.useState<TreeGridCellValue>(undefined);
   const [editError, setEditError] = React.useState<string | undefined>(undefined);
@@ -571,11 +575,11 @@ export function TreeGrid({
   const dataGridTransition = t.motionDurationFast;
   const resizeHandleWidth = t.space1;
   const resizeStep = t.space4;
+  const captionGap = t.space2;
   const densityRowHeight = density === 'comfortable' ? t.sizeTargetComfortable : minTarget;
-  // As DataGrid: this package's Checkbox is a whole comfortable-target row that cannot be made
-  // shorter (its height is not overridable, and a composed child is never restyled), so a
-  // selection column raises the row to the comfortable target at both densities — otherwise
-  // every row's Checkbox would overlap the next row's and `getItemLayout` would lie.
+  // As DataGrid: the select Checkbox is a full minTarget, and a compact row — the same minimum,
+  // less its grid lines — cannot hold one. So a selection column gives comfortable rows at both
+  // densities, and the virtualizer is told the same height.
   const rowHeight = selectable === 'row' ? Math.max(densityRowHeight, t.sizeTargetComfortable) : densityRowHeight;
   // The select column holds a minimum target plus the cell's own inline padding on both sides.
   const selectColumnWidth = minTarget + 2 * cellPaddingInline;
@@ -867,6 +871,7 @@ export function TreeGrid({
     <View
       testID="TreeGrid.header"
       role="rowgroup"
+      onLayout={(event: LayoutChangeEvent) => setHeaderHeight(event.nativeEvent.layout.height)}
       style={{ backgroundColor: t.colorBackgroundSubtle, ...(headerScrolled ? t.shadowRaised : null) }}
     >
       <View
@@ -890,7 +895,15 @@ export function TreeGrid({
               pinnedCellStyle(null),
             ]}
           >
-            <Checkbox label={COPY.selectAll} hideLabel name={`${baseId}-all`} checked={allSelected} indeterminate={someSelected} onChange={toggleAll} />
+            <Checkbox
+              label={COPY.selectAll}
+              hideLabel
+              name={`${baseId}-all`}
+              checked={allSelected}
+              indeterminate={someSelected}
+              overrides={{ controlSize: MIN_TARGET }}
+              onChange={toggleAll}
+            />
           </View>
         ) : null}
         {columns.map((column) => {
@@ -936,7 +949,9 @@ export function TreeGrid({
             >
               <View style={{ flexGrow: 1, flexShrink: 1, alignItems: JUSTIFY[column.align ?? 'start'] }}>
                 {column.sortable === true ? (
-                  <View testID="TreeGrid.sortButton">
+                  // The sortButton part is the grid's own wrapper around the Button and takes the press
+                  // too; `accessible={false}` keeps the Button its own accessibility element.
+                  <Pressable testID="TreeGrid.sortButton" accessible={false} onPress={() => handleSortPress(column)}>
                     <Button
                       label={column.header}
                       accessibleName={sorted && activeSort.direction === 'ascending' ? COPY.sortDescending(column.header) : COPY.sortAscending(column.header)}
@@ -950,10 +965,10 @@ export function TreeGrid({
                       overrides={{ fontWeight: HEADER_WEIGHT, fontSize: HEADER_SIZE, paddingInline: INSET_ZERO }}
                       onPress={() => handleSortPress(column)}
                     />
-                  </View>
+                  </Pressable>
                 ) : (
                   // `abbr` is the spoken name; the visible header is hidden behind it, as on web.
-                  <View accessible accessibilityLabel={column.abbr ?? column.header}>
+                  <View accessible accessibilityLabel={column.abbr ?? column.header} aria-label={column.abbr ?? column.header}>
                     <Text size="sm" weight="semibold" align={column.align ?? 'start'} overrides={headerText}>
                       {column.header}
                     </Text>
@@ -981,13 +996,16 @@ export function TreeGrid({
   // ---- Body ----
 
   /**
-   * One full-height line per ancestor level, centred on that ancestor's expand control:
-   * cellPaddingInline + indent × (ancestor level − 1) + expandButtonSize / 2 from the cell's
-   * start. Decorative — the level is announced, so the lines are hidden and never contrast-checked.
+   * One full-height line per ancestor level, centred on that ancestor's expand control. Drawn on
+   * the row, not inside the row header cell (which may be pinned and clip it), at
+   * cellPaddingInline + indent × (ancestor level − 1) + expandButtonSize / 2 from the row header's
+   * start, offset by the selection column when there is one. Decorative — the level is announced,
+   * so the lines are hidden (they hold no control) and never contrast-checked.
    */
+  const rowHeaderStart = selectable === 'row' ? selectColumnWidth : 0;
   const guideLines = (level: number): React.JSX.Element | null =>
     level > 1 ? (
-      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[StyleSheet.absoluteFill, { pointerEvents: 'none', zIndex: 1 }]}>
         {Array.from({ length: level - 1 }, (_unused, ancestor) => (
           <View
             key={ancestor}
@@ -995,7 +1013,7 @@ export function TreeGrid({
               position: 'absolute',
               top: 0,
               bottom: 0,
-              start: cellPaddingInline + ancestor * indent + (expandButtonSize - guideLineWidth) / 2,
+              start: rowHeaderStart + cellPaddingInline + ancestor * indent + (expandButtonSize - guideLineWidth) / 2,
               width: guideLineWidth,
               backgroundColor: guideLine,
             }}
@@ -1071,8 +1089,12 @@ export function TreeGrid({
         testID="TreeGrid.cell"
         role="cell"
         accessibilityLabel={COPY.cellLabel(column.header, cellText(row, column.key))}
+        aria-label={COPY.cellLabel(column.header, cellText(row, column.key))}
         accessibilityHint={editableHere ? COPY.editHint : undefined}
         accessibilityState={selectable === 'cell' ? { selected: cellSelected } : undefined}
+        aria-selected={selectable === 'cell' ? cellSelected : undefined}
+        onPressIn={interactive ? () => setPressedRow(row.id) : undefined}
+        onPressOut={interactive ? () => setPressedRow((current) => (current === row.id ? null : current)) : undefined}
         onPress={
           interactive
             ? () => {
@@ -1168,10 +1190,15 @@ export function TreeGrid({
         testID="TreeGrid.rowHeader"
         role="rowheader"
         accessibilityLabel={label}
+        aria-label={label}
         accessibilityHint={editableHere ? COPY.editHint : undefined}
         accessibilityState={state}
+        aria-expanded={parent ? isExpanded : undefined}
+        aria-selected={selectable === 'cell' ? cellSelected : undefined}
         accessibilityActions={expandActions}
         onAccessibilityAction={expandActions !== undefined ? handleAction : undefined}
+        onPressIn={() => setPressedRow(row.id)}
+        onPressOut={() => setPressedRow((current) => (current === row.id ? null : current))}
         onPress={activate}
         onLongPress={parent && editableHere ? () => startEdit(row, column) : undefined}
         onFocus={() => setFocusedCell(key)}
@@ -1180,7 +1207,6 @@ export function TreeGrid({
         onHoverOut={() => setHoveredRow((current) => (current === row.id ? null : current))}
         style={style}
       >
-        {guideLines(level)}
         {level > 1 ? <View testID="TreeGrid.indent" style={{ width: (level - 1) * indent }} /> : null}
         <View style={{ flexGrow: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: expandGap }}>
           {/*
@@ -1226,6 +1252,7 @@ export function TreeGrid({
       testID="TreeGrid.row"
       role="row"
       accessibilityState={{ busy: true }}
+      aria-busy
       style={{
         flexDirection: 'row',
         alignItems: 'stretch',
@@ -1233,8 +1260,12 @@ export function TreeGrid({
         backgroundColor: t.colorBackground,
         borderBottomWidth: gridLineWidth,
         borderBottomColor: gridLine,
+        // The same start border as a data row, so the indent and guide lines line up.
+        borderStartWidth: focusRingWidth,
+        borderStartColor: t.colorBackground,
       }}
     >
+      {guideLines(flat.level)}
       {selectable === 'row' ? <View style={[selectColumnStyle, { borderEndWidth: gridLineWidth, borderEndColor: gridLine }]} /> : null}
       {columns.map((column) =>
         column === rowHeaderColumn ? (
@@ -1243,9 +1274,9 @@ export function TreeGrid({
             testID="TreeGrid.rowHeader"
             role="rowheader"
             accessibilityLabel={[COPY.loading, COPY.level(flat.level)].join(', ')}
+            aria-label={[COPY.loading, COPY.level(flat.level)].join(', ')}
             style={[cellFrame(column), { flexDirection: 'row', alignItems: 'center' }]}
           >
-            {guideLines(flat.level)}
             {flat.level > 1 ? <View testID="TreeGrid.indent" style={{ width: (flat.level - 1) * indent }} /> : null}
             <View style={{ flexGrow: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: expandGap }}>
               <View style={{ width: expandButtonSize }} />
@@ -1279,6 +1310,8 @@ export function TreeGrid({
         testID="TreeGrid.row"
         role="row"
         accessibilityState={selectable === 'row' ? { selected: rowSelected, busy } : busy ? { busy } : undefined}
+        aria-selected={selectable === 'row' ? rowSelected : undefined}
+        aria-busy={busy || undefined}
         style={{
           flexDirection: 'row',
           alignItems: 'stretch',
@@ -1290,14 +1323,25 @@ export function TreeGrid({
           borderStartColor: rowSelected ? t.colorControlSelectedBackground : background,
         }}
       >
-        <RowTint visible={hoveredRow === row.id} color={rowHover} duration={dataGridTransition} />
+        {/* A selected row keeps rowSelected: the hover/pressed tint is not drawn over it. */}
+        <RowTint visible={!rowSelected && (hoveredRow === row.id || pressedRow === row.id)} color={rowHover} duration={dataGridTransition} />
+        {guideLines(item.level)}
         {selectable === 'row' ? (
-          <View
+          // The selectCell part is the cell holding the Checkbox, so a press anywhere on it is the
+          // row's own toggle; `accessible={false}` leaves the Checkbox its own accessibility element.
+          <Pressable
             testID="TreeGrid.selectCell"
             role="cell"
+            accessible={false}
+            onPress={() => toggleRow(row)}
+            onPressIn={() => setPressedRow(row.id)}
+            onPressOut={() => setPressedRow((current) => (current === row.id ? null : current))}
+            onHoverIn={() => setHoveredRow(row.id)}
+            onHoverOut={() => setHoveredRow((current) => (current === row.id ? null : current))}
             style={[
               selectColumnStyle,
-              { backgroundColor: background, borderEndWidth: gridLineWidth, borderEndColor: gridLine },
+              // Transparent so the row tint shows through, opaque only while it casts the pinned shadow.
+              { backgroundColor: scrolledX ? background : 'transparent', borderEndWidth: gridLineWidth, borderEndColor: gridLine },
               pinnedCellStyle(null),
             ]}
           >
@@ -1307,9 +1351,10 @@ export function TreeGrid({
               name={`${baseId}-${row.id}`}
               checked={checkState === 'checked'}
               indeterminate={checkState === 'indeterminate'}
+              overrides={{ controlSize: MIN_TARGET }}
               onChange={() => toggleRow(row)}
             />
-          </View>
+          </Pressable>
         ) : null}
         {columns.map((column) => (column === rowHeaderColumn ? renderRowHeader(item, column) : renderDataCell(row, column)))}
       </View>
@@ -1349,7 +1394,9 @@ export function TreeGrid({
       testID="TreeGrid.grid"
       role="grid"
       accessibilityLabel={caption}
+      aria-label={caption}
       accessibilityState={{ busy: loading }}
+      aria-busy={loading}
       data={rows}
       extraData={[
         selectedIds,
@@ -1359,6 +1406,7 @@ export function TreeGrid({
         activeCell,
         focusedCell,
         hoveredRow,
+        pressedRow,
         editing,
         draft,
         editError,
@@ -1369,9 +1417,11 @@ export function TreeGrid({
       ]}
       keyExtractor={(flat) => flat.key}
       renderItem={renderRow}
-      getItemLayout={(_items, index) => ({ length: rowHeight, offset: rowHeight * index, index })}
+      // Offsets start below the list header (the header row), measured once laid out.
+      getItemLayout={(_items, index) => ({ length: rowHeight, offset: (headerHeight ?? rowHeight + t.borderWidthThin) + rowHeight * index, index })}
       ListHeaderComponent={headerRow}
-      ListEmptyComponent={emptyState}
+      // Suppressed while loading: rows in flight show copy.loading and no empty message, as DataGrid.
+      ListEmptyComponent={loading ? undefined : emptyState}
       // Always sticky when virtualized; with `height: content` the page scrolls, so it has no effect.
       stickyHeaderIndices={bounded ? [0] : undefined}
       scrollEnabled={bounded}
@@ -1393,12 +1443,13 @@ export function TreeGrid({
       onAccessibilityAction={handleRootAction}
       style={{
         backgroundColor: t.colorBackground,
-        // `viewport` sizes the whole component; the scroll region takes what the caption and status bar leave.
-        ...(height === 'viewport' ? { height: viewport.height - 2 * t.layoutGapSection } : null),
+        // `viewport` and `fixed` both size the whole component; the scroll region takes what the caption and status bar leave.
+        ...(height === 'viewport' ? { height: viewport.height - 2 * t.layoutGapSection } : height === 'fixed' ? { height: fixedHeight } : null),
       }}
     >
-      <View testID="TreeGrid.caption" style={hideCaption ? HIDDEN_STYLE : undefined}>
-        <Heading level={captionLevel} size="md" overrides={{ fontSize: CAPTION_SIZE, fontWeight: CAPTION_WEIGHT, marginBlockEnd: CAPTION_GAP }}>
+      {/* DataGrid's captionGap is the grid's own inset below the caption; the Heading's margin is turned off, as DataGrid. */}
+      <View testID="TreeGrid.caption" style={hideCaption ? HIDDEN_STYLE : { paddingBottom: captionGap }}>
+        <Heading level={captionLevel} size="md" overrides={{ fontSize: CAPTION_SIZE, fontWeight: CAPTION_WEIGHT, marginBlockEnd: INSET_ZERO }}>
           {caption}
         </Heading>
       </View>
@@ -1408,13 +1459,13 @@ export function TreeGrid({
           borderStartWidth: gridLineWidth,
           borderTopWidth: gridLineWidth,
           borderColor: gridLine,
-          ...(height === 'viewport' ? flexStyle : height === 'fixed' ? { height: fixedHeight } : null),
+          ...(bounded ? flexStyle : null),
         }}
       >
+        {/* The scroll hint is shown in the status bar and never announced. */}
         <ScrollView
           testID="TreeGrid.scrollRegion"
           horizontal
-          accessibilityHint={COPY.scrollHint}
           onScroll={(event) => setScrolledX(event.nativeEvent.contentOffset.x > 0)}
           scrollEventThrottle={16} // literal-ok: one frame between the pinned shadow and the scroll position
           onLayout={(event: LayoutChangeEvent) => setRegionWidth(event.nativeEvent.layout.width)}

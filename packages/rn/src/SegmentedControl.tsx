@@ -77,6 +77,10 @@ const FONT_SIZE = {
   md: 'fontSizeMd',
 } as const satisfies Record<SegmentedControlSize, keyof Tokens>;
 
+/** segmentColor / segmentSelectedColor as token refs, for the Icon's `overrides.color`. */
+const COLOR: TokenRef = 'color.foreground.muted';
+const SELECTED_COLOR: TokenRef = 'color.foreground.strong';
+
 type SegmentLayout = { x: number; y: number; width: number; height: number };
 
 const isWeb = Platform.OS === 'web';
@@ -127,7 +131,6 @@ export function SegmentedControl({
 }: SegmentedControlProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
-  const rtl = I18nManager.isRTL;
 
   const enabledOptions = options.filter((option) => option.disabled !== true);
   const firstEnabledValue = enabledOptions[0]?.value;
@@ -243,6 +246,8 @@ export function SegmentedControl({
     // when the value names a disabled option or none).
     const fromValue = focusedValueRef.current ?? tabStopValue;
     const fromIndex = enabledOptions.findIndex((option) => option.value === fromValue);
+    // The writing direction is read at keydown: in RTL ArrowLeft is "next".
+    const rtl = I18nManager.isRTL;
     const nextKeys = rtl ? ['ArrowLeft', 'ArrowDown'] : ['ArrowRight', 'ArrowDown'];
     const prevKeys = rtl ? ['ArrowRight', 'ArrowUp'] : ['ArrowLeft', 'ArrowUp'];
     let targetIndex: number;
@@ -317,6 +322,7 @@ export function SegmentedControl({
       testID="SegmentedControl"
       accessibilityRole="radiogroup"
       accessibilityLabel={label}
+      aria-label={label}
       style={groupStyle}
     >
       {hasSelectedOption ? (
@@ -476,6 +482,7 @@ function Segment({
       // label as text is named by that text, and gets no label of its own. No
       // `accessibilityHint` either: it would only repeat the name, and a press already selects.
       accessibilityLabel={showLabel ? undefined : option.label}
+      aria-label={showLabel ? undefined : option.label}
       accessibilityState={{ checked: selected, disabled }}
       // `role="radio"` requires `aria-checked`, and react-native-web 0.21 ignores
       // `accessibilityState`, so the checked state reaches the DOM through this mirror (native
@@ -500,7 +507,8 @@ function Segment({
     >
       {showIcon ? (
         <View testID="SegmentedControl.segmentIcon" accessibilityElementsHidden importantForAccessibility="no">
-          <Icon name={option.icon!} size={s.iconSize} color={foreground} />
+          {/* The segment's own colour, forwarded to Icon's `color` binding (no currentColor on native). */}
+          <Icon name={option.icon!} size={s.iconSize} overrides={{ color: selected ? SELECTED_COLOR : COLOR }} />
         </View>
       ) : null}
       {!showLabel ? null : (

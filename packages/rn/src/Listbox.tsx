@@ -62,7 +62,11 @@ export interface ListboxProps {
   options: ListboxItem[];
   /** Allow any number of selections. The value becomes an array; each option shows a check indicator; selection toggles. */
   multiple?: boolean | undefined;
-  /** Controlled selection: a value, or with `multiple` an array. Omit for uncontrolled. */
+  /**
+   * Controlled selection: a value, or with `multiple` an array. Omit for uncontrolled. The shape
+   * that does not match the mode is normalised: single-select takes an array's first entry,
+   * multi-select reads a bare string as a one-entry array.
+   */
   value?: ListboxValue | undefined;
   /** Initial selection (or array) for an uncontrolled list. */
   defaultValue?: ListboxValue | undefined;
@@ -89,6 +93,13 @@ export interface ListboxProps {
    * is no single tab stop to move, and the pre-highlight never fires `onActiveChange`.
    */
   initialActiveValue?: string | undefined;
+  /**
+   * The active row, driven by a host (Select, Combobox, Search). Set, it wins over
+   * `initialActiveValue`: the active background follows it, and `null` means no row is active.
+   * Row focus and hover only report through `onActiveChange`; the host passes the value back.
+   * Native has no single tab stop, so this pre-highlights a row as `initialActiveValue` does.
+   */
+  activeValue?: string | null | undefined;
   /** Options are being fetched; shows `copy.loading` in place of the empty message and marks the list busy. */
   loading?: boolean | undefined;
   /** The whole list is inert but readable: rows stay focusable, taps do nothing, and the list dims once. */
@@ -197,8 +208,13 @@ function ListboxOptionRow({
       }}
       accessibilityRole={isWeb ? undefined : 'menuitem'}
       accessibilityLabel={accessibleLabel}
+      aria-label={accessibleLabel}
       accessibilityHint={hint}
       accessibilityState={{ selected, checked: multiple ? selected : undefined, disabled: optionDisabled }}
+      aria-selected={selected}
+      aria-checked={multiple ? selected : undefined}
+      // Overwritten by Pressable on react-native-web; the effect above sets it on the node there.
+      aria-disabled={optionDisabled}
       onPress={onPress}
       onFocus={onFocus}
       onBlur={onBlur}
@@ -214,7 +230,8 @@ function ListboxOptionRow({
       ) : null}
       {option.icon !== undefined ? (
         <View testID="Listbox.optionIcon">
-          <Icon name={option.icon} size="sm" />
+          {/* No currentColor on native: the icon takes `optionColor` so it matches the row's label. */}
+          <Icon name={option.icon} size="sm" overrides={{ color: 'color.foreground' }} />
         </View>
       ) : null}
       <View style={textColumnStyle}>
@@ -268,11 +285,21 @@ function flattenOptions(items: ListboxItem[]): ListboxOption[] {
   return options;
 }
 
-function toSelectedArray(selection: ListboxValue | undefined): string[] {
-  if (Array.isArray(selection)) {
-    return selection;
+/**
+ * The selection as an array, normalised to the mode rather than warned about: single-select
+ * takes an array's first entry, multi-select reads a bare string as a one-entry array.
+ */
+function toSelectedArray(selection: ListboxValue | undefined, multiple: boolean): string[] {
+  const all = Array.isArray(selection)
+    ? selection
+    : selection !== undefined && selection !== ''
+      ? [selection]
+      : [];
+  if (multiple) {
+    return all;
   }
-  return selection !== undefined && selection !== '' ? [selection] : [];
+  const first = all[0];
+  return first !== undefined && first !== '' ? [first] : [];
 }
 
 /** `initialActiveValue` when it names an enabled option, else the first selected, else the first enabled. */
@@ -280,12 +307,13 @@ function resolveInitialActive(
   items: ListboxItem[],
   initialActiveValue: string | undefined,
   selection: ListboxValue | undefined,
+  multiple: boolean,
 ): string | null {
   const enabled = flattenOptions(items).filter((option) => option.disabled !== true);
   if (initialActiveValue !== undefined && enabled.some((option) => option.value === initialActiveValue)) {
     return initialActiveValue;
   }
-  const selected = toSelectedArray(selection);
+  const selected = toSelectedArray(selection, multiple);
   const firstSelected = enabled.find((option) => selected.includes(option.value));
   return firstSelected?.value ?? enabled[0]?.value ?? null;
 }
@@ -303,8 +331,8 @@ function resolveInitialActive(
  * plus 2 × listPadding, plus 2 × borderWidth when not `embedded`; never measured. Each row
  * is its own accessibility stop and a tap is the selection: arrows, Home/End, Page keys,
  * typeahead, Shift+Arrow and Ctrl+A have no native form, and `selectionFollowsFocus` and
- * `typeaheadReset` have no runtime effect. The active row (focused, hovered, or
- * pre-highlighted) gets `color.background.subtle`; focus draws a `color.border.focus`
+ * `typeaheadReset` have no runtime effect. The active row (focused, hovered, pre-highlighted,
+ * or named by a host's `activeValue`) gets `color.background.subtle`; focus draws a `color.border.focus`
  * border that is always reserved. Selection shows by weight, and with `multiple` by the
  * check (an invisible slot when unselected, so labels align). Inside a Form the list
  * registers by `name`; the message below it follows `error` → Form error →
@@ -323,6 +351,7 @@ export function Listbox({
   error,
   embedded = false,
   initialActiveValue,
+  activeValue: activeValueProp,
   loading = false,
   disabled = false,
   name,
@@ -339,25 +368,33 @@ export function Listbox({
   const emptyId = `${instanceId}empty`;
   const errorId = `${instanceId}error`;
   const listRef = React.useRef<FlatList<ListboxRow>>(null);
-  // Mounted rows only: FlatList virtualises, so a focus target that scrolled away falls back to the list.
+  // Mounted rows only: FlatList virtualises, so a focus target is scrolled to before it is focused.
   const rowRefs = React.useRef(new Map<string, ViewInstance>());
   const [internalValue, setInternalValue] = React.useState<ListboxValue | undefined>(defaultValue);
-  const [activeValue, setActiveValue] = React.useState<string | null>(() =>
-    resolveInitialActive(options, initialActiveValue, value ?? defaultValue),
+  const [internalActive, setInternalActive] = React.useState<string | null>(() =>
+    resolveInitialActive(options, initialActiveValue, value ?? defaultValue, multiple),
   );
   const [focusedValue, setFocusedValue] = React.useState<string | null>(null);
 
   const isControlled = value !== undefined;
   const currentValue = isControlled ? value : internalValue;
   const isDisabled = disabled || (form?.disabled ?? false);
+  // A host-driven `activeValue` wins; focus and hover then only report, and the host passes the value back.
+  const isActiveControlled = activeValueProp !== undefined;
+  const effectiveActive: string | null = isActiveControlled ? activeValueProp : internalActive;
+  const setActive = (next: string | null): void => {
+    if (!isActiveControlled) {
+      setInternalActive(next);
+    }
+  };
 
   const orderedOptions = React.useMemo(() => flattenOptions(options), [options]);
   const orderedValues = React.useMemo(() => orderedOptions.map((option) => option.value), [orderedOptions]);
   const rows = React.useMemo(() => flattenRows(options), [options]);
 
-  const selectedValues: string[] = multiple ? toSelectedArray(currentValue) : [];
-  const selectedValue: string | undefined = !multiple && typeof currentValue === 'string' ? currentValue : undefined;
-  const nothingSelected = multiple ? selectedValues.length === 0 : selectedValue === undefined || selectedValue === '';
+  const selectedValues: string[] = toSelectedArray(currentValue, multiple);
+  const selectedValue: string | undefined = multiple ? undefined : selectedValues[0];
+  const nothingSelected = selectedValues.length === 0;
 
   // A later `initialActiveValue` (Combobox type-ahead) moves the pre-highlight; like the first one it fires nothing.
   const lastInitialActive = React.useRef(initialActiveValue);
@@ -367,9 +404,9 @@ export function Listbox({
     }
     lastInitialActive.current = initialActiveValue;
     if (focusedValue === null) {
-      setActiveValue(resolveInitialActive(options, initialActiveValue, currentValue));
+      setInternalActive(resolveInitialActive(options, initialActiveValue, currentValue, multiple));
     }
-  }, [initialActiveValue, options, currentValue, focusedValue]);
+  }, [initialActiveValue, options, currentValue, focusedValue, multiple]);
 
   const hasError = error !== undefined && error !== '';
   const formError = name !== undefined ? form?.errors[name] : undefined;
@@ -384,7 +421,7 @@ export function Listbox({
       if (error !== undefined && error !== '') {
         return error;
       }
-      if (required && toSelectedArray(candidate).length === 0) {
+      if (required && toSelectedArray(candidate, multiple).length === 0) {
         return withLabel(COPY.required, label);
       }
       if (invalid) {
@@ -392,23 +429,41 @@ export function Listbox({
       }
       return null;
     },
-    [required, label, error, invalid],
+    [required, label, error, invalid, multiple],
   );
 
-  // A failed submit focuses the first selected row, else the first enabled one; the list itself when neither is mounted.
-  const focusTargets = React.useRef({ orderedOptions, selectedValues, selectedValue, multiple });
-  focusTargets.current = { orderedOptions, selectedValues, selectedValue, multiple };
+  /*
+   * A failed submit focuses the first selected row, else the first enabled one. The row is
+   * scrolled into view first so FlatList mounts it; when it still cannot be reached the list
+   * itself takes focus.
+   */
+  const focusTargets = React.useRef({ orderedOptions, selectedValues, rows });
+  focusTargets.current = { orderedOptions, selectedValues, rows };
   const focusField = React.useCallback((): void => {
-    const { orderedOptions: all, selectedValues: many, selectedValue: one, multiple: isMultiple } = focusTargets.current;
-    const selected = isMultiple ? many : one !== undefined && one !== '' ? [one] : [];
+    const { orderedOptions: all, selectedValues: selected, rows: allRows } = focusTargets.current;
     const target =
       all.find((option) => selected.includes(option.value)) ?? all.find((option) => option.disabled !== true);
-    const row = target === undefined ? undefined : rowRefs.current.get(target.value);
-    const node = findNodeHandle(row ?? listRef.current);
-    if (node != null) {
-      AccessibilityInfo.setAccessibilityFocus(node);
+    const focusNow = (): void => {
+      const row = target === undefined ? undefined : rowRefs.current.get(target.value);
+      const node = findNodeHandle(row ?? listRef.current);
+      if (node != null) {
+        AccessibilityInfo.setAccessibilityFocus(node);
+      }
+    };
+    const index =
+      target === undefined ? -1 : allRows.findIndex((row) => row.kind === 'option' && row.option.value === target.value);
+    if (index < 0 || listRef.current === null) {
+      focusNow();
+      return;
     }
+    listRef.current.scrollToIndex({ index, animated: false });
+    requestAnimationFrame(focusNow);
   }, []);
+
+  // Rows vary in height (descriptions, group labels), so an unmeasured target is approached by the average row.
+  const handleScrollToIndexFailed = (info: { index: number; averageItemLength: number }): void => {
+    listRef.current?.scrollToOffset({ offset: info.index * info.averageItemLength, animated: false });
+  };
 
   const latest = React.useRef({ currentValue, validateValue, label });
   latest.current = { currentValue, validateValue, label };
@@ -418,12 +473,11 @@ export function Listbox({
         return latest.current.label;
       },
       getValue: () => {
-        const current = latest.current.currentValue;
-        if (multiple) {
-          const selected = toSelectedArray(current);
-          return selected.length > 0 ? selected : undefined;
+        const selected = toSelectedArray(latest.current.currentValue, multiple);
+        if (selected.length === 0) {
+          return undefined;
         }
-        return typeof current === 'string' && current !== '' ? current : undefined;
+        return multiple ? selected : selected[0];
       },
       validate: () => latest.current.validateValue(latest.current.currentValue),
       focus: focusField,
@@ -477,21 +531,21 @@ export function Listbox({
     if (isDisabled) {
       return;
     }
-    setActiveValue(optionValue);
+    setActive(optionValue);
     onActiveChange?.(optionValue);
   };
   const handleBlurOption = (optionValue: string): void => {
     setFocusedValue((prev) => (prev === optionValue ? null : prev));
-    if (!isDisabled && activeValue === optionValue) {
-      setActiveValue(null);
+    if (!isDisabled && effectiveActive === optionValue) {
+      setActive(null);
       onActiveChange?.(null);
     }
   };
   const handleHoverOption = (optionValue: string): void => {
-    if (isDisabled || optionValue === activeValue) {
+    if (isDisabled || optionValue === effectiveActive) {
       return;
     }
-    setActiveValue(optionValue);
+    setActive(optionValue);
     onActiveChange?.(optionValue);
   };
 
@@ -533,6 +587,11 @@ export function Listbox({
     rowCount === null ? undefined : rowCount * rowHeight + 2 * listPadding + (embedded ? 0 : 2 * borderWidth);
 
   const placeholderText = loading ? COPY.loading : (emptyMessage ?? COPY.empty);
+  // One form only: "1 selected" is intended, so no plural selection is needed.
+  const selectedCountText =
+    multiple && !isWeb ? COPY.selectedCount.replace('{count}', String(selectedValues.length)) : undefined;
+  // The messages share the rows' typeface; each keeps its own `size`, so `fontSize` is not forwarded.
+  const messageOverrides = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight };
 
   const rootStyle: ViewStyle = { flexDirection: 'column', gap: partGap };
 
@@ -617,8 +676,6 @@ export function Listbox({
         'aria-multiselectable': multiple ? 'true' : undefined,
         'aria-invalid': isInvalid ? 'true' : undefined,
         'aria-required': required ? 'true' : undefined,
-        'aria-disabled': isDisabled ? 'true' : undefined,
-        'aria-busy': loading ? 'true' : undefined,
         // A listbox owns only options and groups, so the empty/loading row is hidden from the tree
         // and reaches the user as the list's description instead, as the React package does.
         'aria-describedby':
@@ -629,8 +686,7 @@ export function Listbox({
     : {};
 
   // `aria-disabled` is not here: Pressable overwrites it, so ListboxOptionRow sets it on the node.
-  const webRowProps = (selected: boolean): Record<string, unknown> =>
-    isWeb ? { role: 'option', 'aria-selected': selected ? 'true' : 'false' } : {};
+  const webRowProps: Record<string, unknown> = isWeb ? { role: 'option' } : {};
 
   const keepRowRef = (optionValue: string) => (instance: ViewInstance | null) => {
     if (instance === null) {
@@ -660,8 +716,8 @@ export function Listbox({
         multiple={multiple}
         // The error is not a live region: it describes the rows, the native stand-in for aria-describedby on the list.
         hint={displayedError}
-        webProps={webRowProps(selected)}
-        rowStyle={optionRowStyle(activeValue === option.value, focusedValue === option.value, optionDisabled)}
+        webProps={webRowProps}
+        rowStyle={optionRowStyle(effectiveActive === option.value, focusedValue === option.value, optionDisabled)}
         labelStyle={optionLabelStyle(selected)}
         descriptionStyle={optionDescriptionStyle}
         textColumnStyle={optionTextColumnStyle}
@@ -685,23 +741,29 @@ export function Listbox({
         style={listStyle}
         contentContainerStyle={listContentStyle}
         // The list keeps its label but is not `accessible`, so rows (and the empty/loading Text) stay their own stops.
+        onScrollToIndexFailed={handleScrollToIndexFailed}
         accessibilityRole={isWeb ? undefined : 'list'}
         accessibilityLabel={label}
+        aria-label={label}
         accessibilityState={{ disabled: isDisabled, busy: loading }}
-        accessibilityValue={
-          multiple ? { text: COPY.selectedCount.replace('{count}', String(selectedValues.length)) } : undefined
-        }
+        aria-disabled={isDisabled}
+        aria-busy={loading}
+        // Native only: a role=listbox takes no value on the web, where the count is left to the host.
+        accessibilityValue={selectedCountText !== undefined ? { text: selectedCountText } : undefined}
+        aria-valuetext={selectedCountText}
         ListEmptyComponent={
           // Native keeps the row as its own stop; on web it is the list's description (see webListProps).
           <View id={emptyId} aria-hidden={isWeb} style={emptyRowStyle} testID="Listbox.emptyState">
-            <Text tone="muted">{placeholderText}</Text>
+            <Text tone="muted" overrides={messageOverrides}>
+              {placeholderText}
+            </Text>
           </View>
         }
         testID="Listbox.list"
       />
       {displayedError !== undefined ? (
         <View id={errorId} testID="Listbox.errorMessage">
-          <Text size="sm" tone="danger">
+          <Text size="sm" tone="danger" overrides={messageOverrides}>
             {displayedError}
           </Text>
         </View>

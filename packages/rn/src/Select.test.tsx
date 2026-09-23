@@ -68,6 +68,12 @@ describe('Select', () => {
     expect(screen.getByText(' (required)', { exact: false })).toBeTruthy();
   });
 
+  it('invalid-is-reported-on-the-trigger', () => {
+    // The `state: invalid` expectation is web/Lit only; the error region renders copy.invalid.
+    const s = setup({ invalid: true });
+    expect(screen.getByText('{label} is not valid.'.replace('{label}', s.props.label))).toBeTruthy();
+  });
+
   it('renders', () => {
     setup();
     expect(screen.getByTestId('Select')).toBeTruthy();

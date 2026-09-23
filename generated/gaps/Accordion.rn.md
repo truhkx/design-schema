@@ -50,3 +50,31 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Accordion: `styles.itemGap` is `layout.gap.none`, and its description explains that when `divided` the gap 'falls between each item and its Divider — intended: the divider sits centred in the space between items'. With the default token that space is 0, so no shipped configuration exercises the described behavior; it is only observable via an `itemGap` override. Left as specified.
 - Accordion: item-level `disabled` has no documented RN-specific effect. On web it matters because arrows skip disabled triggers; with no arrow navigation here it reduces to Disclosure's press guard plus `accessibilityState.disabled`. Passed straight through to Disclosure; the doc should say whether a disabled item is expected to differ at all on native.
 - Accordion: `keepMounted` and `headingLevel` are accordion-wide with no per-item override in the `items` shape, so a form-sections accordion cannot keep only the field-bearing panels mounted. Implemented as documented (applied to every Disclosure).
+
+## 2026-09-23 14:34 — round 1
+
+- Accordion: the RN notes say `headingLevel` gives each Disclosure summary `accessibilityRole="header"`, but Disclosure only does that when `headingLevel` is set. Because Accordion defaults it to '3', every summary is always a header and there is no way to opt out. Chose: always pass it, and the heading-level tests check that there is one header per item.
+- Accordion: the dev warning's key is the requested id list, including ids that match no item. The spec says unknown ids are 'silently ignored' but also that the warning fires when the resolved `value`/`defaultValue` 'holds more than one id'. It doesn't say whether an unmatched id counts towards that. Chose: it counts, because the raw list is what gets checked.
+- Accordion: a `keyboard` block exists, so the rules require a `Keyboard` story, but the RN notes say no keyboard scenario is generated for this platform. Chose: keep the story, open, with three enabled triggers and no disabled item, so it stays usable for the axe gate on react-native-web.
+- Accordion: the spec doesn't say whether switching between controlled and uncontrolled mode (`value` appearing or disappearing) should fire any events. Chose: nothing fires, and any pending just-emitted set is cleared while uncontrolled.
+- Accordion: the `items` shape is written out inline in the props, as the schema requires, and is also exported as `AccordionItem`, which the stories use. The schema names no item type, so the export name is my choice.
+
+## 2026-09-23 14:34 — round 1
+
+- Accordion: the warning's 'once per distinct id list' could mean compared with the last list only, or with every list seen; I chose every list seen (a Set), so a value going A → B → A warns for A only once.
+- Accordion: a controlled `value` that echoes the just-emitted set is matched as an unordered set, not by array order; the spec says 'a set the accordion did not itself just emit' but never says whether order matters (it matters for which id survives the `exclusive` trim).
+- Accordion: the `Keyboard` story is required to have 'at least three focusable children', and the Behavior section says a keyboard scenario must not include disabled items. The Default items include a disabled one, so the Keyboard story filters it out; the spec doesn't say whether the Keyboard story should reuse Default's items.
+- Accordion: `platforms.rn.props` is empty, yet the RN notes and Disclosure rely on `aria-expanded`/`aria-disabled` for react-native-web. Accordion adds no accessibility props of its own and relies entirely on Disclosure; the spec doesn't say whether the `list` root should carry any role (a11y.role is `none`, so none was added).
+- Accordion: 'Divider keeps its default spacing: none' is assumed to be the RN Divider's default too; Accordion passes no `spacing` prop, as the spec says it adds nothing beyond the listed props.
+
+## 2026-09-23 14:35 — round 2
+
+- Accordion: the spec names an overridable binding `fontFamily`, and the literals gate flags any `fontFamily: '…'` string as a hard-coded font, including a token name like 'font.family.body' in the default-token table. Keeping the spec's binding name as the table key trips the gate, so I marked the line `literal-ok` (it is a token name resolved through the theme). Either the gate should skip strings that are token names, or the binding should be named `triggerFontFamily` to match Disclosure's.
+
+## 2026-09-23 14:35 — round 2
+
+- Accordion: the literals gate flags any `fontFamily: '…'` as a font-stack literal, including a token path such as 'font.family.body'. The schema names this binding `fontFamily`, so its entry in the default-token table has that key. Chose: keep the spec's binding name and mark the line `literal-ok` as a token path. The gate could skip quoted values that are dotted token paths.
+- Accordion: the RN notes say `headingLevel` gives each Disclosure summary `accessibilityRole="header"`, but Disclosure only does that when `headingLevel` is set. Because Accordion defaults it to '3', every summary is always a header and there is no way to opt out. Chose: always pass it, and the heading-level tests check that there is one header per item.
+- Accordion: the dev warning's key is the requested id list, including ids that match no item. The spec says unknown ids are 'silently ignored' but also that the warning fires when the resolved `value`/`defaultValue` 'holds more than one id'. It doesn't say whether an unmatched id counts towards that. Chose: it counts, because the raw list is what gets checked.
+- Accordion: a `keyboard` block exists, so the rules require a `Keyboard` story, but the RN notes say no keyboard scenario is generated for this platform. Chose: keep the story, open, with three enabled triggers and no disabled item.
+- Accordion: the spec doesn't say whether switching between controlled and uncontrolled mode (`value` appearing or disappearing) should fire any events. Chose: nothing fires, and any pending just-emitted set is cleared while uncontrolled.

@@ -1,4 +1,4 @@
-import type * as React from 'react';
+import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Tabs, TabPanel } from './Tabs';
 import type { TabsItem, TabsProps } from './Tabs';
@@ -48,10 +48,35 @@ export const OrientationVertical: Story = { args: { orientation: 'vertical' } };
 
 // fit
 export const FitStart: Story = { args: { fit: 'start' } };
-export const FitFill: Story = { args: { fit: 'fill' } };
+export const FitFill: Story = { args: { fit: 'fill', tabs: TABS.slice(0, 3) } };
 
 // notable states
-export const KeepMounted: Story = { args: { keepMounted: true } };
+export const KeepMounted: Story = { args: { keepMounted: true, tabs: TABS.slice(0, 2) } };
+
+/** Controlled: the story owns `value`, starting on `activity`, and follows `onChange`. */
+export const Controlled: Story = {
+  args: { value: 'activity' },
+  render: function ControlledTabs(args: TabsProps) {
+    const [value, setValue] = React.useState(args.value);
+    return (
+      <Tabs
+        {...args}
+        value={value}
+        onChange={(next) => {
+          setValue(next);
+          args.onChange?.(next);
+        }}
+      >
+        {panelsFor(args.tabs)}
+      </Tabs>
+    );
+  },
+};
+
+/** One tab (`files`) has no TabPanel: it still renders, its panel region is empty, and a dev warning fires. */
+export const TabWithoutPanel: Story = {
+  render: (args: TabsProps) => <Tabs {...args}>{panelsFor(args.tabs.filter((tab) => tab.id !== 'files'))}</Tabs>,
+};
 
 export const WithOverrides: Story = {
   args: { overrides: { radius: 'radius.md', tabPaddingInline: 'space.lg' } },
@@ -71,7 +96,12 @@ export const Keyboard: Story = {
       { id: 'files', label: 'Files' },
     ],
   },
-  argTypes: { orientation: { control: 'inline-radio', options: ['horizontal', 'vertical'] } },
+  // Explicit enum argTypes: without them Storybook drops these URL args and the gate tests the defaults.
+  argTypes: {
+    activation: { control: 'inline-radio', options: ['automatic', 'manual'] },
+    orientation: { control: 'inline-radio', options: ['horizontal', 'vertical'] },
+    fit: { control: 'inline-radio', options: ['start', 'fill'] },
+  },
 };
 
 // examples

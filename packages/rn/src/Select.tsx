@@ -479,11 +479,11 @@ export function Select({
       ? selectedValues.map(labelFor).join(', ')
       : COPY.selectedCount.replace('{count}', new Intl.NumberFormat().format(selectedValues.length));
 
-  // The focus width replaces the border width; padding shrinks by the difference, clamped at
-  // zero, so the trigger does not shift. Pressable focus cannot tell keyboard from touch here,
-  // so the width changes on any focus.
+  // The focus width replaces the border width; padding shrinks by the difference — the doc's
+  // unclamped `padding - (focusRingWidth - triggerBorderWidth)` — so the trigger does not
+  // shift. Pressable focus cannot tell keyboard from touch here, so the width changes on any focus.
   const borderWidth = focused ? t.borderWidthFocus : triggerBorderWidth;
-  const borderGrowth = Math.max(0, borderWidth - triggerBorderWidth);
+  const borderGrowth = borderWidth - triggerBorderWidth;
   // Invalid keeps the danger color while focused, so focus never hides the error.
   const triggerBorderColor = isInvalid ? triggerBorderInvalid : focused ? t.colorBorderFocus : t.colorBorderStrong;
 
@@ -503,8 +503,8 @@ export function Select({
     borderWidth,
     borderColor: triggerBorderColor,
     borderRadius: triggerRadius,
-    paddingHorizontal: Math.max(0, triggerPaddingInline - borderGrowth),
-    paddingVertical: Math.max(0, triggerPaddingBlock - borderGrowth),
+    paddingHorizontal: triggerPaddingInline - borderGrowth,
+    paddingVertical: triggerPaddingBlock - borderGrowth,
   };
 
   // Each forward carries the binding's resolved token — the consumer's override, else the
@@ -609,6 +609,7 @@ export function Select({
         // react-native-web 0.21 drops `accessibilityState`, and a `combobox` without
         // `aria-expanded` fails an accessibility audit; `aria-disabled` is set on the web node
         // in the effect above.
+        aria-label={accessibleName}
         aria-expanded={open}
         onPress={handleTriggerPress}
         onFocus={() => setFocused(true)}

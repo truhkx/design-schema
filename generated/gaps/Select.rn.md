@@ -66,3 +66,25 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Select: the guidance sets `initialActiveValue` to "the current selection" but does not say which one when `multiple` has several selected. Chose the first value in the array's order.
 - Select: `focusRingWidth` says the width changes on any focus because Pressable cannot tell keyboard from touch — but on native Pressable has no onFocus/onBlur at all (only react-native-web fires them), so on a device the focus ring never appears. The doc should record that limit rather than implying the ring is merely imprecise.
 - Select: `description` is both an anatomy part (rendered as a muted Text) and the trigger's accessibilityHint, so a screen reader hears it twice. Did both, as Input does, but the doc never acknowledges the duplication on this platform.
+
+## 2026-09-23 14:31 — round 1
+
+- Select: focusRingWidth says the padding rule is 'the same unclamped rule Input uses', but RN Input.tsx clamps with Math.max(0, padding - growth). Chose the spec's unclamped form; Input and Select now disagree on RN when an override makes padding smaller than the border growth (padding goes negative).
+- Select: the package digest says to mirror accessibilityValue as aria-valuetext, but aria-valuetext is not an allowed attribute on role=combobox (axe aria-allowed-attr). Did not add it; accessibilityValue.text is left to react-native-web's own mapping. The doc should say whether the RN combobox mirrors it.
+- Select: platforms.web lists aria-invalid and aria-required, but the rn notes only mention aria-expanded, aria-controls and aria-disabled. Left aria-invalid/aria-required off the RN trigger, and the RN error region uses a live region, not role=alert (as Input). The rn notes should say whether react-native-web needs them for axe.
+- Select: the guidance says 'The Keyboard story ... focuses the trigger before sending keys', but a react-native-web CSF story can't send keys and has no play function here. The story only owns open/onOpenChange; focusing is left to the keyboard gate.
+- Select: behavior scenario invalid-is-reported-on-the-trigger expects `copy: invalid`, which contains {label}. The test fills it in with the Default story's label; the scenario doesn't say which params to use.
+- Select: the root View carries aria-disabled (inherited from Input's pattern) while the spec only puts aria-disabled on the trigger via the web-only effect. Kept both; the doc should say whether the group wrapper announces disabled.
+
+## 2026-09-23 14:31 — round 1
+
+- Select: composition.listbox.props lists only label/options/multiple/value/embedded/selectionFollowsFocus, but Guidance says the set also includes initialActiveValue and Select's onChange (and onActiveChange, which the rn notes exclude). I passed initialActiveValue = first selected value and onChange, and no onActiveChange.
+- Select: listbox `value` is declared `from: value` (the prop). An uncontrolled Select has no `value` prop, so I passed the resolved current value (controlled, else internal state from defaultValue).
+- Select: the doc doesn't say what the phone BottomSheet's heading is. I used `label`.
+- Select: the rn notes put the copy.done footer button on the sheet 'for multiple', while Guidance says only 'the native phone sheet renders it' without saying single or multiple. I render it for multiple only (a single select closes when you pick).
+- Select: the tablet/web popup is a trapped FocusScope, but the doc doesn't say where focus lands inside it. I used autoFocus="first", which puts focus in the Listbox. That contradicts Guidance's 'focus never leaves the trigger' (web model), but a modal Modal can't leave focus behind on the trigger.
+- Select: Guidance says a Fieldset prefixes the accessible name with the legend but gives no separator. I used `${legend}, ${label}` as the other rn fields do.
+- Select: the doc doesn't say which element carries the disabled state for axe under react-native-web. aria-disabled is set on the trigger's DOM node in an effect (per the rn notes), and the root View also gets aria-disabled, which the doc doesn't mention.
+- Select: popupShadow on rn resolves to a shadow style object that is spread onto the popup. The doc doesn't say how shadow.overlay maps to RN (shadow* props vs boxShadow).
+- Select: chevronReserve is accepted in the overrides type and does nothing on rn, as the doc says. The derived NativeAlways and ForcedNativePicker stories render the same as auto, which is expected, not a defect.
+- Select: the minTargetSm exception (24px floor at sm) is applied, but the doc doesn't say whether hitSlop should extend the sm trigger toward 44px on touch. I added no hitSlop.

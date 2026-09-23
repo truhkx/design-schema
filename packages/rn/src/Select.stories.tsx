@@ -1,3 +1,4 @@
+import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Select } from './Select';
 import { withTheme } from './decorators';
@@ -125,8 +126,23 @@ export const WithDescription: Story = { args: { description: 'Used to set your d
 
 /**
  * Rendered open (`open: true`) with its trigger and at least three focusable options,
- * for the axe gate and manual keyboard checks on react-native-web.
+ * for the axe gate and manual keyboard checks on react-native-web. The story owns `open`:
+ * it starts from the arg and writes `onOpenChange` back, so closing and reopening work.
  */
 export const Keyboard: Story = {
   args: { open: true },
+  render: function KeyboardStory(args) {
+    const [open, setOpen] = React.useState(args.open ?? true);
+    React.useEffect(() => setOpen(args.open ?? true), [args.open]);
+    return (
+      <Select
+        {...args}
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          args.onOpenChange?.(next);
+        }}
+      />
+    );
+  },
 };

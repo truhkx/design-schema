@@ -120,6 +120,17 @@ const isWeb = Platform.OS === 'web';
 /** The DOM element react-native-web renders for a `Pressable`; this package has no DOM lib. */
 type WebElement = { setAttribute(name: string, value: string): void; removeAttribute(name: string): void };
 
+/** The computed writing direction of a react-native-web DOM node, or `undefined` off the web. */
+function readDirection(node: unknown): boolean | undefined {
+  const getComputedStyle = (globalThis as { getComputedStyle?: (element: unknown) => { direction?: string } })
+    .getComputedStyle;
+  if (!isWeb || node == null || getComputedStyle === undefined) {
+    return undefined;
+  }
+  const direction = getComputedStyle(node).direction;
+  return direction === undefined || direction === '' ? undefined : direction === 'rtl';
+}
+
 /**
  * Tabs — one region of a screen showing one of several equal-standing views.
  *
@@ -218,17 +229,34 @@ export function Tabs({
   const scrollRef = React.useRef<ScrollViewInstance>(null);
   const scrollOffsetRef = React.useRef(0);
   const viewportSizeRef = React.useRef(0);
+  const listWidthRef = React.useRef(0);
   const focusedIdRef = React.useRef<string | undefined>(undefined);
+  const [focusedId, setFocusedId] = React.useState<string | undefined>(undefined);
 
+  // Animates only when the selection moves between tabs (`animate`); the first measured placement
+  // and every resize remeasure snap. A selection matching no tab collapses the bar to zero size.
   const updateIndicator = React.useCallback(
-    (id: string): void => {
+    (id: string | undefined, animate: boolean): void => {
+      if (id === undefined || !tabs.some((tab) => tab.id === id)) {
+        indicatorOffset.stopAnimation();
+        indicatorExtent.stopAnimation();
+        indicatorOffset.setValue(0);
+        indicatorExtent.setValue(0);
+        // The next placement is a first appearance, not a move between tabs: it snaps.
+        hasMeasuredIndicatorRef.current = false;
+        return;
+      }
       const layout = tabLayoutsRef.current.get(id);
       if (!layout) {
         return;
       }
-      const offset = isHorizontal ? layout.x : layout.y;
+      // Measured from the list's inline-start edge. Yoga's layout `x` is physical, so under
+      // I18nManager.isRTL it is read from the right; the bar is then placed with logical `start`.
+      const offset = isHorizontal ? (rtl ? listWidthRef.current - layout.x - layout.width : layout.x) : layout.y;
       const extent = isHorizontal ? layout.width : layout.height;
-      if (reducedMotion || !hasMeasuredIndicatorRef.current) {
+      if (!animate || reducedMotion || !hasMeasuredIndicatorRef.current) {
+        indicatorOffset.stopAnimation();
+        indicatorExtent.stopAnimation();
         indicatorOffset.setValue(offset);
         indicatorExtent.setValue(extent);
         hasMeasuredIndicatorRef.current = true;
@@ -240,7 +268,7 @@ export function Tabs({
         Animated.timing(indicatorExtent, { toValue: extent, duration: transitionDuration, easing, useNativeDriver: false }),
       ]).start();
     },
-    [isHorizontal, reducedMotion, transitionDuration, t.motionEasingStandard, indicatorOffset, indicatorExtent],
+    [tabs, isHorizontal, rtl, reducedMotion, transitionDuration, t.motionEasingStandard, indicatorOffset, indicatorExtent],
   );
 
   const scrollSelectedIntoView = React.useCallback(
@@ -271,19 +299,26 @@ export function Tabs({
     [fill, isHorizontal, reducedMotion],
   );
 
+  const previousValueRef = React.useRef(currentValue);
   React.useEffect(() => {
-    if (currentValue === undefined) {
-      return;
+    const moved = previousValueRef.current !== currentValue;
+    previousValueRef.current = currentValue;
+    updateIndicator(currentValue, moved);
+    if (currentValue !== undefined) {
+      scrollSelectedIntoView(currentValue);
     }
-    updateIndicator(currentValue);
-    scrollSelectedIntoView(currentValue);
   }, [currentValue, updateIndicator, scrollSelectedIntoView]);
 
   const handleTabLayout = (id: string, event: LayoutChangeEvent): void => {
     const { x, y, width, height } = event.nativeEvent.layout;
+    const firstMeasure = !tabLayoutsRef.current.has(id);
     tabLayoutsRef.current.set(id, { x, y, width, height });
     if (id === currentValue) {
-      updateIndicator(id);
+      // A remeasure (first appearance or resize) snaps; only a selection change animates.
+      updateIndicator(id, false);
+      if (firstMeasure) {
+        scrollSelectedIntoView(id);
+      }
     }
   };
 
@@ -295,6 +330,18 @@ export function Tabs({
   const handleViewportLayout = (event: LayoutChangeEvent): void => {
     const { width, height } = event.nativeEvent.layout;
     viewportSizeRef.current = isHorizontal ? width : height;
+  };
+
+  // The list's own width, for the RTL indicator offset; a resize remeasure snaps.
+  const handleListLayout = (event: LayoutChangeEvent): void => {
+    const { width } = event.nativeEvent.layout;
+    if (width === listWidthRef.current) {
+      return;
+    }
+    listWidthRef.current = width;
+    if (rtl && isHorizontal) {
+      updateIndicator(currentValue, false);
+    }
   };
 
   const selectTab = (id: string): void => {
@@ -309,7 +356,12 @@ export function Tabs({
   };
 
   // react-native-web only: View has no key events on iOS/Android.
-  const handleKeyDown = (event: { key?: string; nativeEvent?: { key?: string }; preventDefault?: () => void }): void => {
+  const handleKeyDown = (event: {
+    key?: string;
+    nativeEvent?: { key?: string };
+    currentTarget?: unknown;
+    preventDefault?: () => void;
+  }): void => {
     const key = event.key ?? event.nativeEvent?.key;
     const enabled = tabs.filter((tab) => tab.disabled !== true);
     if (enabled.length === 0 || key === undefined) {
@@ -317,8 +369,10 @@ export function Tabs({
     }
     const fromId = focusedIdRef.current ?? currentValue;
     const fromIndex = enabled.findIndex((tab) => tab.id === fromId);
-    const nextKey = isHorizontal ? (rtl ? 'ArrowLeft' : 'ArrowRight') : 'ArrowDown';
-    const prevKey = isHorizontal ? (rtl ? 'ArrowRight' : 'ArrowLeft') : 'ArrowUp';
+    // Direction is read at keydown: the list's computed `direction` on web, I18nManager elsewhere.
+    const isRtl = readDirection(event.currentTarget) ?? rtl;
+    const nextKey = isHorizontal ? (isRtl ? 'ArrowLeft' : 'ArrowRight') : 'ArrowDown';
+    const prevKey = isHorizontal ? (isRtl ? 'ArrowRight' : 'ArrowLeft') : 'ArrowUp';
     let targetIndex: number;
     if (key === nextKey) {
       targetIndex = fromIndex < 0 ? 0 : (fromIndex + 1) % enabled.length;
@@ -362,8 +416,11 @@ export function Tabs({
     badgeSize,
   };
 
-  // The roving tab stop on web: the selected tab, or the first enabled one when nothing is selected.
-  const tabStopId = tabs.some((tab) => tab.id === currentValue && tab.disabled !== true) ? currentValue : firstEnabledId;
+  // The roving tab stop on web: while focus is inside the list it follows the focused tab (however
+  // focus arrived); otherwise the selected tab, or the first enabled one when the selection is
+  // disabled or matches nothing. Under `manual`, leaving the list forgets unselected arrow moves.
+  const isEnabledId = (id: string | undefined): boolean => tabs.some((tab) => tab.id === id && tab.disabled !== true);
+  const tabStopId = isEnabledId(focusedId) ? focusedId : isEnabledId(currentValue) ? currentValue : firstEnabledId;
 
   const tabButtons = tabs.map((tab, index) => (
     <TabButton
@@ -379,6 +436,7 @@ export function Tabs({
       onMeasured={handleTabLayout}
       onFocusChange={(id, focused) => {
         focusedIdRef.current = focused ? id : focusedIdRef.current === id ? undefined : focusedIdRef.current;
+        setFocusedId(focusedIdRef.current);
       }}
       registerRef={(id, instance) => {
         if (instance) {
@@ -396,30 +454,30 @@ export function Tabs({
     flexGrow: fill ? 1 : 0,
     gap: listGap,
     position: 'relative',
+    // Logical edges: physical left/right are swapped under RTL by doLeftAndRightSwapInRTL, so a
+    // branch on isRTL here would swap twice. The vertical rule sits at the inline end, by the panels.
     borderBottomWidth: isHorizontal ? listBorderWidth : 0,
-    borderRightWidth: !isHorizontal && !rtl ? listBorderWidth : 0,
-    borderLeftWidth: !isHorizontal && rtl ? listBorderWidth : 0,
+    borderEndWidth: isHorizontal ? 0 : listBorderWidth,
     borderColor: listBorderColor,
   };
 
+  // Inside the list at inset 0 of the bordered edge, against the border rather than over it.
   const indicatorStyle: Animated.WithAnimatedValue<ViewStyle> = isHorizontal
     ? {
         position: 'absolute',
         bottom: 0,
-        left: 0,
+        start: indicatorOffset,
         height: indicatorThickness,
         width: indicatorExtent,
         backgroundColor: indicatorColor,
-        transform: [{ translateX: indicatorOffset }],
       }
     : {
         position: 'absolute',
-        top: 0,
-        ...(rtl ? { left: 0 } : { right: 0 }),
+        top: indicatorOffset,
+        end: 0,
         width: indicatorThickness,
         height: indicatorExtent,
         backgroundColor: indicatorColor,
-        transform: [{ translateY: indicatorOffset }],
       };
 
   const indicator = (
@@ -443,17 +501,31 @@ export function Tabs({
         onLayout={handleViewportLayout}
         style={{ flexGrow: 0 }}
       >
-        <View {...keyProps} accessibilityRole="tablist" accessibilityLabel={label} testID="Tabs.tablist" style={listContentStyle}>
+        <View
+          {...keyProps}
+          onLayout={handleListLayout}
+          role="tablist"
+          accessibilityRole="tablist"
+          accessibilityLabel={label}
+          aria-label={label}
+          testID="Tabs.tablist"
+          style={listContentStyle}
+        >
           {tabButtons}
           {indicator}
         </View>
       </ScrollView>
     ) : (
       <View
-        onLayout={handleViewportLayout}
+        onLayout={(event) => {
+          handleViewportLayout(event);
+          handleListLayout(event);
+        }}
         {...keyProps}
+        role="tablist"
         accessibilityRole="tablist"
         accessibilityLabel={label}
+        aria-label={label}
         testID="Tabs.tablist"
         style={listContentStyle}
       >
@@ -475,7 +547,9 @@ export function Tabs({
             <View
               key={tab.id}
               testID="Tabs.panel"
+              role="tabpanel"
               accessibilityLabel={tab.label}
+              aria-label={tab.label}
               style={{ display: selected ? 'flex' : 'none' }}
               accessibilityElementsHidden={!selected}
               importantForAccessibility={selected ? 'auto' : 'no-hide-descendants'}
@@ -613,12 +687,15 @@ function TabButton({
         nodeRef.current = instance;
         registerRef(tab.id, instance);
       }}
+      role="tab"
       accessibilityRole="tab"
       accessibilityLabel={accessibleName}
+      aria-label={accessibleName}
       accessibilityState={{ selected, disabled }}
       // react-native-web 0.21 ignores `accessibilityState`, so selection reaches the DOM through
       // this mirror (native merges both); `aria-disabled` and `tabindex` are set in the effect above.
       aria-selected={selected}
+      aria-disabled={disabled}
       accessibilityValue={{ text: position }}
       // Never the native `disabled` prop: it would drop the tab from the accessibility order.
       onPress={() => {

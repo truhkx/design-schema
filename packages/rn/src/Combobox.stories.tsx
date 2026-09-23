@@ -1,5 +1,7 @@
+import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Combobox } from './Combobox';
+import type { ComboboxProps } from './Combobox';
 import { withTheme } from './decorators';
 
 const FRUIT = [
@@ -111,7 +113,27 @@ export const WithError: Story = { args: { error: 'Choose a fruit.' } };
 
 export const WithDescription: Story = { args: { description: 'Pick the one you want delivered.', placeholder: 'Search fruit' } };
 
-/** Rendered open with the input, the toggle button and three option rows, for the axe gate and manual keyboard checks on react-native-web. */
+function KeyboardCombobox(args: ComboboxProps): React.JSX.Element {
+  // The story owns `open`: it starts open and writes onOpenChange back, so Escape and Tab can close it.
+  const [open, setOpen] = React.useState<boolean>(args.open ?? true);
+  return (
+    <Combobox
+      {...args}
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        args.onOpenChange?.(next);
+      }}
+    />
+  );
+}
+
+/**
+ * Rendered open with the input, the clear and toggle buttons and three option rows, for the axe
+ * gate and manual keyboard checks on react-native-web. `defaultValue: apple` makes the clear
+ * button render.
+ */
 export const Keyboard: Story = {
-  args: { open: true, options: FRUIT },
+  args: { open: true, defaultValue: 'apple', options: FRUIT },
+  render: (args) => <KeyboardCombobox {...args} />,
 };

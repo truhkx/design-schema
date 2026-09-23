@@ -1,20 +1,27 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Listbox } from './Listbox';
+import type { ListboxItem } from './Listbox';
 import { withTheme } from './decorators';
 
+const people: ListboxItem[] = [
+  { value: 'alex', label: 'Alex Kim', description: 'Design' },
+  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },
+  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },
+  { value: 'lee', label: 'Lee Chen', description: 'Product' },
+];
+
+// The Default story's args are the `single-picker` example on every platform.
 const meta: Meta<typeof Listbox> = {
   title: 'Listbox/React Native',
   component: Listbox,
   decorators: [withTheme()],
   args: {
-    label: 'Assignee',
+    label: 'Fruit',
     options: [
-      { value: 'alex', label: 'Alex Kim', description: 'Design' },
-      { value: 'sam', label: 'Sam Patel', description: 'Engineering' },
-      { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },
-      { value: 'lee', label: 'Lee Chen', description: 'Product' },
+      { value: 'apple', label: 'Apple' },
+      { value: 'banana', label: 'Banana' },
+      { value: 'cherry', label: 'Cherry' },
     ],
-    defaultValue: 'sam',
     multiple: false,
     selectionFollowsFocus: true,
     required: false,
@@ -36,11 +43,7 @@ export const MaxVisible12: Story = { args: { maxVisible: '12' } };
 export const MaxVisibleAll: Story = { args: { maxVisible: 'all' } };
 
 export const Multiple: Story = {
-  args: {
-    label: 'Reviewers',
-    defaultValue: ['sam', 'jo'],
-    multiple: true,
-  },
+  args: { label: 'Reviewers', options: people, defaultValue: ['sam', 'jo'], multiple: true },
 };
 
 export const Grouped: Story = {
@@ -74,6 +77,7 @@ export const WithIcon: Story = {
 
 export const OptionDisabled: Story = {
   args: {
+    label: 'Assignee',
     options: [
       { value: 'alex', label: 'Alex Kim', description: 'Design' },
       { value: 'sam', label: 'Sam Patel', description: 'Engineering', disabled: true },
@@ -82,25 +86,28 @@ export const OptionDisabled: Story = {
   },
 };
 
-export const Required: Story = { args: { defaultValue: undefined, required: true, name: 'assignee' } };
+export const Required: Story = { args: { required: true, name: 'fruit' } };
 
 export const Invalid: Story = { args: { invalid: true } };
 
-export const ErrorMessage: Story = { args: { error: 'Choose an assignee before continuing.' } };
+export const ErrorMessage: Story = { args: { error: 'Choose a fruit before continuing.' } };
 
-export const Disabled: Story = { args: { disabled: true } };
+export const Disabled: Story = { args: { disabled: true, defaultValue: 'banana' } };
 
-export const Empty: Story = { args: { options: [], emptyMessage: 'No matching people' } };
+export const Empty: Story = { args: { options: [], emptyMessage: 'No matching fruit' } };
 
 export const Loading: Story = { args: { options: [], loading: true } };
 
 export const Embedded: Story = { args: { embedded: true } };
 
-export const InitialActiveValue: Story = { args: { defaultValue: undefined, initialActiveValue: 'jo' } };
+export const InitialActiveValue: Story = { args: { label: 'Assignee', options: people, initialActiveValue: 'jo' } };
+
+/** A host-driven active row: pre-highlights `jo` the way a Select or Combobox would. */
+export const ActiveValue: Story = { args: { label: 'Assignee', options: people, activeValue: 'jo' } };
 
 // Examples from the component doc.
 
-/** The standalone visible picker. */
+/** The standalone visible picker, where arrows select as they move. */
 export const SinglePicker: Story = {
   args: {
     label: 'Fruit',
@@ -126,7 +133,7 @@ export const MultiSelectWithChecks: Story = {
   },
 };
 
-/** Options under group headings. */
+/** Options under group headings, for a list long enough to need sections. */
 export const GroupedOptions: Story = {
   args: {
     label: 'Role',
@@ -159,14 +166,5 @@ export const EmbeddedInAPopup: Story = {
 
 /** At least three focusable rows, for the axe gate and manual keyboard checks on react-native-web. */
 export const Keyboard: Story = {
-  args: {
-    label: 'Assignee',
-    defaultValue: 'sam',
-    options: [
-      { value: 'alex', label: 'Alex Kim', description: 'Design' },
-      { value: 'sam', label: 'Sam Patel', description: 'Engineering' },
-      { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },
-      { value: 'lee', label: 'Lee Chen', description: 'Product' },
-    ],
-  },
+  args: { label: 'Assignee', defaultValue: 'sam', options: people },
 };

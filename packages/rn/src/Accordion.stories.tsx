@@ -71,6 +71,16 @@ export const FormSections: Story = {
   },
 };
 
+export const InitiallyOpen: Story = {
+  args: {
+    defaultValue: 'setup',
+    items: [
+      { id: 'setup', summary: 'Getting set up', content: 'Install the package and add the provider.' },
+      { id: 'upgrade', summary: 'Upgrading', content: 'Read the migration notes before bumping a major.' },
+    ],
+  },
+};
+
 export const Undivided: Story = {
   args: {
     divided: false,
@@ -81,5 +91,8 @@ export const Undivided: Story = {
   },
 };
 
-/** Open, with four triggers as focus stops, for the axe gate and manual keyboard checks on react-native-web. */
-export const Keyboard: Story = { args: { defaultValue: 'shipping' } };
+/**
+ * Open, with three triggers as focus stops, for the axe gate and manual keyboard checks on
+ * react-native-web. No disabled item: it would stay focusable and shift a `from: first`/`last` index.
+ */
+export const Keyboard: Story = { args: { defaultValue: 'shipping', items: ITEMS.filter((item) => !item.disabled) } };

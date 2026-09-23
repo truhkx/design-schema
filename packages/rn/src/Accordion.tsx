@@ -59,6 +59,17 @@ export interface AccordionProps {
   ref?: React.Ref<ViewInstance> | undefined;
 }
 
+/** Each overridable binding's default token, the one place its path is written. */
+const DEFAULT_TOKEN = {
+  divider: 'color.border',
+  dividerWidth: 'border.width.thin',
+  itemGap: 'layout.gap.none',
+  triggerPaddingBlock: 'space.md',
+  fontFamily: 'font.family.body', // literal-ok: a TokenRef path resolved through the theme, not a font stack
+  triggerFontSize: 'font.size.md',
+  triggerFontWeight: 'font.weight.medium',
+} as const satisfies Record<AccordionOverridableBinding, TokenRef>;
+
 function toIdArray(value: AccordionValue | undefined): string[] {
   if (value === undefined || value === '') return [];
   return Array.isArray(value) ? value : [value];
@@ -127,14 +138,15 @@ export function Accordion({
     }
   }, [exclusive, isControlled, internalOpenIds]);
 
-  // Development warning: several ids under `exclusive` open only the first. Warned once per distinct input.
+  // Development warning: several ids under `exclusive` open only the first. Warned once per distinct
+  // id list, so a standing controlled `value` warns again only when it becomes a list not seen before.
   const requestedIds = toIdArray(isControlled ? value : defaultValue);
-  const warnedRef = React.useRef<string | null>(null);
+  const warnedRef = React.useRef<Set<string>>(new Set());
   React.useEffect(() => {
     if (!__DEV__ || !exclusive || requestedIds.length <= 1) return;
     const key = requestedIds.join(' ');
-    if (warnedRef.current === key) return;
-    warnedRef.current = key;
+    if (warnedRef.current.has(key)) return;
+    warnedRef.current.add(key);
     const source = isControlled ? 'value' : 'defaultValue';
     console.warn(
       `Accordion: \`exclusive\` opens one section, but \`${source}\` has ${requestedIds.length} ids. Opening "${requestedIds[0]}"; ignoring ${requestedIds.slice(1).join(', ')}.`,
@@ -194,26 +206,32 @@ export function Accordion({
     }
   };
 
+  // Every forward carries the resolved token (the override, else the Accordion default), even when
+  // it equals the child's own default.
+  const tokenFor = (binding: AccordionOverridableBinding): TokenRef => overrides?.[binding] ?? DEFAULT_TOKEN[binding];
+  const paddingToken = tokenFor('triggerPaddingBlock');
+  const fontFamilyToken = tokenFor('fontFamily');
+  const fontSizeToken = tokenFor('triggerFontSize');
+  const fontWeightToken = tokenFor('triggerFontWeight');
   const disclosureOverrides = React.useMemo<Partial<Record<DisclosureOverridableBinding, TokenRef | undefined>>>(
     () => ({
-      triggerPaddingBlock: overrides?.triggerPaddingBlock ?? 'space.md',
-      triggerFontFamily: overrides?.fontFamily ?? 'font.family.body',
-      triggerFontSize: overrides?.triggerFontSize ?? 'font.size.md',
-      triggerFontWeight: overrides?.triggerFontWeight ?? 'font.weight.medium',
+      triggerPaddingBlock: paddingToken,
+      triggerFontFamily: fontFamilyToken,
+      triggerFontSize: fontSizeToken,
+      triggerFontWeight: fontWeightToken,
     }),
-    [overrides?.triggerPaddingBlock, overrides?.fontFamily, overrides?.triggerFontSize, overrides?.triggerFontWeight],
+    [paddingToken, fontFamilyToken, fontSizeToken, fontWeightToken],
   );
 
+  const dividerColorToken = tokenFor('divider');
+  const dividerWidthToken = tokenFor('dividerWidth');
   const dividerOverrides = React.useMemo<Partial<Record<DividerOverridableBinding, TokenRef | undefined>>>(
-    () => ({
-      color: overrides?.divider ?? 'color.border',
-      thickness: overrides?.dividerWidth ?? 'border.width.thin',
-    }),
-    [overrides?.divider, overrides?.dividerWidth],
+    () => ({ color: dividerColorToken, thickness: dividerWidthToken }),
+    [dividerColorToken, dividerWidthToken],
   );
 
   const listStyle: ViewStyle = {
-    gap: overrides?.itemGap ? (resolveToken(t, overrides.itemGap) as number) : t.layoutGapNone,
+    gap: resolveToken(t, tokenFor('itemGap')) as number,
   };
 
   const children: React.ReactNode[] = [];
@@ -225,6 +243,7 @@ export function Accordion({
       <Disclosure
         key={item.id}
         summary={item.summary}
+        fullWidth
         headingLevel={headingLevel}
         open={openIds.includes(item.id)}
         disabled={item.disabled}

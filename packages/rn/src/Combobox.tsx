@@ -151,7 +151,17 @@ function fold(text: string): string {
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-type WebElement = { setAttribute(name: string, value: string): void; removeAttribute(name: string): void };
+type WebElement = {
+  setAttribute(name: string, value: string): void;
+  removeAttribute(name: string): void;
+  contains(other: unknown): boolean;
+};
+
+/** react-native-web only: the DOM's focused element (tools have no DOM lib, so it is declared locally). */
+function webActiveElement(): unknown {
+  const doc = (globalThis as { document?: { activeElement?: unknown } }).document;
+  return doc?.activeElement ?? null;
+}
 
 /**
  * Combobox — an input that narrows as you type and lets you pick, or, with
@@ -517,9 +527,25 @@ export function Combobox({
     if (open) {
       closePopup(true);
     } else {
+      openedByTyping.current = false;
       setShowAll(true);
       changeOpen(true);
+      // The input is the field's focus holder (web keeps the toggle out of the tab order); only
+      // the clear and chip-remove Buttons keep focus when the list opens.
+      if (!usesSheet) {
+        inputRef.current?.focus();
+      }
     }
+  };
+
+  // A click in the input opens the same full list the toggle does; the next keystroke filters again.
+  const handleInputPress = (): void => {
+    if (isDisabled || open) {
+      return;
+    }
+    openedByTyping.current = false;
+    setShowAll(true);
+    changeOpen(true);
   };
 
   const handleClear = (): void => {
@@ -628,11 +654,24 @@ export function Combobox({
   React.useEffect(() => {
     if (open && !wasOpen.current) {
       setShowAll(!openedByTyping.current);
+      // Opening claims focus for the input when focus is not already inside the field, so the
+      // open list has a focused combobox to belong to (and blur can close it) — but never takes
+      // focus from a focused clear or chip-remove Button. Only the anchored field: the sheet
+      // autofocuses its own input.
+      const input = inputRef.current;
+      if (!usesSheet && input !== null && !input.isFocused()) {
+        const field = fieldRef.current as unknown as WebElement | null;
+        const focusInField = Platform.OS === 'web' && field !== null && field.contains(webActiveElement());
+        if (!focusInField) {
+          input.focus();
+        }
+      }
     }
     if (!open) {
       openedByTyping.current = false;
     }
     wasOpen.current = open;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const handleListPressStart = (): void => {
@@ -812,9 +851,15 @@ export function Combobox({
       accessibilityState={{ disabled: isDisabled, expanded: open }}
       accessibilityValue={!multiple && selectedValue !== undefined ? { text: labelFor(selectedValue) } : undefined}
       // react-native-web 0.21 drops `accessibilityState`, and a `combobox` without
-      // `aria-expanded` fails an accessibility audit (as Select's trigger).
+      // `aria-expanded` fails an accessibility audit (as Select's trigger). Every native
+      // accessibility prop is mirrored as `aria-*`.
+      aria-label={visibleLabel}
+      aria-disabled={isDisabled}
       aria-expanded={open}
       editable={!isDisabled}
+      onPressIn={usesSheet ? undefined : handleInputPress}
+      // react-native-web's TextInput has no press events; its click is the tap in the input.
+      {...(Platform.OS === 'web' && !usesSheet ? ({ onClick: handleInputPress } as object) : null)}
       value={currentInputText}
       placeholder={placeholder}
       placeholderTextColor={t.colorForegroundMuted}
@@ -931,6 +976,9 @@ export function Combobox({
           accessibilityHint={description}
           accessibilityState={{ disabled: isDisabled, expanded: open }}
           accessibilityValue={hasSelection ? { text: multiple ? selectedValues.map(labelFor).join(', ') : singleSummaryText } : undefined}
+          aria-label={visibleLabel}
+          aria-disabled={isDisabled}
+          aria-expanded={open}
           onPress={handleTogglePress}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
@@ -960,7 +1008,8 @@ export function Combobox({
             ) : null}
             {textInput}
             {clearButton}
-            <View testID="Combobox.toggleButton">
+            {/* A press on the toggle blurs the input first; the guard keeps that blur from closing the list under it. */}
+            <View testID="Combobox.toggleButton" onPointerDown={handleListPressStart} onPointerUp={handleListPressEnd}>
               <Button
                 label={COPY.toggleLabel}
                 variant="ghost"

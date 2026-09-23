@@ -102,3 +102,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tooltip: the doc doesn't say how cross-axis overflow is handled for the flipped bubble. I clamp the cross axis into the viewport as the RN notes describe, and flip only on the main axis when the opposite side fits.
 - Tooltip: the Keyboard story's layout wrapper uses an inline `gap: var(--space-2)` because the doc names no layout component for the three triggers. Stack would work, but the doc doesn't ask for it.
 - Tooltip: the docs don't say which Tooltip scenarios run on web vs native, and the Escape behaviour (closes, focus unchanged, dialog double-Escape) has no scenario, so no test covers it; it is implemented but untested.
+
+## 2026-09-23 19:08 — round 1
+
+- Tooltip: `children` is typed `ReactElement<any>`, but the spec says only 'a single ReactElement'; I kept `any` because the clone must accept arbitrary trigger props.
+- Tooltip: the spec says the bubble stays mounted through `exit` (0 under reduced motion) but not how `present`/`visible` interact when `open` toggles mid-fade; I mount on open, set visible on the next frame, and unmount after the exit duration.
+- Tooltip: the non-focusable-child dev warning also fires when the child does not forward `ref` (the trigger ref is null); the spec defines only the non-focusable case, so I warn on both.
+- Tooltip: the `container` prop (from the portal convention) is not in the schema props; I added it as a platform prop and also use it as the host for the duration probe.

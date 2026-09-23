@@ -89,3 +89,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toast: actionColor and dismissColor both default to color.inverse.link. Re-scoping one token at toast level can't give them different values, so each is re-scoped on its own part wrapper. The doc doesn't say whether the two are meant to diverge at all.
 - Toast: a hook and the token it re-scopes can't both sit on the toast root (e.g. `--ds-toast-focus-ring-inverse: var(--color-inverse-focus)` and `--color-inverse-focus: var(--ds-toast-focus-ring-inverse)` on `.ds-toast` form a custom-property cycle and both become invalid), so the re-scope sits one level down on the wrappers. The styling-and-overrides doc should say where a re-scope may go.
 - Toast: carried over from round 1 — ToastRegion's `ref` (dropped), whether actionLabel/tone changes re-fire the duration warning, the Keyboard story's trigger label and action, replacement of a toast already exiting, removal of a standalone Toast, and pointercancel on web.
+
+## 2026-09-23 19:09 — round 1
+
+- Toast: the spec says the wide-screen breakpoint is the resolved px of layout.maxWidth.content 'at generation time', but gives no value. The existing CSS keeps 960px with a literal-ok comment, and I could not confirm it against the theme.
+- Toast: the region's bottom-start versus bottom-centre layout is described only loosely (`inset-inline-start` on wide screens, centered below the content measure). The existing CSS uses `inset-inline: var(--ds-toast-region-inset)` with `align-items: center`, then `flex-start` on wide screens; I kept it.
+- Toast: the `actionButton` and `dismissButton` parts are wrapper spans because Button owns its own `data-part`. The spec says this in the guidance but not in the `composition` block, so the parts list reads as if the Buttons carry the hooks themselves.

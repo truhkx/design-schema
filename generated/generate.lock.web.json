@@ -133,12 +133,12 @@
   },
   "Box.web": {
     "hash": "85fadaee02502a83",
-    "lastAttemptHash": "b04aa019e31da032",
-    "generatedAt": "2026-09-19T11:48:46+00:00",
+    "lastAttemptHash": "e0282451849b494d",
+    "generatedAt": "2026-09-23T17:52:00+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 1.684,
+    "costUsd": 2.1069,
     "files": [
       "packages/react/src/Box.css",
       "packages/react/src/Box.stories.tsx",
@@ -146,7 +146,7 @@
       "packages/react/src/Box.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 14,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -154,8 +154,8 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
-      "keyboard-run": false,
       "axe": false
     }
   },
@@ -186,70 +186,21 @@
     }
   },
   "Button.web": {
-    "hash": "66399b69b597a864",
-    "lastAttemptHash": "66399b69b597a864",
-    "generatedAt": "2026-09-22T06:59:15+00:00",
+    "hash": "3420ac8fa0bafed5",
+    "lastAttemptHash": "3420ac8fa0bafed5",
+    "generatedAt": "2026-09-23T17:54:44+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.4613,
+    "rounds": 2,
+    "costUsd": 1.6865,
     "files": [
-      "packages/react/src/Button.css"
-    ],
-    "gaps": 5,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "Card.web": {
-    "hash": "7b226ef738ded1ca",
-    "lastAttemptHash": "7b226ef738ded1ca",
-    "generatedAt": "2026-09-22T08:04:51+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.193,
-    "files": [
-      "packages/react/src/Card.css",
-      "packages/react/src/Card.stories.tsx",
-      "packages/react/src/Card.test.tsx",
-      "packages/react/src/Card.tsx"
-    ],
-    "gaps": 10,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "Carousel.web": {
-    "hash": "f68b4712f17c992f",
-    "lastAttemptHash": "f68b4712f17c992f",
-    "generatedAt": "2026-09-23T17:44:04+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.7958,
-    "files": [
-      "packages/react/src/Carousel.css",
-      "packages/react/src/Carousel.stories.tsx",
-      "packages/react/src/Carousel.test.tsx",
-      "packages/react/src/Carousel.tsx",
+      "packages/react/src/Button.css",
+      "packages/react/src/Button.stories.tsx",
+      "packages/react/src/Button.test.tsx",
+      "packages/react/src/Button.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -258,6 +209,58 @@
       "deps": true,
       "modules": true,
       "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Card.web": {
+    "hash": "a2433a2840e87a1c",
+    "lastAttemptHash": "a2433a2840e87a1c",
+    "generatedAt": "2026-09-23T18:46:27+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 1.9902,
+    "files": [
+      "packages/react/src/Card.css",
+      "packages/react/src/Card.stories.tsx",
+      "packages/react/src/Card.test.tsx",
+      "packages/react/src/Card.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 9,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Carousel.web": {
+    "hash": "29b9abf1abc15934",
+    "lastAttemptHash": "29b9abf1abc15934",
+    "generatedAt": "2026-09-21T22:48:26+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 4.8503,
+    "files": [
+      "packages/react/src/Carousel.css",
+      "packages/react/src/Carousel.tsx"
+    ],
+    "gaps": 22,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -313,47 +316,17 @@
     }
   },
   "Container.web": {
-    "hash": "88314ee3a5b60a11",
-    "lastAttemptHash": "88314ee3a5b60a11",
-    "generatedAt": "2026-09-22T07:54:54+00:00",
+    "hash": "3ab01fb4fbbcb973",
+    "lastAttemptHash": "3ab01fb4fbbcb973",
+    "generatedAt": "2026-09-23T18:17:54+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.1299,
+    "costUsd": 0.467,
     "files": [
-      "packages/react/src/Container.css",
-      "packages/react/src/Container.stories.tsx",
-      "packages/react/src/Container.test.tsx",
-      "packages/react/src/Container.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Container.tsx"
     ],
-    "gaps": 6,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "DataGrid.web": {
-    "hash": "28cc3c5569455c89",
-    "lastAttemptHash": "28cc3c5569455c89",
-    "generatedAt": "2026-09-23T17:53:01+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.3234,
-    "files": [
-      "packages/react/src/DataGrid.css",
-      "packages/react/src/DataGrid.stories.tsx",
-      "packages/react/src/DataGrid.test.tsx",
-      "packages/react/src/DataGrid.tsx"
-    ],
-    "gaps": 8,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -362,6 +335,33 @@
       "deps": true,
       "modules": true,
       "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "DataGrid.web": {
+    "hash": "dc6a0976ef8dbb2a",
+    "lastAttemptHash": "dc6a0976ef8dbb2a",
+    "generatedAt": "2026-09-22T00:00:36+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 2.5907,
+    "files": [
+      "packages/react/src/DataGrid.css",
+      "packages/react/src/DataGrid.stories.tsx",
+      "packages/react/src/DataGrid.test.tsx",
+      "packages/react/src/DataGrid.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 13,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -447,45 +447,21 @@
     }
   },
   "Divider.web": {
-    "hash": "288f8a09ce7194b1",
-    "lastAttemptHash": "288f8a09ce7194b1",
-    "generatedAt": "2026-09-22T08:14:54+00:00",
+    "hash": "8fb9aefdc06c553e",
+    "lastAttemptHash": "8fb9aefdc06c553e",
+    "generatedAt": "2026-09-23T18:49:09+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.2833,
+    "rounds": 3,
+    "costUsd": 2.0762,
     "files": [
       "packages/react/src/Divider.css",
-      "packages/react/src/Divider.tsx"
-    ],
-    "gaps": 6,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "Feed.web": {
-    "hash": "7f75cd1d460e43c7",
-    "lastAttemptHash": "7f75cd1d460e43c7",
-    "generatedAt": "2026-09-23T18:24:48+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.0032,
-    "files": [
-      "packages/react/src/Feed.css",
-      "packages/react/src/Feed.stories.tsx",
-      "packages/react/src/Feed.test.tsx",
-      "packages/react/src/Feed.tsx",
+      "packages/react/src/Divider.stories.tsx",
+      "packages/react/src/Divider.test.tsx",
+      "packages/react/src/Divider.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 13,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -494,6 +470,31 @@
       "deps": true,
       "modules": true,
       "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Feed.web": {
+    "hash": "16deff77493c6883",
+    "lastAttemptHash": "16deff77493c6883",
+    "generatedAt": "2026-09-22T03:35:14+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 7.1097,
+    "files": [
+      "packages/react/src/Feed.css",
+      "packages/react/src/Feed.stories.tsx",
+      "packages/react/src/Feed.tsx"
+    ],
+    "gaps": 8,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -548,16 +549,20 @@
     }
   },
   "Form.web": {
-    "hash": "8a0631203f34dcb0",
-    "lastAttemptHash": "8a0631203f34dcb0",
-    "generatedAt": "2026-09-22T07:40:12+00:00",
+    "hash": "fb58e150b72ec2fc",
+    "lastAttemptHash": "fb58e150b72ec2fc",
+    "generatedAt": "2026-09-23T18:16:47+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.2553,
+    "rounds": 2,
+    "costUsd": 1.4612,
     "files": [
+      "packages/react/src/Form.css",
+      "packages/react/src/Form.stories.tsx",
+      "packages/react/src/Form.test.tsx",
       "packages/react/src/Form.tsx",
-      "packages/react/src/FormContext.ts"
+      "packages/react/src/FormContext.ts",
+      "packages/react/src/index.ts"
     ],
     "gaps": 9,
     "gates": {
@@ -567,26 +572,26 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
   },
   "Heading.web": {
-    "hash": "7e2a8844553daf28",
-    "lastAttemptHash": "00c2c94a8e1cc212",
-    "generatedAt": "2026-09-19T09:40:56+00:00",
+    "hash": "e3004151a3a561b2",
+    "lastAttemptHash": "e3004151a3a561b2",
+    "generatedAt": "2026-09-23T17:46:39+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 1.5045,
+    "rounds": 2,
+    "costUsd": 1.0988,
     "files": [
       "packages/react/src/Heading.css",
       "packages/react/src/Heading.stories.tsx",
       "packages/react/src/Heading.test.tsx",
-      "packages/react/src/Heading.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Heading.tsx"
     ],
-    "gaps": 7,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -594,19 +599,19 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
-      "keyboard-run": false,
-      "axe": false
+      "axe": true
     }
   },
   "Icon.web": {
-    "hash": "7a3aa90d5110c636",
-    "lastAttemptHash": "9a4f0c4bb923b80f",
-    "generatedAt": "2026-09-19T06:41:26+00:00",
+    "hash": "fc295e464215a820",
+    "lastAttemptHash": "fc295e464215a820",
+    "generatedAt": "2026-09-23T17:40:48+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 1.731,
+    "rounds": 1,
+    "costUsd": 0.5238,
     "files": [
       "packages/react/src/Icon.css",
       "packages/react/src/Icon.stories.tsx",
@@ -614,7 +619,7 @@
       "packages/react/src/Icon.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -622,27 +627,28 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
-      "keyboard-run": false,
-      "axe": false
+      "axe": true
     }
   },
   "Input.web": {
     "hash": "56e1dc20f5976313",
-    "lastAttemptHash": "56e1dc20f5976313",
-    "generatedAt": "2026-09-22T07:26:21+00:00",
+    "lastAttemptHash": "6dd2e3959dee69b1",
+    "generatedAt": "2026-09-23T18:14:42+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.3473,
+    "rounds": 3,
+    "costUsd": 2.7582,
     "files": [
+      "logs/input-axe.config.ts",
       "packages/react/src/Input.css",
       "packages/react/src/Input.stories.tsx",
       "packages/react/src/Input.test.tsx",
       "packages/react/src/Input.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -650,8 +656,9 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": false,
       "keyboard": true,
-      "axe": true
+      "axe": false
     }
   },
   "Landmark.web": {
@@ -680,21 +687,20 @@
     }
   },
   "Link.web": {
-    "hash": "c7e12e320d05e337",
-    "lastAttemptHash": "c7e12e320d05e337",
-    "generatedAt": "2026-09-22T07:10:14+00:00",
+    "hash": "1cd676595bcf4453",
+    "lastAttemptHash": "1cd676595bcf4453",
+    "generatedAt": "2026-09-23T17:56:31+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.2114,
+    "rounds": 2,
+    "costUsd": 1.1084,
     "files": [
       "packages/react/src/Link.css",
       "packages/react/src/Link.stories.tsx",
       "packages/react/src/Link.test.tsx",
-      "packages/react/src/Link.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Link.tsx"
     ],
-    "gaps": 5,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -702,6 +708,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
@@ -1043,18 +1050,45 @@
     }
   },
   "Splitter.web": {
-    "hash": "0e0f4372985072a8",
-    "lastAttemptHash": "0e0f4372985072a8",
-    "generatedAt": "2026-09-23T18:21:59+00:00",
+    "hash": "51e27e356d922de9",
+    "lastAttemptHash": "51e27e356d922de9",
+    "generatedAt": "2026-09-22T02:55:30+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.1304,
+    "costUsd": 2.1323,
     "files": [
+      "packages/react/src/Splitter.css",
       "packages/react/src/Splitter.stories.tsx",
       "packages/react/src/Splitter.tsx"
     ],
-    "gaps": 7,
+    "gaps": 9,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Stack.web": {
+    "hash": "9703afd3d66c8249",
+    "lastAttemptHash": "9703afd3d66c8249",
+    "generatedAt": "2026-09-23T17:49:13+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 1.1212,
+    "files": [
+      "logs/stack-axe.config.ts",
+      "packages/react/src/Stack.stories.tsx",
+      "packages/react/src/Stack.tsx"
+    ],
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1064,33 +1098,7 @@
       "modules": true,
       "hooks": true,
       "keyboard": true,
-      "keyboard-run": true,
       "axe": true
-    }
-  },
-  "Stack.web": {
-    "hash": "e69294b90b42a39d",
-    "lastAttemptHash": "12f016012786e223",
-    "generatedAt": "2026-09-19T10:46:27+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 3,
-    "costUsd": 1.6816,
-    "files": [
-      "packages/react/src/Stack.stories.tsx",
-      "packages/react/src/Stack.tsx"
-    ],
-    "gaps": 10,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "keyboard": true,
-      "keyboard-run": false,
-      "axe": false
     }
   },
   "Stepper.web": {
@@ -1143,21 +1151,18 @@
     }
   },
   "Table.web": {
-    "hash": "26bad26ca4de7705",
-    "lastAttemptHash": "26bad26ca4de7705",
-    "generatedAt": "2026-09-23T17:47:47+00:00",
+    "hash": "1419eaa7fd386761",
+    "lastAttemptHash": "1419eaa7fd386761",
+    "generatedAt": "2026-09-21T23:19:15+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.6171,
+    "rounds": 1,
+    "costUsd": 5.4569,
     "files": [
       "packages/react/src/Table.css",
-      "packages/react/src/Table.stories.tsx",
-      "packages/react/src/Table.test.tsx",
-      "packages/react/src/Table.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Table.tsx"
     ],
-    "gaps": 10,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1165,7 +1170,6 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
-      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -1198,19 +1202,22 @@
     }
   },
   "Text.web": {
-    "hash": "fe1f48275a8be129",
-    "lastAttemptHash": "eceb70d37ad7a13e",
-    "generatedAt": "2026-09-19T08:37:10+00:00",
+    "hash": "9fcda2ad29416046",
+    "lastAttemptHash": "9fcda2ad29416046",
+    "generatedAt": "2026-09-23T17:44:26+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 1.6259,
+    "costUsd": 2.1544,
     "files": [
+      "logs/text-axe.mjs",
+      "packages/react/src/Text.css",
       "packages/react/src/Text.stories.tsx",
       "packages/react/src/Text.test.tsx",
-      "packages/react/src/Text.tsx"
+      "packages/react/src/Text.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1218,9 +1225,9 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
-      "keyboard-run": false,
-      "axe": false
+      "axe": true
     }
   },
   "Toast.web": {
@@ -1249,18 +1256,21 @@
     }
   },
   "Toolbar.web": {
-    "hash": "9526ca0147782f56",
-    "lastAttemptHash": "9526ca0147782f56",
-    "generatedAt": "2026-09-23T17:42:18+00:00",
+    "hash": "fcf62b5ef3e603dc",
+    "lastAttemptHash": "fcf62b5ef3e603dc",
+    "generatedAt": "2026-09-21T22:18:34+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0273,
+    "costUsd": 1.8447,
     "files": [
       "packages/react/src/Toolbar.css",
-      "packages/react/src/Toolbar.tsx"
+      "packages/react/src/Toolbar.stories.tsx",
+      "packages/react/src/Toolbar.test.tsx",
+      "packages/react/src/Toolbar.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1268,7 +1278,6 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
-      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -1299,21 +1308,18 @@
     }
   },
   "Tree.web": {
-    "hash": "5354dc8ed8438102",
-    "lastAttemptHash": "5354dc8ed8438102",
-    "generatedAt": "2026-09-23T18:18:49+00:00",
+    "hash": "65813ff40c4b6325",
+    "lastAttemptHash": "65813ff40c4b6325",
+    "generatedAt": "2026-09-22T02:06:41+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 3.0359,
+    "rounds": 1,
+    "costUsd": 6.7482,
     "files": [
-      "packages/react/src/Tree.css",
       "packages/react/src/Tree.stories.tsx",
-      "packages/react/src/Tree.test.tsx",
-      "packages/react/src/Tree.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Tree.tsx"
     ],
-    "gaps": 11,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1321,28 +1327,24 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
-      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
     }
   },
   "TreeGrid.web": {
-    "hash": "e9fbd0fcc2425a36",
-    "lastAttemptHash": "e9fbd0fcc2425a36",
-    "generatedAt": "2026-09-23T18:14:24+00:00",
+    "hash": "56da4498c315c701",
+    "lastAttemptHash": "56da4498c315c701",
+    "generatedAt": "2026-09-22T01:39:45+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 4.2999,
+    "rounds": 1,
+    "costUsd": 6.3175,
     "files": [
       "packages/react/src/TreeGrid.css",
-      "packages/react/src/TreeGrid.stories.tsx",
-      "packages/react/src/TreeGrid.test.tsx",
-      "packages/react/src/TreeGrid.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/TreeGrid.tsx"
     ],
-    "gaps": 14,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1350,7 +1352,6 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
-      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true

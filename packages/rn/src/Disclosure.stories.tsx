@@ -12,6 +12,7 @@ const meta: Meta<typeof Disclosure> = {
     defaultOpen: false,
     disabled: false,
     keepMounted: false,
+    fullWidth: false,
   },
 };
 
@@ -32,6 +33,9 @@ export const HeadingLevel6: Story = { args: { headingLevel: '6' } };
 
 /** The panel stays mounted (hidden) while closed, so form fields inside keep registering. */
 export const KeepMounted: Story = { args: { keepMounted: true } };
+
+/** The trigger spans its row, so the whole row is the hit area. */
+export const FullWidth: Story = { args: { fullWidth: true } };
 
 // Examples from the component doc.
 

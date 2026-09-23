@@ -53,6 +53,9 @@ const COPY = {
   current: 'current page',
 } as const;
 
+/** react-native-web mirror of `accessibilityState.selected` for the current page. */
+const CURRENT_PAGE_ATTRS: Record<string, unknown> = { 'aria-current': 'page' };
+
 /** Trails longer than this collapse (when `collapse` is on). */
 const COLLAPSE_ABOVE = 4;
 /** How many trailing items stay visible when collapsed. */
@@ -149,6 +152,7 @@ export function Breadcrumb({
       testID="Breadcrumb.separator"
       accessibilityElementsHidden
       importantForAccessibility="no"
+      aria-hidden
       style={styles.separator}
     >
       {COPY.separator}
@@ -183,11 +187,16 @@ export function Breadcrumb({
 
     let content: React.JSX.Element;
     if (index === lastIndex) {
+      const currentName = `${item.label}, ${COPY.current}`;
       content = (
         <RNText
           testID="Breadcrumb.current"
           accessibilityState={{ selected: true }}
-          accessibilityLabel={`${item.label}, ${COPY.current}`}
+          accessibilityLabel={currentName}
+          aria-label={currentName}
+          // aria-selected is not allowed on a generic element; the web contract marks the
+          // current page with aria-current="page", which Text's types omit.
+          {...CURRENT_PAGE_ATTRS}
           style={styles.current}
         >
           {item.label}
@@ -227,7 +236,14 @@ export function Breadcrumb({
   });
 
   return (
-    <View ref={ref} testID="Breadcrumb" role="navigation" accessibilityLabel={label} style={styles.nav}>
+    <View
+      ref={ref}
+      testID="Breadcrumb"
+      role="navigation"
+      accessibilityLabel={label}
+      aria-label={label}
+      style={styles.nav}
+    >
       {nodes}
     </View>
   );

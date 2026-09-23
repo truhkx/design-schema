@@ -43,6 +43,13 @@ describe('Landmark', () => {
     expect(s.getByTestId('Landmark').props.accessibilityRole).toBe('search');
   });
 
+  it('a-label-is-dropped-on-a-role-that-refuses-one', () => {
+    const s = setup({ role: 'banner', label: 'Site header' });
+    const root = s.getByTestId('Landmark');
+    expect(root.props.accessibilityLabel).toBeUndefined();
+    expect(root.props['aria-label']).toBeUndefined();
+  });
+
   it('a-region-is-named-by-its-label', () => {
     const s = setup({ role: 'region', label: 'Related articles' });
     expect(s.getByTestId('Landmark').props.accessibilityLabel).toBe('Related articles');
@@ -54,48 +61,51 @@ describe('Landmark', () => {
     expect(s.getByTestId('Landmark')).toBeTruthy();
   });
 
+  // Per-role scenarios use the doc's per-role labels, never Default's "Main".
   it('renders-role-banner', () => {
-    const s = setup({ role: 'banner' });
+    const s = setup({ role: 'banner', label: undefined });
     expect(s.getByTestId('Landmark')).toBeTruthy();
   });
 
   it('renders-role-navigation', () => {
-    const s = setup({ role: 'navigation' });
+    const s = setup({ role: 'navigation', label: 'Primary' });
     expect(s.getByTestId('Landmark')).toBeTruthy();
   });
 
   it('renders-role-main', () => {
-    const s = setup({ role: 'main' });
+    const s = setup({ role: 'main', label: undefined });
     expect(s.getByTestId('Landmark')).toBeTruthy();
   });
 
   it('renders-role-complementary', () => {
-    const s = setup({ role: 'complementary' });
+    const s = setup({ role: 'complementary', label: 'Related links' });
     expect(s.getByTestId('Landmark')).toBeTruthy();
   });
 
   it('renders-role-contentinfo', () => {
-    const s = setup({ role: 'contentinfo' });
+    const s = setup({ role: 'contentinfo', label: undefined });
     expect(s.getByTestId('Landmark')).toBeTruthy();
   });
 
   it('renders-role-region', () => {
-    const s = setup({ role: 'region' });
+    const s = setup({ role: 'region', label: 'Related articles' });
     expect(s.getByTestId('Landmark')).toBeTruthy();
   });
 
   it('renders-role-search', () => {
-    const s = setup({ role: 'search' });
+    const s = setup({ role: 'search', label: 'Site search' });
     expect(s.getByTestId('Landmark')).toBeTruthy();
   });
 
   it('renders-role-form', () => {
-    const s = setup({ role: 'form' });
+    const s = setup({ role: 'form', label: 'Sign in' });
     expect(s.getByTestId('Landmark')).toBeTruthy();
   });
 
   it('has-accessible-name', () => {
     const s = setup({ label: 'Accessible name' });
-    expect(s.getByTestId('Landmark').props.accessibilityLabel).toBe('Accessible name');
+    const root = s.getByTestId('Landmark');
+    expect(root.props.accessibilityLabel).toBe('Accessible name');
+    expect(root.props['aria-label']).toBe('Accessible name');
   });
 });

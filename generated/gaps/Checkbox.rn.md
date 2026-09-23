@@ -69,3 +69,38 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Checkbox: pressedOverlay uses the opacity.disabled token for a pressed fill, which reads as a token reused for an unrelated purpose. I implemented it as written, but the two bindings moving together under one theme change looks accidental.
 - Checkbox: a11y.requires lists target-24px while the minTarget binding uses size.target.comfortable (44px). I followed the binding; the requires entry is the weaker floor and is satisfied by it.
 - Checkbox: the RN notes say the error's live region is 'none' inside a Form with errorSummary on, and assertive otherwise. There is no guidance on the non-Form case, so a bare Checkbox with an error announces assertively on mount, which fires on first render of an already-invalid field.
+
+## 2026-09-23 13:49 — round 1
+
+- Checkbox: the `transition` binding says the invalid and focus border colors cross-fade, but on native focus is drawn on the border and the width jumps from controlBorderWidth to the focus width at once. The spec doesn't say whether the width animates too; I animate only the color and switch the width instantly.
+- Checkbox: 'Border color precedence: invalid, then selected, then rest' (controlBorderInvalid) doesn't place focus. The focusRing binding says a focused invalid box keeps controlBorderInvalid. I used invalid > focus > selected > rest, so a focused checked box shows the focus color rather than the selected color.
+- Checkbox: the doc doesn't say where a cross-fade starts when the state changes mid-fade. The implementation starts from the previous target color rather than the in-between color.
+- Checkbox: controlBorderInvalid says RN conveys invalid through the error text's live region, but the spec gives no Android live-region politeness. I kept 'assertive' as Input does, even though 'read in sequence instead of interrupting' (the no-first-render rule) points to 'polite'.
+- Checkbox: minTarget says the hidden label 'still sets the line box'. On RN there's no hidden Text to size it, so an empty View one label-line tall stands in (testID Checkbox.label). The doc doesn't say whether that part should exist when hideLabel is true.
+- Checkbox: the conventions ask for aria-describedby alongside the native props, but RN has no id for the description or error. Only accessibilityHint carries the description, and the error isn't linked at all.
+- Checkbox: `value` is accepted and ignored on RN as the spec says, but the doc doesn't say whether a __DEV__ warning is wanted when a caller sets it. None is emitted.
+
+## 2026-09-23 13:50 — round 1
+
+- Checkbox: the generation left Checkbox.tsx failing to compile (useColorTransition is called at lines 277-278 but defined nowhere) because a second RN generator session (ds-regen-rn-42) was editing the same file in the same worktree at the same time; gates not passed
+- Checkbox: the web notes link description and error with aria-describedby, but React Native 0.87 has no aria-describedby prop, so on react-native-web the description reaches assistive technology only as accessibilityHint (which react-native-web does not map); the doc does not say what react-native-web should do instead
+- Checkbox: minTarget says the hidden label 'still sets the line box'; on native I render an empty View one label line tall (testID Checkbox.label) in place of the label; the doc does not say whether that placeholder carries the label part's testID
+- Checkbox: the transition binding says the invalid and focus border colors cross-fade, but not where a fade interrupted halfway should start from; the implementation starts from the previous target color
+
+## 2026-09-23 13:50 — round 2
+
+- Checkbox: the `transition` binding says the invalid and focus border colors cross-fade, but on native focus is drawn on the border and the width jumps from controlBorderWidth to the focus width at once. The spec doesn't say whether the width animates too; I animate only the color and switch the width instantly.
+- Checkbox: 'Border color precedence: invalid, then selected, then rest' (controlBorderInvalid) doesn't place focus. The focusRing binding says a focused invalid box keeps controlBorderInvalid. I used invalid > focus > selected > rest, so a focused checked box shows the focus color rather than the selected color.
+- Checkbox: the doc doesn't say where a cross-fade starts when the state changes mid-fade. The implementation starts from the previous target color rather than the in-between color.
+- Checkbox: controlBorderInvalid says RN conveys invalid through the error text's live region, but the spec gives no Android live-region politeness. I kept 'assertive' as Input does, even though 'read in sequence instead of interrupting' (the no-first-render rule) points to 'polite'.
+- Checkbox: minTarget says the hidden label 'still sets the line box'. On RN there's no hidden Text to size it, so an empty View one label-line tall stands in (testID Checkbox.label). The doc doesn't say whether that part should exist when hideLabel is true.
+- Checkbox: the conventions ask for aria-describedby alongside the native props, but RN has no id for the description or error. Only accessibilityHint carries the description, and the error isn't linked at all.
+- Checkbox: `value` is accepted and ignored on RN as the spec says, but the doc doesn't say whether a __DEV__ warning is wanted when a caller sets it. None is emitted.
+
+## 2026-09-23 13:50 — round 2
+
+- Checkbox: no code changed this round; the typecheck failure (useColorTransition undefined) was a race between two RN generator sessions editing Checkbox.tsx in the same worktree, and the hook was restored once by another session before this round; tsc and the 12 Jest scenarios pass against the current file
+- Checkbox: the web notes link description and error with aria-describedby, but React Native 0.87 has no aria-describedby prop, so on react-native-web the description reaches assistive technology only as accessibilityHint, which react-native-web does not map; the doc does not say what react-native-web should do instead
+- Checkbox: minTarget says the hidden label 'still sets the line box'; on native an empty View one label line tall (testID Checkbox.label) stands in for the label; the doc does not say whether that placeholder carries the label part's testID
+- Checkbox: the transition binding says the invalid and focus border colors cross-fade, but not where a fade interrupted mid-way should start; the implementation starts from the previous target color
+- Checkbox: the color cross-fade on every state change makes Animated update after fireEvent.press, so the RN tests log act() warnings; the doc's 'instant under reduced motion' gives tests no hook to disable the fade

@@ -22,12 +22,13 @@ export const Default: Story = {};
 
 // role
 export const RoleBanner: Story = { args: { role: 'banner', label: undefined } };
-export const RoleNavigation: Story = { args: { role: 'navigation' } };
+export const RoleNavigation: Story = { args: { role: 'navigation', label: 'Primary' } };
 export const RoleMain: Story = { args: { role: 'main', label: undefined } };
-export const RoleComplementary: Story = { args: { role: 'complementary', label: undefined } };
+// complementary and search drop the label on React Native; it is kept for parity with web.
+export const RoleComplementary: Story = { args: { role: 'complementary', label: 'Related links' } };
 export const RoleContentinfo: Story = { args: { role: 'contentinfo', label: undefined } };
 export const RoleRegion: Story = { args: { role: 'region', label: 'Related articles' } };
-export const RoleSearch: Story = { args: { role: 'search', label: undefined } };
+export const RoleSearch: Story = { args: { role: 'search', label: 'Site search' } };
 export const RoleForm: Story = { args: { role: 'form', label: 'Sign in' } };
 
 // examples

@@ -45,6 +45,13 @@ describe('Alert', () => {
     expect(s.getByTestId('Alert').props.accessibilityRole).toBeUndefined();
   });
 
+  it('an-empty-heading-falls-back-to-the-body', () => {
+    const s = setup({ heading: '', children: 'Your card was declined.' });
+    expect(s.getByText('Your card was declined.')).toBeTruthy();
+    expect(s.queryByTestId('Alert.heading')).toBeNull();
+    expect(s.getByTestId('Alert').props.accessibilityLabel).toBe('Your card was declined.');
+  });
+
   it('the-heading-is-rendered', () => {
     const s = setup({ heading: 'Payment failed' });
     expect(s.getByText('Payment failed')).toBeTruthy();

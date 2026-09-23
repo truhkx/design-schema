@@ -137,11 +137,21 @@ export function Alert({
 
   // iOS has no live regions: announce when the alert enters the tree and whenever
   // the heading or body changes. Android is covered by accessibilityLiveRegion.
+  // The effect is keyed on the announcement alone (live is read through a ref), so
+  // flipping `live` on a mounted alert swaps the region in place and never re-announces.
+  // The sync effect is declared first, so it runs before the announcement effect on every commit.
+  const liveRef = React.useRef(live);
   React.useEffect(() => {
-    if (Platform.OS === 'ios' && live !== 'off' && announcement !== '') {
+    liveRef.current = live;
+  }, [live]);
+  React.useEffect(() => {
+    if (Platform.OS === 'ios' && liveRef.current !== 'off' && announcement !== '') {
       AccessibilityInfo.announceForAccessibility(announcement);
     }
-  }, [announcement, live]);
+  }, [announcement]);
+
+  const liveRegion = live === 'alert' ? 'assertive' : live === 'status' ? 'polite' : undefined;
+  const label = announcement !== '' ? announcement : undefined;
 
   const bodyLineHeight = toLineHeight(fontSize, lineHeightMultiplier);
   const headingLineHeight = toLineHeight(headingSize, lineHeightMultiplier);
@@ -193,8 +203,10 @@ export function Alert({
       ref={ref}
       testID="Alert"
       accessibilityRole={live === 'alert' ? 'alert' : undefined}
-      accessibilityLiveRegion={live === 'alert' ? 'assertive' : live === 'status' ? 'polite' : undefined}
-      accessibilityLabel={announcement !== '' ? announcement : undefined}
+      accessibilityLiveRegion={liveRegion}
+      aria-live={liveRegion}
+      accessibilityLabel={label}
+      aria-label={label}
       style={containerStyle}
     >
       {/* The Icon is decorative and hides itself (no `label`); the box the Alert owns adds no

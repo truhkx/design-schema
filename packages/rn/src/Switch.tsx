@@ -105,11 +105,17 @@ export function Switch({
   const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
   const accessibleName = fieldset !== null ? `${fieldset.legend}, ${label}` : label;
 
-  const latest = React.useRef({ isChecked });
-  latest.current = { isChecked };
+  const latest = React.useRef({ isChecked, isDisabled, label });
+  latest.current = { isChecked, isDisabled, label };
+  // A disabled switch stays registered and reports `isDisabled()`, which the Form uses to
+  // leave it out of the values (the disabled-field rule, as for Checkbox); it never validates.
   const handle = React.useMemo<FormFieldHandle>(
     () => ({
+      get label() {
+        return latest.current.label;
+      },
       getValue: () => latest.current.isChecked,
+      isDisabled: () => latest.current.isDisabled,
       validate: () => null,
       focus: () => {
         const node = switchRef.current === null ? null : findNodeHandle(switchRef.current);
@@ -124,12 +130,25 @@ export function Switch({
   const register = form?.register;
   const unregister = form?.unregister;
   React.useEffect(() => {
-    if (register === undefined || unregister === undefined || name === undefined || isDisabled) {
+    // Without `name` the switch contributes no key and does not register.
+    if (register === undefined || unregister === undefined || name === undefined) {
       return undefined;
     }
     register(name, handle);
     return () => unregister(name);
-  }, [register, unregister, name, handle, isDisabled]);
+  }, [register, unregister, name, handle]);
+  // The Form re-reads `isDisabled()` on registration, which keeps the field's place in the
+  // order, so registering again is how a change of disabled state reaches it (as in Input).
+  const registeredDisabled = React.useRef(isDisabled);
+  React.useEffect(() => {
+    if (registeredDisabled.current === isDisabled) {
+      return;
+    }
+    registeredDisabled.current = isDisabled;
+    if (name !== undefined) {
+      register?.(name, handle);
+    }
+  }, [register, name, handle, isDisabled]);
 
   // The row is dimmed as a whole (disabledOpacity covers track, label and description), so on
   // react-native-web its text would fail axe's contrast check while reading as enabled. The row
@@ -200,6 +219,11 @@ export function Switch({
     gap: partGap,
   };
 
+  // react-native-web colours a checked thumb from its own `activeThumbColor` (a teal default)
+  // and uses `thumbColor` only while off, so the thumb binding is given to both there.
+  const isWeb = Platform.OS === 'web';
+  const webThumbProps: object = isWeb ? { activeThumbColor: t.colorControlSelectedForeground } : {};
+
   const typographyOverrides = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight };
   const helperOverrides = { ...typographyOverrides, fontSize: overrides?.helperSize };
 
@@ -253,6 +277,12 @@ export function Switch({
             accessibilityLabel={accessibleName}
             accessibilityHint={description}
             accessibilityState={{ checked: isChecked, disabled: isDisabled }}
+            // The aria-* mirrors, native only for the same reason as the role: on the web
+            // container they would be a stateless duplicate of what the input already says.
+            aria-label={Platform.OS === 'web' ? undefined : accessibleName}
+            aria-checked={Platform.OS === 'web' ? undefined : isChecked}
+            aria-disabled={Platform.OS === 'web' ? undefined : isDisabled}
+            {...webThumbProps}
             value={isChecked}
             disabled={isDisabled}
             trackColor={{ false: t.colorControlTrackOff, true: t.colorControlSelectedBackground }}

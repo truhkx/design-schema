@@ -36,17 +36,6 @@ export const CollapseTrue: Story = { args: { collapse: true, items: deepTrail } 
 
 export const CollapseFalse: Story = { args: { collapse: false, items: deepTrail } };
 
-/** An ancestor without `href` renders as plain text, not an empty link. */
-export const AncestorWithoutHref: Story = {
-  args: {
-    items: [
-      { label: 'Docs', href: '/docs' },
-      { label: 'Reference' },
-      { label: 'Tokens' },
-    ],
-  },
-};
-
 // examples
 
 /** A short trail whose last item is the current page, rendered as text. */
@@ -73,6 +62,21 @@ export const AlwaysInFull: Story = {
       { label: 'Catalogue', href: '/catalogue' },
       { label: 'Outdoor', href: '/catalogue/outdoor' },
       { label: 'Tents' },
+    ],
+  },
+};
+
+/**
+ * A level with no page of its own: it renders as plain text in the trail rather than an
+ * empty link, and activating it navigates nowhere.
+ */
+export const AncestorWithoutHref: Story = {
+  args: {
+    items: [
+      { label: 'Docs', href: '/docs' },
+      { label: 'Reference' },
+      { label: 'Tokens', href: '/docs/reference/tokens' },
+      { label: 'Color' },
     ],
   },
 };

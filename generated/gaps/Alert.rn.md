@@ -50,3 +50,18 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Alert: `accessibilityLabel` is specified as heading + body joined by '. ' — with no rule for a heading that already ends in punctuation, so `heading: 'Payment failed.'` announces 'Payment failed.. Your card was declined.' I joined verbatim rather than normalising, since copy guidance forbids inventing user-facing text.
 - Alert: the iOS announcement effect is specified as 'on mount and again whenever heading or body change'. I keyed the effect on the joined announcement string and `live`, which also re-announces when `live` flips from `off` to `status`/`alert` on an already-mounted alert. The doc does not say whether a live change alone should announce.
 - Alert: no story exercises `dismissible` on its own (only the `dismissible-notice` example does, bundled with `tone: info`), and `dismissible` is a boolean so the 'one story per enum value' rule produces none. The dismiss Button's ghost-foreground-on-tinted-background contrast pair from `a11y.contrast` therefore has no story showing it against `warning` or `danger`.
+
+## 2026-09-23 13:55 — round 1
+
+- Alert: the RN notes say to use the `accessibilityLiveRegion` prop but the package rule says to mirror every accessibility prop as `aria-*`; the doc does not say whether `aria-live` belongs next to it. I added `aria-live` with the same value, and left it unset when live=off so the live-off test still reads null.
+- Alert: 'key the effect on the joined announcement alone' leaves open whether a message change while live=off should announce once live changes back. I read the current `live` through a ref when the message changes, so an alert changed to live=off stays silent and switching live back on does not replay the message.
+- Alert: an empty-string or empty-array body isn't covered: with no heading, the empty string gives an empty label, and I leave accessibilityLabel unset rather than setting it to ''.
+- Alert: the `an-empty-heading-falls-back-to-the-body` scenario only asserts the body text; the description also says 'no heading element' and 'the body carries the name'. I added both checks (no `Alert.heading` testID, label equals the body), but the scenario's `then` doesn't list them.
+
+## 2026-09-23 13:56 — round 1
+
+- Alert: the rn notes say to key the iOS announcement effect on the joined text alone but don't say how `live` gets into the effect; I read it through a ref that an earlier effect keeps up to date, so a mount with live=off never announces and switching live later doesn't either. The doc could name that pattern.
+- Alert: the joined announcement drops empty parts (an empty heading or empty-string body), so a heading-only or body-only alert has no stray '. '; the doc says to join with '. ' without saying what happens to empty parts.
+- Alert: the conventions ask for aria-* mirrors while the rn notes say to use accessibilityRole/accessibilityLiveRegion, not the role prop. I mirrored aria-live and aria-label but added no role/aria role for live=status, because the notes forbid role=status on react-native-web. The doc should say whether aria-live counts as the allowed mirror.
+- Alert: iconSize is always forwarded to the Icon as overrides.size (the default token path 'font.size.lg' when there's no override), since the doc says Icon's size enum isn't used; the doc doesn't say whether to leave the forward out when there's no override.
+- Alert: the dismiss button wrapper sets marginTop and marginEnd of -dismissMargin, and the container's alignItems flex-start stops it stretching; the doc doesn't say which container alignment is intended.

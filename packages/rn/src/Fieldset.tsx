@@ -3,8 +3,17 @@ import { AccessibilityInfo, Platform, View } from 'react-native';
 import type { ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
+import { Checkbox } from './Checkbox';
+import { DatePicker } from './DatePicker';
+import { useFormContext } from './FormContext';
+import { Input } from './Input';
+import { NumberInput } from './NumberInput';
+import { RadioGroup } from './RadioGroup';
+import { Select } from './Select';
+import { Slider } from './Slider';
 import { Stack } from './Stack';
 import type { StackGap } from './Stack';
+import { Switch } from './Switch';
 import { Text } from './Text';
 import { useTheme } from './theme';
 
@@ -39,11 +48,11 @@ export interface FieldsetProps {
   legend: string;
   /** The fields as direct children, usually Inputs, Checkboxes or Switches. Fieldset renders the `Stack` around them. */
   children: React.ReactNode;
-  /** Persistent helper text under the legend. Also the group's `accessibilityHint`. */
+  /** Persistent helper text under the legend. Also the group's `accessibilityHint`. An empty string counts as unset. */
   description?: string | undefined;
-  /** A group-level error (cross-field validation such as "End date must be after start date"). Field-level errors stay on the fields. */
+  /** A group-level error (cross-field validation such as "End date must be after start date"). Field-level errors stay on the fields. An empty string counts as unset. */
   error?: string | undefined;
-  /** Disables every field inside (through `FieldsetContext`). Fields keep their own `disabled` for finer control. */
+  /** Disables every field inside (through `FieldsetContext`). A field may disable itself in an enabled group, but cannot opt out of a disabled one. */
   disabled?: boolean | undefined;
   /** Gap between the fields, from the layout rhythm. */
   gap?: FieldsetGap | undefined;
@@ -68,8 +77,27 @@ const FIELDS_GAP_TOKEN = {
 } as const satisfies Record<FieldsetGap, TokenRef>;
 
 /**
+ * The components that read `FieldsetContext` — a "field" for the required indicator is a
+ * direct child of one of these types. Read at render time only: every one of them imports
+ * `useFieldsetContext` from this module, so the references resolve once both have loaded.
+ */
+function isFieldType(type: unknown): boolean {
+  return (
+    type === Input ||
+    type === NumberInput ||
+    type === Checkbox ||
+    type === Switch ||
+    type === RadioGroup ||
+    type === Select ||
+    type === Slider ||
+    type === DatePicker
+  );
+}
+
+/**
  * The direct child fields, with fragments flattened so `<>{street}{city}</>` counts as
- * two children rather than one. Only elements count; raw strings and `null` are skipped.
+ * two children rather than one. A plain Text or decorative View beside the fields is not
+ * a field and neither counts nor suppresses the indicator.
  */
 function collectFields(
   children: React.ReactNode,
@@ -81,7 +109,7 @@ function collectFields(
       collectFields((child.props as { children?: React.ReactNode }).children, out);
       return;
     }
-    out.push(child as React.ReactElement<{ required?: boolean | undefined }>);
+    if (isFieldType(child.type)) out.push(child as React.ReactElement<{ required?: boolean | undefined }>);
   });
 }
 
@@ -108,9 +136,11 @@ function collectFields(
  * fields dim themselves, and the group error is never dimmed. Those two dimmed
  * Views also carry `aria-disabled`, which is what reaches the DOM under
  * react-native-web (`accessibilityState` is dropped there) and what stops a
- * checker reading dimmed-because-inapplicable text as failing contrast. The group error is announced as in Input
- * (`accessibilityLiveRegion` on Android, `announceForAccessibility` on iOS); native
- * has no invalid state, so the error text alone identifies it.
+ * checker reading dimmed-because-inapplicable text as failing contrast. The group
+ * error is announced as in Input (`accessibilityLiveRegion` on Android,
+ * `announceForAccessibility` on iOS), once when it appears, and not at all inside a
+ * Form with its own error summary; native has no invalid state, so the error text
+ * alone identifies it.
  */
 export function Fieldset({
   legend,
@@ -125,13 +155,23 @@ export function Fieldset({
   const { tokens: t } = useTheme();
   const hasError = error !== undefined && error !== '';
   const hasDescription = description !== undefined && description !== '';
+  const form = useFormContext();
+  const summarised = form !== null && form.errorSummary;
+  const baseId = React.useId();
+  const descriptionId = `${baseId}-description`;
+  const errorId = `${baseId}-error`;
 
-  // iOS: announce the group error the moment it appears.
+  // iOS: announce the group error when it appears. Appearing is what announces — a change
+  // from one error string to another re-renders the text in place without announcing
+  // again, matching the Android live region that is already mounted. A Form with its own
+  // error summary announces instead, so both are silenced there.
+  const hadError = React.useRef(false);
   React.useEffect(() => {
-    if (Platform.OS === 'ios' && error !== undefined && error !== '') {
-      AccessibilityInfo.announceForAccessibility(error);
+    if (hasError && !hadError.current && Platform.OS === 'ios' && !summarised) {
+      AccessibilityInfo.announceForAccessibility(error!);
     }
-  }, [error]);
+    hadError.current = hasError;
+  }, [hasError, error, summarised]);
 
   // The indicator is derived: shown when every direct child field is `required`, so it is
   // not repeated on each field. A group with no fields shows none.
@@ -172,6 +212,7 @@ export function Fieldset({
       testID="Fieldset"
       role="group"
       accessibilityLabel={visibleLegend}
+      aria-label={visibleLegend}
       accessibilityHint={hasDescription ? description : undefined}
       style={groupStyle}
     >
@@ -201,7 +242,7 @@ export function Fieldset({
         </FieldsetContext.Provider>
       </View>
       {hasError ? (
-        <View accessibilityLiveRegion="assertive" testID="Fieldset.errorMessage">
+        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'} testID="Fieldset.errorMessage">
           <Text tone="danger" size="sm" overrides={helperOverrides}>
             {error}
           </Text>

@@ -8,7 +8,7 @@ import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
 import { Text } from './Text';
 import type { TextProps } from './Text';
-import { toEasing, useReducedMotion, useTheme } from './theme';
+import { toEasing, toLineHeight, useReducedMotion, useTheme } from './theme';
 
 export type RadioGroupOrientation = 'vertical' | 'horizontal';
 
@@ -100,6 +100,8 @@ interface RadioProps {
     optionGap: number;
     disabledOpacity: number;
     transitionDuration: number;
+    labelSize: number;
+    lineHeight: number;
   };
   labelOverrides: TextOverrides;
   helperOverrides: TextOverrides;
@@ -166,25 +168,39 @@ function Radio({
     }).start();
   }, [selected, reducedMotion, selectAnim, sizes.transitionDuration, t.motionEasingStandard]);
 
+  // A single-line row is exactly minTarget tall: it pads the difference between the target and the
+  // label's first line above and below, so optionPaddingBlock only shows once it exceeds that and
+  // can grow the row but never shrink it below the floor. A description grows it downwards.
+  const firstLine = toLineHeight(sizes.labelSize, sizes.lineHeight);
   const rowStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: sizes.optionGap,
     minHeight: t.sizeTargetComfortable,
-    paddingVertical: sizes.optionPaddingBlock,
+    paddingVertical: Math.max(sizes.optionPaddingBlock, (t.sizeTargetComfortable - firstLine) / 2),
     // Only option rows dim, once each: `optionDisabled` already folds in the group's disabled state.
     opacity: optionDisabled ? sizes.disabledOpacity : 1,
   };
 
+  // The control sits in a slot as tall as the label's first line, centred in it, so a wrapping
+  // label or a description never pulls it off that line.
+  const controlSlotStyle: ViewStyle = {
+    height: firstLine,
+    justifyContent: 'center',
+  };
+
+  // Border colour precedence: invalid, then focus, then selected, then rest. Focus never hides the
+  // invalid colour — only the width changes. Invalid and focus switch instantly; the selected
+  // border fades with the dot over `transition`.
   const controlStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: sizes.controlSize,
     height: sizes.controlSize,
     borderRadius: sizes.controlRadius,
     borderWidth: focused ? t.borderWidthFocus : sizes.controlBorderWidth,
-    borderColor: focused
-      ? t.colorBorderFocus
-      : invalid
-        ? sizes.controlBorderInvalid
+    borderColor: invalid
+      ? sizes.controlBorderInvalid
+      : focused
+        ? t.colorBorderFocus
         : selectAnim.interpolate({ inputRange: [0, 1], outputRange: [t.colorControlBorder, t.colorControlSelectedBackground] }),
     backgroundColor: t.colorControlBackground,
     alignItems: 'center',
@@ -217,6 +233,7 @@ function Radio({
       testID="RadioGroup.radio"
       accessibilityRole="radio"
       accessibilityLabel={accessibleName}
+      aria-label={accessibleName}
       accessibilityState={{ checked: selected, disabled: optionDisabled }}
       accessibilityValue={{ text: COPY.position(index, total) }}
       // react-native-web 0.21 ignores `accessibilityState`, and `aria-checked` is required on
@@ -232,9 +249,11 @@ function Radio({
       onBlur={() => setFocused(false)}
       style={rowStyle}
     >
-      <Animated.View style={controlStyle} accessibilityElementsHidden importantForAccessibility="no">
-        <Animated.View testID="RadioGroup.radioIndicator" style={dotStyle} />
-      </Animated.View>
+      <View style={controlSlotStyle}>
+        <Animated.View style={controlStyle} accessibilityElementsHidden importantForAccessibility="no">
+          <Animated.View testID="RadioGroup.radioIndicator" style={dotStyle} />
+        </Animated.View>
+      </View>
       <View style={textColumnStyle}>
         <View testID="RadioGroup.radioLabel">
           <Text size="md" weight="regular" tone="default" overrides={labelOverrides}>
@@ -355,7 +374,14 @@ export function RadioGroup({
     return () => unregister(name);
   }, [register, unregister, name, handle, isDisabled]);
 
+  // iOS announces the message when it appears or changes after mount, never on the first
+  // render, so a group that starts invalid is read in sequence instead of interrupting.
+  const announcedError = React.useRef(displayedError);
   React.useEffect(() => {
+    if (announcedError.current === displayedError) {
+      return;
+    }
+    announcedError.current = displayedError;
     if (Platform.OS === 'ios' && !summarised && displayedError !== undefined) {
       AccessibilityInfo.announceForAccessibility(displayedError);
     }
@@ -389,6 +415,8 @@ export function RadioGroup({
     optionGap: overrides?.optionGap ? (resolveToken(t, overrides.optionGap) as number) : t.space2,
     disabledOpacity: overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled,
     transitionDuration: overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast,
+    labelSize: overrides?.labelSize ? (resolveToken(t, overrides.labelSize) as number) : t.fontSizeMd,
+    lineHeight: overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal,
   };
   const listGap = overrides?.listGap ? (resolveToken(t, overrides.listGap) as number) : t.space2;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
@@ -416,8 +444,10 @@ export function RadioGroup({
       testID="RadioGroup"
       accessibilityRole="radiogroup"
       accessibilityLabel={accessibleName}
+      aria-label={accessibleName}
       accessibilityHint={description}
       accessibilityState={{ disabled: isDisabled }}
+      aria-disabled={isDisabled}
       style={groupStyle}
     >
       <View testID="RadioGroup.legend">

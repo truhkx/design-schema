@@ -51,3 +51,22 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Meter: the doc does not say whether the header row is dropped entirely when `hideValue` is true. Kept the header (the label is always visible); only the value Text and its wrapper are omitted.
 - Meter: `flexShrink` is specified only for the label wrapper. Left the valueText wrapper unshrinkable, so a long valueText makes the label wrap — unspecified which of the two should give way.
 - Meter: anatomy names `container`, but the RN testability convention puts `testID="Meter"` on the root rather than `Meter.container`, so the `container` part has no part-scoped hook. Consistent with the other RN components, but the anatomy list and the testID convention disagree on paper.
+
+## 2026-09-23 13:59 — round 1
+
+- Meter: the rn notes give only the label wrapper `flexShrink: 1`; the web notes also give the value wrapper `flexShrink: 0` so it never wraps. Applied both on RN; the rn notes should list both.
+- Meter: the `header` anatomy part has no stated testID on rn (the notes list only Meter.label and Meter.valueText, and say the container has none). Kept `testID="Meter.header"`, `Meter.track` and `Meter.fill` from the anatomy names; the rn notes should list all of them or say which to omit.
+- Meter: the web version names the meter with aria-labelledby; RN has no id link, so the root also gets `aria-label={label}`, mirroring accessibilityLabel. The rn notes don't mention aria-label, only the flattened aria-value* props.
+- Meter: `hideValue` doesn't say what happens to `labelGap` and the header's space-between when the header holds only the label. Chose to keep the header row with one child (the gap then does nothing).
+- Meter: the warn-once rule keys on the substituted (finite) bounds on RN. The spec doesn't say whether the 'distinct min/max pair' is the raw props or the substituted ones (e.g. max=NaN with min=200 warns as 100/200). Chose the substituted values, since those are the ones in the message.
+- Meter: the transition rule says an update where a fraction change and a resize land together snaps; the rule is implemented, but no behavior scenario covers any animation behavior, so nothing on RN tests it.
+- Meter: the aria-valuetext/text scenario assertion is limited to web/lit and the RN scenarios don't assert accessibilityValue, so the always-set `text` (percentage fallback, the '0%' of an invalid range) isn't tested on RN.
+
+## 2026-09-23 13:59 — round 1
+
+- Meter: the doc says the dev warning names `max` (<max>) and `min` (<min>), and separately that a non-finite bound is replaced by its default. It never says which values the warning prints, the raw props or the replaced ones. I used the replaced (finite) values, both in the message and in the once-per-pair key.
+- Meter: the RN notes give only the label wrapper a shrink rule (`flexShrink: 1`). The web notes add `flex-shrink: 0` on the value so it never wraps. I put `flexShrink: 0` on the RN value wrapper too; RN already defaults to 0, but the RN notes don't say so.
+- Meter: the doc lists no RN behavior for aria-labelledby. I wrote the name as `aria-label` beside `accessibilityLabel`, following the package convention of mirroring every accessibility prop, because the RN label Text has no id to reference.
+- Meter: the anatomy has `header`, `track` and `fill`, but the RN notes only name testIDs for `label` and `valueText`. I kept `Meter.header`, `Meter.track` and `Meter.fill`, using the anatomy names as the parts rule requires.
+- Meter: `alignItems: 'baseline'` for the header row comes from the Behavior prose ('aligned on their text baseline'). It isn't a style binding, and there's no RN note on whether baseline alignment works across the two wrapper Views.
+- Meter: the Default story's args include `valueText: '3.2 GB of 10 GB'`. The doc doesn't say what Default should show; with that value set, the default percentage path appears only in the extra `Percentage` story.

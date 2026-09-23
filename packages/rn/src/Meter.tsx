@@ -58,6 +58,9 @@ const FILL_TOKEN = {
   danger: 'colorStatusDangerIcon',
 } as const satisfies Record<MeterTone, keyof Tokens>;
 
+/** Invalid min/max pairs already warned about, for the life of the process: a second Meter with the same bad range, or a remount, stays silent. */
+const warnedRanges = new Set<string>();
+
 /**
  * Meter — shows how much of something there is against a known scale. Its shape is
  * a bar because people read fullness at a glance; its meaning is the number.
@@ -98,14 +101,13 @@ export function Meter({
   const validRange = safeMax > safeMin;
 
   // Development warning: an inverted or empty range. Warned once per distinct invalid pair.
-  const warnedRef = React.useRef<string | null>(null);
   React.useEffect(() => {
     if (!__DEV__ || validRange) return;
     const key = `${safeMin}/${safeMax}`;
-    if (warnedRef.current === key) return;
-    warnedRef.current = key;
+    if (warnedRanges.has(key)) return;
+    warnedRanges.add(key);
     console.warn(`Meter: \`max\` (${safeMax}) must be greater than \`min\` (${safeMin}).`);
-  });
+  }, [validRange, safeMin, safeMax]);
 
   const safeValue = Number.isFinite(value) ? value : safeMin;
   const clamped = validRange ? Math.min(safeMax, Math.max(safeMin, safeValue)) : safeMin;
@@ -158,13 +160,15 @@ export function Meter({
     };
     // A long label wraps onto more lines inside the row rather than truncating.
     const labelWrapper: ViewStyle = { flexShrink: 1 };
+    // The value text never wraps; the label gives way instead.
+    const valueWrapper: ViewStyle = { flexShrink: 0 };
     const track: ViewStyle = {
       height: trackHeight,
       borderRadius: radius,
       backgroundColor: t.colorBackgroundStrong,
       overflow: 'hidden',
     };
-    return { container, header, labelWrapper, track };
+    return { container, header, labelWrapper, valueWrapper, track };
   }, [partGap, labelGap, trackHeight, radius, t.colorBackgroundStrong]);
 
   const fillStyle: Animated.WithAnimatedValue<ViewStyle> = {
@@ -181,8 +185,11 @@ export function Meter({
       testID="Meter"
       // One accessibility element: label and value announce together.
       accessible
+      // Not a control: the bar takes no focus, as on ProgressBar.
+      focusable={false}
       role="meter"
       accessibilityLabel={label}
+      aria-label={label}
       accessibilityValue={{ min: safeMin, max: safeMax, now: clamped, text: announcedValue }}
       // The aria-* aliases carry the same value. React Native merges them into
       // `accessibilityValue`; react-native-web forwards only these, and role="meter"
@@ -210,7 +217,7 @@ export function Meter({
           </Text>
         </View>
         {hideValue ? null : (
-          <View testID="Meter.valueText">
+          <View testID="Meter.valueText" style={styles.valueWrapper}>
             <Text
               size="sm"
               tone="muted"

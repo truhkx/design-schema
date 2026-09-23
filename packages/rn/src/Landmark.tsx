@@ -69,6 +69,8 @@ export function Landmark({ role, label, children, ref }: LandmarkProps): React.J
   const nativeRole: Role | undefined = role === 'search' ? undefined : role;
   const legacyRole: AccessibilityRole | undefined = role === 'search' ? 'search' : undefined;
 
+  const accessibleName = LABELLED_ROLES.has(role) ? name : undefined;
+
   const content =
     typeof children === 'string' || typeof children === 'number' ? (
       <Text>{children}</Text>
@@ -84,7 +86,8 @@ export function Landmark({ role, label, children, ref }: LandmarkProps): React.J
       testID="Landmark"
       role={nativeRole}
       accessibilityRole={legacyRole}
-      accessibilityLabel={LABELLED_ROLES.has(role) ? name : undefined}
+      accessibilityLabel={accessibleName}
+      aria-label={accessibleName}
     >
       {content}
     </View>

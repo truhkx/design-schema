@@ -71,6 +71,35 @@ const COPY = {
 type WebElement = { setAttribute(name: string, value: string): void; removeAttribute(name: string): void };
 
 /**
+ * Cross-fades from the previous target color to the new one over `duration`; instant under
+ * reduced motion. A change mid-fade starts from the previous target rather than the in-between
+ * color, which is invisible at `motion.duration.fast`.
+ */
+function useColorTransition(
+  target: string,
+  duration: number,
+  easing: (value: number) => number,
+  reducedMotion: boolean,
+): Animated.AnimatedInterpolation<string> {
+  const progress = React.useRef(new Animated.Value(1)).current;
+  const [pair, setPair] = React.useState({ from: target, to: target });
+  if (pair.to !== target) {
+    setPair({ from: pair.to, to: target });
+  }
+  React.useLayoutEffect(() => {
+    if (reducedMotion || pair.from === pair.to) {
+      progress.setValue(1);
+      return undefined;
+    }
+    progress.setValue(0);
+    const animation = Animated.timing(progress, { toValue: 1, duration, easing, useNativeDriver: false });
+    animation.start();
+    return () => animation.stop();
+  }, [pair, reducedMotion, progress, duration, easing]);
+  return progress.interpolate({ inputRange: [0, 1], outputRange: [pair.from, pair.to] });
+}
+
+/**
  * Checkbox — a single yes/no choice that the user makes and then submits, as
  * opposed to a Switch, which takes effect the moment it is flipped.
  *
@@ -195,7 +224,14 @@ export function Checkbox({
     return () => unregister(name);
   }, [register, unregister, name, handle, isDisabled]);
 
+  // iOS announces the message when it appears or changes after mount, never on the first
+  // render, so a field that starts invalid is read in sequence instead of interrupting.
+  const announcedError = React.useRef(displayedError);
   React.useEffect(() => {
+    if (announcedError.current === displayedError) {
+      return;
+    }
+    announcedError.current = displayedError;
     if (Platform.OS === 'ios' && !summarised && displayedError !== undefined) {
       AccessibilityInfo.announceForAccessibility(displayedError);
     }
@@ -255,25 +291,20 @@ export function Checkbox({
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
   const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
 
-  // Fill and border color cross-fade together between unchecked and
-  // checked/indeterminate; the pressed overlay and the indicator are instant.
-  const fillAnim = React.useRef(new Animated.Value(filled ? 1 : 0)).current;
-  React.useEffect(() => {
-    const toValue = filled ? 1 : 0;
-    if (reducedMotion) {
-      fillAnim.setValue(toValue);
-      return;
-    }
-    Animated.timing(fillAnim, {
-      toValue,
-      duration: transitionDuration,
-      easing: toEasing(t.motionEasingStandard),
-      useNativeDriver: false,
-    }).start();
-  }, [filled, reducedMotion, fillAnim, transitionDuration, t.motionEasingStandard]);
-
-  const animatedBackground = fillAnim.interpolate({ inputRange: [0, 1], outputRange: [controlBackground, t.colorControlSelectedBackground] });
-  const animatedBorderColor = fillAnim.interpolate({ inputRange: [0, 1], outputRange: [t.colorControlBorder, t.colorControlSelectedBackground] });
+  // Fill and border color cross-fade in every state — check, invalid and focus alike;
+  // the pressed overlay and the indicator are instant. Border color precedence: invalid,
+  // then focus (native draws focus on the border), then selected, then rest.
+  const easing = React.useMemo(() => toEasing(t.motionEasingStandard), [t.motionEasingStandard]);
+  const backgroundTarget = filled ? t.colorControlSelectedBackground : controlBackground;
+  const borderTarget = isInvalid
+    ? controlBorderInvalid
+    : focused
+      ? t.colorBorderFocus
+      : filled
+        ? t.colorControlSelectedBackground
+        : t.colorControlBorder;
+  const animatedBackground = useColorTransition(backgroundTarget, transitionDuration, easing, reducedMotion);
+  const animatedBorderColor = useColorTransition(borderTarget, transitionDuration, easing, reducedMotion);
 
   const rootStyle: ViewStyle = {
     flexDirection: 'column',
@@ -310,7 +341,7 @@ export function Checkbox({
     height: controlSize,
     borderRadius: controlRadius,
     borderWidth: focused ? Math.max(t.borderWidthFocus, controlBorderWidth) : controlBorderWidth,
-    borderColor: isInvalid ? controlBorderInvalid : focused ? t.colorBorderFocus : animatedBorderColor,
+    borderColor: animatedBorderColor,
     backgroundColor: animatedBackground,
     overflow: 'hidden',
     alignItems: 'center',
@@ -343,6 +374,7 @@ export function Checkbox({
         ref={pressableRef}
         accessibilityRole="checkbox"
         accessibilityLabel={accessibleName}
+        aria-label={accessibleName}
         accessibilityHint={description}
         accessibilityState={{ checked: isMixed ? 'mixed' : isChecked, disabled: isDisabled }}
         // react-native-web 0.21 ignores `accessibilityState`, and `aria-checked` is required on
@@ -368,7 +400,11 @@ export function Checkbox({
               </Animated.View>
             </View>
             <View style={textColumnStyle}>
-              {hideLabel ? null : (
+              {/* A hidden label still sets the line box, so the control stays on that line and a
+                  description starts below it rather than beside the control. */}
+              {hideLabel ? (
+                <View testID="Checkbox.label" style={controlSlotStyle} />
+              ) : (
                 <View testID="Checkbox.label" style={dimStyle}>
                   <Text
                     size="md"

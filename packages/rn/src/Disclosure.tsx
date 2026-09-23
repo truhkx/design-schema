@@ -45,6 +45,8 @@ export interface DisclosureProps {
   disabled?: boolean | undefined;
   /** Keep the panel in the tree while closed (hidden, not unmounted). Required when the panel contains form fields, so the Form still collects them while the disclosure is closed. */
   keepMounted?: boolean | undefined;
+  /** The trigger stretches across its container, so the whole row is the hit area (and the hover fill runs edge to edge). The icon and summary stay at the start. */
+  fullWidth?: boolean | undefined;
   /**
    * When set, the summary is marked `accessibilityRole="header"` so the disclosure
    * appears in the screen reader's heading list. Native has no heading levels, so the
@@ -61,6 +63,22 @@ export interface DisclosureProps {
 
 /** The part of a DOM element react-native-web hands back for a `View`; `Platform.OS === 'web'` only. */
 type WebElement = { setAttribute(name: string, value: string): void; removeAttribute(name: string): void };
+
+/** Each overridable binding's default token, the one place its path is written. */
+const DEFAULT_TOKEN = {
+  triggerPaddingBlock: 'space.sm',
+  triggerPaddingInline: 'space.sm',
+  triggerGap: 'space.2',
+  triggerFontFamily: 'font.family.body',
+  triggerFontSize: 'font.size.md',
+  triggerFontWeight: 'font.weight.medium',
+  triggerLineHeight: 'font.lineHeight.normal',
+  triggerRadius: 'radius.md',
+  panelPaddingBlock: 'space.sm',
+  panelPaddingInline: 'space.sm',
+  disabledOpacity: 'opacity.disabled',
+  transition: 'motion.duration.base',
+} as const satisfies Record<DisclosureOverridableBinding, TokenRef>;
 
 /** Chevron rotation: pointing along the reading direction when closed, down when open. */
 const CHEVRON_CLOSED = '0deg';
@@ -94,6 +112,7 @@ export function Disclosure({
   defaultOpen = false,
   disabled = false,
   keepMounted = false,
+  fullWidth = false,
   headingLevel,
   onToggle,
   overrides,
@@ -134,6 +153,9 @@ export function Disclosure({
   // and the `open` change that echoes that request does not fire again; any other `open` change
   // reports 'controlled'. Uncontrolled: the press is reported after the new state has committed.
   // Only the latest request is remembered, and the next `open` change clears it. Nothing fires on mount.
+  // The latest handler, so the effect below never calls one from an earlier render.
+  const onToggleRef = React.useRef(onToggle);
+  onToggleRef.current = onToggle;
   const previousOpenRef = React.useRef(isOpen);
   const selfEmittedRef = React.useRef<boolean | null>(null);
   const pendingPressRef = React.useRef(false);
@@ -145,45 +167,27 @@ export function Disclosure({
     const pressed = pendingPressRef.current;
     pendingPressRef.current = false;
     if (isControlled) {
-      if (!echo) onToggle?.(isOpen, 'controlled');
+      if (!echo) onToggleRef.current?.(isOpen, 'controlled');
     } else if (pressed) {
-      onToggle?.(isOpen, 'pointer');
+      onToggleRef.current?.(isOpen, 'pointer');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, isControlled]);
 
-  const triggerPaddingBlock = overrides?.triggerPaddingBlock
-    ? (resolveToken(t, overrides.triggerPaddingBlock) as number)
-    : t.spaceSm;
-  const triggerPaddingInline = overrides?.triggerPaddingInline
-    ? (resolveToken(t, overrides.triggerPaddingInline) as number)
-    : t.spaceSm;
-  const triggerGap = overrides?.triggerGap ? (resolveToken(t, overrides.triggerGap) as number) : t.space2;
-  const triggerFontFamily = overrides?.triggerFontFamily
-    ? (resolveToken(t, overrides.triggerFontFamily) as string)
-    : t.fontFamilyBody;
-  const triggerFontSize = overrides?.triggerFontSize
-    ? (resolveToken(t, overrides.triggerFontSize) as number)
-    : t.fontSizeMd;
-  const triggerFontWeight = overrides?.triggerFontWeight
-    ? (resolveToken(t, overrides.triggerFontWeight) as number)
-    : t.fontWeightMedium;
-  const triggerLineHeight = overrides?.triggerLineHeight
-    ? (resolveToken(t, overrides.triggerLineHeight) as number)
-    : t.fontLineHeightNormal;
-  const triggerRadius = overrides?.triggerRadius ? (resolveToken(t, overrides.triggerRadius) as number) : t.radiusMd;
-  const panelPaddingBlock = overrides?.panelPaddingBlock
-    ? (resolveToken(t, overrides.panelPaddingBlock) as number)
-    : t.spaceSm;
-  const panelPaddingInline = overrides?.panelPaddingInline
-    ? (resolveToken(t, overrides.panelPaddingInline) as number)
-    : t.spaceSm;
-  const disabledOpacity = overrides?.disabledOpacity
-    ? (resolveToken(t, overrides.disabledOpacity) as number)
-    : t.opacityDisabled;
-  const transitionDuration = overrides?.transition
-    ? (resolveToken(t, overrides.transition) as number)
-    : t.motionDurationBase;
+  const tokenFor = (binding: DisclosureOverridableBinding): TokenRef =>
+    overrides?.[binding] ?? DEFAULT_TOKEN[binding];
+  const triggerPaddingBlock = resolveToken(t, tokenFor('triggerPaddingBlock')) as number;
+  const triggerPaddingInline = resolveToken(t, tokenFor('triggerPaddingInline')) as number;
+  const triggerGap = resolveToken(t, tokenFor('triggerGap')) as number;
+  const triggerFontFamily = resolveToken(t, tokenFor('triggerFontFamily')) as string;
+  const triggerFontSizeToken = tokenFor('triggerFontSize');
+  const triggerFontSize = resolveToken(t, triggerFontSizeToken) as number;
+  const triggerFontWeight = resolveToken(t, tokenFor('triggerFontWeight')) as number;
+  const triggerLineHeight = resolveToken(t, tokenFor('triggerLineHeight')) as number;
+  const triggerRadius = resolveToken(t, tokenFor('triggerRadius')) as number;
+  const panelPaddingBlock = resolveToken(t, tokenFor('panelPaddingBlock')) as number;
+  const panelPaddingInline = resolveToken(t, tokenFor('panelPaddingInline')) as number;
+  const disabledOpacity = resolveToken(t, tokenFor('disabledOpacity')) as number;
+  const transitionDuration = resolveToken(t, tokenFor('transition')) as number;
 
   // `useReducedMotion` reads `false` until the OS answers, so the first run snaps rather
   // than trusting it: nothing animates on first render.
@@ -222,7 +226,8 @@ export function Disclosure({
   const triggerStyle = ({ pressed }: PressableStateCallbackType): ViewStyle => ({
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
+    // Start-aligned so the hover fill hugs the summary; `fullWidth` makes the whole row the trigger.
+    alignSelf: fullWidth ? 'stretch' : 'flex-start',
     gap: triggerGap,
     minHeight: t.sizeTargetMin,
     minWidth: t.sizeTargetMin,
@@ -268,6 +273,7 @@ export function Disclosure({
         testID="Disclosure.trigger"
         accessibilityRole="button"
         accessibilityLabel={summary}
+        aria-label={summary}
         accessibilityState={{ expanded: isOpen, disabled }}
         // react-native-web 0.21 ignores `accessibilityState`; this mirror is what carries the
         // expanded state to the DOM (native merges both). `aria-disabled` is set in the effect above.
@@ -284,7 +290,7 @@ export function Disclosure({
           <Icon
             name={rtl ? 'chevron-left' : 'chevron-right'}
             color={t.colorForegroundMuted}
-            overrides={{ size: overrides?.triggerFontSize ?? 'font.size.md' }}
+            overrides={{ size: triggerFontSizeToken }}
           />
         </Animated.View>
         {/*

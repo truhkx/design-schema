@@ -90,6 +90,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Visible label. Clicking or tapping it toggles the control.
       a11y: Programmatically associated with the control (label/for on web, accessibilityLabel

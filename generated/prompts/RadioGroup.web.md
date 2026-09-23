@@ -100,6 +100,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: The group's legend — the question the options answer. Always visible.
       a11y: Rendered as the fieldset legend on web; as the group's accessibilityLabel

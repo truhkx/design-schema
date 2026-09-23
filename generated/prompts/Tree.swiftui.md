@@ -96,6 +96,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: What the tree lists ("Folders", "Categories"). Not visible unless
         `showLabel`.

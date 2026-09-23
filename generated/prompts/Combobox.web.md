@@ -84,6 +84,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Visible label. Always rendered.
       a11y: label/for on the input; accessibilityLabel on native.
@@ -594,9 +595,9 @@ component:
       notes: 'The APG editable combobox with list autocomplete: <input role="combobox"
         aria-autocomplete="list" aria-expanded aria-controls aria-activedescendant>;
         the popup is a portal with the Listbox; DOM focus never leaves the input.
-        The React Listbox exports no key handler hook and no controlled active option,
-        so today the combobox sets the active option by remounting the Listbox with
-        `initialActiveValue` and re-dispatches ArrowUp/ArrowDown as native keydown
+        The combobox drives the active option through the Listbox''s controlled `activeValue`
+        (passing back what `onActiveChange` reports) and, since the React Listbox
+        exports no key handler hook, re-dispatches ArrowUp/ArrowDown as native keydown
         on the Listbox root; only the keys in the keyboard table are forwarded (no
         PageUp/PageDown, no letter type-ahead — typing goes to the input). The ref
         is `Ref<HTMLInputElement>` on the input (the element above); `data-ds` sits
@@ -1148,26 +1149,27 @@ attributes:
 notes: "The APG editable combobox with list autocomplete: <input role=\"combobox\"\
   \ aria-autocomplete=\"list\" aria-expanded aria-controls aria-activedescendant>;\
   \ the popup is a portal with the Listbox; DOM focus never leaves the input. The\
-  \ React Listbox exports no key handler hook and no controlled active option, so\
-  \ today the combobox sets the active option by remounting the Listbox with `initialActiveValue`\
-  \ and re-dispatches ArrowUp/ArrowDown as native keydown on the Listbox root; only\
-  \ the keys in the keyboard table are forwarded (no PageUp/PageDown, no letter type-ahead\
-  \ \u2014 typing goes to the input). The ref is `Ref<HTMLInputElement>` on the input\
-  \ (the element above); `data-ds` sits on the wrapper div. The toggle Button is `tabIndex={-1}`\
-  \ (the input is the tab stop, per APG); the clear and chip-remove Buttons stay tabbable.\
-  \ Button sets its own `data-part=\"container\"`, so the `chipRemove`, `clearButton`\
-  \ and `toggleButton` parts are wrapper <span>s around their Buttons, and a scenario\
-  \ `click` on those parts presses the Button inside. `copy.done` and `copy.activeOption`\
-  \ are not rendered on web (activedescendant does the announcing). A visually hidden\
-  \ <div role=\"status\" aria-live=\"polite\"> announces copy.resultCount, loading\
-  \ and empty states after a short debounce. Chips are <span> with a ds Button (ghost,\
-  \ sm, iconOnly, close icon) labelled copy.removeChip; chips are not focus stops\
-  \ themselves. The scenario `click` lands on the wrapper <span>, which carries the\
-  \ handler, so clicking the wrapper and clicking the Button inside each fire exactly\
-  \ once (a disabled ds Button still stops its own click, so `disabled` blocks either\
-  \ path). `aria-controls` is rendered whether or not the list is open, per APG, so\
-  \ it points at an id that is absent while closed \u2014 deliberately unlike Select,\
-  \ which renders it only while open. Hidden <input name> per value for native forms."
+  \ combobox drives the active option through the Listbox's controlled `activeValue`\
+  \ (passing back what `onActiveChange` reports) and, since the React Listbox exports\
+  \ no key handler hook, re-dispatches ArrowUp/ArrowDown as native keydown on the\
+  \ Listbox root; only the keys in the keyboard table are forwarded (no PageUp/PageDown,\
+  \ no letter type-ahead \u2014 typing goes to the input). The ref is `Ref<HTMLInputElement>`\
+  \ on the input (the element above); `data-ds` sits on the wrapper div. The toggle\
+  \ Button is `tabIndex={-1}` (the input is the tab stop, per APG); the clear and\
+  \ chip-remove Buttons stay tabbable. Button sets its own `data-part=\"container\"\
+  `, so the `chipRemove`, `clearButton` and `toggleButton` parts are wrapper <span>s\
+  \ around their Buttons, and a scenario `click` on those parts presses the Button\
+  \ inside. `copy.done` and `copy.activeOption` are not rendered on web (activedescendant\
+  \ does the announcing). A visually hidden <div role=\"status\" aria-live=\"polite\"\
+  > announces copy.resultCount, loading and empty states after a short debounce. Chips\
+  \ are <span> with a ds Button (ghost, sm, iconOnly, close icon) labelled copy.removeChip;\
+  \ chips are not focus stops themselves. The scenario `click` lands on the wrapper\
+  \ <span>, which carries the handler, so clicking the wrapper and clicking the Button\
+  \ inside each fire exactly once (a disabled ds Button still stops its own click,\
+  \ so `disabled` blocks either path). `aria-controls` is rendered whether or not\
+  \ the list is open, per APG, so it points at an id that is absent while closed \u2014\
+  \ deliberately unlike Select, which renders it only while open. Hidden <input name>\
+  \ per value for native forms."
 ```
 
 ## Guidance

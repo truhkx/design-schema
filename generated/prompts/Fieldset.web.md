@@ -105,6 +105,7 @@ component:
   props:
     legend:
       type: string
+      a11yRole: accessible-name
       required: true
       description: The group's name — what the fields together describe ("Shipping
         address", "Notification preferences"). Always visible.

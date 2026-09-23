@@ -93,6 +93,7 @@ component:
         the item type as `BreadcrumbItem`.
     label:
       type: string
+      a11yRole: accessible-name
       default: Breadcrumb
       description: 'Accessible name of the navigation landmark. Change it only if
         the page has another breadcrumb. `copy.navLabel` is the canonical string:

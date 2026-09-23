@@ -15,6 +15,7 @@ component:
       description: 'Which landmark this is. `banner` (site header), `navigation`, `main` (exactly one per page), `complementary` (sidebar), `contentinfo` (site footer), `region` (a labelled section that deserves a jump point), `search`, `form` (a labelled form that is a page-level region).'
     label:
       type: string
+      a11yRole: accessible-name
       description: 'Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role (two navigations: "Main" and "Footer"). Not shown visually. An empty string counts as absent (no aria-label, and missing for the warnings). `banner`, `main` and `contentinfo` never take a label: on web and Lit one passed to them is not rendered and a development warning says so. On React Native the label is applied only to `navigation`, `region` and `form`; on any other role it is silently not applied, with no warning. `search` and `complementary` do take a label on web and Lit, and a page with two of either needs one.'
       a11y: Rendered as aria-label; the name is read together with the role ("Main navigation, landmark").
     children:

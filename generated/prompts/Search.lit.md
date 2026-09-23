@@ -101,6 +101,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: The accessible name ("Search products", "Search this site"). Visually
         hidden by default — the glyph and placeholder are the visible cue.

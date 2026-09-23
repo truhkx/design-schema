@@ -19,7 +19,7 @@ export const VALID_COMPONENT: Dict = {
   status: 'review',
   anatomy: ['container', 'label'],
   props: {
-    label: { type: 'string', required: true, description: 'Visible text.' },
+    label: { type: 'string', required: true, a11yRole: 'accessible-name', description: 'Visible text.' },
     variant: { type: 'enum', values: ['primary', 'danger'], default: 'primary', description: 'Visual emphasis.' },
     size: { type: 'enum', enumRef: 'size', values: ['sm', 'md'], default: 'md', description: 'Padding scale.' },
   },

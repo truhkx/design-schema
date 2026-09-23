@@ -67,6 +67,8 @@ component:
   composition:
     item:
       component: Disclosure
+      props:
+        fullWidth: true
       forwards:
         triggerPaddingBlock: triggerPaddingBlock
         fontFamily: triggerFontFamily
@@ -332,12 +334,11 @@ component:
         from a trigger moves focus among triggers) and the exclusive logic. Every
         trigger stays a tab stop — no roving tabindex — per the APG accordion pattern.
         The root <div> is the `list` part (`data-part="list"`). Each trigger is Disclosure's
-        own inline trigger, so its hit area ends at the summary rather than spanning
-        the row; Accordion does not stretch it (a full-width trigger needs a Disclosure
-        prop). Every forwarded binding reaches the child through its `overrides` prop,
-        not through a rule the accordion writes into the child, so `--ds-accordion-item-gap`
-        is the only hook a consumer can set from CSS; the other six are settable only
-        through Accordion's own `overrides`.
+        own trigger with `fullWidth`, so its hit area spans the row; Accordion does
+        not stretch it with a rule of its own. Every forwarded binding reaches the
+        child through its `overrides` prop, not through a rule the accordion writes
+        into the child, so `--ds-accordion-item-gap` is the only hook a consumer can
+        set from CSS; the other six are settable only through Accordion's own `overrides`.
     lit:
       tag: ds-accordion
       reflect:
@@ -364,16 +365,18 @@ component:
         or a `value` change opens or closes it, so a page listening to slotted children
         sees those as well as the accordion''s `open-change`; the `toggle` of disclosures
         rendered from `items` is stopped at the accordion, which reports `change`/`open-change`
-        instead. The trigger hit area ends at the summary, as on web. The `ds-accordion
-        > ds-disclosure` address holds for the slotted form only: in `items` mode
-        the disclosures live in the accordion''s shadow root, so address them as `ds-accordion`''s
-        `shadowRoot.querySelectorAll(''ds-disclosure'')`. `change` is not stopped
-        from bubbling out of panel content either, so a page listening on `<ds-accordion>`
-        also receives the composed `change` of a field inside a panel; the accordion''s
-        own event is the one whose `detail` carries `openIds`, and a listener that
-        cares must check for it rather than assume every `change` is the accordion''s.
-        The generated keyboard gate runs against the `items` form (its story passes
-        `items`, matching the React story''s args), not the slotted form.'
+        instead. Disclosures rendered from `items` get `fullWidth`, so their hit area
+        spans the row, as on web; slotted ones are the consumer''s and span it only
+        with their own `full-width`. The `ds-accordion > ds-disclosure` address holds
+        for the slotted form only: in `items` mode the disclosures live in the accordion''s
+        shadow root, so address them as `ds-accordion`''s `shadowRoot.querySelectorAll(''ds-disclosure'')`.
+        `change` is not stopped from bubbling out of panel content either, so a page
+        listening on `<ds-accordion>` also receives the composed `change` of a field
+        inside a panel; the accordion''s own event is the one whose `detail` carries
+        `openIds`, and a listener that cares must check for it rather than assume
+        every `change` is the accordion''s. The generated keyboard gate runs against
+        the `items` form (its story passes `items`, matching the React story''s args),
+        not the slotted form.'
     rn:
       element: View
       props: []
@@ -523,7 +526,7 @@ component:
 ## Parts and slots
 
 - `list`: element
-- `item`: component `Disclosure`; forwards `triggerPaddingBlock` → `overrides.triggerPaddingBlock`, `fontFamily` → `overrides.triggerFontFamily`, `triggerFontSize` → `overrides.triggerFontSize`, `triggerFontWeight` → `overrides.triggerFontWeight`
+- `item`: component `Disclosure`; props `fullWidth` = true; forwards `triggerPaddingBlock` → `overrides.triggerPaddingBlock`, `fontFamily` → `overrides.triggerFontFamily`, `triggerFontSize` → `overrides.triggerFontSize`, `triggerFontWeight` → `overrides.triggerFontWeight`
 - `trigger`: element
 - `triggerIcon`: element
 - `panel`: element
@@ -655,12 +658,13 @@ notes: 'Light-DOM <ds-disclosure> children are the items (slot), so their conten
   whenever `exclusive` or a `value` change opens or closes it, so a page listening
   to slotted children sees those as well as the accordion''s `open-change`; the `toggle`
   of disclosures rendered from `items` is stopped at the accordion, which reports
-  `change`/`open-change` instead. The trigger hit area ends at the summary, as on
-  web. The `ds-accordion > ds-disclosure` address holds for the slotted form only:
-  in `items` mode the disclosures live in the accordion''s shadow root, so address
-  them as `ds-accordion`''s `shadowRoot.querySelectorAll(''ds-disclosure'')`. `change`
-  is not stopped from bubbling out of panel content either, so a page listening on
-  `<ds-accordion>` also receives the composed `change` of a field inside a panel;
+  `change`/`open-change` instead. Disclosures rendered from `items` get `fullWidth`,
+  so their hit area spans the row, as on web; slotted ones are the consumer''s and
+  span it only with their own `full-width`. The `ds-accordion > ds-disclosure` address
+  holds for the slotted form only: in `items` mode the disclosures live in the accordion''s
+  shadow root, so address them as `ds-accordion`''s `shadowRoot.querySelectorAll(''ds-disclosure'')`.
+  `change` is not stopped from bubbling out of panel content either, so a page listening
+  on `<ds-accordion>` also receives the composed `change` of a field inside a panel;
   the accordion''s own event is the one whose `detail` carries `openIds`, and a listener
   that cares must check for it rather than assume every `change` is the accordion''s.
   The generated keyboard gate runs against the `items` form (its story passes `items`,
@@ -691,7 +695,7 @@ Summaries are section titles — noun phrases or questions in sentence case, par
 
 ## Accessibility
 
-Each trigger is a button inside a heading of the given level with `aria-expanded` and `aria-controls` (WCAG 4.1.2, 2.4.6; APG accordion), so the accordion reads as a list of headings in the rotor. Arrow keys are a convenience, not a replacement for Tab: every trigger is in the tab order so no panel content is stranded (2.1.1). Expanded state is visible (chevron) and announced. Targets meet the 24px minimum through Disclosure's `minTarget`; the accordion's `space.md` block padding makes rows roomier but does not guarantee 44px, and the hit area ends at the summary text rather than spanning the row.
+Each trigger is a button inside a heading of the given level with `aria-expanded` and `aria-controls` (WCAG 4.1.2, 2.4.6; APG accordion), so the accordion reads as a list of headings in the rotor. Arrow keys are a convenience, not a replacement for Tab: every trigger is in the tab order so no panel content is stranded (2.1.1). Expanded state is visible (chevron) and announced. Targets meet the 24px minimum through Disclosure's `minTarget`; the accordion's `space.md` block padding makes rows roomier but does not guarantee 44px, and the hit area spans the row through Disclosure's `fullWidth`.
 
 ## Platform notes
 

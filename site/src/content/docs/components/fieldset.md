@@ -14,6 +14,7 @@ component:
   props:
     legend:
       type: string
+      a11yRole: accessible-name
       required: true
       description: 'The group''s name — what the fields together describe ("Shipping address", "Notification preferences"). Always visible.'
       a11y: The accessible name of the group; screen readers read it before each field inside.

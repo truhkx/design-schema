@@ -73,6 +73,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: What the toolbar controls ("Formatting", "Table actions"). Not
         visible; read by assistive technology.

@@ -17,6 +17,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: 'What the feed contains ("Activity", "Notifications"). There is no default; an empty or whitespace-only label warns once per mount in development, with the wording "Feed: label is the accessible name of the feed and must not be empty."'
       a11y: aria-label on the feed.

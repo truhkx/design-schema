@@ -73,6 +73,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: What the divider resizes ("Sidebar width", "Preview height"). The
         separator's accessible name.

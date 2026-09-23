@@ -266,7 +266,7 @@ export function validate(fm: Dict, file: string): void {
   }
   validateCompositionEntries(c, composition, file);
   checkUndeclaredFields(c, composition, file);
-  warnDeprecatedComposition(composition, file);
+  checkDeprecatedComposition(composition, file);
   checkProseForwards(c, composition, file);
   // The halves of the target and keyboard-operable rules that read other docs. The schema accepted the doc because it
   // composes something; one composed component must then declare the requirement itself.
@@ -310,9 +310,9 @@ function composedRequires(composition: Record<string, CompositionEntry>): string
 }
 
 /** A composition part built from a component whose doc has status deprecated: the part is built from something on its
- *  way out. A warning, so a parent keeps parsing while it moves to the replacement. A planned child has no doc, and a
+ *  way out. An error since job 651 (a warning until then, with the same text); a planned child has no doc, and a
  *  child doc that does not read is reported when that doc parses. */
-function warnDeprecatedComposition(composition: Record<string, CompositionEntry>, file: string): void {
+function checkDeprecatedComposition(composition: Record<string, CompositionEntry>, file: string): void {
   for (const [part, entry] of Object.entries(composition)) {
     const target = compositionTarget(entry);
     let child: Dict | null = null;
@@ -323,7 +323,7 @@ function warnDeprecatedComposition(composition: Record<string, CompositionEntry>
     }
     if (child?.status !== 'deprecated') continue;
     const replacement = child.deprecated?.use;
-    warn(docPath(file), `composition.${part}: ${target.component} is deprecated${typeof replacement === 'string' ? `; use ${replacement}` : ''}`);
+    throw new DocError(`${name(file)}: composition.${part}: ${target.component} is deprecated${typeof replacement === 'string' ? `; use ${replacement}` : ''}`);
   }
 }
 
@@ -427,26 +427,14 @@ function checkUndeclaredFields(c: Dict, composition: Record<string, CompositionE
 
 export { BEHAVIOR_FOCUS_TARGETS, BEHAVIOR_STATES };
 
-export const ACCESSIBLE_NAME_HINTS: readonly string[] = ['accessible name', 'aria-label', 'accessibilitylabel', 'accessibility label'];
-export const ACCESSIBLE_NAME_PROPS: readonly string[] = ['label', 'caption', 'title'];
 export const ACCESSIBLE_NAME_PLACEHOLDER = 'Accessible name';
 
-/** The prop that gives the component its accessible name: the first that declares `a11yRole: accessible-name`;
- *  failing that, the first whose `a11y` note says so, else a required `label`/`caption`/`title`. null when the
- *  name is intrinsic (children, heading text) or absent. */
+/** The prop that gives the component its accessible name: the one that declares `a11yRole: accessible-name`
+ *  (`componentDef` allows at most one). null when the name is intrinsic (children, heading text) or absent. */
 export function accessibleNameProp(component: Dict): string | null {
   const props: Dict = truthy(component.props) ? component.props : {};
   for (const [propName, prop] of Object.entries(props)) {
     if (prop.a11yRole === 'accessible-name') return propName;
-  }
-  for (const [propName, prop] of Object.entries(props)) {
-    const note = pyStr(truthy(prop.a11y) ? prop.a11y : '').toLowerCase();
-    if (['string', 'content', 'enum'].includes(prop.type) && ACCESSIBLE_NAME_HINTS.some((h) => note.includes(h))) {
-      return propName; // a boolean like BottomSheet's hideTitle can mention the name without supplying it
-    }
-  }
-  for (const propName of ACCESSIBLE_NAME_PROPS) {
-    if (has(props, propName) && truthy(props[propName].required)) return propName;
   }
   return null;
 }
@@ -1199,7 +1187,6 @@ function controlledContract(c: Dict, platform: string): string {
       const bits = [`\`${pair.prop}\` is controlled when given, uncontrolled ${pair.default === null ? 'from its initial state' : `from \`${pair.default}\``} when omitted`];
       if (pair.event !== null) bits.push(`changes reported by \`${pair.event}\` (emit \`${emittedName(c, pair.event, platform)}\`)`);
       if (pair.state !== null) bits.push(`drives state \`${pair.state}\``);
-      if (!pair.declared) bits.push('paired by name, so no event is declared');
       return `- ${bits.join('; ')}`;
     });
   return contractSection('Controlled state', lines);

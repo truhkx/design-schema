@@ -65,6 +65,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Visible label (visually hidden with `hideLabel`). Never replaced
         by a placeholder.

@@ -73,6 +73,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Accessible name of the control ("View mode"). Not shown; put a
         visible Text label beside it when the meaning is not obvious from context.

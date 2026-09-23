@@ -101,6 +101,14 @@ describe('Popover', () => {
     const s = setup({"placement": "end", "open": true});
     expect(s.root()).not.toBeNull();
   });
+  test('renders-initial-focus-first', async () => {
+    const s = setup({"initialFocus": "first", "open": true});
+    expect(s.root()).not.toBeNull();
+  });
+  test('renders-initial-focus-none', async () => {
+    const s = setup({"initialFocus": "none", "open": true});
+    expect(s.root()).not.toBeNull();
+  });
   test('has-accessible-name', async () => {
     const s = setup({"open": true});
     expect(screen.getByRole('dialog')).toHaveAccessibleName();

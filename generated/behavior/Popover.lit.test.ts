@@ -130,6 +130,14 @@ describe('ds-popover', () => {
     const s = await setup({"placement": "end", "open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
   });
+  test('renders-initial-focus-first', async () => {
+    const s = await setup({"initialFocus": "first", "open": true});
+    expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
+  });
+  test('renders-initial-focus-none', async () => {
+    const s = await setup({"initialFocus": "none", "open": true});
+    expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
+  });
   test('has-accessible-name', async () => {
     const s = await setup({"open": true});
     expect(s.trigger()).toHaveAccessibleName();

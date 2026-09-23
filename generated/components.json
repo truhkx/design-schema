@@ -19,6 +19,9 @@
       "composition": {
         "item": {
           "component": "Disclosure",
+          "props": {
+            "fullWidth": true
+          },
           "forwards": {
             "triggerPaddingBlock": "triggerPaddingBlock",
             "fontFamily": "triggerFontFamily",
@@ -287,7 +290,7 @@
           "attributes": [
             "data-ds=Accordion"
           ],
-          "notes": "A <div> of Disclosures rendered with headingLevel and shared padding overrides; Accordion adds the arrow-key handler on the container (keydown from a trigger moves focus among triggers) and the exclusive logic. Every trigger stays a tab stop — no roving tabindex — per the APG accordion pattern. The root <div> is the `list` part (`data-part=\"list\"`). Each trigger is Disclosure's own inline trigger, so its hit area ends at the summary rather than spanning the row; Accordion does not stretch it (a full-width trigger needs a Disclosure prop). Every forwarded binding reaches the child through its `overrides` prop, not through a rule the accordion writes into the child, so `--ds-accordion-item-gap` is the only hook a consumer can set from CSS; the other six are settable only through Accordion's own `overrides`."
+          "notes": "A <div> of Disclosures rendered with headingLevel and shared padding overrides; Accordion adds the arrow-key handler on the container (keydown from a trigger moves focus among triggers) and the exclusive logic. Every trigger stays a tab stop — no roving tabindex — per the APG accordion pattern. The root <div> is the `list` part (`data-part=\"list\"`). Each trigger is Disclosure's own trigger with `fullWidth`, so its hit area spans the row; Accordion does not stretch it with a rule of its own. Every forwarded binding reaches the child through its `overrides` prop, not through a rule the accordion writes into the child, so `--ds-accordion-item-gap` is the only hook a consumer can set from CSS; the other six are settable only through Accordion's own `overrides`."
         },
         "lit": {
           "tag": "ds-accordion",
@@ -300,7 +303,7 @@
             "heading-level",
             "keep-mounted"
           ],
-          "notes": "Light-DOM <ds-disclosure> children are the items (slot), so their content stays in the document; ds-accordion sets heading-level and keep-mounted on them, listens for their `toggle` to enforce exclusive, and handles arrow keys via keydown bubbling from the slotted triggers. `items` as a property is also accepted and renders <ds-disclosure> elements itself. The shadow root's flex container is the `list` part (`data-part=\"list\"` and `part=\"list\"`). Light-DOM disclosures are assigned manually, one slot per disclosure, with <ds-divider> rendered between the slots in the shadow root, so on Lit the Dividers are not light-DOM siblings of the items (address an item as `ds-accordion > ds-disclosure`). Forwarded bindings reach each Disclosure as its `--ds-disclosure-*` hook set from the accordion's own hook (`--ds-disclosure-trigger-padding-block: var(--ds-accordion-trigger-padding-block)`), so a consumer's CSS override of the accordion hook still arrives; the Dividers get `--ds-divider-color`/`--ds-divider-thickness` the same way. A slotted disclosure's composed `toggle` is left to reach the page (the consumer owns those elements), including its `reason: 'controlled'` echoes whenever `exclusive` or a `value` change opens or closes it, so a page listening to slotted children sees those as well as the accordion's `open-change`; the `toggle` of disclosures rendered from `items` is stopped at the accordion, which reports `change`/`open-change` instead. The trigger hit area ends at the summary, as on web. The `ds-accordion > ds-disclosure` address holds for the slotted form only: in `items` mode the disclosures live in the accordion's shadow root, so address them as `ds-accordion`'s `shadowRoot.querySelectorAll('ds-disclosure')`. `change` is not stopped from bubbling out of panel content either, so a page listening on `<ds-accordion>` also receives the composed `change` of a field inside a panel; the accordion's own event is the one whose `detail` carries `openIds`, and a listener that cares must check for it rather than assume every `change` is the accordion's. The generated keyboard gate runs against the `items` form (its story passes `items`, matching the React story's args), not the slotted form."
+          "notes": "Light-DOM <ds-disclosure> children are the items (slot), so their content stays in the document; ds-accordion sets heading-level and keep-mounted on them, listens for their `toggle` to enforce exclusive, and handles arrow keys via keydown bubbling from the slotted triggers. `items` as a property is also accepted and renders <ds-disclosure> elements itself. The shadow root's flex container is the `list` part (`data-part=\"list\"` and `part=\"list\"`). Light-DOM disclosures are assigned manually, one slot per disclosure, with <ds-divider> rendered between the slots in the shadow root, so on Lit the Dividers are not light-DOM siblings of the items (address an item as `ds-accordion > ds-disclosure`). Forwarded bindings reach each Disclosure as its `--ds-disclosure-*` hook set from the accordion's own hook (`--ds-disclosure-trigger-padding-block: var(--ds-accordion-trigger-padding-block)`), so a consumer's CSS override of the accordion hook still arrives; the Dividers get `--ds-divider-color`/`--ds-divider-thickness` the same way. A slotted disclosure's composed `toggle` is left to reach the page (the consumer owns those elements), including its `reason: 'controlled'` echoes whenever `exclusive` or a `value` change opens or closes it, so a page listening to slotted children sees those as well as the accordion's `open-change`; the `toggle` of disclosures rendered from `items` is stopped at the accordion, which reports `change`/`open-change` instead. Disclosures rendered from `items` get `fullWidth`, so their hit area spans the row, as on web; slotted ones are the consumer's and span it only with their own `full-width`. The `ds-accordion > ds-disclosure` address holds for the slotted form only: in `items` mode the disclosures live in the accordion's shadow root, so address them as `ds-accordion`'s `shadowRoot.querySelectorAll('ds-disclosure')`. `change` is not stopped from bubbling out of panel content either, so a page listening on `<ds-accordion>` also receives the composed `change` of a field inside a panel; the accordion's own event is the one whose `detail` carries `openIds`, and a listener that cares must check for it rather than assume every `change` is the accordion's. The generated keyboard gate runs against the `items` form (its story passes `items`, matching the React story's args), not the slotted form."
         },
         "rn": {
           "element": "View",
@@ -553,7 +556,7 @@
       "When not to use": "Do not use an Accordion for content most users need — show it. Do not use it as navigation or as tabs (Tabs replace content; an accordion adds it). Do not nest accordions. Do not use one for a single section; that is a Disclosure.",
       "Behavior": "Each item is a Disclosure with a heading. Enter or Space toggles the focused item; with `exclusive`, opening one closes the others (closing does not open anything). Arrow keys, Home and End move focus among the triggers and wrap; Tab moves through triggers and open panel content in document order, since every trigger remains a tab stop. `onChange` receives the open ids. Disabled items are visible and skipped by arrows: arrow keys, Home and End never land on a disabled trigger, but they still work when focus starts on one (it remains a tab stop). `onOpenChange` reasons come from Disclosure's `onToggle(open, reason)` — `pointer` becomes `trigger`, `keyboard` stays `keyboard`, and Disclosure's `controlled` (the echo of the accordion setting `open`) is ignored — so `keyboard` is distinguishable from `trigger` on web and Lit (native always reports `trigger`). One toggle fires, in order: `onChange` with the new set, then `onOpenChange` for the toggled section, then one `onOpenChange(id, false, 'exclusive')` per section `exclusive` closed, in item order. With `exclusive` and several ids in `value`/`defaultValue`, the first is opened and a development warning notes the rest, once per distinct id list; the warning is a development aid, not copy, so its wording is not contract — only the condition and the frequency are. Arrow keys, Home and End are live only when the event target is one of the triggers, so a key pressed inside an open panel is left to the page; when every item is disabled the key is left unhandled too, rather than trapping focus. Because a disabled trigger stays focusable, a keyboard scenario must not include disabled items — the `from: first`/`from: last` index would otherwise count one. Items are identified by `id` (on Lit, the slotted `<ds-disclosure>`'s `id` attribute). The `item` part is the composed Disclosure root itself — Accordion does not add a `data-part=\"item\"` hook and must not wrap items in an extra element to carry one, since Dividers are direct siblings of the items (on web and React Native; on Lit they sit between per-item slots in the shadow root, see its notes); address an item as `[data-ds=\"Accordion\"] > [data-ds=\"Disclosure\"]`. The `trigger`, `triggerIcon` and `panel` parts are tagged by Disclosure. Nothing open is `[]` or `''`, never `undefined`. `reason: 'controlled'` is reported when `value` arrives holding a set the accordion did not itself just emit; a controlled parent that answers a trigger with some other set therefore sees `controlled`, which is the intended reading. The just-emitted set is compared only with the next `value` change and then cleared, as Disclosure does for `open`: a parent that ignores `onChange` leaves it pending until `value` next changes, and a change caused only by toggling `exclusive` does not consume it. A `controlled` `value` change fires `onOpenChange` only for sections whose open state actually changed, in item order; a `value` that resolves to the set already shown (for example several ids trimmed back to the same one under `exclusive`) fires nothing. That is one pass over `items`: opens and closes are not grouped by direction, they interleave in item order. An id in `value`/`defaultValue` that matches no item is silently ignored — it reports nothing and opens nothing — and duplicate ids in `items` are not detected; neither warns. Only a `value` change is diffed, so replacing `items` while controlled reports nothing, even for an added id whose open state differs. Replacing `items` never prunes the open set either: an id whose section is gone stays in it, matching nothing, and opens that section again if the item returns. Events fire from the toggle handler with the new set as the payload, in controlled and uncontrolled mode alike; they do not wait for the re-render. Every forward (to Disclosure and to Divider) always carries the resolved token — the consumer's override, else the Accordion default — even when it equals the child's own default. An item's `id` is the accordion's key, not a DOM id: on web and React Native each Disclosure generates its own element ids, so two accordions with the same item ids never collide. On Lit, `value`/`defaultValue` are the only source of the open set: a slotted `<ds-disclosure>`'s own `open` or `default-open` attribute is overwritten, not read.",
       "Content guidelines": "Summaries are section titles — noun phrases or questions in sentence case, parallel across the list. Panel content starts with the answer, not a restatement of the heading. For FAQs, order by frequency, not alphabetically.",
-      "Accessibility": "Each trigger is a button inside a heading of the given level with `aria-expanded` and `aria-controls` (WCAG 4.1.2, 2.4.6; APG accordion), so the accordion reads as a list of headings in the rotor. Arrow keys are a convenience, not a replacement for Tab: every trigger is in the tab order so no panel content is stranded (2.1.1). Expanded state is visible (chevron) and announced. Targets meet the 24px minimum through Disclosure's `minTarget`; the accordion's `space.md` block padding makes rows roomier but does not guarantee 44px, and the hit area ends at the summary text rather than spanning the row.",
+      "Accessibility": "Each trigger is a button inside a heading of the given level with `aria-expanded` and `aria-controls` (WCAG 4.1.2, 2.4.6; APG accordion), so the accordion reads as a list of headings in the rotor. Arrow keys are a convenience, not a replacement for Tab: every trigger is in the tab order so no panel content is stranded (2.1.1). Expanded state is visible (chevron) and announced. Targets meet the 24px minimum through Disclosure's `minTarget`; the accordion's `space.md` block padding makes rows roomier but does not guarantee 44px, and the hit area spans the row through Disclosure's `fullWidth`.",
       "Platform notes": "### Web\nRender `<div data-ds=\"Accordion\">` containing a `Disclosure` per item with `headingLevel`, `keepMounted`, `open` controlled by the accordion's state, and `overrides` carrying the forwarded `triggerPaddingBlock`, `triggerFontFamily` (from `fontFamily`), `triggerFontSize` and `triggerFontWeight`; a `Divider` between items when `divided`, with `overrides` `color` (from `divider`) and `thickness` (from `dividerWidth`). Keydown on the container: when the event target is one of the triggers, handle ArrowUp/Down/Home/End by focusing the sibling trigger. `exclusive` maps each `onToggle` to the new open set.\n\n### Lit\n`<ds-accordion exclusive heading-level=\"3\"><ds-disclosure summary=\"…\">…</ds-disclosure>…</ds-accordion>`. On `slotchange`, set `heading-level` and `keep-mounted` on each slotted `ds-disclosure` (the forwarded bindings arrive as hooks, see the notes); listen for their composed `toggle` to enforce `exclusive` and dispatch `change`; handle arrow keys from bubbling keydown whose composed path includes a slotted trigger.\n\n### React Native\n`View` of `Disclosure`s with `Divider`s; the accordion owns the open set and passes `open`/`onToggle` to each. No arrow keys on native.",
       "Related": "Disclosure, Tabs, Divider, Heading."
     },
@@ -1948,6 +1951,7 @@
         },
         "heading": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "The question or statement, as a level-2 Heading at the size Heading reads from level 2 (no explicit `size`), and the accessible name (\"Delete 3 files?\").",
           "a11y": "aria-labelledby the heading; native accessibilityLabel on the modal content."
@@ -3951,6 +3955,7 @@
         },
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "default": "Breadcrumb",
           "description": "Accessible name of the navigation landmark. Change it only if the page has another breadcrumb. `copy.navLabel` is the canonical string: the default is that copy key, not a second literal, so translating the copy block moves the default with it.",
           "a11y": "Rendered as aria-label on the nav so it is distinguished from other navigation landmarks."
@@ -4374,6 +4379,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "The button's text. Also its accessible name. An empty string is allowed and warns on no platform, like Lit's initial `''` and an `iconOnly` button with no icon: it renders a nameless button, and nothing enforces WCAG 4.1.2 at runtime.",
           "a11y": "Rendered as visible text, or as aria-label / accessibilityLabel when the button shows only an icon."
@@ -4420,6 +4426,21 @@
         "expanded": {
           "type": "boolean",
           "description": "Set by a parent that the button discloses (Menu, Popover, SidePanel, Disclosure): aria-expanded on web, accessibilityState.expanded on native. Consumers rarely set it directly. No default, and tri-state on every platform: undefined means the button discloses nothing, so no expanded state is reported at all (no aria-expanded on the container; `expanded` omitted from accessibilityState), never a false one. When the prop is set and an `aria-expanded` also arrives through `...rest`, the prop wins."
+        },
+        "haspopup": {
+          "type": "enum",
+          "values": [
+            "menu",
+            "listbox",
+            "tree",
+            "grid",
+            "dialog"
+          ],
+          "description": "Set by a parent whose popup the button opens (Menu's trigger takes `menu`): `aria-haspopup` on the element that carries the button role, so on Lit it reaches the inner <button> the way `expanded` does, where a raw attribute on the host would not. No default: omitted means the button opens nothing and no aria-haspopup is written. The values are ARIA's own, without `true` (which means `menu`). When the prop is set and an `aria-haspopup` also arrives through `...rest` on web, the prop wins. Web and Lit only: native has no has-popup state, and the popup's own role carries the relationship there.",
+          "platforms": [
+            "web",
+            "lit"
+          ]
         },
         "disabled": {
           "type": "boolean",
@@ -4656,7 +4677,8 @@
             "type",
             "aria-disabled",
             "aria-busy",
-            "aria-label"
+            "aria-label",
+            "aria-haspopup"
           ],
           "notes": "Use aria-disabled rather than the disabled attribute so the button remains discoverable by keyboard and screen readers. `expanded` is a React prop mapped to aria-expanded; when it is undefined, an `aria-expanded` arriving through `...rest` still applies, which is how Menu, Popover, Disclosure, SidePanel, Combobox and Search already set it. `ButtonProps` omits `className` and `style` from the native button props, so passing either is a type error rather than a silent drop: `overrides` is the only per-instance styling. Hooks follow Lit: locked bindings get no `--ds-button-*` hook, and the interpolated ones (background, backgroundHover, foreground) are written out as one rule per variant reading the token directly; spinnerStroke is the one exception. A blocked activation (disabled or loading) calls preventDefault() and stopPropagation() on the click, so a `type: submit` button submits nothing and the enclosing Form never sees the event. Cursor is not a binding and is the same everywhere: `pointer`, `not-allowed` under aria-disabled, `progress` under aria-busy."
         },
@@ -4672,7 +4694,7 @@
             "inverse",
             "overflow-label"
           ],
-          "notes": "Wraps a native <button> in the shadow root with delegatesFocus so the host element is focusable. `press` is a composed CustomEvent. Icons are named slots `leading-icon` / `trailing-icon`; the part names stay the anatomy names verbatim (`part=\"leadingIcon\"`, `part=\"trailingIcon\"`), so slot names are kebab-case and part names camelCase. The slots are not aria-hidden (aria-hidden on a <slot> is unreliable): a ds-icon with no label hides itself, which is what makes the icons decorative. Locked bindings get no `--ds-button-*` hook (the rule reads the token directly, per the overrides contract, one rule per variant for the interpolated ones); spinnerStroke is the one exception its binding names. `label` is required but a property needs an initial value, so it starts as '' and ds-button does not warn. A blocked activation (disabled or loading) is swallowed on the inner button with preventDefault() and stopPropagation(): neither `press` nor the native click leaves the host, and no form submits. ds-button is NOT form-associated (a FACE with a reflected disabled attribute becomes truly disabled and unfocusable); `type=submit` is handled by ds-form listening for `press`, and by `closest('form')?.requestSubmit()` only when no ds-form encloses the button, so a ds-form nested in a native form submits once. `expanded` is a JS property only (`attribute: false`) and stays tri-state — undefined means the button discloses nothing, so no aria-expanded is set at all. A disclosing parent sets `.expanded=`; a raw `aria-expanded` attribute on the host does not reach the inner button. The host is the tab stop and the inner button is never an independent one: `tabindex` written on the host (Toolbar's roving focus, TreeGrid's chevron, NumberInput's steppers) is mirrored onto the inner button through a MutationObserver watching that attribute alone, which never writes back to the host; no other global attribute crosses the shadow root. The host lays out as `display: inline-flex; vertical-align: middle` with the inner button filling it, so a stretched host exposes no dead click area of its own. `accessibleName` is not reflected and is the plain kebab attribute `accessible-name`. On `type: submit` the order is `press`, then tracking, then `closest('form')?.requestSubmit()` guarded by `!this.closest('ds-form')`; with neither form present the submit is a silent no-op, as on rn. A caller's `aria-describedby` on the host cannot cross the shadow root, so on Lit `copy.loading` replaces rather than merges with it — an accepted divergence from web, since the busy description matters more than a description the shadow root cannot reach."
+          "notes": "Wraps a native <button> in the shadow root with delegatesFocus so the host element is focusable. `press` is a composed CustomEvent. Icons are named slots `leading-icon` / `trailing-icon`; the part names stay the anatomy names verbatim (`part=\"leadingIcon\"`, `part=\"trailingIcon\"`), so slot names are kebab-case and part names camelCase. The slots are not aria-hidden (aria-hidden on a <slot> is unreliable): a ds-icon with no label hides itself, which is what makes the icons decorative. Locked bindings get no `--ds-button-*` hook (the rule reads the token directly, per the overrides contract, one rule per variant for the interpolated ones); spinnerStroke is the one exception its binding names. `label` is required but a property needs an initial value, so it starts as '' and ds-button does not warn. A blocked activation (disabled or loading) is swallowed on the inner button with preventDefault() and stopPropagation(): neither `press` nor the native click leaves the host, and no form submits. ds-button is NOT form-associated (a FACE with a reflected disabled attribute becomes truly disabled and unfocusable); `type=submit` is handled by ds-form listening for `press`, and by `closest('form')?.requestSubmit()` only when no ds-form encloses the button, so a ds-form nested in a native form submits once. `expanded` is a JS property only (`attribute: false`) and stays tri-state — undefined means the button discloses nothing, so no aria-expanded is set at all. A disclosing parent sets `.expanded=`; a raw `aria-expanded` attribute on the host does not reach the inner button. `haspopup` is the same kind of JS property, written as `aria-haspopup` on the inner button and omitted while undefined. The host is the tab stop and the inner button is never an independent one: `tabindex` written on the host (Toolbar's roving focus, TreeGrid's chevron, NumberInput's steppers) is mirrored onto the inner button through a MutationObserver watching that attribute alone, which never writes back to the host; no other global attribute crosses the shadow root. The host lays out as `display: inline-flex; vertical-align: middle` with the inner button filling it, so a stretched host exposes no dead click area of its own. `accessibleName` is not reflected and is the plain kebab attribute `accessible-name`. On `type: submit` the order is `press`, then tracking, then `closest('form')?.requestSubmit()` guarded by `!this.closest('ds-form')`; with neither form present the submit is a silent no-op, as on rn. A caller's `aria-describedby` on the host cannot cross the shadow root, so on Lit `copy.loading` replaces rather than merges with it — an accepted divergence from web, since the busy description matters more than a description the shadow root cannot reach."
         },
         "rn": {
           "element": "Pressable",
@@ -5009,6 +5031,86 @@
           {
             "renders": true
           }
+        ],
+        "derived": true
+      },
+      {
+        "name": "renders-haspopup-menu",
+        "given": {
+          "haspopup": "menu"
+        },
+        "then": [
+          {
+            "renders": true
+          }
+        ],
+        "platforms": [
+          "web",
+          "lit"
+        ],
+        "derived": true
+      },
+      {
+        "name": "renders-haspopup-listbox",
+        "given": {
+          "haspopup": "listbox"
+        },
+        "then": [
+          {
+            "renders": true
+          }
+        ],
+        "platforms": [
+          "web",
+          "lit"
+        ],
+        "derived": true
+      },
+      {
+        "name": "renders-haspopup-tree",
+        "given": {
+          "haspopup": "tree"
+        },
+        "then": [
+          {
+            "renders": true
+          }
+        ],
+        "platforms": [
+          "web",
+          "lit"
+        ],
+        "derived": true
+      },
+      {
+        "name": "renders-haspopup-grid",
+        "given": {
+          "haspopup": "grid"
+        },
+        "then": [
+          {
+            "renders": true
+          }
+        ],
+        "platforms": [
+          "web",
+          "lit"
+        ],
+        "derived": true
+      },
+      {
+        "name": "renders-haspopup-dialog",
+        "given": {
+          "haspopup": "dialog"
+        },
+        "then": [
+          {
+            "renders": true
+          }
+        ],
+        "platforms": [
+          "web",
+          "lit"
         ],
         "derived": true
       },
@@ -5645,6 +5747,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "What the carousel shows (\"Featured products\", \"Customer stories\").",
           "a11y": "aria-label on the region; each slide is named `copy.slideLabel` (\"2 of 4\") alone — its heading is read as content, never joined into the name."
@@ -6312,6 +6415,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "Visible label. Clicking or tapping it toggles the control.",
           "a11y": "Programmatically associated with the control (label/for on web, accessibilityLabel on native)."
@@ -7035,6 +7139,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "Visible label. Always rendered.",
           "a11y": "label/for on the input; accessibilityLabel on native."
@@ -7599,7 +7704,7 @@
             "aria-required",
             "autocomplete=off"
           ],
-          "notes": "The APG editable combobox with list autocomplete: <input role=\"combobox\" aria-autocomplete=\"list\" aria-expanded aria-controls aria-activedescendant>; the popup is a portal with the Listbox; DOM focus never leaves the input. The React Listbox exports no key handler hook and no controlled active option, so today the combobox sets the active option by remounting the Listbox with `initialActiveValue` and re-dispatches ArrowUp/ArrowDown as native keydown on the Listbox root; only the keys in the keyboard table are forwarded (no PageUp/PageDown, no letter type-ahead — typing goes to the input). The ref is `Ref<HTMLInputElement>` on the input (the element above); `data-ds` sits on the wrapper div. The toggle Button is `tabIndex={-1}` (the input is the tab stop, per APG); the clear and chip-remove Buttons stay tabbable. Button sets its own `data-part=\"container\"`, so the `chipRemove`, `clearButton` and `toggleButton` parts are wrapper <span>s around their Buttons, and a scenario `click` on those parts presses the Button inside. `copy.done` and `copy.activeOption` are not rendered on web (activedescendant does the announcing). A visually hidden <div role=\"status\" aria-live=\"polite\"> announces copy.resultCount, loading and empty states after a short debounce. Chips are <span> with a ds Button (ghost, sm, iconOnly, close icon) labelled copy.removeChip; chips are not focus stops themselves. The scenario `click` lands on the wrapper <span>, which carries the handler, so clicking the wrapper and clicking the Button inside each fire exactly once (a disabled ds Button still stops its own click, so `disabled` blocks either path). `aria-controls` is rendered whether or not the list is open, per APG, so it points at an id that is absent while closed — deliberately unlike Select, which renders it only while open. Hidden <input name> per value for native forms."
+          "notes": "The APG editable combobox with list autocomplete: <input role=\"combobox\" aria-autocomplete=\"list\" aria-expanded aria-controls aria-activedescendant>; the popup is a portal with the Listbox; DOM focus never leaves the input. The combobox drives the active option through the Listbox's controlled `activeValue` (passing back what `onActiveChange` reports) and, since the React Listbox exports no key handler hook, re-dispatches ArrowUp/ArrowDown as native keydown on the Listbox root; only the keys in the keyboard table are forwarded (no PageUp/PageDown, no letter type-ahead — typing goes to the input). The ref is `Ref<HTMLInputElement>` on the input (the element above); `data-ds` sits on the wrapper div. The toggle Button is `tabIndex={-1}` (the input is the tab stop, per APG); the clear and chip-remove Buttons stay tabbable. Button sets its own `data-part=\"container\"`, so the `chipRemove`, `clearButton` and `toggleButton` parts are wrapper <span>s around their Buttons, and a scenario `click` on those parts presses the Button inside. `copy.done` and `copy.activeOption` are not rendered on web (activedescendant does the announcing). A visually hidden <div role=\"status\" aria-live=\"polite\"> announces copy.resultCount, loading and empty states after a short debounce. Chips are <span> with a ds Button (ghost, sm, iconOnly, close icon) labelled copy.removeChip; chips are not focus stops themselves. The scenario `click` lands on the wrapper <span>, which carries the handler, so clicking the wrapper and clicking the Button inside each fire exactly once (a disabled ds Button still stops its own click, so `disabled` blocks either path). `aria-controls` is rendered whether or not the list is open, per APG, so it points at an id that is absent while closed — deliberately unlike Select, which renders it only while open. Hidden <input name> per value for native forms."
         },
         "lit": {
           "tag": "ds-combobox",
@@ -8433,6 +8538,7 @@
       "props": {
         "caption": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "What the grid holds (\"Price list\"). The accessible name; visually hidden with `hideCaption`. Required: a grid built without one falls back to an empty caption and warns in development.",
           "a11y": "aria-labelledby the caption (web) / accessibilityLabel (native)."
@@ -10083,6 +10189,9 @@
         "calendarButton": "Button",
         "popover": {
           "component": "Popover",
+          "props": {
+            "initialFocus": "none"
+          },
           "forwards": {
             "calendarInset": "inset"
           }
@@ -10109,6 +10218,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "Visible label (\"Start date\", \"Date of birth\").",
           "a11y": "label/for on the input; the grid is named \"{label}, {month} {year}\"."
@@ -10766,7 +10876,7 @@
             "locale",
             "size"
           ],
-          "notes": "Form-associated: setFormValue with the ISO string (a FormData with two entries for a range, name and name-end). Implements DsFormField for `name` (the start ISO string, or null until complete), and a range adds a second DsFormField entry for `name-end` (the end ISO string) that always validates clean; `name` reports the combined message. The end field therefore ignores `required` — it reads it from the picker for shape only, and its checkValidity() is unconditionally true, because one message must not be read twice. ds-form discovers only light-DOM descendants with data-ds-field, so while `range` is on the picker appends a hidden light-DOM child `<ds-date-picker-end-field data-ds-field>` that reads name-end, the end ISO, required and disabled from the picker and whose focus() moves to the end input. The errorMessage ds-text sits in a role=alert wrapper carrying its data-part. Calendar in a <ds-popover> in the shadow root; grid, week numbers, day labels and aria-selected placement as in web. Ids do not cross shadow roots, so the native <label for>, aria-describedby, aria-labelledby and the grid label all point at elements inside the same shadow root, and aria-invalid sits on the input(s). The month and year ds-selects live inside the shadow root, so ds-form never discovers them; they carry name=\"month\" and name=\"year\" only to satisfy ds-select. `open` is a property, not reflected (see the prop). The composed ds-popover focuses its first focusable on open, so DatePicker moves focus to the selected day (or today) after the popover has opened, and asks the popover to reposition once the grid has laid out. Composed `change` and `open-change`. The composed parts carry data-part on the ds-button and ds-select hosts themselves, with no wrapper span, because ds-popover's trigger slot must receive the button itself. The `popover` part is the exception: the ds-popover host also holds the trigger slot and so is never hidden, which no `closes` expectation could ever see, so part/data-part=\"popover\" goes on the calendar content wrapper inside it — the same element the web note names. ds-button has no focusable-while-disabled mode, so on Lit Today uses `disabled` and leaves the Tab cycle while today cannot be picked. ds-select closes its popup on Tab before the event bubbles, so the Tab trap ignores a Tab whose composed path includes a ds-select; the Selects are never the first or last stop, so native order holds the cycle there."
+          "notes": "Form-associated: setFormValue with the ISO string (a FormData with two entries for a range, name and name-end). Implements DsFormField for `name` (the start ISO string, or null until complete), and a range adds a second DsFormField entry for `name-end` (the end ISO string) that always validates clean; `name` reports the combined message. The end field therefore ignores `required` — it reads it from the picker for shape only, and its checkValidity() is unconditionally true, because one message must not be read twice. ds-form discovers only light-DOM descendants with data-ds-field, so while `range` is on the picker appends a hidden light-DOM child `<ds-date-picker-end-field data-ds-field>` that reads name-end, the end ISO, required and disabled from the picker and whose focus() moves to the end input. The errorMessage ds-text sits in a role=alert wrapper carrying its data-part. Calendar in a <ds-popover> in the shadow root; grid, week numbers, day labels and aria-selected placement as in web. Ids do not cross shadow roots, so the native <label for>, aria-describedby, aria-labelledby and the grid label all point at elements inside the same shadow root, and aria-invalid sits on the input(s). The month and year ds-selects live inside the shadow root, so ds-form never discovers them; they carry name=\"month\" and name=\"year\" only to satisfy ds-select. `open` is a property, not reflected (see the prop). The composed ds-popover is opened with `initial-focus=\"none\"`, so DatePicker moves focus to the selected day (or today) itself after the popover has opened, and calls the popover's `reposition()` once the grid has laid out. Composed `change` and `open-change`. The composed parts carry data-part on the ds-button and ds-select hosts themselves, with no wrapper span, because ds-popover's trigger slot must receive the button itself. The `popover` part is the exception: the ds-popover host also holds the trigger slot and so is never hidden, which no `closes` expectation could ever see, so part/data-part=\"popover\" goes on the calendar content wrapper inside it — the same element the web note names. ds-button has no focusable-while-disabled mode, so on Lit Today uses `disabled` and leaves the Tab cycle while today cannot be picked. ds-select closes its popup on Tab before the event bubbles, so the Tab trap ignores a Tab whose composed path includes a ds-select; the Selects are never the first or last stop, so native order holds the cycle there."
         },
         "rn": {
           "element": "TextInput",
@@ -11144,6 +11254,7 @@
         },
         "heading": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "The dialog's title, rendered as a level-2 Heading and used as the accessible name. Says what the task is (\"Rename project\").",
           "a11y": "aria-labelledby the heading; native accessibilityLabel on the Modal content."
@@ -11813,6 +11924,11 @@
           "default": false,
           "description": "Keep the panel in the tree while closed (hidden, not unmounted). Required when the panel contains form fields, so the Form still collects them while the disclosure is closed."
         },
+        "fullWidth": {
+          "type": "boolean",
+          "default": false,
+          "description": "The trigger spans the width of its row, so the whole row is the hit area (and the hover fill runs edge to edge) rather than ending at the summary text. The icon and summary stay at the start; the rest of the row is empty trigger. Web and Lit make the trigger a full-width block-level flex box (Lit: the host and the inner button both); native stretches the Pressable across its container. Accordion sets it on every section it renders."
+        },
         "headingLevel": {
           "type": "enum",
           "values": [
@@ -12020,7 +12136,8 @@
           "reflect": [
             "open",
             "disabled",
-            "keep-mounted"
+            "keep-mounted",
+            "full-width"
           ],
           "notes": "Shadow root with delegatesFocus; the summary is a property, the panel content is the default slot, and the slot is rendered only while open (with keep-mounted the slot is always rendered and its wrapper gets `hidden` while closed; the shadow styles set `display: none` explicitly on both `:host([hidden])` and `[data-part=panel][hidden]`, because the panel's own padding and display rules would otherwise override the attribute). Light-DOM children exist either way, so ds-form skips fields inside a closed ds-disclosure that lacks keep-mounted, matching the other platforms. `toggle` is a composed CustomEvent with detail { open, reason }. The name matches the native ToggleEvent (popover and details), a deliberate exception to the no-native-names rule: the native event does not bubble and ds-disclosure is never a popover, so the two cannot be confused. `open` is reflected so it can be styled and set from markup; markup can only express controlled open (a present attribute), because a missing attribute means uncontrolled, so a controlled closed state is set through the `open` property; the resolved state is readable as `currentOpen` (ds-form reads `currentOpen` and `keepMounted` to skip hidden fields); `heading-level` and `default-open` are attributes (`default-open` is not reflected). The chevron is `<ds-icon name=\"chevron-right\" inline>` (aria-hidden) inside the `triggerIcon` wrapper span, mirrored under `:dir(rtl)` as the icon binding describes. Hooks all live on `:host`, part-scoped bindings included, as on web."
         },
@@ -12671,6 +12788,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "What the feed contains (\"Activity\", \"Notifications\"). There is no default; an empty or whitespace-only label warns once per mount in development, with the wording \"Feed: label is the accessible name of the feed and must not be empty.\"",
           "a11y": "aria-label on the feed."
@@ -13391,6 +13509,7 @@
       "props": {
         "legend": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "The group's name — what the fields together describe (\"Shipping address\", \"Notification preferences\"). Always visible.",
           "a11y": "The accessible name of the group; screen readers read it before each field inside."
@@ -14145,6 +14264,7 @@
         },
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "description": "Accessible name for the form landmark, e.g. \"Sign in\". Required when a page has more than one form and `labelledBy` is not set. Nothing enforces this at runtime and no dev warning is emitted.",
           "a11y": "Rendered as aria-label so the form is a named region."
         },
@@ -14957,6 +15077,7 @@
         },
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "description": "Accessible name. When set (non-empty), the icon is meaningful and exposed as an image with this name; when omitted or empty, it is decorative and hidden from assistive technology — an empty string is the decorative case, not an authoring error. Most icons sit next to text and should have no label.",
           "a11y": "With label: role=img + aria-label (accessibilityRole image + accessibilityLabel, importantForAccessibility auto). Without: aria-hidden / accessibilityElementsHidden + importantForAccessibility no."
         },
@@ -15579,6 +15700,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "Visible label (visually hidden with `hideLabel`). Never replaced by a placeholder.",
           "a11y": "Programmatically associated with the field (label/for on web, accessibilityLabel on native)."
@@ -16266,6 +16388,7 @@
         },
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "description": "Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role (two navigations: \"Main\" and \"Footer\"). Not shown visually. An empty string counts as absent (no aria-label, and missing for the warnings). `banner`, `main` and `contentinfo` never take a label: on web and Lit one passed to them is not rendered and a development warning says so. On React Native the label is applied only to `navigation`, `region` and `form`; on any other role it is silently not applied, with no warning. `search` and `complementary` do take a label on web and Lit, and a page with two of either needs one.",
           "a11y": "Rendered as aria-label; the name is read together with the role (\"Main navigation, landmark\")."
         },
@@ -16809,6 +16932,7 @@
         },
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "The link text. Also the accessible name. Says where the link goes, not \"click here\"."
         },
@@ -16835,6 +16959,12 @@
             "web",
             "lit"
           ]
+        },
+        "current": {
+          "type": "boolean",
+          "default": false,
+          "description": "The link points at the page the user is on, in a navigation list (a SidePanel drawer, a Tree of href nodes): `aria-current=\"page\"` on the anchor on web and Lit, `accessibilityState.selected` on React Native (with the `aria-current=\"page\"` mirror on react-native-web, which drops accessibilityState), `.isSelected` on SwiftUI. The link stays a link and keeps its colours and underline; how a navigation also marks it visually is that container's to say. False writes nothing, so an `aria-current` a consumer passes through `...rest` on web (a `step` or `location`) still applies; while `current` is true the prop wins.",
+          "a11y": "The current page is announced, not shown by position or colour alone (WCAG 1.3.1, 4.1.2)."
         }
       },
       "events": {
@@ -16946,14 +17076,15 @@
             "rel",
             "download"
           ],
-          "notes": "A native <a href>. `external` sets target=\"_blank\" and rel=\"noopener noreferrer\". The visible label stays as-is; the external suffix is added in visually hidden text, not aria-label, so the accessible name still starts with the visible text. Link accepts no `className` or `style`: a composite that shows a link inside its own row uses `tone: inherit` and keeps the underline. The root <a> carries `data-ds=\"Link\"` and `data-part=\"anchor\"`, and those win: a parent never stamps its own `data-part` onto Link's root, it puts its part on a wrapper element it owns. The `label` part is a `<span data-part=\"label\">` holding the visible text inside the anchor (web and Lit); on native the root Text is the anchor and the label is its string content, with no element of its own. Lit shadow elements carry `part` as well as `data-part`, both the anatomy names: they are names tests read, not a styling surface. Locked bindings (the three colours and the focus ring bindings, which carry contrast and focus guarantees) get no `--ds-link-*` hook on web or Lit: their rules read the token directly, so consumer CSS cannot swap an accessibility-bearing colour. The visually hidden span that carries copy.externalSuffix is deliberately not an anatomy part: it is a naming device, not a visual piece, so it takes no data-part, no part and no hook on any platform, and nothing needs to address it. The external glyph is composed with no forwarded override at all: it takes its colour from the text around it (currentColor on web and Lit, the enclosing Text's colour on native), which is the one case in the package where a composed child is given nothing and inherits instead. Link never sets `aria-current`, but it does pass one through `...rest`: a navigation that marks its own current page is the consumer's to state. `external` writes its modifier class or attribute on both web and Lit even though no rule reads it, so the two platforms expose the same state to a consumer's own selectors. Example stories take their `given` as args over meta args that hold the schema defaults — and, since `href` and `label` are required with no default, those two as well; that still counts as exactly the `given`. `ToneDefault` renders standalone, with no surrounding paragraph: only `ToneInherit`, `InlineInAParagraph` and `InsideMutedText` are specified inside a sentence."
+          "notes": "A native <a href>. `external` sets target=\"_blank\" and rel=\"noopener noreferrer\". The visible label stays as-is; the external suffix is added in visually hidden text, not aria-label, so the accessible name still starts with the visible text. Link accepts no `className` or `style`: a composite that shows a link inside its own row uses `tone: inherit` and keeps the underline. The root <a> carries `data-ds=\"Link\"` and `data-part=\"anchor\"`, and those win: a parent never stamps its own `data-part` onto Link's root, it puts its part on a wrapper element it owns. The `label` part is a `<span data-part=\"label\">` holding the visible text inside the anchor (web and Lit); on native the root Text is the anchor and the label is its string content, with no element of its own. Lit shadow elements carry `part` as well as `data-part`, both the anatomy names: they are names tests read, not a styling surface. Locked bindings (the three colours and the focus ring bindings, which carry contrast and focus guarantees) get no `--ds-link-*` hook on web or Lit: their rules read the token directly, so consumer CSS cannot swap an accessibility-bearing colour. The visually hidden span that carries copy.externalSuffix is deliberately not an anatomy part: it is a naming device, not a visual piece, so it takes no data-part, no part and no hook on any platform, and nothing needs to address it. The external glyph is composed with no forwarded override at all: it takes its colour from the text around it (currentColor on web and Lit, the enclosing Text's colour on native), which is the one case in the package where a composed child is given nothing and inherits instead. Link sets `aria-current=\"page\"` only for `current`, and otherwise passes one through `...rest`: a navigation that marks some other kind of current item is the consumer's to state. `external` writes its modifier class or attribute on both web and Lit even though no rule reads it, so the two platforms expose the same state to a consumer's own selectors. Example stories take their `given` as args over meta args that hold the schema defaults — and, since `href` and `label` are required with no default, those two as well; that still counts as exactly the `given`. `ToneDefault` renders standalone, with no surrounding paragraph: only `ToneInherit`, `InlineInAParagraph` and `InsideMutedText` are specified inside a sentence."
         },
         "lit": {
           "tag": "ds-link",
           "reflect": [
             "tone",
             "external",
-            "download"
+            "download",
+            "current"
           ],
           "notes": "Wraps a native <a> in the shadow root with delegatesFocus. No custom event: the native click bubbles and retargets to the host. Consumers who intercept navigation call preventDefault on that click. A ds-link inside a ds-text paragraph is inline by default (display: inline). `href` and `label` are required but a property needs an initial value, so both start as '' and Link does not warn; an empty href is the consumer's authoring error (render Text instead). ds-link has no slot: the text comes only from `label`, so `<ds-link href>text</ds-link>` renders an unnamed anchor. An empty `href` still renders `href=\"\"` on the anchor rather than omitting the attribute, which would make it a non-link and drop it from the focus order. The tone colour rules are scoped `:host(:not([tone='inherit']))`, not `:host([tone='default'])`, so a link is coloured before the attribute reflects and for any value that is not `inherit`. `:host([hidden]) { display: none }` overrides the inline default, as elsewhere in the package."
         },
@@ -17052,6 +17183,23 @@
             {
               "attribute": "download",
               "is": "",
+              "platforms": [
+                "web",
+                "lit"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "current-marks-the-page",
+          "description": "current announces the link as the page the user is on: aria-current=\"page\" on the anchor (web, Lit), accessibilityState.selected on native.",
+          "given": {
+            "current": true
+          },
+          "then": [
+            {
+              "attribute": "aria-current",
+              "is": "page",
               "platforms": [
                 "web",
                 "lit"
@@ -17164,7 +17312,7 @@
       "Overview": "Links take people somewhere. Buttons do things. That distinction is the whole reason this component exists: assistive technology lists links separately, users expect middle-click and open-in-new-tab to work on them, and the browser's history, visited state and find-in-page all depend on the element being a real link.",
       "When to use": "Use a Link for any navigation: to another page, to a screen, to an anchor within the page, to an external site, or to a downloadable file. Use it inline inside body text (it renders inline by default) and standalone in navigation lists. Use `external` whenever the destination leaves the product, so people are warned before they lose their place.",
       "When not to use": "Do not use a Link to trigger an action — submitting, opening a dialog, toggling a setting — even if it looks lighter than a Button. Use the `ghost` Button variant for that. Do not remove the underline; underline-free links in body text are a WCAG 1.4.1 failure unless the link color contrasts 3:1 with the surrounding text *and* changes on hover, which no theme in this system promises. Do not render a Link with an empty `href` as a placeholder; render Text.",
-      "Behavior": "A Link has no typography of its own: it inherits font family, size, weight and line height from the text it sits in, so it looks right inside a paragraph, a caption, or a breadcrumb without configuration. Standalone, it inherits from the page body.\n\nActivation with pointer, Enter, or assistive technology navigates to `href`. `onPress` fires first; on web the consumer may prevent the default to route client-side, and on native the consumer's handler is the navigation (an `external` link still hands off to the system afterwards unless the handler returns `false`). With `external`, web opens a new tab and native hands the URL to the system. `download` asks the browser to save rather than open and does nothing on native. The link is never disabled: a destination that is not available is not rendered as a link. Link has no current-page state and forwards no `aria-current`; the current item of a navigation (Breadcrumb''s last item, a drawer''s current page) is rendered as Text, not as a Link.",
+      "Behavior": "A Link has no typography of its own: it inherits font family, size, weight and line height from the text it sits in, so it looks right inside a paragraph, a caption, or a breadcrumb without configuration. Standalone, it inherits from the page body.\n\nActivation with pointer, Enter, or assistive technology navigates to `href`. `onPress` fires first; on web the consumer may prevent the default to route client-side, and on native the consumer's handler is the navigation (an `external` link still hands off to the system afterwards unless the handler returns `false`). With `external`, web opens a new tab and native hands the URL to the system. `download` asks the browser to save rather than open and does nothing on native. The link is never disabled: a destination that is not available is not rendered as a link. A link in a navigation list that points at the page the user is on sets `current`, which every platform announces; it stays a link. Where a pattern renders its current item as plain text instead (Breadcrumb's last item), that is the pattern's choice, not Link's.",
       "Content guidelines": "Link text describes the destination and makes sense out of context, because screen-reader users navigate by pulling up a list of links: \"View the billing history\", not \"click here\" or \"more\". Keep links short and do not link whole sentences. When an external link's text is a product name, that is enough — the external suffix already says it leaves. Do not repeat \"(opens in new tab)\" in the visible text; the component adds it to the accessible name.",
       "Accessibility": "The accessible name is the visible text (WCAG 2.4.4, 2.5.3), plus `copy.externalSuffix` for external links. Links are distinguishable from surrounding text by the underline, not by color alone (1.4.1). Link color meets 4.5:1 on the page background in both modes for the rest, hover and visited colors (1.4.3); the build checks all three. Focus is visible with the focus ring (2.4.7); because links are inline, the ring uses `focusRingRadius` and follows the text box rather than the line box. Links are keyboard operable with Enter (2.1.1), which the native anchor does on every platform — there is no `keyboard` block, because there is nothing for a generator to write. Link declares no minimum target and is exempt from the 24px floor (2.5.8): a link is inline text sized by its own words, and WCAG's inline exception covers exactly that case. Where a link is the whole of an interactive row rather than a word in a sentence — an error-summary entry, a card target — the container owns the target, not the Link. Opening a new tab is a change of context that the user is warned about in advance (3.2.5).",
       "Platform notes": "### Web\nRender `<a href>` with the visible label as content. For `external`, render, in order: the label, a visually hidden `<span>` containing `copy.externalSuffix`, then the decorative icon: a `<span data-part=\"externalIcon\">` wrapper carrying the `externalIconGap` margin, containing the system `<Icon name=\"external\" inline />` with no label (so it hides itself). Icon's `inline` sizes it at 1em of the surrounding text, and its color is currentColor, so it follows the anchor's rest, hover and visited colors; no hand-drawn SVG. The visually hidden span uses the standard clip pattern (position absolute, 1px box, margin -1px, overflow hidden, border 0, clip-path inset(50%), white-space nowrap; no legacy clip: rect) — the one place where 1px literals are sanctioned. `font: inherit` on the anchor. Prefer `text-underline-offset` and `text-decoration-thickness` from the tokens over border tricks so the underline behaves in wrapped text.\n\n### Lit\n`<ds-link>` hosts a shadow root with `delegatesFocus: true` and a native `<a>` inside. Do not dispatch a CustomEvent named `click`; the native click retargets to the host and consumers listen for it there. The host defaults to `display: inline` so it can sit inside a `<ds-text>` paragraph; reflect `tone` and `external` so consumers can style from outside.\n\n### React Native\nRender `Text` with `accessibilityRole=\"link\"` and `accessibilityLabel` (label plus the external suffix when `external`). Nested inside a parent `Text` it flows inline; standalone it is its own line. `onPress(href)` is the navigation when provided; otherwise call `Linking.openURL(href)`. The one exception is `external`: after the handler runs, Link still calls `Linking.openURL(href)` unless the handler returned `false`. Standalone, the Link sets the body typography (`font.size.md`, `font.weight.regular`, `font.lineHeight.normal` via Text's helpers) since there is no cascade; nested in the system Text it inherits, which Text signals through its exported `TextStyleContext` (its `nested` field; there is no `TextNestingContext`) — inside a raw RN Text the Link is standalone. Put a single space before the external glyph, since nested Text ignores margins. Platform limits, all acknowledged: no visited state (`colorVisited` unused), no hover (`colorHover` is the pressed color), no underline offset or thickness, and no focus events on `Text`, so the focus ring is the platform's own — `focusRing*` bindings are not applied.",
@@ -17215,6 +17363,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "Accessible name of the list. When a visible Text label exists, pass its id via `labelledBy` as well; on web `aria-labelledby` then wins. Always pass `label` even with `labelledBy`: it is the `{label}` in `copy.required` and `copy.invalid` on every platform, and on Lit it is always the list's `aria-label`, because an id outside the shadow root cannot be referenced."
         },
@@ -17278,6 +17427,14 @@
         "initialActiveValue": {
           "type": "string",
           "description": "The option that is active when the list first receives focus (Select opens with the selected option active). It wins when it names an enabled option; otherwise the first selected, else the first enabled. When it changes while the list has no focus (Combobox updates it as the user types), the active option (native: the pre-highlight) moves to it without firing `onActiveChange`. \"No focus\" is measured on the list element, not on the page: the test is that the list does not contain the active element (on Lit, that its shadow root's `activeElement` is not the list), so a list driven by a host that holds focus itself — Select, Combobox, Search — always follows the new value."
+        },
+        "activeValue": {
+          "type": "union",
+          "shape": "string | null",
+          "description": "The active option, driven by a host that keeps focus on its own trigger or input and forwards keys (Select, Combobox, Search). Set, it wins over `initialActiveValue` and needs no focus in the list: the active background and `aria-activedescendant` follow it, and `null` means no option is active (how a host clears the highlight, instead of remounting the list). Keys the host forwards move nothing on their own while it is set; they report the option they would make active through `onActiveChange`, and the host passes that value back. Omitted, the list owns the active option as before. The ids a host points `aria-activedescendant` at are the ones the platform notes give (web `${id}-option-${value}`; Lit instance-scoped and index-based, reached by `data-value`). On React Native, where every row is its own stop and there is no highlight to drive, it pre-highlights a row exactly as `initialActiveValue` does.",
+          "controls": {
+            "event": "onActiveChange"
+          }
         },
         "loading": {
           "type": "boolean",
@@ -18137,7 +18294,7 @@
       "Behavior": "The list is one tab stop. Arrow keys move the active option and, in single-select with `selectionFollowsFocus`, select it; Space selects or toggles, Enter selects; Home/End and PageUp/PageDown jump; typing letters moves to the matching label. In `multiple`, each option shows a check, Space toggles, Shift+Arrow extends, Ctrl/Cmd+A selects all, and `onChange` receives the array in option order. Disabled options are visible, announced, skipped by arrows and not selectable. The active option is always scrolled into view; the list scrolls after `maxVisible` rows. When `options` is empty, `emptyMessage` shows and the list is still focusable so a Combobox user hears \"No options\". Inside a Form, `name` collects the value (array for `multiple`) and `required` fails when nothing is selected. Arrow keys clamp at the first and last enabled option (no wrapping; Home and End reach the ends). Home, End, PageUp/PageDown and type-ahead follow `selectionFollowsFocus` exactly as the arrows do. When no option is active yet (keys forwarded by a Combobox before the list was focused), ArrowDown and PageDown land on the first enabled option, ArrowUp and PageUp on the last, and Space and Enter act on the resolved initial option (`initialActiveValue`, else the first selected, else the first enabled). Enter selects only in single-select (a no-op with `multiple`, where Space toggles). Rows are `max(minTarget, fontSize × lineHeight + 2 × optionPaddingBlock)` tall (native adds the reserved `2 × focusRingWidth`), computed from tokens and never measured, which is what `maxVisible` and PageUp/PageDown count. Option icons and the check render at Icon `size: sm`; the check's color reaches it as Icon `overrides.color` = `optionSelectedCheck`, and the `optionIcon` takes `optionColor` the same way, so it matches its row's label on every platform (there is no `currentColor` on native). An option's description has its own id and the option points at it with `aria-describedby` (web, Lit). The empty/loading row uses `optionPaddingBlock` and `optionPaddingInline`, so it lines up with the rows. It is a real accessibility stop only on React Native; on web and Lit it is hidden from assistive technology and linked as the list's `aria-describedby`, because a role=listbox may own only options and groups, so the focusable empty list still announces \"No options\". Empty groups are omitted. The error message is Text `size: sm`, `tone: danger` below the list, `partGap` from it; besides the listed props every composed part gets its `data-part` hook, both the emptyState and errorMessage Texts render as `element=\"p\"`, and the error Text also gets the id `aria-describedby` points at. Those two Texts also receive the root `fontFamily` and `lineHeight` as their own overrides — not `fontSize`, since each carries its own `size` — so a host that overrides the typeface (Select passes its own into the embedded list) gets the message and the rows in one typeface. The Default story's args are the `single-picker` example on every platform. Without `name` the list submits nothing to a Form.",
       "Content guidelines": "Option labels are short, unique within the list, sentence case, no trailing punctuation; use `description` for the second line rather than a longer label. Group labels are one or two words. The empty message states the situation, not an instruction (\"No matching people\", not \"Try another search\"). When the list is multi-select, the surrounding UI shows `copy.selectedCount` or the selected items.",
       "Accessibility": "Role `listbox` with a name, `aria-multiselectable` when `multiple`, options with `aria-selected`, groups with names (WCAG 4.1.2; APG listbox). One tab stop with arrow navigation and typeahead; the active option is announced via `aria-activedescendant` while DOM focus stays on the list (or, in Combobox, on the input). Selected and active states are visually distinct — check mark and weight for selected (weight alone in single-select), background for active — so neither is color alone (1.4.1) and a sighted keyboard user can tell \"where I am\" from \"what I chose\". Options meet 24px (2.5.8) and text meets AA on both the surface and the active background; the check meets 3:1.",
-      "Platform notes": "### Web\n`<div role=\"listbox\" tabindex=\"0\" aria-label|aria-labelledby aria-multiselectable aria-activedescendant={activeId}>` containing `<div role=\"group\" aria-labelledby>` and `<div role=\"option\" id aria-selected aria-disabled>` rows with, only when `multiple`, `<Icon name=\"check\">` (invisible when unselected, so labels align), optional `<Icon>`, label and description. Keydown on the list implements the table; `pointermove` over an option sets it active; click selects. Scroll the active option into view with `block: 'nearest'`. There is no separate `useListbox` hook: a host (Combobox, Select) forwards its keys by dispatching `keydown` (and `focusin` to activate) on the Listbox ref. The role=listbox div sits inside a root wrapper div (data-ds, data-ds-field) that also holds the error Text after it. `id` goes on the role=listbox list (hosts build `${id}-option-${value}` and `aria-controls` from it); `ref` and the remaining DOM props go on the wrapper, and keydown/focus/blur are handled on the wrapper so events dispatched on the ref arrive. Form registration as Input, with `getValue` returning the string in single-select and the array for `multiple`.\n\n### Lit\n`<ds-listbox label=\"Assignees\" multiple .options=${…}>`; form-associated (`setFormValue(FormData)` for multiple, string otherwise); `aria-activedescendant` between shadow siblings; composed `change` and `active-change`. Expose a `handleKey(event)` method and `activeValue` for `ds-combobox`.\n\n### React Native\n`FlatList` of `Pressable` rows with `accessibilityRole=\"menuitem\"`, `accessibilityState={{ selected, checked: multiple ? selected : undefined, disabled }}`, and `accessibilityLabel` = label plus description — on react-native-web the listbox/option contract and real ARIA attributes instead, per the platform notes. `maxVisible` becomes `maxHeight`. Groups are plain `Text` rows (not the header trait, which would enter the headings rotor). No activedescendant on native; each row is a stop. Form registration as Input.",
+      "Platform notes": "### Web\n`<div role=\"listbox\" tabindex=\"0\" aria-label|aria-labelledby aria-multiselectable aria-activedescendant={activeId}>` containing `<div role=\"group\" aria-labelledby>` and `<div role=\"option\" id aria-selected aria-disabled>` rows with, only when `multiple`, `<Icon name=\"check\">` (invisible when unselected, so labels align), optional `<Icon>`, label and description. Keydown on the list implements the table; `pointermove` over an option sets it active; click selects. Scroll the active option into view with `block: 'nearest'`. There is no separate `useListbox` hook: a host (Combobox, Select) forwards its keys by dispatching `keydown` on the Listbox ref and drives the active option through `activeValue`. The role=listbox div sits inside a root wrapper div (data-ds, data-ds-field) that also holds the error Text after it. `id` goes on the role=listbox list (hosts build `${id}-option-${value}` and `aria-controls` from it); `ref` and the remaining DOM props go on the wrapper, and keydown/focus/blur are handled on the wrapper so events dispatched on the ref arrive. Form registration as Input, with `getValue` returning the string in single-select and the array for `multiple`.\n\n### Lit\n`<ds-listbox label=\"Assignees\" multiple .options=${…}>`; form-associated (`setFormValue(FormData)` for multiple, string otherwise); `aria-activedescendant` between shadow siblings; composed `change` and `active-change`. Expose a `handleKey(event)` method and `activeValue` for `ds-combobox`.\n\n### React Native\n`FlatList` of `Pressable` rows with `accessibilityRole=\"menuitem\"`, `accessibilityState={{ selected, checked: multiple ? selected : undefined, disabled }}`, and `accessibilityLabel` = label plus description — on react-native-web the listbox/option contract and real ARIA attributes instead, per the platform notes. `maxVisible` becomes `maxHeight`. Groups are plain `Text` rows (not the header trait, which would enter the headings rotor). No activedescendant on native; each row is a stop. Form registration as Input.",
       "Related": "Select, Combobox, RadioGroup, Checkbox, Menu."
     },
     "extensions": [],
@@ -18171,6 +18328,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "The trigger's label and the menu's accessible name (\"More actions\", \"Sort by\").",
           "a11y": "The accessible name of the trigger, and of the menu: in trigger mode the popup is named `aria-labelledby` the trigger (which this string names), and in `anchor` mode — and on Lit, where an idref cannot reach a slotted trigger — it is this string as the popup's `aria-label`. The two agree as long as the trigger keeps a name of its own, which an `iconOnly` Button takes from this prop."
@@ -18683,7 +18841,7 @@
             "placement",
             "icon-only"
           ],
-          "notes": "Uses the Popover API (popover=\"manual\", showPopover()) for top-layer rendering without a portal, with a position: fixed fallback; anchor positioning is computed from the trigger rect. `items` is a property. Composed `action` (detail { id }) and `open-change` (detail { open, reason }, the same payload as every other platform — the reason is not dropped here). The trigger is a <ds-button> in the shadow root; focus delegation lands on it. The menu surface is named with aria-label from the trigger's text (or the `label` property when given): aria-labelledby cannot reach a slotted trigger from the shadow root. `<ds-button>` forwards only `expanded` to its inner <button>, and an IDREF cannot cross its shadow root, so on Lit the trigger exposes aria-expanded only — aria-haspopup and aria-controls are waived here; the popup's role=\"menu\" and its aria-label carry the relationship. As on web, one element is both parts: `role=\"menu\"` with `data-part=\"popup\"` and `part=\"popup list\"`. That is the only `part` attribute, and deliberately so: trigger, group, groupLabel, item, itemIcon, itemShortcut and separator carry `data-part` only, because Menu's internals are styled through the override hooks rather than `::part()`. The trigger part is an overlay-owned wrapper element carrying `data-part=\"trigger\"` around the ds-button. `anchor` is a property (the element), not an attribute, handed over with the `ref` directive or set imperatively after first render. `open` reflects the controlled property only: an uncontrolled menu keeps its state internally and never writes the attribute, so `ds-menu[open]` matches controlled menus alone — reflecting the internal state would write back into the property and turn every menu controlled. Focus leaving the host, or the window losing focus, closes with reason `focus-out`."
+          "notes": "Uses the Popover API (popover=\"manual\", showPopover()) for top-layer rendering without a portal, with a position: fixed fallback; anchor positioning is computed from the trigger rect. `items` is a property. Composed `action` (detail { id }) and `open-change` (detail { open, reason }, the same payload as every other platform — the reason is not dropped here). The trigger is a <ds-button> in the shadow root; focus delegation lands on it. The menu surface is named with aria-label from the trigger's text (or the `label` property when given): aria-labelledby cannot reach a slotted trigger from the shadow root. `<ds-button>` forwards `expanded` and `haspopup` to its inner <button>, and an IDREF cannot cross its shadow root, so on Lit the trigger exposes aria-expanded and aria-haspopup=\"menu\" (`.haspopup=\"menu\"`) — aria-controls is waived here; the popup's role=\"menu\" and its aria-label carry the relationship. As on web, one element is both parts: `role=\"menu\"` with `data-part=\"popup\"` and `part=\"popup list\"`. That is the only `part` attribute, and deliberately so: trigger, group, groupLabel, item, itemIcon, itemShortcut and separator carry `data-part` only, because Menu's internals are styled through the override hooks rather than `::part()`. The trigger part is an overlay-owned wrapper element carrying `data-part=\"trigger\"` around the ds-button. `anchor` is a property (the element), not an attribute, handed over with the `ref` directive or set imperatively after first render. `open` reflects the controlled property only: an uncontrolled menu keeps its state internally and never writes the attribute, so `ds-menu[open]` matches controlled menus alone — reflecting the internal state would write back into the property and turn every menu controlled. Focus leaving the host, or the window losing focus, closes with reason `focus-out`."
         },
         "rn": {
           "element": "Modal",
@@ -19171,6 +19329,7 @@
         },
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "Visible label naming the measurement (\"Storage used\"). Also the accessible name. Lit starts the property as an empty string, with no development warning.",
           "a11y": "Associated with the meter as its accessible name (aria-labelledby / accessibilityLabel)."
@@ -19617,6 +19776,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "Visible label.",
           "a11y": "label/for on the input; accessibilityLabel on native."
@@ -20538,6 +20698,16 @@
           "type": "boolean",
           "default": true,
           "description": "Show the close button. Escape and outside click work regardless (non-modal), so this is a visibility switch, not Dialog's \"must be answered\" rule: with it false there is simply no close button."
+        },
+        "initialFocus": {
+          "type": "enum",
+          "values": [
+            "first",
+            "none"
+          ],
+          "default": "first",
+          "description": "Where focus goes on open, after Dialog's prop of the same name. `first` (default) is the first control, in the order Behavior gives. `none` moves no focus: a composing component that opens the popover on content it owns focuses its own element once the panel is shown (DatePicker focuses the selected day, or today), and until it does focus stays on the trigger — with `modal` that is outside the trap, so a composer that passes `none` must move focus in. Everything else is unchanged: Tab and Shift+Tab out, Escape and focus restore behave as with `first`. No effect in the React Native phone presentation, where the BottomSheet always takes focus.",
+          "a11y": "Focus must land inside an open popover; with `none` the composer, not the popover, owns that move."
         }
       },
       "events": {
@@ -20788,9 +20958,10 @@
               "prop": "dismissible",
               "attribute": "no-dismiss"
             },
-            "heading-level"
+            "heading-level",
+            "initial-focus"
           ],
-          "notes": "Slots: `trigger` and default. The panel renders in the shadow root with the Popover API (top layer, no z-index issues) or a fixed fallback. aria-controls cannot cross the shadow boundary, so the slotted trigger gets expanded state — its `expanded` property when it has one (ds-button, whose inner <button> carries the role, ignores aria-expanded on the host), aria-expanded otherwise — and the panel is named by `heading` (aria-label) or the trigger's name copied into aria-label, read from the trigger's aria-label, then its `accessibleName`, then its `label`, then its textContent. The panel follows the trigger slot in the tab order, so Tab from the last element prevents default and focuses the first focusable element after the host (the trigger if there is none) without waiting for `open` to go false; \"focusable\" there is FocusScope's walker run over the document in DOM order (descending open shadow roots and slots, skipping disabled, inert, aria-hidden and tabindex=-1 elements; a positive tabindex is not reordered) — the walk is FocusScope's own exported `focusableIn`, shared API rather than a per-component reimplementation, since a Popover that resolved first and last differently from the FocusScope trapping the same panel would be a live bug. Shift+Tab from the first element prevents default and focuses the trigger; in both directions focus moves before `open-change` fires. The close button's glyph is `<ds-icon name=\"close\">` in ds-button's `leading-icon` slot, since ds-button has no leadingIcon property. Every composed part (heading, body, close button) is a popover-owned wrapper element carrying `data-part`; tabindex -1 goes on the <ds-heading> itself and the heading wrapper draws the ring with `:has(:focus-visible)`. `focusScope` is the exception: a composed part that is itself a wrapper component takes the `data-part` (and `part`) on its own <ds-focus-scope> host rather than getting a second wrapper. `open` reflects the controlled property only — an uncontrolled popover keeps its state internally and never writes the attribute, so a consumer that sets and then removes the attribute has made the popover controlled, which is the documented meaning of setting it. A panel `data-side` holds the resolved physical side, as on web. Composed `open-change`."
+          "notes": "Slots: `trigger` and default. The panel renders in the shadow root with the Popover API (top layer, no z-index issues) or a fixed fallback. aria-controls cannot cross the shadow boundary, so the slotted trigger gets expanded state — its `expanded` property when it has one (ds-button, whose inner <button> carries the role, ignores aria-expanded on the host), aria-expanded otherwise — and the panel is named by `heading` (aria-label) or the trigger's name copied into aria-label, read from the trigger's aria-label, then its `accessibleName`, then its `label`, then its textContent. The panel follows the trigger slot in the tab order, so Tab from the last element prevents default and focuses the first focusable element after the host (the trigger if there is none) without waiting for `open` to go false; \"focusable\" there is FocusScope's walker run over the document in DOM order (descending open shadow roots and slots, skipping disabled, inert, aria-hidden and tabindex=-1 elements; a positive tabindex is not reordered) — the walk is FocusScope's own exported `focusableIn`, shared API rather than a per-component reimplementation, since a Popover that resolved first and last differently from the FocusScope trapping the same panel would be a live bug. Shift+Tab from the first element prevents default and focuses the trigger; in both directions focus moves before `open-change` fires. The close button's glyph is `<ds-icon name=\"close\">` in ds-button's `leading-icon` slot, since ds-button has no leadingIcon property. Every composed part (heading, body, close button) is a popover-owned wrapper element carrying `data-part`; tabindex -1 goes on the <ds-heading> itself and the heading wrapper draws the ring with `:has(:focus-visible)`. `focusScope` is the exception: a composed part that is itself a wrapper component takes the `data-part` (and `part`) on its own <ds-focus-scope> host rather than getting a second wrapper. `open` reflects the controlled property only — an uncontrolled popover keeps its state internally and never writes the attribute, so a consumer that sets and then removes the attribute has made the popover controlled, which is the documented meaning of setting it. A panel `data-side` holds the resolved physical side, as on web. Composed `open-change`. Slotted content can lay out after the panel opens (DatePicker's grid), which the scroll and resize listeners never see, so ds-popover exposes a public `reposition()` method that re-measures and re-places the open panel; a composer calls it rather than dispatching a synthetic `scroll`."
         },
         "rn": {
           "element": "Modal",
@@ -21048,6 +21219,30 @@
         "derived": true
       },
       {
+        "name": "renders-initial-focus-first",
+        "given": {
+          "initialFocus": "first"
+        },
+        "then": [
+          {
+            "renders": true
+          }
+        ],
+        "derived": true
+      },
+      {
+        "name": "renders-initial-focus-none",
+        "given": {
+          "initialFocus": "none"
+        },
+        "then": [
+          {
+            "renders": true
+          }
+        ],
+        "derived": true
+      },
+      {
         "name": "has-accessible-name",
         "then": [
           {
@@ -21081,7 +21276,7 @@
       "Overview": "A popover is a small panel that appears next to the thing you clicked and stays out of the way of everything else. It is for content that needs interaction but not the whole screen: pick a date, choose a color, adjust two settings, read a help note with a link. Unlike a Tooltip it can contain controls; unlike a Dialog it does not take over the page.",
       "When to use": "Use a Popover for a compact interactive panel tied to a trigger: a date picker under a date field, a color swatch, a filter panel behind a \"Filters\" button, a share panel, contextual help with a link. Use `modal` when the panel contains a required step (a short form that must be submitted or cancelled). Use `heading` when the content is not obvious from the trigger.",
       "When not to use": "Do not use a Popover for text-only hints (Tooltip), for a list of actions (Menu), for a list of options (Select/Combobox), or for anything that needs more than a small panel's worth of content or must be completed before continuing (Dialog). Do not nest popovers. Do not open one on hover.",
-      "Behavior": "The trigger toggles the popover; opening positions the panel at `placement`, flipping or shifting to stay in view, moves focus to the first control, and marks the trigger expanded. The first control is the first focusable element in the body, then the close button, then the heading (made focusable with tabindex -1), then the panel itself. The close button is labelled `copy.closeLabel` and keeps Button's own ghost colors. Non-modal: the page stays live; Escape, the close button, a click outside, and tabbing past the last element close it; Shift+Tab from the first element returns to the trigger and closes. There is no focusout listener on any platform: the overlay block's `focus-out` is realized by the Tab and Shift+Tab handlers, reported as `tab-out`, and `outside-press` is reported as `outside`; focus moved out programmatically leaves the popover open. Modal: the panel is a small Dialog — trapped focus, inert page, Escape and close only. Closing by the trigger, Escape or the close button returns focus to the trigger as soon as `open` goes false; an outside press leaves focus where the press put it, and Tab out moves it to the element after the trigger. When a controlled consumer sets `open` false with no reason from the popover, focus returns to the trigger only if it is inside the panel at that moment; otherwise it stays where it is. A modal popover's `close()` has by then moved focus to the document body, so the body counts as inside for this test — Escape and the close button still restore focus on a modal popover. FocusScope's `active` follows `open`, so from the moment `open` is false a panel still mounted for its exit transition never pulls focus back. The panel repositions on scroll and resize while open.\n\nInitial focus uses the order above (body control, close button, heading, panel). The keyboard rules' \"first\" and \"last element in the panel\" mean something else: the first and last tabbable elements in panel DOM order, where the header row (with the close button) comes before the body, so with a close button Shift+Tab-out starts from the close button. With no tabbable element in the panel (focus on the heading or the panel itself), non-modal Tab closes as a Tab out past the last element and Shift+Tab closes as a Shift+Tab back to the trigger, both reported `tab-out`; a modal panel keeps focus where it is. A modal popover's native <dialog> may raise `cancel` on Escape before focus has moved in, or close without a `cancel` at all; both are reported as `escape`, and if the consumer still holds `open` true the dialog is shown again.\n\nThe parts get wiring every platform passes, not composition props: the Heading's id (web), ref and tabindex -1 for naming and the focus fallback; the close Button's `label` from `copy.closeLabel`, its system Icon `close` glyph and its press handler; the trigger's expanded state, controls link and toggle handler.\n\nThe Default story is open, with the filter-panel example's args, so the derived scenarios (accessible name, renders) find the named panel; the derived accessible-name scenario targets the panel, not the trigger. Every story except the examples — Default, Keyboard, the gates, and the enum and state stories (headingLevel, placement, modal, showArrow, dismissible), whose difference is only visible open — renders through a wrapper that owns `open`, starting true, and writes `onOpenChange` back into it, acting as the consumer; there is no meta-level open wrapper. Example stories read as if they started from blank args: Storybook merges `meta.args` into every story, so each example writes out every prop it needs at its schema default instead (date-picker-panel and contextual-help set `heading` back to undefined), and since no example gives `open`, the four examples render closed and uncontrolled, which is intended; the uncontrolled popover always starts closed. The boolean state stories are named for the effect, not the prop and value: `Modal`, `WithArrow` and `NotDismissible` on every platform — where React already named a story for the effect, parity wins over the `<Prop><Value>` reading.",
+      "Behavior": "The trigger toggles the popover; opening positions the panel at `placement`, flipping or shifting to stay in view, moves focus to the first control (unless `initialFocus` is `none`), and marks the trigger expanded. The first control is the first focusable element in the body, then the close button, then the heading (made focusable with tabindex -1), then the panel itself. The close button is labelled `copy.closeLabel` and keeps Button's own ghost colors. Non-modal: the page stays live; Escape, the close button, a click outside, and tabbing past the last element close it; Shift+Tab from the first element returns to the trigger and closes. There is no focusout listener on any platform: the overlay block's `focus-out` is realized by the Tab and Shift+Tab handlers, reported as `tab-out`, and `outside-press` is reported as `outside`; focus moved out programmatically leaves the popover open. Modal: the panel is a small Dialog — trapped focus, inert page, Escape and close only. Closing by the trigger, Escape or the close button returns focus to the trigger as soon as `open` goes false; an outside press leaves focus where the press put it, and Tab out moves it to the element after the trigger. When a controlled consumer sets `open` false with no reason from the popover, focus returns to the trigger only if it is inside the panel at that moment; otherwise it stays where it is. A modal popover's `close()` has by then moved focus to the document body, so the body counts as inside for this test — Escape and the close button still restore focus on a modal popover. FocusScope's `active` follows `open`, so from the moment `open` is false a panel still mounted for its exit transition never pulls focus back. The panel repositions on scroll and resize while open.\n\nInitial focus uses the order above (body control, close button, heading, panel). The keyboard rules' \"first\" and \"last element in the panel\" mean something else: the first and last tabbable elements in panel DOM order, where the header row (with the close button) comes before the body, so with a close button Shift+Tab-out starts from the close button. With no tabbable element in the panel (focus on the heading or the panel itself), non-modal Tab closes as a Tab out past the last element and Shift+Tab closes as a Shift+Tab back to the trigger, both reported `tab-out`; a modal panel keeps focus where it is. A modal popover's native <dialog> may raise `cancel` on Escape before focus has moved in, or close without a `cancel` at all; both are reported as `escape`, and if the consumer still holds `open` true the dialog is shown again.\n\nThe parts get wiring every platform passes, not composition props: the Heading's id (web), ref and tabindex -1 for naming and the focus fallback; the close Button's `label` from `copy.closeLabel`, its system Icon `close` glyph and its press handler; the trigger's expanded state, controls link and toggle handler.\n\nThe Default story is open, with the filter-panel example's args, so the derived scenarios (accessible name, renders) find the named panel; the derived accessible-name scenario targets the panel, not the trigger. Every story except the examples — Default, Keyboard, the gates, and the enum and state stories (headingLevel, placement, modal, showArrow, dismissible), whose difference is only visible open — renders through a wrapper that owns `open`, starting true, and writes `onOpenChange` back into it, acting as the consumer; there is no meta-level open wrapper. Example stories read as if they started from blank args: Storybook merges `meta.args` into every story, so each example writes out every prop it needs at its schema default instead (date-picker-panel and contextual-help set `heading` back to undefined), and since no example gives `open`, the four examples render closed and uncontrolled, which is intended; the uncontrolled popover always starts closed. The boolean state stories are named for the effect, not the prop and value: `Modal`, `WithArrow` and `NotDismissible` on every platform — where React already named a story for the effect, parity wins over the `<Prop><Value>` reading.",
       "Content guidelines": "Headings are short noun phrases naming the panel's purpose (\"Filters\", \"Pick a color\"). Content fits without scrolling; a popover that scrolls is a Dialog or a page. Keep one primary action, placed last.",
       "Accessibility": "The panel is a `dialog` named by its heading or trigger, and the trigger exposes `aria-expanded` and `aria-controls` (WCAG 4.1.2; APG non-modal dialog guidance). Focus moves in on open and back to the trigger on close (2.4.3); Escape always closes (2.1.2). Non-modal popovers do not trap focus — Tab leaves them — so keyboard users are never stuck, and modal ones use FocusScope with the inert page like Dialog. Contrast on the overlay surface is checked in both modes; motion respects reduced-motion; the close button meets 24px.",
       "Platform notes": "### Web\nClone the trigger with `aria-expanded`, `aria-controls={panelId}` and an `onClick` toggle. Render the panel through a portal: `<div role=\"dialog\" id aria-labelledby>` with `position: fixed`, computed from the trigger's rect for `placement` (flip when overflowing, shift along the cross axis), `z-index: var(--layer-dropdown)`, `max-inline-size` from the token, wrapped in `FocusScope trapped={modal} autoFocus=\"none\" restoreFocus={false} active={open}` (the component focuses the first control and restores focus itself). Non-modal: `pointerdown` on document outside panel and trigger closes; there is no `focusout` listener; keydown Tab on the last focusable element closes, focuses the trigger and lets the Tab continue; Shift+Tab on the first focuses the trigger and closes. Modal: render inside a `<dialog>` opened with `showModal()` and positioned at the trigger. Optional arrow as a rotated square `<span aria-hidden>` on the `data-side` edge.\n\n### Lit\n`<ds-popover placement=\"bottom-start\"><ds-button slot=\"trigger\" label=\"Filters\"></ds-button><div>…</div></ds-popover>`; the panel uses `popover=\"manual\"` and `showPopover()` with fixed positioning as fallback; composes `<ds-focus-scope>`, `<ds-heading>`, `<ds-button>`; composed `open-change`.\n\n### React Native\nPhones (window width <= the `breakpoint` token): render `BottomSheet` with `height=\"content\"`, `heading={heading ?? trigger accessibleName ?? trigger label}`. Tablets / react-native-web: a transparent `Modal` whose backdrop `Pressable` closes (unless `modal`) and whose panel `View` is positioned from `measureInWindow()`, wrapped in `FocusScope`. The trigger `Button` gets `accessibilityState={{ expanded }}`.",
@@ -21140,6 +21335,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "What is progressing (\"Uploading photos\", \"Importing contacts\"). Visible unless `hideLabel`.",
           "a11y": "The accessible name: aria-labelledby on web, aria-label on the Lit host (ids do not cross the shadow root), accessibilityLabel on React Native. An empty label leaves the bar unnamed, with no development warning."
@@ -21683,6 +21879,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "The group's legend — the question the options answer. Always visible.",
           "a11y": "Rendered as the fieldset legend on web; as the group's accessibilityLabel on native."
@@ -22422,6 +22619,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "The accessible name (\"Search products\", \"Search this site\"). Visually hidden by default — the glyph and placeholder are the visible cue.",
           "a11y": "label/for on the input, visually hidden unless `showLabel`."
@@ -23082,6 +23280,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "Accessible name of the control (\"View mode\"). Not shown; put a visible Text label beside it when the meaning is not obvious from context. Lit, where an attribute can be absent, defaults the property to an empty string and warns in development when it is empty; React and React Native rely on the required type and do not warn, even for an empty string."
         },
@@ -23840,6 +24039,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "Visible label. Always rendered.",
           "a11y": "Associated with the trigger (label/for on web; accessibilityLabel on native)."
@@ -24199,7 +24399,7 @@
         "fontWeight": {
           "token": "font.weight.regular",
           "part": "value",
-          "description": "Weight of the trigger's value text only. Options keep Listbox's own weights (optionSelectedWeight), since Listbox has no plain option-weight binding to forward into. It exists as an override seam for composites that set their own header type — DatePicker forwards its monthTitleWeight into it.",
+          "description": "Weight of the trigger's value text only. Not forwarded to Listbox's `optionWeight`: like fontSize, the trigger's value type does not reach the popup, so options keep Listbox's own weights (optionWeight, optionSelectedWeight). It exists as an override seam for composites that set their own header type — DatePicker forwards its monthTitleWeight into it.",
           "locked": false
         },
         "lineHeight": {
@@ -24321,7 +24521,7 @@
             "aria-invalid",
             "aria-required"
           ],
-          "notes": "The APG select-only combobox: the trigger is a <button role=\"combobox\" aria-haspopup=\"listbox\" aria-expanded aria-controls> showing the value; the popup is a portal with the Listbox, positioned below (flipping above when there is no room below) the trigger at least as wide as it, on layer.dropdown. aria-labelledby is the label id alone — the value is the button's own text content, so it is not repeated in the name. aria-controls and aria-activedescendant are present only while open (the Listbox is unmounted while closed); aria-activedescendant is the active option's id in Listbox's option id format (`<listboxId>-option-<value>`), tracked through onActiveChange. Keys on the trigger are forwarded while open by replaying the KeyboardEvent on the Listbox ref (its wrapper, where Listbox handles keys) and copying its defaultPrevented back to the original event; Enter with `multiple` is not forwarded (Listbox's Enter is a no-op there) but handled by Select, which toggles the active option. Listbox applies initialActiveValue only when it receives focus, and focus never leaves the trigger, so on open Select dispatches a `focusin` on the Listbox ref to make the selected (or first) option active. A hidden <input name> per selected value carries the value(s) for native form submission — none when nothing is selected or when disabled. `native: always` renders <select> (and <select multiple>) with the same label/description/error wiring and no popup, and is the one place the system uses the real `disabled` attribute rather than aria-disabled: that mode exists for forms that work without JavaScript, where aria alone would not stop interaction. In that mode a single select gets a first disabled <option value=\"\"> showing the placeholder, and the chevron is drawn for single only (<select multiple> is a list box with no dropdown). `container?: HTMLElement` (default document.body) is the portal target — a platform prop, not a schema prop."
+          "notes": "The APG select-only combobox: the trigger is a <button role=\"combobox\" aria-haspopup=\"listbox\" aria-expanded aria-controls> showing the value; the popup is a portal with the Listbox, positioned below (flipping above when there is no room below) the trigger at least as wide as it, on layer.dropdown. aria-labelledby is the label id alone — the value is the button's own text content, so it is not repeated in the name. aria-controls and aria-activedescendant are present only while open (the Listbox is unmounted while closed); aria-activedescendant is the active option's id in Listbox's option id format (`<listboxId>-option-<value>`), tracked through onActiveChange. Keys on the trigger are forwarded while open by replaying the KeyboardEvent on the Listbox ref (its wrapper, where Listbox handles keys) and copying its defaultPrevented back to the original event; Enter with `multiple` is not forwarded (Listbox's Enter is a no-op there) but handled by Select, which toggles the active option. Focus never leaves the trigger, so Select drives the active option through Listbox's controlled `activeValue`: the selected (or first) option on open, each value `onActiveChange` reports while open, and `null` on close. A hidden <input name> per selected value carries the value(s) for native form submission — none when nothing is selected or when disabled. `native: always` renders <select> (and <select multiple>) with the same label/description/error wiring and no popup, and is the one place the system uses the real `disabled` attribute rather than aria-disabled: that mode exists for forms that work without JavaScript, where aria alone would not stop interaction. In that mode a single select gets a first disabled <option value=\"\"> showing the placeholder, and the chevron is drawn for single only (<select multiple> is a list box with no dropdown). `container?: HTMLElement` (default document.body) is the portal target — a platform prop, not a schema prop."
         },
         "lit": {
           "tag": "ds-select",
@@ -25314,7 +25514,7 @@
           "given": {
             "trigger": "An icon-only Button with the menu Icon, labelled Menu",
             "heading": "Menu",
-            "children": "A Stack of navigation Links with the current page marked where the platform allows it (aria-current on web; unmarked on Lit and React Native, whose Links cannot carry it yet)",
+            "children": "A Stack of navigation Links with the current page's Link set `current`",
             "hideHeading": true,
             "role": "navigation",
             "persistent": "content"
@@ -25522,7 +25722,7 @@
       "When to use": "Use a SidePanel for the primary navigation on phones (the \"hamburger\" menu — a Stack or Tree of Links from the `start` edge), for filters beside a results page, for a cart or a detail panel from the `end` edge, for a settings drawer. Set `persistent: content` when the same panel should become the permanent sidebar on desktop; leave it `never` for panels that are always a temporary overlay (a cart).",
       "When not to use": "Do not use a SidePanel for a short list of actions (Menu, ActionSheet), for a task with a few fields (Dialog or BottomSheet, which the thumb reaches), or for content that is the page's point. Do not open one on hover. Use `modal` only when the page must not be used until the panel is done; a navigation drawer is not that. Do not stack side panels, and do not put a Dialog's job inside one — a panel is a place, not a step.",
       "Behavior": "The trigger toggles the panel and reflects it with `aria-expanded`. Non-modal (default): opening slides the panel in from `side` and fades the scrim if shown; focus stays on the trigger, and the next Tab enters the panel as if it sat right after the trigger (on web the panel is portaled, so this is explicit focus handling; Tab from the panel's last control goes to the element after the trigger); Shift+Tab from the first control returns to the trigger with the panel still open; the page stays live. Modal: focus moves to the first focusable in the body, then the footer, then the close button, then the title (tabindex -1), the page is inert and scroll-locked, Tab is confined. In both, the body scrolls within the panel and the footer stays pinned; Escape (from inside the panel, not from the trigger), the close button, a scrim tap (`scrim`) or, with no scrim, an outside press (`outside`), and a swipe toward the edge request close; following a Link inside closes it with reason `navigation` (without moving focus); every other close returns focus to the trigger. Above the `persistent` breakpoint the panel is simply there: no scrim, no trap, the trigger hidden, the same content in the page's tab order as a `complementary` (or navigation) landmark; crossing the breakpoint while open keeps the content and drops the overlay chrome. `start` and `end` follow the writing direction. The swipe-to-dismiss gesture lives on the header (not the close button). When closed the panel is either unmounted or `hidden` — both remove it from the accessibility tree; the exit transition finishes first. The non-modal scrim fades with the panel's enter/exit durations and easing. The trigger is a single element; a `menu` Icon exists for the usual icon-only trigger. `copy.expanded` is used only on SwiftUI; the other platforms announce the trigger's expanded state natively, and still carry the string in their COPY constant, unused, so the copy stays verbatim with the doc on every platform. The parts get wiring every platform passes, not composition props: the Heading's id/ref/tabindex for naming and initial focus, the close Button's `label` from `copy.closeLabel`, its `close` Icon as `leadingIcon` and its press handler, and the trigger's aria-expanded/aria-controls and toggle. The close Button takes its default size; Button's own minimum target keeps it at 44px. Stories and examples that must start open (`open: true`) render through a wrapper that owns `open`, starting true, and writes `onOpenChange` back, acting as the consumer. The Default story is the exception among the overlays and renders **closed**, behind its trigger, because that is this component's resting state — every enum-value story shows the same, and both platforms follow it. Example stories read as if they started from blank args: Storybook merges `meta.args` into every story, so each example restates the props its `given` names and the ones it relies on being at their default, so an example with no `open` in its `given` (navigation-drawer, filters) renders uncontrolled and closed, opened by its trigger. The `accessible-name` requirement is about the shown panel: a closed panel carries `hidden` on the region (Lit) or its wrapper (web) and is out of the accessibility tree, where it has no name to compute.",
-      "Content guidelines": "Titles name what the panel holds (\"Menu\", \"Filters\", \"Your cart\"), not \"Side panel\". A navigation panel is a Stack (or Tree) of Links with the current page marked where the platform's Link allows it — `aria-current=\"page\"` through Link's rest props on web; not yet on Lit, where `ds-link` has neither a `current` property nor a forward of `aria-current` to its inner `<a>`, so the Lit story leaves it unmarked until Link's own schema grows the prop; and never on React Native, whose Link has no current-page state — grouped with Dividers if long; keep it to what fits without scrolling on a typical phone. Filter panels end with an action row in the footer (\"Apply\", \"Clear\"). The trigger's label says what opens (\"Menu\", \"Filters\"), and the `menu` Icon alone is only acceptable with that label for assistive technology.",
+      "Content guidelines": "Titles name what the panel holds (\"Menu\", \"Filters\", \"Your cart\"), not \"Side panel\". A navigation panel is a Stack (or Tree) of Links with the current page's Link set `current`, which every platform announces — grouped with Dividers if long; keep it to what fits without scrolling on a typical phone. Filter panels end with an action row in the footer (\"Apply\", \"Clear\"). The trigger's label says what opens (\"Menu\", \"Filters\"), and the `menu` Icon alone is only acceptable with that label for assistive technology.",
       "Accessibility": "The default is the APG disclosure pattern: a button with `aria-expanded` and `aria-controls` showing and hiding a named landmark region (WCAG 4.1.2, 1.3.6), with the tab sequence running button → region → the page after the button, so it matches the visual sequence (2.4.3, 1.3.2) — on web the region is portaled and the sequence is stitched by focus handling, on Lit the shadow region simply follows the trigger slot; the hidden panel uses `hidden`, not just off-screen positioning, so it is out of the accessibility tree when closed. Escape closes from inside and restores focus to the button (2.1.2). With `modal` the panel is a modal `dialog` named by its title: focus moves in and is confined, the background is inert and scroll-locked (APG modal dialog). The swipe is additive (2.5.1). In persistent mode it is a landmark region (`complementary` or `navigation`) in the normal tab order, so a screen-reader user can jump to it (1.3.6, 2.4.1). The panel meets contrast on the overlay surface, its close button meets 44px, and the slide respects reduced motion (2.3.3). A phone-width panel leaves a strip of scrim visible so sighted users keep their sense of place and have a large close target.",
       "Platform notes": "### Web\nClone the trigger with `aria-expanded`, `aria-controls`, `onClick` (toggle), inside a `<span data-part=\"trigger\">` with display: contents. Non-modal: render, through a portal into `container` (default document.body), the positioned surface `<div id hidden={!open} data-ds=\"SidePanel\" class=\"ds-side-panel--{side} ds-side-panel--{width}\">`, `position: fixed`, holding `Landmark` (`<aside aria-labelledby>`, or `as=\"nav\"`), and an optional scrim `<div aria-hidden>` before it; Tab on the trigger wrapper → focus the panel's first tabbable, Shift+Tab from the panel's first → trigger, Tab from its last → the next tabbable after the trigger; keydown Escape inside the panel → close + focus trigger; `click` on the scrim → close with `scrim`, or with no scrim a pointerdown outside the panel and trigger (document listener) → close with `outside`, when dismissible; `hidden` is applied after the exit transition ends. Modal: render a full-viewport `<dialog aria-labelledby>` through `showModal()` with a transparent `::backdrop`, holding a scrim element (`data-part=\"scrim\"`, from `scrim`) and the surface element with `position: fixed; inset-block: 0; inset-inline-start: 0` (or `-end`), `inline-size` from the width tokens (`min(var(--ds-side-panel-width), 100% - var(--ds-side-panel-edge-gutter))`), translated from `-100%` to `0` over `enter`; wrap content in `FocusScope trapped={modal} autoFocus=\"none\" restoreFocus` and, after `showModal()`, focus the first focusable in the body, then the footer, then the close button, then the heading (tabindex -1); header `Stack` horizontal with the `Heading` (`level 2`, visually hidden with the clip pattern when `hideHeading`; the header is not rendered when that leaves it empty) and the close `Button` (`ghost`, `iconOnly`, `close` Icon); body `Box` scrolling; footer `Stack`; header, body and footer in the `data-part=\"focusScope\"` column inside FocusScope. A `click` on the scrim element and Escape → close. A `click` on an `<a href>` inside, not default-prevented → close with `navigation`, focus not moved. Persistent: `matchMedia('(width > <token px>)')` (`literal-ok: breakpoint from layout.maxWidth.*`) renders `Landmark as=\"complementary\"` (or `\"nav\"`) in place — where SidePanel sits, not portaled — with the same children, no close button, `border` on the edge facing the content (`border-inline-end` for `start`, `border-inline-start` for `end`), inline-size from the width binding and natural height, no safe-area padding, and the trigger wrapper with `hidden`; the page layout places it beside the content. Overlay mode only: safe area via `env(safe-area-inset-left)` or `-right` on the physical edge the panel touches (flipped under `:dir(rtl)`), plus the top and bottom insets.\n\n### Lit\n`<ds-side-panel heading=\"Menu\" persistent=\"content\"><ds-button slot=\"trigger\" icon-only icon=\"menu\" label=\"Menu\"></ds-button><ds-stack>…</ds-stack></ds-side-panel>`; non-modal: a shadow `<aside>` (or `<nav>` for `landmark=\"navigation\"`) with `hidden` when closed; modal: a shadow `<dialog>` with `showModal()`; persistent mode switches the host to `display: block` in the parent grid and renders the same `<aside>` or `<nav>`; composed `open-change`.\n\n### React Native\n`Modal` with an `Animated.View` panel at the `start`/`end` edge (`I18nManager.isRTL` flips), width from tokens capped at screen width minus `edgeGutter`, scrim `Pressable`, `PanResponder` swipe toward the edge to dismiss, `FocusScope`, `onRequestClose` → escape. `persistent` on tablets above the breakpoint renders a sibling `View` with `role={role}` and `accessibilityLabel={heading}`, beside the content (children remount when crossing the breakpoint). Provide `useSidePanelEdgeSwipe()` for the edge-swipe-to-open gesture on the screen root.",
       "Related": "BottomSheet, Dialog, Menu, Landmark, Tree, Link, FocusScope."
@@ -25606,6 +25806,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "Visible label naming the quantity (\"Volume\", \"Price range\").",
           "a11y": "The label is a Text `<span>` with an id, not a native `<label for>` (which cannot name a `div role=slider`); a single thumb takes aria-labelledby pointing at it (on Lit the span is in the same shadow root, so the id reference holds). A range slider's thumbs are named with aria-label (accessibilityLabel on native) set to the resolved `copy.minimumLabel` / `copy.maximumLabel`, with no hidden spans."
@@ -26542,6 +26743,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "What the divider resizes (\"Sidebar width\", \"Preview height\"). The separator's accessible name.",
           "a11y": "aria-label on the separator."
@@ -28699,6 +28901,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "Visible label naming the thing being turned on or off. Also the accessible name.",
           "a11y": "Associated with the control (label/for on web, accessibilityLabel on native)."
@@ -29387,6 +29590,7 @@
       "props": {
         "caption": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "What the table lists (\"Open invoices\"). Rendered as the caption and the accessible name; visually hidden with `hideCaption` when a Heading directly above already says it.",
           "a11y": "The <caption> (web) / aria-label on the container; never omitted."
@@ -30534,6 +30738,7 @@
         },
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "Accessible name of the tab list (\"Account sections\"). Not shown visually."
         },
@@ -32388,6 +32593,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "What the toolbar controls (\"Formatting\", \"Table actions\"). Not visible; read by assistive technology.",
           "a11y": "aria-label / accessibilityLabel on the toolbar."
@@ -33336,6 +33542,7 @@
       "props": {
         "label": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "What the tree lists (\"Folders\", \"Categories\"). Not visible unless `showLabel`.",
           "a11y": "aria-label / accessibilityLabel on the tree."
@@ -34537,6 +34744,7 @@
       "props": {
         "caption": {
           "type": "string",
+          "a11yRole": "accessible-name",
           "required": true,
           "description": "What the tree grid holds (\"Chart of accounts\").",
           "a11y": "aria-labelledby the caption / accessibilityLabel."

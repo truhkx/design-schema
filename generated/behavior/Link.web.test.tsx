@@ -49,6 +49,10 @@ describe('Link', () => {
     const s = setup({"download": true});
     expect(s.anchor()).toHaveAttribute("download", "");
   });
+  test('current-marks-the-page', async () => {
+    const s = setup({"current": true});
+    expect(s.anchor()).toHaveAttribute("aria-current", "page");
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

@@ -72,6 +72,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: The trigger's label and the menu's accessible name ("More actions",
         "Sort by").
@@ -617,22 +618,23 @@ component:
         a <ds-button> in the shadow root; focus delegation lands on it. The menu surface
         is named with aria-label from the trigger''s text (or the `label` property
         when given): aria-labelledby cannot reach a slotted trigger from the shadow
-        root. `<ds-button>` forwards only `expanded` to its inner <button>, and an
-        IDREF cannot cross its shadow root, so on Lit the trigger exposes aria-expanded
-        only — aria-haspopup and aria-controls are waived here; the popup''s role="menu"
-        and its aria-label carry the relationship. As on web, one element is both
-        parts: `role="menu"` with `data-part="popup"` and `part="popup list"`. That
-        is the only `part` attribute, and deliberately so: trigger, group, groupLabel,
-        item, itemIcon, itemShortcut and separator carry `data-part` only, because
-        Menu''s internals are styled through the override hooks rather than `::part()`.
-        The trigger part is an overlay-owned wrapper element carrying `data-part="trigger"`
-        around the ds-button. `anchor` is a property (the element), not an attribute,
-        handed over with the `ref` directive or set imperatively after first render.
-        `open` reflects the controlled property only: an uncontrolled menu keeps its
-        state internally and never writes the attribute, so `ds-menu[open]` matches
-        controlled menus alone — reflecting the internal state would write back into
-        the property and turn every menu controlled. Focus leaving the host, or the
-        window losing focus, closes with reason `focus-out`.'
+        root. `<ds-button>` forwards `expanded` and `haspopup` to its inner <button>,
+        and an IDREF cannot cross its shadow root, so on Lit the trigger exposes aria-expanded
+        and aria-haspopup="menu" (`.haspopup="menu"`) — aria-controls is waived here;
+        the popup''s role="menu" and its aria-label carry the relationship. As on
+        web, one element is both parts: `role="menu"` with `data-part="popup"` and
+        `part="popup list"`. That is the only `part` attribute, and deliberately so:
+        trigger, group, groupLabel, item, itemIcon, itemShortcut and separator carry
+        `data-part` only, because Menu''s internals are styled through the override
+        hooks rather than `::part()`. The trigger part is an overlay-owned wrapper
+        element carrying `data-part="trigger"` around the ds-button. `anchor` is a
+        property (the element), not an attribute, handed over with the `ref` directive
+        or set imperatively after first render. `open` reflects the controlled property
+        only: an uncontrolled menu keeps its state internally and never writes the
+        attribute, so `ds-menu[open]` matches controlled menus alone — reflecting
+        the internal state would write back into the property and turn every menu
+        controlled. Focus leaving the host, or the window losing focus, closes with
+        reason `focus-out`.'
     rn:
       element: Modal
       props:

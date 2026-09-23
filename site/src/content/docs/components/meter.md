@@ -25,6 +25,7 @@ component:
       description: 'Upper bound of the range. Must be greater than `min`. On Lit a missing or unparseable attribute falls back to 100; on every platform a non-finite `max` (NaN, Infinity) is treated as 100, and the substituted bound is the one exposed, as for `min`. An invalid range warns once per distinct min/max pair for the life of the process — a module-level record, so a second Meter with the same bad range is silent and a remount never repeats it. The warning text is a development diagnostic; the backticks it is written with here are this document''s formatting, not characters in the emitted string.'
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: 'Visible label naming the measurement ("Storage used"). Also the accessible name. Lit starts the property as an empty string, with no development warning.'
       a11y: Associated with the meter as its accessible name (aria-labelledby / accessibilityLabel).

@@ -23,6 +23,7 @@ component:
       description: 'Identifier for the form, used for analytics and as the base of generated ids. React Native has no ids and focuses by ref, so it is inert there and exists for parity. An unnamed form bases its ids on a generated unique id (useId on web); two forms given the same `name` on one page is an authoring error Form does not detect.'
     label:
       type: string
+      a11yRole: accessible-name
       description: Accessible name for the form landmark, e.g. "Sign in". Required when a page has more than one form and `labelledBy` is not set. Nothing enforces this at runtime and no dev warning is emitted.
       a11y: Rendered as aria-label so the form is a named region.
     labelledBy:

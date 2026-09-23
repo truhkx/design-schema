@@ -15,6 +15,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Visible label naming the quantity ("Volume", "Price range").
       a11y: 'The label is a Text `<span>` with an id, not a native `<label for>` (which cannot name a `div role=slider`); a single thumb takes aria-labelledby pointing at it (on Lit the span is in the same shadow root, so the id reference holds). A range slider''s thumbs are named with aria-label (accessibilityLabel on native) set to the resolved `copy.minimumLabel` / `copy.maximumLabel`, with no hidden spans.'

@@ -70,6 +70,7 @@ component:
         by `onPress` when the consumer provides it.
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: The link text. Also the accessible name. Says where the link goes,
         not "click here".
@@ -107,6 +108,19 @@ component:
       platforms:
       - web
       - lit
+    current:
+      type: boolean
+      default: false
+      description: 'The link points at the page the user is on, in a navigation list
+        (a SidePanel drawer, a Tree of href nodes): `aria-current="page"` on the anchor
+        on web and Lit, `accessibilityState.selected` on React Native (with the `aria-current="page"`
+        mirror on react-native-web, which drops accessibilityState), `.isSelected`
+        on SwiftUI. The link stays a link and keeps its colours and underline; how
+        a navigation also marks it visually is that container''s to say. False writes
+        nothing, so an `aria-current` a consumer passes through `...rest` on web (a
+        `step` or `location`) still applies; while `current` is true the prop wins.'
+      a11y: The current page is announced, not shown by position or colour alone (WCAG
+        1.3.1, 4.1.2).
   events:
     onPress:
       description: 'Fired when the link is activated. On web the default navigation
@@ -234,22 +248,23 @@ component:
         it. The external glyph is composed with no forwarded override at all: it takes
         its colour from the text around it (currentColor on web and Lit, the enclosing
         Text''s colour on native), which is the one case in the package where a composed
-        child is given nothing and inherits instead. Link never sets `aria-current`,
-        but it does pass one through `...rest`: a navigation that marks its own current
-        page is the consumer''s to state. `external` writes its modifier class or
-        attribute on both web and Lit even though no rule reads it, so the two platforms
-        expose the same state to a consumer''s own selectors. Example stories take
-        their `given` as args over meta args that hold the schema defaults — and,
-        since `href` and `label` are required with no default, those two as well;
-        that still counts as exactly the `given`. `ToneDefault` renders standalone,
-        with no surrounding paragraph: only `ToneInherit`, `InlineInAParagraph` and
-        `InsideMutedText` are specified inside a sentence.'
+        child is given nothing and inherits instead. Link sets `aria-current="page"`
+        only for `current`, and otherwise passes one through `...rest`: a navigation
+        that marks some other kind of current item is the consumer''s to state. `external`
+        writes its modifier class or attribute on both web and Lit even though no
+        rule reads it, so the two platforms expose the same state to a consumer''s
+        own selectors. Example stories take their `given` as args over meta args that
+        hold the schema defaults — and, since `href` and `label` are required with
+        no default, those two as well; that still counts as exactly the `given`. `ToneDefault`
+        renders standalone, with no surrounding paragraph: only `ToneInherit`, `InlineInAParagraph`
+        and `InsideMutedText` are specified inside a sentence.'
     lit:
       tag: ds-link
       reflect:
       - tone
       - external
       - download
+      - current
       notes: 'Wraps a native <a> in the shadow root with delegatesFocus. No custom
         event: the native click bubbles and retargets to the host. Consumers who intercept
         navigation call preventDefault on that click. A ds-link inside a ds-text paragraph
@@ -381,6 +396,17 @@ component:
     then:
     - attribute: download
       is: ''
+      platforms:
+      - web
+      - lit
+  - name: current-marks-the-page
+    description: 'current announces the link as the page the user is on: aria-current="page"
+      on the anchor (web, Lit), accessibilityState.selected on native.'
+    given:
+      current: true
+    then:
+    - attribute: aria-current
+      is: page
       platforms:
       - web
       - lit
@@ -568,7 +594,7 @@ Do not use a Link to trigger an action — submitting, opening a dialog, togglin
 
 A Link has no typography of its own: it inherits font family, size, weight and line height from the text it sits in, so it looks right inside a paragraph, a caption, or a breadcrumb without configuration. Standalone, it inherits from the page body.
 
-Activation with pointer, Enter, or assistive technology navigates to `href`. `onPress` fires first; on web the consumer may prevent the default to route client-side, and on native the consumer's handler is the navigation (an `external` link still hands off to the system afterwards unless the handler returns `false`). With `external`, web opens a new tab and native hands the URL to the system. `download` asks the browser to save rather than open and does nothing on native. The link is never disabled: a destination that is not available is not rendered as a link. Link has no current-page state and forwards no `aria-current`; the current item of a navigation (Breadcrumb''s last item, a drawer''s current page) is rendered as Text, not as a Link.
+Activation with pointer, Enter, or assistive technology navigates to `href`. `onPress` fires first; on web the consumer may prevent the default to route client-side, and on native the consumer's handler is the navigation (an `external` link still hands off to the system afterwards unless the handler returns `false`). With `external`, web opens a new tab and native hands the URL to the system. `download` asks the browser to save rather than open and does nothing on native. The link is never disabled: a destination that is not available is not rendered as a link. A link in a navigation list that points at the page the user is on sets `current`, which every platform announces; it stays a link. Where a pattern renders its current item as plain text instead (Breadcrumb's last item), that is the pattern's choice, not Link's.
 
 ## Content guidelines
 

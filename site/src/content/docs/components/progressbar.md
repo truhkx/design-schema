@@ -12,6 +12,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: What is progressing ("Uploading photos", "Importing contacts"). Visible unless `hideLabel`.
       a11y: 'The accessible name: aria-labelledby on web, aria-label on the Lit host (ids do not cross the shadow root), accessibilityLabel on React Native. An empty label leaves the bar unnamed, with no development warning.'

@@ -82,6 +82,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Visible label. Always rendered.
       a11y: label/for on the input; accessibilityLabel on native.
@@ -592,9 +593,9 @@ component:
       notes: 'The APG editable combobox with list autocomplete: <input role="combobox"
         aria-autocomplete="list" aria-expanded aria-controls aria-activedescendant>;
         the popup is a portal with the Listbox; DOM focus never leaves the input.
-        The React Listbox exports no key handler hook and no controlled active option,
-        so today the combobox sets the active option by remounting the Listbox with
-        `initialActiveValue` and re-dispatches ArrowUp/ArrowDown as native keydown
+        The combobox drives the active option through the Listbox''s controlled `activeValue`
+        (passing back what `onActiveChange` reports) and, since the React Listbox
+        exports no key handler hook, re-dispatches ArrowUp/ArrowDown as native keydown
         on the Listbox root; only the keys in the keyboard table are forwarded (no
         PageUp/PageDown, no letter type-ahead — typing goes to the input). The ref
         is `Ref<HTMLInputElement>` on the input (the element above); `data-ds` sits

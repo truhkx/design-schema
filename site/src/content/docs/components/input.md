@@ -9,6 +9,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Visible label (visually hidden with `hideLabel`). Never replaced by a placeholder.
       a11y: Programmatically associated with the field (label/for on web, accessibilityLabel on native).

@@ -76,6 +76,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Visible label naming the thing being turned on or off. Also the
         accessible name.

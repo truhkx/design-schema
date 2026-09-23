@@ -175,6 +175,23 @@ component:
       description: 'Show the close button. Escape and outside click work regardless
         (non-modal), so this is a visibility switch, not Dialog''s "must be answered"
         rule: with it false there is simply no close button.'
+    initialFocus:
+      type: enum
+      values:
+      - first
+      - none
+      default: first
+      description: 'Where focus goes on open, after Dialog''s prop of the same name.
+        `first` (default) is the first control, in the order Behavior gives. `none`
+        moves no focus: a composing component that opens the popover on content it
+        owns focuses its own element once the panel is shown (DatePicker focuses the
+        selected day, or today), and until it does focus stays on the trigger — with
+        `modal` that is outside the trap, so a composer that passes `none` must move
+        focus in. Everything else is unchanged: Tab and Shift+Tab out, Escape and
+        focus restore behave as with `first`. No effect in the React Native phone
+        presentation, where the BottomSheet always takes focus.'
+      a11y: Focus must land inside an open popover; with `none` the composer, not
+        the popover, owns that move.
   events:
     onOpenChange:
       description: 'Fired when the popover opens or closes, with the new state and
@@ -448,6 +465,7 @@ component:
       - prop: dismissible
         attribute: no-dismiss
       - heading-level
+      - initial-focus
       notes: 'Slots: `trigger` and default. The panel renders in the shadow root with
         the Popover API (top layer, no z-index issues) or a fixed fallback. aria-controls
         cannot cross the shadow boundary, so the slotted trigger gets expanded state
@@ -477,7 +495,11 @@ component:
         its state internally and never writes the attribute, so a consumer that sets
         and then removes the attribute has made the popover controlled, which is the
         documented meaning of setting it. A panel `data-side` holds the resolved physical
-        side, as on web. Composed `open-change`.'
+        side, as on web. Composed `open-change`. Slotted content can lay out after
+        the panel opens (DatePicker''s grid), which the scroll and resize listeners
+        never see, so ds-popover exposes a public `reposition()` method that re-measures
+        and re-places the open panel; a composer calls it rather than dispatching
+        a synthetic `scroll`.'
     rn:
       element: Modal
       props:
@@ -723,7 +745,7 @@ Do not use a Popover for text-only hints (Tooltip), for a list of actions (Menu)
 
 ## Behavior
 
-The trigger toggles the popover; opening positions the panel at `placement`, flipping or shifting to stay in view, moves focus to the first control, and marks the trigger expanded. The first control is the first focusable element in the body, then the close button, then the heading (made focusable with tabindex -1), then the panel itself. The close button is labelled `copy.closeLabel` and keeps Button's own ghost colors. Non-modal: the page stays live; Escape, the close button, a click outside, and tabbing past the last element close it; Shift+Tab from the first element returns to the trigger and closes. There is no focusout listener on any platform: the overlay block's `focus-out` is realized by the Tab and Shift+Tab handlers, reported as `tab-out`, and `outside-press` is reported as `outside`; focus moved out programmatically leaves the popover open. Modal: the panel is a small Dialog — trapped focus, inert page, Escape and close only. Closing by the trigger, Escape or the close button returns focus to the trigger as soon as `open` goes false; an outside press leaves focus where the press put it, and Tab out moves it to the element after the trigger. When a controlled consumer sets `open` false with no reason from the popover, focus returns to the trigger only if it is inside the panel at that moment; otherwise it stays where it is. A modal popover's `close()` has by then moved focus to the document body, so the body counts as inside for this test — Escape and the close button still restore focus on a modal popover. FocusScope's `active` follows `open`, so from the moment `open` is false a panel still mounted for its exit transition never pulls focus back. The panel repositions on scroll and resize while open.
+The trigger toggles the popover; opening positions the panel at `placement`, flipping or shifting to stay in view, moves focus to the first control (unless `initialFocus` is `none`), and marks the trigger expanded. The first control is the first focusable element in the body, then the close button, then the heading (made focusable with tabindex -1), then the panel itself. The close button is labelled `copy.closeLabel` and keeps Button's own ghost colors. Non-modal: the page stays live; Escape, the close button, a click outside, and tabbing past the last element close it; Shift+Tab from the first element returns to the trigger and closes. There is no focusout listener on any platform: the overlay block's `focus-out` is realized by the Tab and Shift+Tab handlers, reported as `tab-out`, and `outside-press` is reported as `outside`; focus moved out programmatically leaves the popover open. Modal: the panel is a small Dialog — trapped focus, inert page, Escape and close only. Closing by the trigger, Escape or the close button returns focus to the trigger as soon as `open` goes false; an outside press leaves focus where the press put it, and Tab out moves it to the element after the trigger. When a controlled consumer sets `open` false with no reason from the popover, focus returns to the trigger only if it is inside the panel at that moment; otherwise it stays where it is. A modal popover's `close()` has by then moved focus to the document body, so the body counts as inside for this test — Escape and the close button still restore focus on a modal popover. FocusScope's `active` follows `open`, so from the moment `open` is false a panel still mounted for its exit transition never pulls focus back. The panel repositions on scroll and resize while open.
 
 Initial focus uses the order above (body control, close button, heading, panel). The keyboard rules' "first" and "last element in the panel" mean something else: the first and last tabbable elements in panel DOM order, where the header row (with the close button) comes before the body, so with a close button Shift+Tab-out starts from the close button. With no tabbable element in the panel (focus on the heading or the panel itself), non-modal Tab closes as a Tab out past the last element and Shift+Tab closes as a Shift+Tab back to the trigger, both reported `tab-out`; a modal panel keeps focus where it is. A modal popover's native <dialog> may raise `cancel` on Escape before focus has moved in, or close without a `cancel` at all; both are reported as `escape`, and if the consumer still holds `open` true the dialog is shown again.
 
@@ -754,7 +776,7 @@ Phones (window width <= the `breakpoint` token): render `BottomSheet` with `heig
 
 Tooltip, Dialog, Menu, BottomSheet, FocusScope.
 
-## Behavior scenarios (16)
+## Behavior scenarios (18)
 
 One test per scenario, in this order.
 
@@ -843,6 +865,18 @@ One test per scenario, in this order.
 - name: renders-placement-end
   given:
     placement: end
+  then:
+  - renders: true
+  derived: true
+- name: renders-initial-focus-first
+  given:
+    initialFocus: first
+  then:
+  - renders: true
+  derived: true
+- name: renders-initial-focus-none
+  given:
+    initialFocus: none
   then:
   - renders: true
   derived: true

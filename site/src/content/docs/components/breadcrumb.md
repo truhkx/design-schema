@@ -18,6 +18,7 @@ component:
       description: 'The trail from root to current page, in order. Every item but the last needs an `href`; an ancestor without one, or with an empty-string `href`, renders as plain text (never an empty link); a plain ancestor has no anatomy part of its own — it is text inside `item` (a `<span>` with no data-part and no class on web and Lit, a Text with no testID on native) and takes `itemColor`; it needs no selector of its own, since the `item` part already selects its container. It renders no interactive element, so activating it fires no `onNavigate`. The last is the current page and its `href` is ignored. An empty array renders the named landmark around an empty list; a single item renders only the current page; neither raises a dev warning. Lit starts the property as `[]`. Export the item type as `BreadcrumbItem`.'
     label:
       type: string
+      a11yRole: accessible-name
       default: Breadcrumb
       description: 'Accessible name of the navigation landmark. Change it only if the page has another breadcrumb. `copy.navLabel` is the canonical string: the default is that copy key, not a second literal, so translating the copy block moves the default with it.'
       a11y: Rendered as aria-label on the nav so it is distinguished from other navigation landmarks.

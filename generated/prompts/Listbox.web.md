@@ -86,6 +86,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: 'Accessible name of the list. When a visible Text label exists,
         pass its id via `labelledBy` as well; on web `aria-labelledby` then wins.
@@ -191,6 +192,24 @@ component:
         the list does not contain the active element (on Lit, that its shadow root''s
         `activeElement` is not the list), so a list driven by a host that holds focus
         itself — Select, Combobox, Search — always follows the new value.'
+    activeValue:
+      type: union
+      shape: string | null
+      description: 'The active option, driven by a host that keeps focus on its own
+        trigger or input and forwards keys (Select, Combobox, Search). Set, it wins
+        over `initialActiveValue` and needs no focus in the list: the active background
+        and `aria-activedescendant` follow it, and `null` means no option is active
+        (how a host clears the highlight, instead of remounting the list). Keys the
+        host forwards move nothing on their own while it is set; they report the option
+        they would make active through `onActiveChange`, and the host passes that
+        value back. Omitted, the list owns the active option as before. The ids a
+        host points `aria-activedescendant` at are the ones the platform notes give
+        (web `${id}-option-${value}`; Lit instance-scoped and index-based, reached
+        by `data-value`). On React Native, where every row is its own stop and there
+        is no highlight to drive, it pre-highlights a row exactly as `initialActiveValue`
+        does.'
+      controls:
+        event: onActiveChange
     loading:
       type: boolean
       default: false
@@ -859,6 +878,7 @@ component:
 ## Controlled state
 
 - `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `onChange`)
+- `activeValue` is controlled when given, uncontrolled from its initial state when omitted; changes reported by `onActiveChange` (emit `onActiveChange`)
 
 ## Parts and slots
 
@@ -1150,7 +1170,7 @@ Role `listbox` with a name, `aria-multiselectable` when `multiple`, options with
 ## Platform notes
 
 ### Web
-`<div role="listbox" tabindex="0" aria-label|aria-labelledby aria-multiselectable aria-activedescendant={activeId}>` containing `<div role="group" aria-labelledby>` and `<div role="option" id aria-selected aria-disabled>` rows with, only when `multiple`, `<Icon name="check">` (invisible when unselected, so labels align), optional `<Icon>`, label and description. Keydown on the list implements the table; `pointermove` over an option sets it active; click selects. Scroll the active option into view with `block: 'nearest'`. There is no separate `useListbox` hook: a host (Combobox, Select) forwards its keys by dispatching `keydown` (and `focusin` to activate) on the Listbox ref. The role=listbox div sits inside a root wrapper div (data-ds, data-ds-field) that also holds the error Text after it. `id` goes on the role=listbox list (hosts build `${id}-option-${value}` and `aria-controls` from it); `ref` and the remaining DOM props go on the wrapper, and keydown/focus/blur are handled on the wrapper so events dispatched on the ref arrive. Form registration as Input, with `getValue` returning the string in single-select and the array for `multiple`.
+`<div role="listbox" tabindex="0" aria-label|aria-labelledby aria-multiselectable aria-activedescendant={activeId}>` containing `<div role="group" aria-labelledby>` and `<div role="option" id aria-selected aria-disabled>` rows with, only when `multiple`, `<Icon name="check">` (invisible when unselected, so labels align), optional `<Icon>`, label and description. Keydown on the list implements the table; `pointermove` over an option sets it active; click selects. Scroll the active option into view with `block: 'nearest'`. There is no separate `useListbox` hook: a host (Combobox, Select) forwards its keys by dispatching `keydown` on the Listbox ref and drives the active option through `activeValue`. The role=listbox div sits inside a root wrapper div (data-ds, data-ds-field) that also holds the error Text after it. `id` goes on the role=listbox list (hosts build `${id}-option-${value}` and `aria-controls` from it); `ref` and the remaining DOM props go on the wrapper, and keydown/focus/blur are handled on the wrapper so events dispatched on the ref arrive. Form registration as Input, with `getValue` returning the string in single-select and the array for `multiple`.
 
 ### Lit
 `<ds-listbox label="Assignees" multiple .options=${…}>`; form-associated (`setFormValue(FormData)` for multiple, string otherwise); `aria-activedescendant` between shadow siblings; composed `change` and `active-change`. Expose a `handleKey(event)` method and `activeValue` for `ds-combobox`.

@@ -81,6 +81,7 @@ component:
         (a labelled form that is a page-level region).
     label:
       type: string
+      a11yRole: accessible-name
       description: 'Accessible name. Required for `region` and `form`, and whenever
         the page has more than one landmark of the same role (two navigations: "Main"
         and "Footer"). Not shown visually. An empty string counts as absent (no aria-label,

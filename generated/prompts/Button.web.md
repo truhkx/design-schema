@@ -77,6 +77,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: 'The button''s text. Also its accessible name. An empty string
         is allowed and warns on no platform, like Lit''s initial `''''` and an `iconOnly`
@@ -129,6 +130,26 @@ component:
         at all (no aria-expanded on the container; `expanded` omitted from accessibilityState),
         never a false one. When the prop is set and an `aria-expanded` also arrives
         through `...rest`, the prop wins.'
+    haspopup:
+      type: enum
+      values:
+      - menu
+      - listbox
+      - tree
+      - grid
+      - dialog
+      description: 'Set by a parent whose popup the button opens (Menu''s trigger
+        takes `menu`): `aria-haspopup` on the element that carries the button role,
+        so on Lit it reaches the inner <button> the way `expanded` does, where a raw
+        attribute on the host would not. No default: omitted means the button opens
+        nothing and no aria-haspopup is written. The values are ARIA''s own, without
+        `true` (which means `menu`). When the prop is set and an `aria-haspopup` also
+        arrives through `...rest` on web, the prop wins. Web and Lit only: native
+        has no has-popup state, and the popup''s own role carries the relationship
+        there.'
+      platforms:
+      - web
+      - lit
     disabled:
       type: boolean
       default: false
@@ -422,6 +443,7 @@ component:
       - aria-disabled
       - aria-busy
       - aria-label
+      - aria-haspopup
       notes: 'Use aria-disabled rather than the disabled attribute so the button remains
         discoverable by keyboard and screen readers. `expanded` is a React prop mapped
         to aria-expanded; when it is undefined, an `aria-expanded` arriving through
@@ -467,21 +489,22 @@ component:
         once. `expanded` is a JS property only (`attribute: false`) and stays tri-state
         — undefined means the button discloses nothing, so no aria-expanded is set
         at all. A disclosing parent sets `.expanded=`; a raw `aria-expanded` attribute
-        on the host does not reach the inner button. The host is the tab stop and
-        the inner button is never an independent one: `tabindex` written on the host
-        (Toolbar''s roving focus, TreeGrid''s chevron, NumberInput''s steppers) is
-        mirrored onto the inner button through a MutationObserver watching that attribute
-        alone, which never writes back to the host; no other global attribute crosses
-        the shadow root. The host lays out as `display: inline-flex; vertical-align:
-        middle` with the inner button filling it, so a stretched host exposes no dead
-        click area of its own. `accessibleName` is not reflected and is the plain
-        kebab attribute `accessible-name`. On `type: submit` the order is `press`,
-        then tracking, then `closest(''form'')?.requestSubmit()` guarded by `!this.closest(''ds-form'')`;
-        with neither form present the submit is a silent no-op, as on rn. A caller''s
-        `aria-describedby` on the host cannot cross the shadow root, so on Lit `copy.loading`
-        replaces rather than merges with it — an accepted divergence from web, since
-        the busy description matters more than a description the shadow root cannot
-        reach.'
+        on the host does not reach the inner button. `haspopup` is the same kind of
+        JS property, written as `aria-haspopup` on the inner button and omitted while
+        undefined. The host is the tab stop and the inner button is never an independent
+        one: `tabindex` written on the host (Toolbar''s roving focus, TreeGrid''s
+        chevron, NumberInput''s steppers) is mirrored onto the inner button through
+        a MutationObserver watching that attribute alone, which never writes back
+        to the host; no other global attribute crosses the shadow root. The host lays
+        out as `display: inline-flex; vertical-align: middle` with the inner button
+        filling it, so a stretched host exposes no dead click area of its own. `accessibleName`
+        is not reflected and is the plain kebab attribute `accessible-name`. On `type:
+        submit` the order is `press`, then tracking, then `closest(''form'')?.requestSubmit()`
+        guarded by `!this.closest(''ds-form'')`; with neither form present the submit
+        is a silent no-op, as on rn. A caller''s `aria-describedby` on the host cannot
+        cross the shadow root, so on Lit `copy.loading` replaces rather than merges
+        with it — an accepted divergence from web, since the busy description matters
+        more than a description the shadow root cannot reach.'
     rn:
       element: Pressable
       props:
@@ -712,7 +735,7 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `iconGap`, `paddingInline`, `paddingBlock`, `radius`, `fontFamily`, `fontWeight`, `fontSize`, `inverseBackgroundHover`, `inverseHoverOpacity`, `disabledOpacity`, `transition`, `loadingSpin`, `spinnerSize`
 Locked (accessibility-bearing, never overridable): `background`, `backgroundHover`, `foreground`, `focusRing`, `focusRingWidth`, `focusRingOffset`, `inverseForeground`, `inverseFocusRing`, `minTarget`, `spinnerStroke`
 
-## Behavior scenarios (21)
+## Behavior scenarios (26)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
@@ -861,6 +884,51 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
   then:
   - renders: true
   derived: true
+- name: renders-haspopup-menu
+  given:
+    haspopup: menu
+  then:
+  - renders: true
+  platforms:
+  - web
+  - lit
+  derived: true
+- name: renders-haspopup-listbox
+  given:
+    haspopup: listbox
+  then:
+  - renders: true
+  platforms:
+  - web
+  - lit
+  derived: true
+- name: renders-haspopup-tree
+  given:
+    haspopup: tree
+  then:
+  - renders: true
+  platforms:
+  - web
+  - lit
+  derived: true
+- name: renders-haspopup-grid
+  given:
+    haspopup: grid
+  then:
+  - renders: true
+  platforms:
+  - web
+  - lit
+  derived: true
+- name: renders-haspopup-dialog
+  given:
+    haspopup: dialog
+  then:
+  - renders: true
+  platforms:
+  - web
+  - lit
+  derived: true
 - name: has-accessible-name
   then:
   - name: true
@@ -884,6 +952,7 @@ attributes:
 - aria-disabled
 - aria-busy
 - aria-label
+- aria-haspopup
 notes: 'Use aria-disabled rather than the disabled attribute so the button remains
   discoverable by keyboard and screen readers. `expanded` is a React prop mapped to
   aria-expanded; when it is undefined, an `aria-expanded` arriving through `...rest`

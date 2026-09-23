@@ -94,6 +94,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Visible label.
       a11y: label/for on the input; accessibilityLabel on native.

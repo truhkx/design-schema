@@ -787,9 +787,7 @@ component:
     given:
       trigger: An icon-only Button with the menu Icon, labelled Menu
       heading: Menu
-      children: A Stack of navigation Links with the current page marked where the
-        platform allows it (aria-current on web; unmarked on Lit and React Native,
-        whose Links cannot carry it yet)
+      children: A Stack of navigation Links with the current page's Link set `current`
       hideHeading: true
       role: navigation
       persistent: content
@@ -885,7 +883,7 @@ overlay:
 - constant `dismissVelocity`: 1.5 px/ms
 - constant `dragSlop`: `t.space1` (`space.1`) px
 - constant `edgeZone`: `t.sizeTargetComfortable` (`size.target.comfortable`) px
-- example `navigation-drawer`, story `NavigationDrawer`: given `trigger: "An icon-only Button with the menu Icon, labelled Menu"`, `heading: "Menu"`, `children: "A Stack of navigation Links with the current page marked where the platform allows it (aria-current on web; unmarked on Lit and React Native, whose Links cannot carry it yet)"`, `hideHeading: true`, `role: "navigation"`, `persistent: "content"`; The phone hamburger menu that becomes the permanent sidebar on desktop, with a self-explanatory list.
+- example `navigation-drawer`, story `NavigationDrawer`: given `trigger: "An icon-only Button with the menu Icon, labelled Menu"`, `heading: "Menu"`, `children: "A Stack of navigation Links with the current page's Link set `current`"`, `hideHeading: true`, `role: "navigation"`, `persistent: "content"`; The phone hamburger menu that becomes the permanent sidebar on desktop, with a self-explanatory list.
 - example `filters`, story `Filters`: given `trigger: "A Filters Button"`, `heading: "Filters"`, `children: "A Stack of filter Checkboxes"`, `footer: "Clear and Apply Buttons"`, `width: "wide"`; A wide filter panel beside a results page, ending in an action row.
 - example `cart`, story `Cart`: given `open: true`, `heading: "Your cart"`, `children: "A Stack of line-item Cards"`, `footer: "A Checkout Button"`, `side: "end"`, `modal: true`; A checkout panel from the end edge that must be finished or dismissed, so it is modal.
 - example `detail-panel`, story `DetailPanel`: given `open: true`, `heading: "Order details"`, `children: "A Stack of labelled values for the selected order"`, `side: "end"`, `width: "narrow"`, `scrim: false`; A narrow detail panel that should feel like part of the page, so it has no scrim.
@@ -1081,7 +1079,7 @@ The trigger toggles the panel and reflects it with `aria-expanded`. Non-modal (d
 
 ## Content guidelines
 
-Titles name what the panel holds ("Menu", "Filters", "Your cart"), not "Side panel". A navigation panel is a Stack (or Tree) of Links with the current page marked where the platform's Link allows it — `aria-current="page"` through Link's rest props on web; not yet on Lit, where `ds-link` has neither a `current` property nor a forward of `aria-current` to its inner `<a>`, so the Lit story leaves it unmarked until Link's own schema grows the prop; and never on React Native, whose Link has no current-page state — grouped with Dividers if long; keep it to what fits without scrolling on a typical phone. Filter panels end with an action row in the footer ("Apply", "Clear"). The trigger's label says what opens ("Menu", "Filters"), and the `menu` Icon alone is only acceptable with that label for assistive technology.
+Titles name what the panel holds ("Menu", "Filters", "Your cart"), not "Side panel". A navigation panel is a Stack (or Tree) of Links with the current page's Link set `current`, which every platform announces — grouped with Dividers if long; keep it to what fits without scrolling on a typical phone. Filter panels end with an action row in the footer ("Apply", "Clear"). The trigger's label says what opens ("Menu", "Filters"), and the `menu` Icon alone is only acceptable with that label for assistive technology.
 
 ## Accessibility
 

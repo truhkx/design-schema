@@ -13,6 +13,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: 'Accessible name of the control ("View mode"). Not shown; put a visible Text label beside it when the meaning is not obvious from context. Lit, where an attribute can be absent, defaults the property to an empty string and warns in development when it is empty; React and React Native rely on the required type and do not warn, even for an empty string.'
     options:

@@ -125,6 +125,26 @@ describe('CtaButton', () => {
     const s = setup({"type": "submit"});
     expect(s.root()).not.toBeNull();
   });
+  test('renders-haspopup-menu', async () => {
+    const s = setup({"haspopup": "menu"});
+    expect(s.root()).not.toBeNull();
+  });
+  test('renders-haspopup-listbox', async () => {
+    const s = setup({"haspopup": "listbox"});
+    expect(s.root()).not.toBeNull();
+  });
+  test('renders-haspopup-tree', async () => {
+    const s = setup({"haspopup": "tree"});
+    expect(s.root()).not.toBeNull();
+  });
+  test('renders-haspopup-grid', async () => {
+    const s = setup({"haspopup": "grid"});
+    expect(s.root()).not.toBeNull();
+  });
+  test('renders-haspopup-dialog', async () => {
+    const s = setup({"haspopup": "dialog"});
+    expect(s.root()).not.toBeNull();
+  });
   test('has-accessible-name', async () => {
     const s = setup({});
     expect(screen.getByRole('button', { name: s.props.label })).toBeInTheDocument();

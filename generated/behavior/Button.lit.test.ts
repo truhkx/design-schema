@@ -156,6 +156,26 @@ describe('ds-button', () => {
     const s = await setup({"type": "submit"});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
   });
+  test('renders-haspopup-menu', async () => {
+    const s = await setup({"haspopup": "menu"});
+    expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
+  });
+  test('renders-haspopup-listbox', async () => {
+    const s = await setup({"haspopup": "listbox"});
+    expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
+  });
+  test('renders-haspopup-tree', async () => {
+    const s = await setup({"haspopup": "tree"});
+    expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
+  });
+  test('renders-haspopup-grid', async () => {
+    const s = await setup({"haspopup": "grid"});
+    expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
+  });
+  test('renders-haspopup-dialog', async () => {
+    const s = await setup({"haspopup": "dialog"});
+    expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
+  });
   test('has-accessible-name', async () => {
     const s = await setup({});
     expect(s.container()).toHaveAccessibleName(s.props.label);

@@ -13,7 +13,7 @@ import { useStd, useTmp, write } from './fixtures.ts';
 const WIDGET: Dict = {
   name: 'Widget',
   anatomy: ['control', 'label'],
-  props: { label: { type: 'string', required: true, description: 'Visible text.' } },
+  props: { label: { type: 'string', required: true, a11yRole: 'accessible-name', description: 'Visible text.' } },
   events: {
     onPress: { description: 'Activated.', platforms: { web: 'onPress', lit: 'press', rn: 'onPress' } },
   },
@@ -318,7 +318,7 @@ describe('name and renders', () => {
       name: 'Icon',
       anatomy: ['glyph'],
       a11y: { role: 'img', requires: ['accessible-name'] },
-      props: { label: { type: 'string', description: 'x', a11y: 'aria-label when set' } },
+      props: { label: { type: 'string', description: 'x', a11yRole: 'accessible-name', a11y: 'aria-label when set' } },
     };
     expect(bt.thenNameLines(icon, 'web')[0]).toContain('s.props.label');
   });
@@ -371,10 +371,10 @@ const SWIDGET: Dict = {
   ...WIDGET,
   anatomy: ['control', 'label'],
   props: {
-    label: { type: 'string', required: true, description: 'Visible text.' },
+    label: { type: 'string', required: true, a11yRole: 'accessible-name', description: 'Visible text.' },
     variant: { type: 'enum', values: ['primary', 'icon-only'], default: 'primary', description: 'Emphasis.' },
     size: { type: 'enum', values: ['sm', '2xl'], default: 'sm', description: 'Scale.' },
-    open: { type: 'boolean', description: 'Controlled.' },
+    open: { type: 'boolean', description: 'Controlled.', controls: { default: 'defaultOpen', event: 'onPress' } },
     defaultOpen: { type: 'boolean', description: 'Uncontrolled.' },
     loading: { type: 'boolean', description: 'Web only.', platforms: ['web'] },
     default: { type: 'boolean', description: 'A Swift keyword as a prop name.' },

@@ -112,6 +112,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Visible label naming the quantity ("Volume", "Price range").
       a11y: The label is a Text `<span>` with an id, not a native `<label for>` (which

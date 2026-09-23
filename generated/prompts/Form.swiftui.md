@@ -98,6 +98,7 @@ component:
         authoring error Form does not detect.
     label:
       type: string
+      a11yRole: accessible-name
       description: Accessible name for the form landmark, e.g. "Sign in". Required
         when a page has more than one form and `labelledBy` is not set. Nothing enforces
         this at runtime and no dev warning is emitted.

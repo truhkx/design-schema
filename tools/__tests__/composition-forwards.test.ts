@@ -310,6 +310,7 @@ describe('compositionTarget', () => {
     // The doc-fold passes after the regeneration added three more object entries (BottomSheet's heading on Heading
     // and DataGrid's two select cells on Checkbox), the two minTarget → controlSize forwards those select cells
     // declare, and three more passed props (AlertDialog focusScope.active, BottomSheet heading.level, footer.wrap).
-    expect({ objects, forwards, passed }).toEqual({ objects: 95, forwards: 143, passed: 179 });
+    // Job 650 passed two props to child contracts it added: Accordion item.fullWidth and DatePicker popover.initialFocus.
+    expect({ objects, forwards, passed }).toEqual({ objects: 95, forwards: 143, passed: 181 });
   });
 });

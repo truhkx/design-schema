@@ -221,7 +221,7 @@ describe('validate', () => {
     expectDocError(() => check(c), "deprecated.use names 'Widget', which is not another component with a doc");
   });
 
-  test('a composition naming a deprecated component warns through takeWarnings', () => {
+  test('a composition naming a deprecated component is an error, with the text the warning had until job 651', () => {
     parse.takeWarnings();
     Object.assign(parse.paths, { DOCS: tmp(), ROOT: tmp() });
     const badge = component();
@@ -229,8 +229,8 @@ describe('validate', () => {
     write(join(tmp(), 'badge.md'), '---\n' + fmText(badge) + '---\n' + BODY);
     const c = component();
     c.composition = { label: 'Badge' };
-    check(c);
-    expect(parse.takeWarnings()).toEqual([{ file: 'widget.md', message: 'composition.label: Badge is deprecated; use Widget' }]);
+    expectDocError(() => check(c), 'widget.md: composition.label: Badge is deprecated; use Widget');
+    expect(parse.takeWarnings()).toEqual([]);
     badge.status = 'review';
     delete badge.deprecated;
     write(join(tmp(), 'badge.md'), '---\n' + fmText(badge) + '---\n' + BODY);

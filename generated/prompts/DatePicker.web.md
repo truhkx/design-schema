@@ -100,6 +100,8 @@ component:
     calendarButton: Button
     popover:
       component: Popover
+      props:
+        initialFocus: none
       forwards:
         calendarInset: inset
     prevMonthButton: Button
@@ -119,6 +121,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Visible label ("Start date", "Date of birth").
       a11y: label/for on the input; the grid is named "{label}, {month} {year}".
@@ -774,20 +777,21 @@ component:
         root, and aria-invalid sits on the input(s). The month and year ds-selects
         live inside the shadow root, so ds-form never discovers them; they carry name="month"
         and name="year" only to satisfy ds-select. `open` is a property, not reflected
-        (see the prop). The composed ds-popover focuses its first focusable on open,
-        so DatePicker moves focus to the selected day (or today) after the popover
-        has opened, and asks the popover to reposition once the grid has laid out.
-        Composed `change` and `open-change`. The composed parts carry data-part on
-        the ds-button and ds-select hosts themselves, with no wrapper span, because
-        ds-popover''s trigger slot must receive the button itself. The `popover` part
-        is the exception: the ds-popover host also holds the trigger slot and so is
-        never hidden, which no `closes` expectation could ever see, so part/data-part="popover"
-        goes on the calendar content wrapper inside it — the same element the web
-        note names. ds-button has no focusable-while-disabled mode, so on Lit Today
-        uses `disabled` and leaves the Tab cycle while today cannot be picked. ds-select
-        closes its popup on Tab before the event bubbles, so the Tab trap ignores
-        a Tab whose composed path includes a ds-select; the Selects are never the
-        first or last stop, so native order holds the cycle there.'
+        (see the prop). The composed ds-popover is opened with `initial-focus="none"`,
+        so DatePicker moves focus to the selected day (or today) itself after the
+        popover has opened, and calls the popover''s `reposition()` once the grid
+        has laid out. Composed `change` and `open-change`. The composed parts carry
+        data-part on the ds-button and ds-select hosts themselves, with no wrapper
+        span, because ds-popover''s trigger slot must receive the button itself. The
+        `popover` part is the exception: the ds-popover host also holds the trigger
+        slot and so is never hidden, which no `closes` expectation could ever see,
+        so part/data-part="popover" goes on the calendar content wrapper inside it
+        — the same element the web note names. ds-button has no focusable-while-disabled
+        mode, so on Lit Today uses `disabled` and leaves the Tab cycle while today
+        cannot be picked. ds-select closes its popup on Tab before the event bubbles,
+        so the Tab trap ignores a Tab whose composed path includes a ds-select; the
+        Selects are never the first or last stop, so native order holds the cycle
+        there.'
     rn:
       element: TextInput
       props:
@@ -1016,7 +1020,7 @@ component:
 - `field`: element
 - `input`: element
 - `calendarButton`: component `Button`
-- `popover`: component `Popover`; forwards `calendarInset` → `overrides.inset`
+- `popover`: component `Popover`; props `initialFocus` = "none"; forwards `calendarInset` → `overrides.inset`
 - `header`: element
 - `prevMonthButton`: component `Button`
 - `nextMonthButton`: component `Button`

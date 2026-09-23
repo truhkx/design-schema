@@ -17,6 +17,7 @@ component:
   props:
     caption:
       type: string
+      a11yRole: accessible-name
       required: true
       description: 'What the grid holds ("Price list"). The accessible name; visually hidden with `hideCaption`. Required: a grid built without one falls back to an empty caption and warns in development.'
       a11y: aria-labelledby the caption (web) / accessibilityLabel (native).

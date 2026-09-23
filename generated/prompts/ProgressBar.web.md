@@ -92,6 +92,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: What is progressing ("Uploading photos", "Importing contacts").
         Visible unless `hideLabel`.

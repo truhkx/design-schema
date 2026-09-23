@@ -100,6 +100,15 @@ component:
       description: Keep the panel in the tree while closed (hidden, not unmounted).
         Required when the panel contains form fields, so the Form still collects them
         while the disclosure is closed.
+    fullWidth:
+      type: boolean
+      default: false
+      description: 'The trigger spans the width of its row, so the whole row is the
+        hit area (and the hover fill runs edge to edge) rather than ending at the
+        summary text. The icon and summary stay at the start; the rest of the row
+        is empty trigger. Web and Lit make the trigger a full-width block-level flex
+        box (Lit: the host and the inner button both); native stretches the Pressable
+        across its container. Accordion sets it on every section it renders.'
     headingLevel:
       type: enum
       values:
@@ -334,6 +343,7 @@ component:
       - open
       - disabled
       - keep-mounted
+      - full-width
       notes: 'Shadow root with delegatesFocus; the summary is a property, the panel
         content is the default slot, and the slot is rendered only while open (with
         keep-mounted the slot is always rendered and its wrapper gets `hidden` while

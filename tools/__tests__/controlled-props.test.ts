@@ -141,7 +141,7 @@ describe('the checks', () => {
 });
 
 describe('controlledPairs', () => {
-  test('declared pairs come first, then name pairs; a default with no prop to seed is not a pair', () => {
+  test('only props that declare controls are pairs; <x> beside default<X> is not one (job 651)', () => {
     const c = withProps({
       value: { type: 'string', description: 'x' },
       defaultValue: { type: 'string', description: 'x' },
@@ -152,11 +152,11 @@ describe('controlledPairs', () => {
     expect(controlledPairs(c)).toEqual([
       { prop: 'checked', default: 'defaultChecked', event: 'onChange', state: 'checked', declared: true },
       { prop: 'open', default: null, event: 'onOpenChange', state: 'open', declared: true },
-      { prop: 'value', default: 'defaultValue', event: null, state: null, declared: false },
     ]);
+    expect(controlledPairs(withProps({ value: { type: 'string', description: 'x' }, defaultValue: { type: 'string', description: 'x' } }))).toEqual([]);
   });
 
-  test('a declared pair replaces the name rule for its props', () => {
+  test('a declared pair is the only pair for its props', () => {
     const c = withProps({
       expanded: bool({ controls: { default: 'initiallyExpanded', event: 'onChange', state: 'expanded' } }),
       initiallyExpanded: bool(),
@@ -173,10 +173,12 @@ const generated = (JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'compone
 describe('generated/components.json', () => {
   // Job 637 declared every controlled prop: the 25 props that paired with a `default<X>` by name, and the 9 `open`
   // props whose doc names the event that reports the change (AlertDialog has two candidates and Tooltip no events,
-  // so both stay undeclared and, having no `default<X>`, are no pair at all).
-  test('34 pairs, every one declared, every one naming the event that reports the change', () => {
+  // so both stay undeclared and, having no `default<X>`, are no pair at all). Job 650 added Listbox's `activeValue`,
+  // reported by `onActiveChange` and seeded by no default prop.
+  test('35 pairs, every one declared, every one naming the event that reports the change', () => {
     const pairs = generated.flatMap((c) => controlledPairs(c).map((pair) => ({ component: c.name as string, ...pair })));
-    expect(pairs).toHaveLength(34);
+    expect(pairs).toHaveLength(35);
+    expect(pairs).toContainEqual(expect.objectContaining({ component: 'Listbox', prop: 'activeValue', event: 'onActiveChange', default: null, declared: true }));
     expect(pairs.filter((pair) => !pair.declared)).toEqual([]);
     expect(pairs.filter((pair) => pair.event === null)).toEqual([]);
     expect(pairs.filter((pair) => pair.default !== null)).toHaveLength(25);
@@ -209,6 +211,18 @@ describe('a default that seeds nothing', () => {
     rejects(withProps({ defaultActive: bool() }), ['props', 'defaultActive'], "seeds 'active', which is not a prop");
     accepts(withProps({ current: bool({ controls: { default: 'defaultActive', event: 'onChange' } }), defaultActive: bool() }));
     accepts(withProps({ active: bool({ controls: { default: 'defaultActiveValue', event: 'onChange' } }), defaultActiveValue: bool() }));
+  });
+});
+
+describe('a pair by name alone (job 651)', () => {
+  // Parsed green before job 651, which paired it by name in `controlledPairs`; nothing pairs it now.
+  test('componentDef rejects <x> beside default<X> when no controls.default names the default', () => {
+    rejects(
+      withProps({ value: { type: 'string', description: 'x' }, defaultValue: { type: 'string', description: 'x' } }),
+      ['props', 'defaultValue'],
+      "seeds 'value' by name only; pair them with props.value.controls.default",
+    );
+    accepts(withProps({ value: { type: 'string', description: 'x', controls: { default: 'defaultValue', event: 'onChange' } }, defaultValue: { type: 'string', description: 'x' } }));
   });
 });
 
@@ -255,8 +269,8 @@ describe('swiftUncontrolled', () => {
     expect(bt.swiftUncontrolled({ ...UNCONVENTIONAL, defaultExpanded: bool() }, { expanded: true })).toEqual({ initiallyExpanded: true });
   });
 
-  test('the name rule still pairs undeclared props', () => {
-    expect(bt.swiftUncontrolled({ open: bool(), defaultOpen: bool() }, { open: true })).toEqual({ defaultOpen: true });
+  test('undeclared props are not paired by name (job 651)', () => {
+    expect(bt.swiftUncontrolled({ open: bool(), defaultOpen: bool() }, { open: true })).toEqual({ open: true });
     expect(bt.swiftUncontrolled({ activeValue: bool() }, { activeValue: true })).toEqual({ activeValue: true });
   });
 });

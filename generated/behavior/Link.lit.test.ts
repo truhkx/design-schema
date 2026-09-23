@@ -89,6 +89,10 @@ describe('ds-link', () => {
     const s = await setup({"download": true});
     expect(s.anchor()).toHaveAttribute("download", "");
   });
+  test('current-marks-the-page', async () => {
+    const s = await setup({"current": true});
+    expect(s.anchor()).toHaveAttribute("aria-current", "page");
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

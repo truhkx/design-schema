@@ -209,13 +209,11 @@ describe('declared contract sections', () => {
     expect(parse.computedExpression(c, binding, 'swiftui')).toBe('theme.space4 * 3.5 - paddingBlock');
   });
 
-  test('a real controlled pair paired by name says no event is declared', () => {
+  test('a pair by name alone renders no controlled-state section (job 651)', () => {
     const c = component();
     c.props.expanded = { type: 'boolean', description: 'Expanded.' };
     c.props.defaultExpanded = { type: 'boolean', default: false, description: 'Initially expanded.' };
-    expect(parse.contractSections(c, 'web')).toBe(
-      '## Controlled state\n\n- `expanded` is controlled when given, uncontrolled from `defaultExpanded` when omitted; paired by name, so no event is declared\n\n',
-    );
+    expect(parse.contractSections(c, 'web')).not.toContain('## Controlled state');
   });
 
   test.each(PLATFORMS)('a component using none of the fields renders no section on %s', (platform) => {

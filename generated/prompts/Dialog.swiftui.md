@@ -106,6 +106,7 @@ component:
         state: open
     heading:
       type: string
+      a11yRole: accessible-name
       required: true
       description: The dialog's title, rendered as a level-2 Heading and used as the
         accessible name. Says what the task is ("Rename project").

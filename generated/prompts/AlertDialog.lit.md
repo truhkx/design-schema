@@ -115,6 +115,7 @@ component:
         `open` and sets it false after handling `onConfirm` or `onCancel`, as in Dialog.
     heading:
       type: string
+      a11yRole: accessible-name
       required: true
       description: The question or statement, as a level-2 Heading at the size Heading
         reads from level 2 (no explicit `size`), and the accessible name ("Delete

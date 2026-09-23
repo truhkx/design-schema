@@ -97,6 +97,7 @@ component:
         orphans.
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Accessible name of the tab list ("Account sections"). Not shown
         visually.

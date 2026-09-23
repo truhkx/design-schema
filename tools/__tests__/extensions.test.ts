@@ -448,7 +448,7 @@ describe('changing and removing upstream: refusals', () => {
 
   test('omitting a required prop', () => {
     ext('x', { extends: 'Widget', name: 'x', omit: { props: ['label'] } });
-    fails('extensions/Widget.x.md: omit.props.label carries an accessibility guarantee (required, the accessible-name prop)');
+    fails('extensions/Widget.x.md: omit.props.label carries an accessibility guarantee (required, a11yRole: accessible-name, the accessible-name prop)');
   });
 
   test('omitting a prop with an a11yRole', () => {

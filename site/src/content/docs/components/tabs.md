@@ -21,6 +21,7 @@ component:
       description: 'One panel per tab, in the same order, each wrapped in the exported `TabPanel` (or `<ds-tab-panel>`) with a matching `id`. Only the selected panel is rendered unless `keepMounted`. Examples describe children in words; stories and tests build them from `args.tabs` (one TabPanel per entry, id = the tab id), so a scenario that replaces `tabs` also replaces the panels and has no orphans.'
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: 'Accessible name of the tab list ("Account sections"). Not shown visually.'
     value:

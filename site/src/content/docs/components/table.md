@@ -16,6 +16,7 @@ component:
   props:
     caption:
       type: string
+      a11yRole: accessible-name
       required: true
       description: 'What the table lists ("Open invoices"). Rendered as the caption and the accessible name; visually hidden with `hideCaption` when a Heading directly above already says it.'
       a11y: The <caption> (web) / aria-label on the container; never omitted.

@@ -358,13 +358,30 @@ describe('shipped docs', () => {
 
 describe('accessibleNameGiven', () => {
   /** has-accessible-name must render with the prop that carries the name when that prop is optional. */
-  test('an optional prop whose a11y note names the accessible name is supplied', () => {
+  test('an optional prop that declares a11yRole: accessible-name is supplied', () => {
     const c = component();
     c.a11y.requires = ['accessible-name'];
     c.props.label.required = false;
-    c.props.label.a11y = 'The accessible name (aria-label / accessibilityLabel) when there is no visible text.';
     const sc = parse.deriveBehavior(c).find((s) => s.name === 'has-accessible-name') as parse.Dict;
     expect(sc.given).toEqual({ label: parse.ACCESSIBLE_NAME_PLACEHOLDER });
+  });
+
+  test('an a11y note that names the accessible name no longer makes the naming prop (job 651)', () => {
+    const c = component();
+    c.a11y.requires = ['accessible-name'];
+    delete c.props.label.a11yRole;
+    c.props.label.required = false;
+    c.props.label.a11y = 'The accessible name (aria-label / accessibilityLabel) when there is no visible text.';
+    expect(parse.accessibleNameProp(c)).toBeNull();
+    const sc = parse.deriveBehavior(c).find((s) => s.name === 'has-accessible-name') as parse.Dict;
+    expect(sc).not.toHaveProperty('given');
+  });
+
+  test('a required label no longer makes the naming prop (job 651)', () => {
+    const c = component();
+    delete c.props.label.a11yRole;
+    expect(c.props.label.required).toBe(true);
+    expect(parse.accessibleNameProp(c)).toBeNull();
   });
 
   test('a required label needs no given', () => {
@@ -385,15 +402,17 @@ describe('accessibleNameGiven', () => {
     expect(sc).not.toHaveProperty('given');
   });
 
-  test('the a11y note wins over a required title', () => {
+  test('neither an a11y note nor a required title makes the naming prop', () => {
     const c = component();
+    delete c.props.label.a11yRole;
     c.props.title = { type: 'string', required: true, description: 'x' };
     c.props.name = { type: 'string', description: 'x', a11y: 'Read as the accessible name.' };
-    expect(parse.accessibleNameProp(c)).toBe('name');
+    expect(parse.accessibleNameProp(c)).toBeNull();
   });
 
-  test('a declared a11yRole wins over the heuristic', () => {
+  test('the prop that declares a11yRole is the naming prop', () => {
     const c = component();
+    delete c.props.label.a11yRole;
     c.props.name = { type: 'string', description: 'x', a11y: 'Read as the accessible name.' };
     c.props.summary = { type: 'string', required: true, description: 'x', a11yRole: 'accessible-name' };
     expect(parse.accessibleNameProp(c)).toBe('summary');
@@ -407,7 +426,8 @@ describe('accessibleNameGiven', () => {
 
   test('an enum naming prop uses its first value', () => {
     const c = component();
-    c.props.icon = { type: 'enum', values: ['check', 'close'], description: 'x', a11y: 'Announced as the accessible name.' };
+    delete c.props.label.a11yRole;
+    c.props.icon = { type: 'enum', values: ['check', 'close'], description: 'x', a11yRole: 'accessible-name' };
     expect(parse.accessibleNameGiven(c)).toEqual({ icon: 'check' });
   });
 
@@ -435,13 +455,17 @@ describe('focusable derivation', () => {
   });
 });
 
-describe('naming prop must carry text', () => {
-  test('a boolean prop that mentions the name is not the naming prop', () => {
-    const c = component();
-    c.props.hideTitle = { type: 'boolean', description: 'x', a11y: 'The title stays the accessible name even when hidden.' };
-    c.props.title = { type: 'string', required: true, description: 'x' };
-    expect(parse.accessibleNameProp(c)).not.toBe('hideTitle');
-    const given = parse.accessibleNameGiven(c);
-    expect(given === null || !('hideTitle' in given)).toBe(true);
+describe('accessible-name prop across the corpus', () => {
+  const corpus = (JSON.parse(readText(join(REPO_ROOT, 'generated', 'components.json'))) as parse.Dict[]).map((entry) => entry.component as parse.Dict);
+
+  test('every naming prop in generated/components.json is declared with a11yRole, and none twice', () => {
+    const named = corpus.filter((c) => parse.accessibleNameProp(c) !== null);
+    expect(named.length).toBeGreaterThan(0);
+    for (const c of named) {
+      const declared = Object.entries(c.props as parse.Dict).filter(([, p]) => p.a11yRole === 'accessible-name').map(([pName]) => pName);
+      expect(declared, `${c.name}`).toEqual([parse.accessibleNameProp(c)]);
+    }
+    const twice = corpus.filter((c) => Object.values((c.props ?? {}) as parse.Dict).filter((p) => p.a11yRole === 'accessible-name').length > 1).map((c) => c.name);
+    expect(twice).toEqual([]);
   });
 });

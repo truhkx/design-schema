@@ -205,7 +205,7 @@ component:
   examples:
     - name: navigation-drawer
       description: The phone hamburger menu that becomes the permanent sidebar on desktop, with a self-explanatory list.
-      given: { trigger: 'An icon-only Button with the menu Icon, labelled Menu', heading: 'Menu', children: 'A Stack of navigation Links with the current page marked where the platform allows it (aria-current on web; unmarked on Lit and React Native, whose Links cannot carry it yet)', hideHeading: true, role: navigation, persistent: content }
+      given: { trigger: 'An icon-only Button with the menu Icon, labelled Menu', heading: 'Menu', children: 'A Stack of navigation Links with the current page''s Link set `current`', hideHeading: true, role: navigation, persistent: content }
     - name: filters
       description: A wide filter panel beside a results page, ending in an action row.
       given: { trigger: 'A Filters Button', heading: 'Filters', children: 'A Stack of filter Checkboxes', footer: 'Clear and Apply Buttons', width: wide }
@@ -233,7 +233,7 @@ The trigger toggles the panel and reflects it with `aria-expanded`. Non-modal (d
 
 ## Content guidelines
 
-Titles name what the panel holds ("Menu", "Filters", "Your cart"), not "Side panel". A navigation panel is a Stack (or Tree) of Links with the current page marked where the platform's Link allows it — `aria-current="page"` through Link's rest props on web; not yet on Lit, where `ds-link` has neither a `current` property nor a forward of `aria-current` to its inner `<a>`, so the Lit story leaves it unmarked until Link's own schema grows the prop; and never on React Native, whose Link has no current-page state — grouped with Dividers if long; keep it to what fits without scrolling on a typical phone. Filter panels end with an action row in the footer ("Apply", "Clear"). The trigger's label says what opens ("Menu", "Filters"), and the `menu` Icon alone is only acceptable with that label for assistive technology.
+Titles name what the panel holds ("Menu", "Filters", "Your cart"), not "Side panel". A navigation panel is a Stack (or Tree) of Links with the current page's Link set `current`, which every platform announces — grouped with Dividers if long; keep it to what fits without scrolling on a typical phone. Filter panels end with an action row in the footer ("Apply", "Clear"). The trigger's label says what opens ("Menu", "Filters"), and the `menu` Icon alone is only acceptable with that label for assistive technology.
 
 ## Accessibility
 

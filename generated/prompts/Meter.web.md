@@ -120,6 +120,7 @@ component:
         this document's formatting, not characters in the emitted string.
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Visible label naming the measurement ("Storage used"). Also the
         accessible name. Lit starts the property as an empty string, with no development

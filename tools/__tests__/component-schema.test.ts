@@ -1518,77 +1518,113 @@ describe('lifecycle: since and deprecated', () => {
   });
 });
 
-describe('componentWarnings for lifecycle', () => {
-  const lifecycleWarnings = (c: Dict): { path: string; message: string }[] => componentWarnings(componentDef.parse(c)).filter((w) => w.message.includes('deprecated'));
+// `componentWarnings` rules until job 651 made them errors: the same messages at the same paths, now Zod issue paths.
+describe('lifecycle rules reject', () => {
+  const lifecycleIssues = issues;
 
-  test('a default that is a deprecated value warns', () => {
+  test('a default that is a deprecated value is rejected', () => {
     const c = component();
     c.props.variant.valueLifecycle = { danger: { deprecated: { reason: 'x' } } };
-    expect(lifecycleWarnings(c)).toEqual([]);
+    expect(lifecycleIssues(c)).toEqual([]);
     c.props.variant.valueLifecycle = { primary: { deprecated: { reason: 'x', use: 'danger' } } };
-    expect(lifecycleWarnings(c)).toEqual([{ path: 'props.variant.default', message: "'primary' is a deprecated value" }]);
+    expect(lifecycleIssues(c)).toEqual([{ path: ['props', 'variant', 'default'], message: "'primary' is a deprecated value" }]);
   });
 
-  test('a deprecated prop that is still required warns', () => {
+  test('a deprecated prop that is still required is rejected', () => {
     const c = component();
     c.props.label.required = false;
     c.props.label.deprecated = { reason: 'x' };
-    expect(lifecycleWarnings(c)).toEqual([]);
+    expect(lifecycleIssues(c)).toEqual([]);
     c.props.label.required = true;
-    expect(lifecycleWarnings(c)).toEqual([{ path: 'props.label.required', message: 'is required but deprecated, so a caller cannot stop passing it' }]);
+    expect(lifecycleIssues(c)).toEqual([{ path: ['props', 'label', 'required'], message: 'is required but deprecated, so a caller cannot stop passing it' }]);
   });
 
-  test('status deprecated with no deprecated block warns', () => {
+  test('status deprecated with no deprecated block is rejected', () => {
     const c = component();
     c.status = 'deprecated';
-    expect(lifecycleWarnings(c)).toEqual([{ path: 'status', message: "is 'deprecated' but there is no deprecated block, so nothing says why or what replaces it" }]);
+    expect(lifecycleIssues(c)).toEqual([{ path: ['status'], message: "is 'deprecated' but there is no deprecated block, so nothing says why or what replaces it" }]);
     c.deprecated = { reason: 'Replaced.' };
-    expect(lifecycleWarnings(c)).toEqual([]);
+    expect(lifecycleIssues(c)).toEqual([]);
   });
 
-  test('a use that names something itself deprecated warns, for a prop, an event and a value', () => {
+  test('a use that names something itself deprecated is rejected, for a prop, an event and a value', () => {
     const c = lifecycleShaped();
     c.props.heading = { type: 'string', description: 'x', deprecated: { reason: 'x', use: 'title' } };
     c.events.onActivate = { description: 'x', platforms: { web: 'onActivate', rn: 'onActivate' }, deprecated: { reason: 'x', use: 'onPress' } };
     c.props.tone.valueLifecycle = { alpha: { deprecated: { reason: 'x', use: 'beta' } } };
-    expect(lifecycleWarnings(c)).toEqual([]);
+    expect(lifecycleIssues(c)).toEqual([]);
     c.props.title.deprecated = { reason: 'x' };
     c.events.onPress.deprecated = { reason: 'x' };
     c.props.tone.valueLifecycle.beta = { deprecated: { reason: 'x' } };
-    expect(lifecycleWarnings(c)).toEqual([
-      { path: 'props.tone.valueLifecycle.alpha.deprecated.use', message: "names 'beta', which is itself deprecated" },
-      { path: 'props.heading.deprecated.use', message: "names 'title', which is itself deprecated" },
-      { path: 'events.onActivate.deprecated.use', message: "names 'onPress', which is itself deprecated" },
+    expect(lifecycleIssues(c)).toEqual([
+      { path: ['props', 'tone', 'valueLifecycle', 'alpha', 'deprecated', 'use'], message: "names 'beta', which is itself deprecated" },
+      { path: ['props', 'heading', 'deprecated', 'use'], message: "names 'title', which is itself deprecated" },
+      { path: ['events', 'onActivate', 'deprecated', 'use'], message: "names 'onPress', which is itself deprecated" },
     ]);
   });
 
-  test("an authored scenario's given that sets a deprecated prop or value warns", () => {
+  test("an authored scenario's given that sets a deprecated prop or value is rejected", () => {
     const c = withBehavior({ ...CLICK, given: { title: 'Old', tone: 'alpha' } });
     Object.assign(c.props, lifecycleShaped().props);
-    expect(lifecycleWarnings(c)).toEqual([]);
+    expect(lifecycleIssues(c)).toEqual([]);
     c.props.title.deprecated = { reason: 'x' };
     c.props.tone.valueLifecycle = { alpha: { deprecated: { reason: 'x' } } };
-    expect(lifecycleWarnings(c)).toEqual([
-      { path: 'behavior.0.given.title', message: "scenario 'click-fires' sets 'title', which is deprecated" },
-      { path: 'behavior.0.given.tone', message: "scenario 'click-fires' sets 'tone' to 'alpha', which is a deprecated value" },
+    expect(lifecycleIssues(c)).toEqual([
+      { path: ['behavior', 0, 'given', 'title'], message: "scenario 'click-fires' sets 'title', which is deprecated" },
+      { path: ['behavior', 0, 'given', 'tone'], message: "scenario 'click-fires' sets 'tone' to 'alpha', which is a deprecated value" },
     ]);
   });
 
-  test("an example's given that sets a deprecated prop or value warns", () => {
+  test("an example's given that sets a deprecated prop or value is rejected", () => {
     const c = lifecycleShaped();
     c.examples = [{ name: 'old-look', description: 'The old look.', given: { title: 'Old', tone: 'alpha' } }];
-    expect(lifecycleWarnings(c)).toEqual([]);
+    expect(lifecycleIssues(c)).toEqual([]);
     c.props.title.deprecated = { reason: 'x' };
     c.props.tone.valueLifecycle = { alpha: { deprecated: { reason: 'x' } } };
-    expect(lifecycleWarnings(c)).toEqual([
-      { path: 'examples.0.given.title', message: "example 'old-look' sets 'title', which is deprecated" },
-      { path: 'examples.0.given.tone', message: "example 'old-look' sets 'tone' to 'alpha', which is a deprecated value" },
+    expect(lifecycleIssues(c)).toEqual([
+      { path: ['examples', 0, 'given', 'title'], message: "example 'old-look' sets 'title', which is deprecated" },
+      { path: ['examples', 0, 'given', 'tone'], message: "example 'old-look' sets 'tone' to 'alpha', which is a deprecated value" },
     ]);
   });
 
-  test('generated/components.json has no lifecycle warning, because no doc uses the fields yet', () => {
+  test('generated/components.json raises no warning at all: componentWarnings has nothing left to return', () => {
     const generated = (JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[]).map((entry) => entry.component as ComponentDef);
-    expect(generated.flatMap((c) => componentWarnings(c).filter((w) => w.message.includes('deprecated')))).toEqual([]);
+    expect(generated.flatMap((c) => componentWarnings(c))).toEqual([]);
+  });
+});
+
+// Job 651 removed the parser's fallbacks for the accessible-name prop; these shapes parsed green before it.
+describe('the accessible-name prop is declared', () => {
+  test('at most one prop declares a11yRole: accessible-name', () => {
+    const c = component();
+    c.props.title = { type: 'string', description: 'x', a11yRole: 'accessible-name' };
+    expect(issues(c)).toEqual([{ path: ['props', 'title', 'a11yRole'], message: 'props.label already declares a11yRole: accessible-name; only one prop gives the accessible name' }]);
+  });
+
+  test('a naming prop found only by its a11y note is rejected', () => {
+    const c = component();
+    delete c.props.label.a11yRole;
+    c.props.label.required = false;
+    c.props.label.a11y = 'Rendered as aria-label.';
+    expect(issues(c)).toEqual([{ path: ['props', 'label', 'a11yRole'], message: "props.label: its a11y note says it gives the accessible name, which is only read from a11yRole: accessible-name" }]);
+    c.props.label.a11yRole = 'accessible-name';
+    accepts(c);
+  });
+
+  test('a naming prop found only as a required label is rejected', () => {
+    const c = component();
+    delete c.props.label.a11yRole;
+    expect(issues(c)).toEqual([{ path: ['props', 'label', 'a11yRole'], message: 'props.label is required on a component that requires accessible-name, but the name is only read from a11yRole: accessible-name' }]);
+    c.a11y.requires = c.a11y.requires.filter((r: string) => r !== 'accessible-name');
+    accepts(c);
+  });
+
+  test('an intrinsic name needs no declared prop, even where accessible-name is required', () => {
+    const c = component();
+    delete c.props.label.a11yRole;
+    c.props.label.required = false;
+    expect(c.a11y.requires).toContain('accessible-name');
+    accepts(c);
   });
 });
 

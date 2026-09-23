@@ -24,6 +24,7 @@ component:
       description: 'Size the glyph at 1em of the surrounding text and align it to the text baseline, ignoring `size`. For icons inside Text, Link and Button labels. On web and Lit `font-size: inherit` always has a surrounding size to read, so there is no fallback there. The fallback is React Native only: an inline icon that is not inside a Text has nothing to inherit and renders at font.size.md, so `inline` still ignores `size` in that case.'
     label:
       type: string
+      a11yRole: accessible-name
       description: 'Accessible name. When set (non-empty), the icon is meaningful and exposed as an image with this name; when omitted or empty, it is decorative and hidden from assistive technology — an empty string is the decorative case, not an authoring error. Most icons sit next to text and should have no label.'
       a11y: 'With label: role=img + aria-label (accessibilityRole image + accessibilityLabel, importantForAccessibility auto). Without: aria-hidden / accessibilityElementsHidden + importantForAccessibility no.'
     color:

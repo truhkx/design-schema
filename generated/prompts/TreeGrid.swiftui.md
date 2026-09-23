@@ -88,6 +88,7 @@ component:
   props:
     caption:
       type: string
+      a11yRole: accessible-name
       required: true
       description: What the tree grid holds ("Chart of accounts").
       a11y: aria-labelledby the caption / accessibilityLabel.

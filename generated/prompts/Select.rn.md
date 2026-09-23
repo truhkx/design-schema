@@ -133,6 +133,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: Visible label. Always rendered.
       a11y: Associated with the trigger (label/for on web; accessibilityLabel on native).
@@ -451,11 +452,11 @@ component:
     fontWeight:
       token: font.weight.regular
       part: value
-      description: Weight of the trigger's value text only. Options keep Listbox's
-        own weights (optionSelectedWeight), since Listbox has no plain option-weight
-        binding to forward into. It exists as an override seam for composites that
-        set their own header type — DatePicker forwards its monthTitleWeight into
-        it.
+      description: 'Weight of the trigger''s value text only. Not forwarded to Listbox''s
+        `optionWeight`: like fontSize, the trigger''s value type does not reach the
+        popup, so options keep Listbox''s own weights (optionWeight, optionSelectedWeight).
+        It exists as an override seam for composites that set their own header type
+        — DatePicker forwards its monthTitleWeight into it.'
       locked: false
     lineHeight:
       token: font.lineHeight.normal
@@ -579,20 +580,20 @@ component:
         by replaying the KeyboardEvent on the Listbox ref (its wrapper, where Listbox
         handles keys) and copying its defaultPrevented back to the original event;
         Enter with `multiple` is not forwarded (Listbox''s Enter is a no-op there)
-        but handled by Select, which toggles the active option. Listbox applies initialActiveValue
-        only when it receives focus, and focus never leaves the trigger, so on open
-        Select dispatches a `focusin` on the Listbox ref to make the selected (or
-        first) option active. A hidden <input name> per selected value carries the
-        value(s) for native form submission — none when nothing is selected or when
-        disabled. `native: always` renders <select> (and <select multiple>) with the
-        same label/description/error wiring and no popup, and is the one place the
-        system uses the real `disabled` attribute rather than aria-disabled: that
-        mode exists for forms that work without JavaScript, where aria alone would
-        not stop interaction. In that mode a single select gets a first disabled <option
-        value=""> showing the placeholder, and the chevron is drawn for single only
-        (<select multiple> is a list box with no dropdown). `container?: HTMLElement`
-        (default document.body) is the portal target — a platform prop, not a schema
-        prop.'
+        but handled by Select, which toggles the active option. Focus never leaves
+        the trigger, so Select drives the active option through Listbox''s controlled
+        `activeValue`: the selected (or first) option on open, each value `onActiveChange`
+        reports while open, and `null` on close. A hidden <input name> per selected
+        value carries the value(s) for native form submission — none when nothing
+        is selected or when disabled. `native: always` renders <select> (and <select
+        multiple>) with the same label/description/error wiring and no popup, and
+        is the one place the system uses the real `disabled` attribute rather than
+        aria-disabled: that mode exists for forms that work without JavaScript, where
+        aria alone would not stop interaction. In that mode a single select gets a
+        first disabled <option value=""> showing the placeholder, and the chevron
+        is drawn for single only (<select multiple> is a list box with no dropdown).
+        `container?: HTMLElement` (default document.body) is the portal target — a
+        platform prop, not a schema prop.'
     lit:
       tag: ds-select
       reflect:

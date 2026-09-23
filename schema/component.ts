@@ -1088,11 +1088,14 @@ export const componentDef = z
     // controlled prop has no default of its own, since a default would make every instance controlled.
     // A `default<X>` prop with no `<x>` prop that no `controls.default` names seeds nothing: a `componentWarnings`
     // rule until the phase 3 migration satisfied it, so the message and the issue path are job 611's word for word.
+    // One whose `<x>` exists but names it in no `controls.default` is the by-name pair `controlledPairs` read until
+    // job 651; nothing pairs it now, so it is rejected rather than silently seeding nothing.
     const seeds = new Set(Object.values(c.props).map((p) => p.controls?.default));
     for (const dName of Object.keys(c.props)) {
       const name = seededName(dName);
-      if (name === null || Object.hasOwn(c.props, name) || seeds.has(dName)) continue;
-      issue(['props', dName], `seeds '${name}', which is not a prop`);
+      if (name === null || seeds.has(dName)) continue;
+      if (!Object.hasOwn(c.props, name)) issue(['props', dName], `seeds '${name}', which is not a prop`);
+      else issue(['props', dName], `seeds '${name}' by name only; pair them with props.${name}.controls.default`);
     }
     const seededBy = new Map<string, string>();
     for (const [pName, p] of Object.entries(c.props)) {
@@ -1520,8 +1523,72 @@ export const componentDef = z
         issue(at('repeat'), `${subject} repeat ${rule.repeat} needs focus-next or focus-prev in expect, got ${pyRepr(outcomes)}`);
       }
     }
+
+    // The accessible-name prop: at most one declares it, and since job 651 nothing else finds it. The two old shapes
+    // the parser used to fall back on (a prop whose a11y note says it names the component, and a required
+    // label/caption/title on a component that requires a name) are rejected when no prop declares the role, so a doc
+    // cannot slide back to them and silently lose its naming prop.
+    const namers = Object.entries(c.props).filter(([, p]) => p.a11yRole === 'accessible-name').map(([pName]) => pName);
+    for (const pName of namers.slice(1)) {
+      issue(['props', pName, 'a11yRole'], `props.${namers[0]} already declares a11yRole: accessible-name; only one prop gives the accessible name`);
+    }
+    if (namers.length === 0) {
+      for (const [pName, p] of Object.entries(c.props)) {
+        if (['string', 'content', 'enum'].includes(p.type) && OLD_NAME_NOTE.test(p.a11y ?? '')) {
+          issue(['props', pName, 'a11yRole'], `props.${pName}: its a11y note says it gives the accessible name, which is only read from a11yRole: accessible-name`);
+        }
+      }
+      if (!lacks('accessible-name')) {
+        for (const pName of ['label', 'caption', 'title']) {
+          if (Object.hasOwn(c.props, pName) && c.props[pName]?.required === true) {
+            issue(['props', pName, 'a11yRole'], `props.${pName} is required on a component that requires accessible-name, but the name is only read from a11yRole: accessible-name`);
+          }
+        }
+      }
+    }
+
+    // Lifecycle: what a doc could live with while callers moved off something deprecated. `componentWarnings` rules
+    // until job 651 made them errors; the messages and the paths are the warnings' word for word.
+    const deprecatedValue = (p: (typeof c.props)[string], value: unknown): boolean =>
+      typeof value === 'string' && p.valueLifecycle !== undefined && Object.hasOwn(p.valueLifecycle, value) && p.valueLifecycle[value]?.deprecated !== undefined;
+    const deprecatedIn = (items: Record<string, Deprecatable>, itemName: string): boolean => Object.hasOwn(items, itemName) && items[itemName]?.deprecated !== undefined;
+    if (c.status === 'deprecated' && c.deprecated === undefined) {
+      issue(['status'], "is 'deprecated' but there is no deprecated block, so nothing says why or what replaces it");
+    }
+    for (const [pName, p] of Object.entries(c.props)) {
+      if (deprecatedValue(p, p.default)) issue(['props', pName, 'default'], `'${String(p.default)}' is a deprecated value`);
+      if (p.required && p.deprecated !== undefined) issue(['props', pName, 'required'], 'is required but deprecated, so a caller cannot stop passing it');
+      for (const [value, life] of Object.entries(p.valueLifecycle ?? {})) {
+        const use = life.deprecated?.use;
+        if (use !== undefined && use !== value && deprecatedValue(p, use)) issue(['props', pName, 'valueLifecycle', value, 'deprecated', 'use'], `names '${use}', which is itself deprecated`);
+      }
+    }
+    const useRule = (section: 'props' | 'events', items: Record<string, Deprecatable>): void => {
+      for (const [itemName, item] of Object.entries(items)) {
+        const use = item.deprecated?.use;
+        if (use !== undefined && use !== itemName && (deprecatedIn(c.props, use) || deprecatedIn(c.events, use))) {
+          issue([section, itemName, 'deprecated', 'use'], `names '${use}', which is itself deprecated`);
+        }
+      }
+    };
+    useRule('props', c.props);
+    useRule('events', c.events);
+    const givenRule = (at: PropertyKey[], subject: string, given: Record<string, unknown>): void => {
+      for (const [pName, value] of Object.entries(given)) {
+        const p = Object.hasOwn(c.props, pName) ? c.props[pName] : undefined;
+        if (p?.deprecated !== undefined) issue([...at, pName], `${subject} sets '${pName}', which is deprecated`);
+        else if (p !== undefined && deprecatedValue(p, value)) issue([...at, pName], `${subject} sets '${pName}' to '${String(value)}', which is a deprecated value`);
+      }
+    };
+    for (const [i, sc] of (c.behavior ?? []).entries()) {
+      if (sc.derived !== true) givenRule(['behavior', i, 'given'], `scenario '${sc.name}'`, sc.given ?? {});
+    }
+    for (const [i, ex] of (c.examples ?? []).entries()) givenRule(['examples', i, 'given'], `example '${ex.name}'`, ex.given);
   })
   .meta({ id: 'componentDef' });
+
+/** An `a11y` note in the shape the pre-651 heuristic read as "this prop is the accessible name". */
+const OLD_NAME_NOTE = /accessible name|aria-label|accessibilitylabel|accessibility label/i;
 
 /** The whole frontmatter: Starlight's own fields (title, description, sidebar…) ride alongside `component`. */
 export const componentFrontmatter = z.object({
@@ -1536,59 +1603,13 @@ export type ComponentWarning = { path: string; message: string };
 
 /** Warnings about one parsed component, for rules on their way to becoming errors (a phase 2 check lands here one
  *  job before the doc migration that satisfies it). Pure, so a test can run it over generated/components.json.
- *  Not a Zod `.check`: Zod issues are errors. tools/parse.ts forwards each through its `warn` channel. */
-export function componentWarnings(c: ComponentDef): ComponentWarning[] {
-  return lifecycleWarnings(c);
+ *  Not a Zod `.check`: Zod issues are errors. tools/parse.ts forwards each through its `warn` channel. Empty since
+ *  job 651 moved the lifecycle rules into `componentDef.check`; the channel stays for the next round of rules. */
+export function componentWarnings(_c: ComponentDef): ComponentWarning[] {
+  return [];
 }
 
 type Deprecatable = { deprecated?: { use?: string | undefined } | undefined };
-
-/** What a doc can live with while callers move off something deprecated: a default that is a deprecated value, a
- *  deprecated prop that is still required, status deprecated with no deprecated block, a `use` that points at
- *  something itself deprecated, and an authored scenario or example that renders with a deprecated prop or value. */
-function lifecycleWarnings(c: ComponentDef): ComponentWarning[] {
-  const out: ComponentWarning[] = [];
-  const props = c.props;
-  // generated/components.json leaves out an empty events block, which parsing would default.
-  const events = c.events ?? {};
-  const deprecatedValue = (p: (typeof props)[string], value: unknown): boolean =>
-    typeof value === 'string' && p.valueLifecycle !== undefined && Object.hasOwn(p.valueLifecycle, value) && p.valueLifecycle[value]?.deprecated !== undefined;
-  const deprecatedIn = (items: Record<string, Deprecatable>, itemName: string): boolean => Object.hasOwn(items, itemName) && items[itemName]?.deprecated !== undefined;
-
-  if (c.status === 'deprecated' && c.deprecated === undefined) {
-    out.push({ path: 'status', message: "is 'deprecated' but there is no deprecated block, so nothing says why or what replaces it" });
-  }
-  for (const [pName, p] of Object.entries(props)) {
-    if (deprecatedValue(p, p.default)) out.push({ path: `props.${pName}.default`, message: `'${String(p.default)}' is a deprecated value` });
-    if (p.required && p.deprecated !== undefined) out.push({ path: `props.${pName}.required`, message: 'is required but deprecated, so a caller cannot stop passing it' });
-    for (const [value, life] of Object.entries(p.valueLifecycle ?? {})) {
-      const use = life.deprecated?.use;
-      if (use !== undefined && use !== value && deprecatedValue(p, use)) out.push({ path: `props.${pName}.valueLifecycle.${value}.deprecated.use`, message: `names '${use}', which is itself deprecated` });
-    }
-  }
-  const useRule = (section: string, items: Record<string, Deprecatable>): void => {
-    for (const [itemName, item] of Object.entries(items)) {
-      const use = item.deprecated?.use;
-      if (use !== undefined && use !== itemName && (deprecatedIn(props, use) || deprecatedIn(events, use))) {
-        out.push({ path: `${section}.${itemName}.deprecated.use`, message: `names '${use}', which is itself deprecated` });
-      }
-    }
-  };
-  useRule('props', props);
-  useRule('events', events);
-  const givenRule = (path: string, subject: string, given: Record<string, unknown>): void => {
-    for (const [pName, value] of Object.entries(given)) {
-      const p = Object.hasOwn(props, pName) ? props[pName] : undefined;
-      if (p?.deprecated !== undefined) out.push({ path: `${path}.${pName}`, message: `${subject} sets '${pName}', which is deprecated` });
-      else if (p !== undefined && deprecatedValue(p, value)) out.push({ path: `${path}.${pName}`, message: `${subject} sets '${pName}' to '${String(value)}', which is a deprecated value` });
-    }
-  };
-  for (const [i, sc] of (c.behavior ?? []).entries()) {
-    if (sc.derived !== true) givenRule(`behavior.${i}.given`, `scenario '${sc.name}'`, sc.given ?? {});
-  }
-  for (const [i, ex] of (c.examples ?? []).entries()) givenRule(`examples.${i}.given`, `example '${ex.name}'`, ex.given);
-  return out;
-}
 
 type NarrowSource = {
   props?: Record<string, { values?: readonly string[] | undefined; enumRef?: string | undefined; valuesOn?: Record<string, readonly string[]> | undefined }> | undefined;
@@ -1625,7 +1646,8 @@ export function narrowForPlatform<C extends NarrowSource>(c: C, platform: string
 type ControlsSource = { props?: Record<string, { controls?: { event: string; default?: string | undefined; state?: string | undefined } | undefined }> | undefined };
 
 /** One controlled prop: the prop, the prop that seeds it when omitted, the event that reports a change, and the
- *  behavior state it drives. `declared` is false for a pair found by name alone. */
+ *  behavior state it drives. `declared` is always true since job 651 removed pairing by name; it stays so readers
+ *  keep their shape. */
 export type ControlledPair = { prop: string; default: string | null; event: string | null; state: string | null; declared: boolean };
 
 const DEFAULT_PREFIX = /^default([A-Z].*)$/;
@@ -1637,22 +1659,13 @@ function seededName(propName: string): string | null {
   return rest === undefined ? null : (rest[0] as string).toLowerCase() + rest.slice(1);
 }
 
-/** The component's controlled props. Props that declare `controls` come first. Until job 651 removes it, a prop
- *  without `controls` still pairs by name with a `default<X>` sibling that no declared pair uses, with
- *  `declared: false` and no event; a `default<X>` with no `<x>` is not a pair. */
+/** The component's controlled props: the props that declare `controls`, in prop order. A `<x>`/`default<X>` pair
+ *  without `controls` is not a pair (job 651 removed pairing by name). */
 export function controlledPairs(component: ControlsSource): ControlledPair[] {
-  const props = component.props ?? {};
-  const declared: ControlledPair[] = [];
-  for (const [name, p] of Object.entries(props)) {
+  const pairs: ControlledPair[] = [];
+  for (const [name, p] of Object.entries(component.props ?? {})) {
     const controls = p.controls;
-    if (controls !== undefined) declared.push({ prop: name, default: controls.default ?? null, event: controls.event, state: controls.state ?? null, declared: true });
+    if (controls !== undefined) pairs.push({ prop: name, default: controls.default ?? null, event: controls.event, state: controls.state ?? null, declared: true });
   }
-  const seeds = new Set(declared.map((pair) => pair.default));
-  const byName: ControlledPair[] = [];
-  for (const [dName, d] of Object.entries(props)) {
-    const name = seededName(dName);
-    if (name === null || !Object.hasOwn(props, name) || props[name]?.controls !== undefined || d.controls !== undefined || seeds.has(dName) || seeds.has(name)) continue;
-    byName.push({ prop: name, default: dName, event: null, state: null, declared: false });
-  }
-  return [...declared, ...byName];
+  return pairs;
 }

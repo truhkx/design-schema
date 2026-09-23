@@ -117,6 +117,7 @@ component:
         at font.size.md, so `inline` still ignores `size` in that case.'
     label:
       type: string
+      a11yRole: accessible-name
       description: Accessible name. When set (non-empty), the icon is meaningful and
         exposed as an image with this name; when omitted or empty, it is decorative
         and hidden from assistive technology — an empty string is the decorative case,

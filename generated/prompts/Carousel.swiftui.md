@@ -86,6 +86,7 @@ component:
   props:
     label:
       type: string
+      a11yRole: accessible-name
       required: true
       description: What the carousel shows ("Featured products", "Customer stories").
       a11y: aria-label on the region; each slide is named `copy.slideLabel` ("2 of

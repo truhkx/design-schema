@@ -183,3 +183,20 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Link: under `tone: inherit` the pressed state has no visual effect, and the doc does not say whether the component should still track it. Chose to keep onPressIn/onPressOut wired under both tones (one code path, one harmless re-render) rather than branch the handlers.
 - Link: `allowFontScaling` is not mentioned anywhere in the schema or the rn notes. Chose to leave it on, matching the package's Text, so a link inside a scaled paragraph scales with it.
 - package digest (not the Link doc): the rn conventions digest gives the helper as `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but packages/rn/src/theme.tsx:100 declares `toLineHeight(fontSize, multiplier)` — the arguments are the other way round. Both are numbers, so a job that trusts the digest gets a silently wrong line height with no type error.
+
+## 2026-09-23 13:45 — round 1
+
+- Link: the rn conventions say to mirror accessibilityState.selected as aria-selected, but aria-selected is not an allowed attribute on role=link (axe aria-allowed-attr); the `current` prop names aria-current="page" as the react-native-web mirror, so I wrote only aria-current and no aria-selected. The conventions digest should exempt link roles or say that `current` wins.
+- Link: current-marks-the-page lists only web/lit `then` expectations, so the native accessibilityState.selected check has no scenario; I added a platform-own test in Link.test.tsx. The scenario could take an rn expectation such as `state: selected`.
+- Link: the rules say a component with a state prop gets notable-state stories but name none for `current`; I added a `Current` story (args { current: true }), standalone.
+- Link: the doc says the link 'keeps its colours' under `current` but not whether a current link still fires onPress/Linking; I left activation unchanged.
+- Link: the doc says copy.externalSuffix is a package-internal constant for Card and 'not part of the public entry point', but gives it no name; I kept the existing `LINK_EXTERNAL_SUFFIX` export in Link.tsx and did not add it to index.ts.
+- Link: accessibilityHint has no aria-* twin in the mirror list (aria-description is not in react-native-web's mapping); I forward it only as accessibilityHint.
+
+## 2026-09-23 13:45 — round 1
+
+- Link: package conventions say to mirror accessibilityState as aria-selected, but the spec says `current` mirrors as aria-current="page", and aria-selected is not allowed on role=link (axe aria-allowed-attr). Chose aria-current alone; the conventions digest should list aria-current as the mirror for link selection.
+- Link: the spec says `aria-current` from a consumer passes through `...rest` when `current` is false, but the native Link has no rest spread (it forwards only a fixed list of props for Tooltip). Chose to write nothing when false and accept no pass-through aria-current on native.
+- Link: the spec doesn't say whether a `Current` story is required (it isn't an example and has no enum). Added `Current` under 'notable states' with `current: false` in the meta args, since the web examples note says meta args hold the schema defaults.
+- Link: the current-marks-the-page scenario narrows its `then` to web and Lit, so the native accessibilityState.selected expectation is covered only by a platform-own test; the scenario could carry an rn expectation (selected: true).
+- Link: the rn conventions require aria-label alongside accessibilityLabel, but on react-native-web aria-label overrides the anchor's text content as the accessible name. It matches the visible label (+ suffix), so it's harmless, but the Link doc could say whether the mirror is wanted here, given the web platform deliberately avoids aria-label.

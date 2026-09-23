@@ -78,6 +78,21 @@ describe('Link', () => {
   });
 });
 
+/* Platform-own: current-marks-the-page's native expectation, which the parser narrows to web and Lit. */
+describe('Link — current', () => {
+  it('announces the current page as selected, with the aria-current mirror', () => {
+    const s = setup({ current: true });
+    expect(s.container()).toBeSelected();
+    expect(s.container().props['aria-current']).toBe('page');
+  });
+
+  it('writes nothing when not current', () => {
+    const s = setup({ current: false });
+    expect(s.container().props.accessibilityState).toBeUndefined();
+    expect(s.container().props['aria-current']).toBeUndefined();
+  });
+});
+
 /* Platform-own: the Linking fallback and external hand-off, which the scenarios cannot express. */
 describe('Link — Linking hand-off', () => {
   let openURL: jest.SpyInstance;

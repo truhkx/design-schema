@@ -13,6 +13,7 @@ const meta: Meta<typeof Link> = {
     label: 'View the billing history',
     external: false,
     tone: 'default',
+    current: false,
   },
 };
 
@@ -32,6 +33,11 @@ export const ToneInherit: Story = {
     </Text>
   ),
 };
+
+// states
+
+/** The link points at the screen the user is on: announced as selected, styled as any link. */
+export const Current: Story = { args: { current: true } };
 
 // examples
 

@@ -280,6 +280,9 @@ export function Input({
       label,
       // An empty or disabled field contributes nothing and is left out of the collected values.
       getValue: () => (latest.current.isDisabled || latest.current.currentValue === '' ? undefined : latest.current.currentValue),
+      // A disabled field stays registered and reports itself here; the Form skips it in its
+      // values, its validation and the order the "next" key walks.
+      isDisabled: () => latest.current.isDisabled,
       validate: () => latest.current.validateValue(latest.current.currentValue),
       focus: () => latest.current.focusField(),
     }),
@@ -289,12 +292,22 @@ export function Input({
   const register = form?.register;
   const unregister = form?.unregister;
   React.useEffect(() => {
-    if (register === undefined || unregister === undefined || isDisabled) {
+    if (register === undefined || unregister === undefined) {
       return undefined;
     }
     register(name, handle);
     return () => unregister(name);
-  }, [register, unregister, name, handle, isDisabled]);
+  }, [register, unregister, name, handle]);
+  // The Form re-reads `isDisabled()` on registration, which keeps the field's place in the
+  // order, so registering again is how a change of disabled state reaches the "next" key.
+  const registeredDisabled = React.useRef(isDisabled);
+  React.useEffect(() => {
+    if (registeredDisabled.current === isDisabled) {
+      return;
+    }
+    registeredDisabled.current = isDisabled;
+    register?.(name, handle);
+  }, [register, name, handle, isDisabled]);
 
   React.useEffect(() => {
     if (Platform.OS === 'ios' && !summarised && displayedError !== undefined) {
@@ -447,6 +460,7 @@ export function Input({
         autoCapitalize={literalType ? 'none' : undefined}
         autoCorrect={literalType ? false : undefined}
         accessibilityLabel={accessibleName}
+        aria-label={accessibleName}
         accessibilityHint={hint === '' ? undefined : hint}
         accessibilityState={{ disabled: isDisabled }}
         // react-native-web 0.21 drops `accessibilityState`; this mirror is what reaches the DOM.

@@ -321,7 +321,17 @@ export function Form({
       return { name: fieldName, text, registered: handles.current.has(fieldName) };
     });
 
-  const showSummary = errorSummary && submitFailed && errorEntries.length > 0;
+  // If every invalid field has unregistered by the time a failed submit renders, no summary
+  // is drawn for that attempt and accessibility focus stays where it was. Decided once, on
+  // the attempt's first render: an entry whose field unregisters later stays as plain text.
+  const renderedAttempt = React.useRef(0);
+  const summaryWithheld = React.useRef(false);
+  if (renderedAttempt.current !== failedAttempt) {
+    renderedAttempt.current = failedAttempt;
+    summaryWithheld.current = !errorEntries.some((entry) => entry.registered);
+  }
+
+  const showSummary = errorSummary && submitFailed && errorEntries.length > 0 && !summaryWithheld.current;
   const heading = summaryHeading(errorEntries.length, pluralLocale);
 
   // After a failed submission: accessibility focus to the summary heading, and on iOS (which
@@ -330,7 +340,7 @@ export function Form({
   const announcementRef = React.useRef('');
   announcementRef.current = showSummary ? [heading, ...errorEntries.map((entry) => entry.text)].join('. ') : '';
   React.useEffect(() => {
-    if (failedAttempt === 0) {
+    if (failedAttempt === 0 || summaryWithheld.current) {
       return;
     }
     const node = findNodeHandle(headingRef.current);
@@ -379,7 +389,16 @@ export function Form({
 
   return (
     <FormContext.Provider value={contextValue}>
-      <View ref={ref} testID="Form" role="form" accessibilityLabel={label} accessibilityState={{ disabled }} style={styles.container}>
+      <View
+        ref={ref}
+        testID="Form"
+        role="form"
+        accessibilityLabel={label}
+        aria-label={label}
+        accessibilityState={{ disabled }}
+        aria-disabled={disabled}
+        style={styles.container}
+      >
         {showSummary ? (
           // Not `accessible`, so every item Link stays separately focusable.
           <View testID="Form.errorSummary" accessibilityLiveRegion="assertive" style={styles.summary}>

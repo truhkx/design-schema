@@ -28,6 +28,13 @@ export interface LinkProps {
    * the underline alone; rest and pressed both resolve to the inherited color.
    */
   tone?: LinkTone | undefined;
+  /**
+   * The link points at the screen the user is on, in a navigation list (a SidePanel
+   * drawer, a Tree of href nodes): `accessibilityState.selected`, mirrored as
+   * `aria-current="page"` for react-native-web. The link stays a link and keeps its
+   * colors and underline; how a navigation also marks it visually is that container's to say.
+   */
+  current?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<LinkOverridableBinding, TokenRef | undefined>> | undefined;
   /**
@@ -110,6 +117,7 @@ export function Link({
   label,
   external = false,
   tone = 'default',
+  current = false,
   overrides,
   accessibilityLabel,
   accessibilityHint,
@@ -176,12 +184,19 @@ export function Link({
   // Text's types omit href/hrefAttrs and onFocus/onBlur/onHoverIn/onHoverOut
   // (react-native-web wires them up on Text), so they go through an untyped bag.
   const forwardedProps: Record<string, unknown> = { onFocus, onBlur, onHoverIn, onHoverOut };
+  // react-native-web drops accessibilityState, and Text's types have no aria-current;
+  // aria-selected is not allowed on a link, so the mirror is aria-current="page" alone.
+  if (current) {
+    forwardedProps['aria-current'] = 'page';
+  }
   if (IS_WEB) {
     forwardedProps.href = href;
     if (external) {
       forwardedProps.hrefAttrs = { target: '_blank', rel: 'noopener noreferrer' };
     }
   }
+
+  const name = accessibilityLabel ?? (external ? `${label}${COPY.externalSuffix}` : label);
 
   // Standalone, the Link sets the body typography (there is no cascade); nested in
   // a system Text it sets none and inherits the surrounding style.
@@ -209,7 +224,9 @@ export function Link({
     <Animated.Text
       testID="Link"
       accessibilityRole="link"
-      accessibilityLabel={accessibilityLabel ?? (external ? `${label}${COPY.externalSuffix}` : label)}
+      accessibilityLabel={name}
+      aria-label={name}
+      accessibilityState={current ? { selected: true } : undefined}
       accessibilityHint={accessibilityHint}
       allowFontScaling
       onPress={handlePress}

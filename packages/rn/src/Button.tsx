@@ -29,7 +29,10 @@ export type ButtonOverridableBinding =
   | 'spinnerSize';
 
 export interface ButtonProps {
-  /** The button's text. Also its accessible name. */
+  /**
+   * The button's text. Also its accessible name. An empty string is allowed and warns
+   * nowhere: it renders a nameless button, and nothing enforces WCAG 4.1.2 at runtime.
+   */
   label: string;
   /** Visual emphasis. One primary button per view. */
   variant?: ButtonVariant | undefined;
@@ -44,7 +47,10 @@ export interface ButtonProps {
    * rather than sent as `false`. Consumers rarely set it directly.
    */
   expanded?: boolean | undefined;
-  /** Prevents activation. The button stays in the accessibility tree and is announced as disabled. */
+  /**
+   * Prevents activation. The button stays in the focus order and is announced as disabled;
+   * a blocked press fires neither `onPress` nor tracking. ORed with the enclosing Form's `disabled`.
+   */
   disabled?: boolean | undefined;
   /** Icon before the label. Decorative — hidden from assistive technology; the label carries the meaning. */
   leadingIcon?: React.ReactNode;
@@ -272,6 +278,7 @@ export function Button({
     }
   }, [isDisabled]);
 
+  const name = accessibleName ?? accessibilityLabel ?? label;
   const colors = VARIANT_TOKENS[variant];
   const isInverseGhost = variant === 'ghost' && inverse;
 
@@ -448,11 +455,13 @@ export function Button({
       ref={rootRef}
       testID="Button"
       accessibilityRole="button"
-      accessibilityLabel={accessibleName ?? accessibilityLabel ?? label}
+      accessibilityLabel={name}
+      aria-label={name}
       accessibilityHint={accessibilityHint}
       accessibilityState={expanded === undefined ? { disabled: isDisabled, busy: loading } : { disabled: isDisabled, busy: loading, expanded }}
       // react-native-web 0.21 ignores `accessibilityState`; these aria-* mirrors are what reach
       // the DOM (native merges both). `aria-disabled` is set on the web node in an effect above.
+      // `accessibilityValue` has no mirror: aria-valuetext is not allowed on a button.
       aria-busy={loading}
       aria-expanded={expanded}
       accessibilityValue={loading ? { text: COPY.loading } : undefined}

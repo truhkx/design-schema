@@ -912,7 +912,11 @@ function ready(name: string, platform: string, args: Args, lock: Lock): Ready {
  * pair in another component). Costs nothing; saves the whole run when the docs are the problem.
  */
 function preflight(platform: string, skip: Set<string>, what: string): boolean {
-  const preSkip = new Set([...skip, 'typecheck', 'literals', 'keyboard', 'keyboard-run', 'axe']);
+  // `hooks` belongs with them: it reads the generated stylesheets, and unscoped it reports the whole
+  // repository's hook debt, so every target would fail preflight over bindings it does not own — and
+  // the debt can only clear by regenerating, which this would block. It runs after the model call,
+  // scoped to the component (tools/checks.ts `gatesFor`).
+  const preSkip = new Set([...skip, 'typecheck', 'literals', 'keyboard', 'keyboard-run', 'axe', 'hooks']);
   const pre = hooks.runGates(platform, preSkip, false).filter((r) => !r.ok);
   if (pre.length === 0) return true;
   print(`  ✖ ${what}: preflight failed before any model call — fix the docs and re-run tools/parse.ts:`);

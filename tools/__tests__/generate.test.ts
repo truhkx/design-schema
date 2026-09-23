@@ -619,7 +619,9 @@ describe('the round loop', () => {
       return verbose ? [] : [];
     };
     await g.generateOne('Text', 'lit', args({ skip: ['deps'] }), {});
-    expect(asked[0]).toEqual(['axe', 'deps', 'keyboard', 'keyboard-run', 'literals', 'typecheck']);
+    // `hooks` is in the list for the same reason as the rest: it reads the generated stylesheet, and
+    // unscoped it would fail every target over hook debt owned by components the model may not edit.
+    expect(asked[0]).toEqual(['axe', 'deps', 'hooks', 'keyboard', 'keyboard-run', 'literals', 'typecheck']);
     expect(asked[1], 'the real round skips only what --skip asked for').toEqual(['deps']);
   });
 

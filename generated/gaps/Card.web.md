@@ -179,3 +179,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Card: Behavior says '`tabIndex` is not a Card prop' but doesn't say whether to remove it from the props type. CardProps inherits `tabIndex` from the article props and passes it through, and `focusable` overrides it.
 - Card: a Link or Button target is recognised by component identity (Link, Button, 'button', or 'a' with href). A wrapper around Link (memo, a re-export) isn't recognised and falls back to non-interactive with a warning. The doc doesn't say whether wrappers count.
 - Card: a disabled target only removes hover. The keyboard ring still draws around a focused disabled target, since Button stays focusable when disabled. The notes don't say which is intended.
+
+## 2026-09-23 18:58 — round 1
+
+- Card: `heading` is listed in anatomy but carries no data-part, while the Behavior section says every anatomy part carries data-part except heading; the spec is consistent, but the Parts list ('heading: element') does not say so, so I kept the system Heading's own hook.
+- Card: the spec says the ring is drawn on the card while the target has keyboard focus, but never says whether that ring is a border-color change or an outline. I kept the border-color change, since interactive cards reserve border.width.focus.
+- Card: whole-card-is-a-link and interactive-adds-no-focus-stop give `children` as a string that must render as a Link (href #). Story args must therefore pass a Link element, and I kept the story arg as `<Link href="#" label="A Link to the invoice" />` rather than the literal string. The doc should say how a test harness maps the string to a Link.
+- Card: the `focusable` ring state is handled in focusin/focusout (`ds-card--focus-ring`) alongside `:focus-visible`. The spec describes this only in prose; it does not say whether the state must also clear on pointerup, so I cleared the pointerdown latch there.

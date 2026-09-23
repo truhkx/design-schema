@@ -153,3 +153,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Container: the derived `renders*` scenarios name no element or attribute to assert on. The test checks that the render container has a first child, not the `data-ds` root specifically.
 - Container: the web notes don't say whether `element: section` with no accessible name should warn or accept an `aria-label`. It renders a plain unnamed `<section>` that inherits `aria-*` from `...rest`, with no warning, matching the doc's 'author's responsibility' stance on `main`.
 - Container: the example stories inherit the meta defaults (`gutter: default`, `align: center`, `element: div`) as well as their `given` args. I read 'exactly its given as args' as 'given layered on the Default args', the same way the scenarios work.
+
+## 2026-09-23 18:58 — round 1
+
+- Container: the spec doesn't say how a test should check the responsive gutter or the `full`/`none` no-hook cases. jsdom has no media queries and does not load the CSS, so the scenarios only assert render and the main landmark. The breakpoint behavior has no automated coverage.
+- Container: the breakpoints (960 and 1280) are hard-coded in the CSS from calm-precise, as the notes say. The spec doesn't say what should happen when they drift from the tokens, so nothing checks them.

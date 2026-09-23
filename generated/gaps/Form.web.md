@@ -232,3 +232,9 @@ Note KEYBOARD_EXPECTS has no 'submits' outcome, so Enter is asserted through its
 - Form: the web platform notes say the locked errorSummaryText and errorSummaryBackground 'get no --ds-form-* hook on web or Lit; their rules read the token directly', but the prompt's Overrides section, the package conventions and the hooks gate all say a locked binding keeps its hook. Chose the Overrides contract: all three locked bindings (text, background, lineHeight) declare hooks and the rules read them. They are still left out of the `overrides` type. The notes should drop that sentence, for Lit too.
 - Form: after the Round 1 fix the spec is still unclear on what re-renders the summary when a field unregisters (it now bumps a registry counter), on the id base for an unnamed form (`ds-form` + useId()), on why the context carries both `validate` and `validateMode`, and on how the FailedSubmit play function waits for the summary (requestSubmit, then one animation frame).
 - Form: the spec has no keyboard block but a Keyboard story exists; the docs should declare a keyboard block or drop the requirement.
+
+## 2026-09-23 18:57 — round 1
+
+- Form: the spec never says whether the `actions` part should stretch or wrap when a consumer supplies a horizontal Stack — kept the plain flex-start row.
+- Form: 'the summary box is a column' is ambiguous — the box is a block containing a column Stack; the box itself is not a flex column.
+- Form: `disabled` says 'every action' is disabled, but not how a Button learns it — the Button reads FormContext.disabled; the spec does not name that mechanism.

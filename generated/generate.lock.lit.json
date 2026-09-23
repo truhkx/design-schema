@@ -483,19 +483,20 @@
     }
   },
   "Feed.lit": {
-    "hash": "af829359dd1aa23f",
-    "lastAttemptHash": "af829359dd1aa23f",
-    "generatedAt": "2026-09-22T03:57:48+00:00",
+    "hash": "d5138e1ff5b5440a",
+    "lastAttemptHash": "d5138e1ff5b5440a",
+    "generatedAt": "2026-09-23T19:45:50+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 9.8117,
+    "costUsd": 0.9372,
     "files": [
       "packages/lit/src/Feed.stories.ts",
       "packages/lit/src/Feed.test.ts",
-      "packages/lit/src/Feed.ts"
+      "packages/lit/src/Feed.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 15,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -503,6 +504,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -1071,18 +1073,20 @@
     }
   },
   "Splitter.lit": {
-    "hash": "651119241af0958b",
-    "lastAttemptHash": "651119241af0958b",
-    "generatedAt": "2026-09-22T03:00:55+00:00",
+    "hash": "a29ea40c355e8084",
+    "lastAttemptHash": "a29ea40c355e8084",
+    "generatedAt": "2026-09-23T19:43:56+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.9206,
+    "costUsd": 0.9545,
     "files": [
       "packages/lit/src/Splitter.stories.ts",
-      "packages/lit/src/Splitter.ts"
+      "packages/lit/src/Splitter.test.ts",
+      "packages/lit/src/Splitter.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 14,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1090,6 +1094,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true

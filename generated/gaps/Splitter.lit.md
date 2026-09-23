@@ -82,3 +82,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Splitter: the hooks gate needs a hook for every locked binding, but the prompt's Style bindings list names only separatorHover and separatorActive among the locked ones. grip, paneMinTarget, minTarget, focusRing and focusRingWidth appear only in the schema and under 'Locked'. Declared all seven on :host from the schema's token list.
 - Splitter: separatorActive's hook drives both the dragging and :focus-visible separator colour, because the doc gives the two states one binding. There is no separate hook for the focused colour.
+
+## 2026-09-23 15:43 — round 1
+
+- Splitter: minSize says 'A collapse fires only onCollapseChange, no size events', but onSizeChangeEnd says a drag that collapses still fires it once on release with the last expanded size. These contradict each other; I chose onSizeChangeEnd's rule: a collapsing drag fires size-change-end with the last expanded size, while Enter or the collapse button fires only collapse-change.
+- Splitter: collapseButtonOffset / handleSize say the button, grab area and grip are 'centered across the separator' but don't say how to center them in RTL. With the logical inset-inline-start: 50% plus translateX(-50%) they sit off-center in RTL; I used physical left: 50% for the cross-axis centering (with left: auto where a logical offset takes over).
+- Splitter: the Lit notes say the story frame has 'a definite height' but name no token for it. I kept block-size: var(--layout-max-width-prose), which makes the frame square and probably too tall; the doc should name a height token.
+- Splitter: persistKey says to write 'whenever either value settles', but a drag changes the size on every move. I write on every change after dedupe, so localStorage is written throughout a drag, not only on size-change-end. The doc should say whether 'settles' means commit (size-change-end) only.
+- Splitter: the collapsed description says the Lit property is 'reflected when true' with an absent attribute meaning uncontrolled, which a type: Boolean property can't express. I used a custom converter (present = true, absent = undefined); the platform digest should state that pattern.
+- Splitter: the web notes say persistKey reads localStorage but don't say what happens when the stored size is outside minSize–maxSize, or when a stored collapsed: true meets collapsible=false. I clamp the size and ignore the collapsed value unless collapsible.

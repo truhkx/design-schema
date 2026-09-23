@@ -47,14 +47,19 @@ const BREAKPOINT_PROPERTY: Record<Exclude<SplitterStackBelow, 'never'>, string> 
  */
 function readBreakpoint(el: Element, stackBelow: Exclude<SplitterStackBelow, 'never'>): number | null {
   const raw = getComputedStyle(el).getPropertyValue(BREAKPOINT_PROPERTY[stackBelow]).trim();
-  const value = Number.parseFloat(raw);
+  // Only px, rem and em are readable; any other unit (ch, vw, a calc()) means the splitter never stacks.
+  const match = /^(\d*\.?\d+)(px|rem|em)$/.exec(raw);
+  if (!match) {
+    return null;
+  }
+  const value = Number.parseFloat(match[1]!);
   if (!Number.isFinite(value) || value <= 0) {
     return null;
   }
-  if (raw.endsWith('rem')) {
+  if (match[2] === 'rem') {
     return value * Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
   }
-  if (raw.endsWith('em')) {
+  if (match[2] === 'em') {
     return value * Number.parseFloat(getComputedStyle(el).fontSize);
   }
   return value;
@@ -322,11 +327,13 @@ export class DsSplitter extends LitElement {
     /* handle / handleSize: the grab area centered on the line and overlapping both panes, so the
        panes keep their full width; minTarget (size.target.min, locked) is its floor. Drawn as the
        separator's ::before, so it carries no data-part hook. */
+    /* Centering across the line uses physical left + translateX(-50%), which is direction-agnostic;
+       inset-inline-start would anchor the right edge in RTL and shift the element off-centre. */
     .separator::before {
       content: '';
       position: absolute;
       inset-block: 0;
-      inset-inline-start: 50%;
+      left: 50%;
       inline-size: max(var(--ds-splitter-handle-size), var(--ds-splitter-min-target));
       transform: translateX(-50%);
     }
@@ -345,8 +352,8 @@ export class DsSplitter extends LitElement {
     .separator::after {
       content: '';
       position: absolute;
-      inset-block-start: 50%;
-      inset-inline-start: 50%;
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
       background-color: var(--ds-splitter-grip);
       border-radius: var(--ds-splitter-grip-radius);
@@ -367,12 +374,13 @@ export class DsSplitter extends LitElement {
       z-index: 1;
       display: flex;
       inset-block-start: var(--ds-splitter-collapse-button-offset);
-      inset-inline-start: 50%;
+      left: 50%;
       transform: translateX(-50%);
     }
 
     :host([orientation='vertical']) .collapse-button {
       inset-block-start: 50%;
+      left: auto;
       inset-inline-start: var(--ds-splitter-collapse-button-offset);
       transform: translateY(-50%);
     }
@@ -380,6 +388,7 @@ export class DsSplitter extends LitElement {
     /* While collapsed the primary pane has no size, so the button aligns to the secondary pane's
        start edge instead of hanging outside the container. */
     .container.is-collapsed .collapse-button {
+      left: auto;
       inset-inline-start: 100%;
       transform: none;
     }
@@ -427,7 +436,15 @@ export class DsSplitter extends LitElement {
 
   /** Controlled collapsed state, ignored unless `collapsible`. Reflected when true; an absent
       attribute means uncontrolled, and a controlled `false` is set as a property. */
-  @property({ type: Boolean, reflect: true }) accessor collapsed: boolean | undefined;
+  @property({
+    reflect: true,
+    converter: {
+      // Present = true; absent = uncontrolled (undefined), never a controlled false.
+      fromAttribute: (value: string | null): boolean | undefined => (value === null ? undefined : true),
+      toAttribute: (value: boolean | undefined): string | null => (value ? '' : null),
+    },
+  })
+  accessor collapsed: boolean | undefined;
 
   /** Initial collapsed state when uncontrolled. */
   @property({ type: Boolean, attribute: 'default-collapsed' }) accessor defaultCollapsed: boolean = false;
@@ -647,13 +664,14 @@ export class DsSplitter extends LitElement {
   // ── Pointer ─────────────────────────────────────────────────────────────────
 
   private handlePointerDown(event: PointerEvent): void {
+    // The next pointerdown ends the collapse animation state, even one that starts no drag.
+    this.animating = false;
     if (this.isCollapsed || event.button !== 0 || !this.separatorEl) {
       return;
     }
     event.preventDefault();
     this.separatorEl.focus();
     this.separatorEl.setPointerCapture(event.pointerId);
-    this.animating = false;
     this.dragging = true;
     this.dragSize = this.currentSize;
     this.dragMoved = false;

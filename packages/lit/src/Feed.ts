@@ -404,7 +404,7 @@ export class DsFeed extends LitElement {
   `;
 
   /** What the feed contains ("Activity", "Notifications"). The feed's accessible name; an empty label warns in development. */
-  @property({ type: String }) accessor label = '';
+  @property({ type: String }) accessor label: string = '';
 
   /** Articles, newest first. */
   @property({ attribute: false }) accessor items: FeedItem[] = [];
@@ -453,8 +453,10 @@ export class DsFeed extends LitElement {
       this.warnMissingLabel();
       // Rebuild from scratch: disconnectedCallback dropped the observers.
       this.loadMoreKey = null;
+      this.askedForFirstPage = false;
       this.syncVisibilityObserver();
       this.syncLoadMoreObserver();
+      this.askForFirstPage();
     }
   }
 
@@ -746,7 +748,7 @@ export class DsFeed extends LitElement {
       return;
     }
     article.focus({ preventScroll: true });
-    article.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+    article.scrollIntoView({ behavior: prefersReducedMotion() ? 'instant' : 'smooth', block: 'start' });
   }
 
   /** Watches the last article, at most one ask per change of its id, `hasMore` or `loading`. */
@@ -781,21 +783,29 @@ export class DsFeed extends LitElement {
     this.loadMoreObserver = observer;
   }
 
-  /** Watches every article whose id has not reported yet; ids already reported stay reported. */
+  /**
+   * Watches every article whose id has not reported yet; ids already reported stay reported.
+   * A change of `items` keeps the dwell timer of an article that is still rendered, so a
+   * prepend during the one-second wait does not restart it; removed ids lose theirs.
+   */
   private syncVisibilityObserver(): void {
-    this.visibilityObserver?.disconnect();
-    for (const timer of this.visibilityTimers.values()) {
-      clearTimeout(timer);
-    }
-    this.visibilityTimers.clear();
-    const observer = new IntersectionObserver(this.handleVisibilityIntersect, { threshold: 0.5 });
+    this.visibilityObserver ??= new IntersectionObserver(this.handleVisibilityIntersect, { threshold: 0.5 });
+    const observer = this.visibilityObserver;
+    observer.disconnect();
+    const watched = new Set<string>();
     for (const wrapper of this.getArticles()) {
       const id = wrapper.dataset.itemId;
       if (id !== undefined && !this.reportedVisible.has(id)) {
+        watched.add(id);
         observer.observe(wrapper);
       }
     }
-    this.visibilityObserver = observer;
+    for (const [id, timer] of this.visibilityTimers) {
+      if (!watched.has(id)) {
+        clearTimeout(timer);
+        this.visibilityTimers.delete(id);
+      }
+    }
   }
 
   private teardownObservers(): void {

@@ -244,7 +244,7 @@ export class DsToolbar extends LitElement {
       align-self: center;
       box-sizing: content-box;
       block-size: var(--ds-toolbar-separator-length);
-      padding-inline: max(0px, calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap)));
+      padding-inline: max(0px, calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap))); /* literal-ok: the clamp's zero */
     }
 
     :host([orientation='vertical']) [data-part='separator'] {
@@ -253,7 +253,7 @@ export class DsToolbar extends LitElement {
       block-size: auto;
       inline-size: var(--ds-toolbar-separator-length);
       padding-inline: 0px;
-      padding-block: max(0px, calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap)));
+      padding-block: max(0px, calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap))); /* literal-ok: the clamp's zero */
     }
 
     /* scroll (and menu on a vertical toolbar): each physical edge — left/right, or top/bottom when vertical — fades

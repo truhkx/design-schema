@@ -75,3 +75,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Carousel: 'reaching the last page without loop counts as stopped' does not say what happens when a controlled carousel's play press asks the parent for slide 0 and the parent refuses. Chose to check the stop rule only when the index actually changes, so rotation stays on and the next tick moves on.
 - CarouselSlide: the doc says Lit observes the slide's `label` attribute, but setting the `label` property does not write that attribute unless it reflects. Chose reflect: true on the slide's label.
 - Carousel: the layout.maxWidth.prose breakpoint is duplicated as the literal 572 in the container query, matching the built token today, as the doc allows.
+
+## 2026-09-23 15:31 — round 1
+
+- Carousel: web notes require prev/next Buttons to carry aria-controls to the track's id, but on Lit the track is in ds-carousel's shadow root and the focusable <button> is inside ds-button's own shadow root, and ds-button has no controls/aria-controls prop, so the idref cannot resolve; omitted. The Lit notes should say so (as they already do for the tabs picker) or Button's schema should grow an ariaControlsElements-style prop.
+- Carousel: web notes give dots aria-controls to the slide they choose, but slides are slotted light-DOM children and the dots live in the shadow root, so the idref cannot resolve; omitted, and the pairing is conveyed by aria-label (copy.goTo), aria-current and the announcement. The Lit platform section only exempts the tabs picker; it should exempt dots too.
+- Carousel: the doc does not say whether the remembered focused picker item (which decides the roving tab stop) resets when focus leaves the picker; kept it until the next non-picker change, so the stop stays on the last-focused item while that item is on the current page.
+- Carousel: the layout.maxWidth.prose breakpoint is duplicated as the literal 572 in the @container rule (from the built token); the doc says the duplication is expected but does not say where the literal comes from when themes build different values, so it tracks the default theme's build.

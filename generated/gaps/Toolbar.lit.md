@@ -72,3 +72,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toolbar: 'faded edges are physical, so RTL needs no special case' does not say how to detect hidden content without the scroll-offset sign, which differs in RTL; chose to compare the union of the shown entries' bounding rects with the row's box.
 - Toolbar: the doc does not list which design-system tags are non-control content when they appear bare in a toolbar; chose ds-divider, ds-icon and ds-text (and ds-toolbar-group as structure).
 - Toolbar: the behavior scenario `the-toolbar-is-one-tab-stop` is web-only, and the Lit notes admit only `ds-button` honours the roving tabindex; there is still no Lit scenario for the single tab stop among Buttons.
+
+## 2026-09-23 15:29 — round 1
+
+- Toolbar: the keyboard block says ArrowRight = next and ArrowLeft = previous with no RTL case. The element swaps the two horizontal arrows when direction is rtl (as the APG toolbar does); vertical toolbars are not swapped. The doc should say whether horizontal arrows follow reading direction.
+- Toolbar: the doc doesn't say whether the overflow Menu's trigger joins the roving list. The element adds the More trigger as the last arrow target when it shows. It stays its own tab stop anyway, because ds-menu does not forward the host's tabindex.
+- Toolbar: behavior scenarios are 'given as overrides on the Default story's args', but Default's `children` is prose that can't be applied as a property. The tests build three ghost Buttons (Bold, Italic, Underline) instead of the two-group Default children; the doc should say what `children` means in a test fixture.
+- Toolbar: 'overflow: menu' says a collapsed group without a label is set off 'from earlier items by a Menu separator', but not what separates a bare Button from a group collapsed before it. The element also puts a separator there.
+- Toolbar: the Lit notes say `data-part="container"` names the row but not whether the separator and overflowMenu also get a `part` attribute, given the 'no ::part for styling' rule. The element sets `part` and `data-part` to the anatomy names on container, separator and overflowMenu, as the Parts rule says.
+- Toolbar: which elements count as controls on Lit (versus structure) is left open. The element treats any `ds-*` element or natively focusable element as a control and skips ds-toolbar-group, ds-divider, ds-icon and ds-text. A new non-control design-system element would be mistaken for a control until it is added to that list.

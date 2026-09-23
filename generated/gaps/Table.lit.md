@@ -75,3 +75,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Table: cellMutedColor is a locked binding on the `cell` part, but the doc says secondary values render as Text tone muted (the Text carries the color), so no Table rule reads it; chose to declare --ds-table-cell-muted-color on :host only, so it is renameable and themeable, but it currently styles nothing in Table's own shadow tree.
 - Table: the gates:hooks gate is repo-wide and exits 1 over pre-existing debt in 72 other components (456 locked bindings, web and lit); Table itself no longer appears in it, but a per-component run of the gate would be needed for a job to report it green.
+
+## 2026-09-23 15:33 — round 1
+
+- Table: the keyboard block says the scroll region is focusable and arrow-scrolls 'below the breakpoint', but the guidance says the region is present whenever `responsive: scroll`; kept it always focusable and arrow-scrollable in scroll mode, so the keyboard block's `when` wording should drop 'below the breakpoint'.
+- Table: 'Activating one of those wrappers runs the control's own action' — Checkbox has no public toggle method and a click on its host outside the inner input never reaches it, so a click on the selectCell/selectAllCell/sortButton wrapper outside the control runs Table's selection/sort logic directly; the Checkbox's own `change` does not fire in that case (it re-renders from Table state). Checkbox would need a documented activation method for the wording to hold literally.
+- Table: the prose/content breakpoints are baked into the Lit module as calm-precise's 572/960 with `literal-ok` (the notes accept a rebuild per theme), but the doc does not say which theme's build a published Lit package is baked from.
+- Table: headerWeight and cellGap are both forwarded to the sort Button's `overrides` and also style Table's own parts (plain header cells, the actions-cell gap), so they keep --ds-table-header-weight / --ds-table-cell-gap hooks; the 'a forwarded binding declares no hook' rule should say it applies only to bindings with no Table-owned part (the caption* ones).
+- Table: cellMutedColor is a locked `cell` binding, but secondary values render as Text tone muted, so no Table rule reads it; --ds-table-cell-muted-color is declared on :host and styles nothing in Table's shadow tree.
+- Table: in responsive: stack the selectable: single header placeholder (the empty td with no part) is not covered by the stacked rules; it is visually hidden with the plain column headers.
+- Table: headerShadow in responsive: scroll without maxHeight: viewport — the header does not stick there, so the IntersectionObserver is off and no shadow appears; the doc implies this but does not state it for the shadow.

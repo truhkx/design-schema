@@ -85,3 +85,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Table: cellMutedColor is a locked `cell` binding, but secondary values render as Text tone muted, so no Table rule reads it; --ds-table-cell-muted-color is declared on :host and styles nothing in Table's shadow tree.
 - Table: in responsive: stack the selectable: single header placeholder (the empty td with no part) is not covered by the stacked rules; it is visually hidden with the plain column headers.
 - Table: headerShadow in responsive: scroll without maxHeight: viewport — the header does not stick there, so the IntersectionObserver is off and no shadow appears; the doc implies this but does not state it for the shadow.
+
+## 2026-09-23 19:39 — round 1
+
+- Table: the spec gives no Lit-specific selector for the `ArrowRight`/`ArrowLeft` scroll step besides `space.10` "read from the built token"; I read `--space-10` from the region's computed style and parse px or rem, which assumes the custom property is not registered with a resolved type.
+- Table: `layout.maxWidth.prose` and `content` widths must be baked into `@container` conditions as literals (572 and 960, marked literal-ok) because container queries cannot read custom properties; the spec does not say which built values to use, so they are copied from the current theme's token JSON and will go stale if the theme changes.
+- Table: the spec says the `sortButton` forward reaches Button's `overrides.fontWeight`/`iconGap`, but does not say whether Table should also declare a `--ds-table-header-weight` hook for the same binding; I kept the hook because `headerWeight` also styles the header cells, and forward the same value to the Button.
+- Table: `selectable: single` header cell is an empty `<td role="cell">` per the notes, but the spec does not say whether it should carry the `selectAllCell` part; I gave it no part.

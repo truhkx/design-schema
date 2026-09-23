@@ -244,20 +244,19 @@
     }
   },
   "Carousel.lit": {
-    "hash": "2ba919f706d6d073",
-    "lastAttemptHash": "2ba919f706d6d073",
-    "generatedAt": "2026-09-23T19:31:54+00:00",
-    "model": "opus",
+    "hash": "a2b14895bd5910ad",
+    "lastAttemptHash": "a2b14895bd5910ad",
+    "generatedAt": "2026-09-23T23:38:30+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.741,
+    "costUsd": 0.3132,
     "files": [
       "packages/lit/src/Carousel.stories.ts",
       "packages/lit/src/Carousel.test.ts",
-      "packages/lit/src/Carousel.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Carousel.ts"
     ],
-    "gaps": 4,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1154,20 +1153,19 @@
     }
   },
   "Table.lit": {
-    "hash": "45dc0505f29fa92c",
-    "lastAttemptHash": "45dc0505f29fa92c",
-    "generatedAt": "2026-09-23T19:33:53+00:00",
-    "model": "opus",
+    "hash": "9cbed65818d23ff8",
+    "lastAttemptHash": "9cbed65818d23ff8",
+    "generatedAt": "2026-09-23T23:39:44+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0328,
+    "costUsd": 0.3823,
     "files": [
       "packages/lit/src/Table.stories.ts",
       "packages/lit/src/Table.test.ts",
-      "packages/lit/src/Table.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Table.ts"
     ],
-    "gaps": 7,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1262,20 +1260,18 @@
     }
   },
   "Toolbar.lit": {
-    "hash": "204b483d41168981",
-    "lastAttemptHash": "204b483d41168981",
-    "generatedAt": "2026-09-23T19:30:21+00:00",
-    "model": "opus",
+    "hash": "ea70ef2874505405",
+    "lastAttemptHash": "ea70ef2874505405",
+    "generatedAt": "2026-09-23T23:37:07+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7488,
+    "costUsd": 0.2764,
     "files": [
       "packages/lit/src/Toolbar.stories.ts",
-      "packages/lit/src/Toolbar.test.ts",
-      "packages/lit/src/Toolbar.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Toolbar.ts"
     ],
-    "gaps": 6,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,

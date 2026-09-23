@@ -81,3 +81,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toolbar: 'overflow: menu' says a collapsed group without a label is set off 'from earlier items by a Menu separator', but not what separates a bare Button from a group collapsed before it. The element also puts a separator there.
 - Toolbar: the Lit notes say `data-part="container"` names the row but not whether the separator and overflowMenu also get a `part` attribute, given the 'no ::part for styling' rule. The element sets `part` and `data-part` to the anatomy names on container, separator and overflowMenu, as the Parts rule says.
 - Toolbar: which elements count as controls on Lit (versus structure) is left open. The element treats any `ds-*` element or natively focusable element as a control and skips ds-toolbar-group, ds-divider, ds-icon and ds-text. A new non-control design-system element would be mistaken for a control until it is added to that list.
+
+## 2026-09-23 19:36 — round 1
+
+- Toolbar: The spec says Default and Keyboard use the same two labelled ToolbarGroups, but the React story list is not visible from this spec. I inferred that Lit's children arg is a string key naming a child set, using each example's `children` description verbatim. Where that convention lives is not stated.
+- Toolbar: The Lit stories pick children through a lookup helper interpolated inside the meta render. The docs snippet reader may not be able to quote the child controls from that, and the spec gives no other way to express `children` as a story arg.
+- Toolbar: The spec does not say whether the toolbar should set `part` attributes on its `data-part` elements. It says no `::part` for styling. I kept `part` alongside `data-part`, as other components do.

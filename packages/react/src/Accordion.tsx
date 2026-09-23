@@ -272,6 +272,7 @@ export function Accordion({
         key={item.id}
         ref={setTriggerRef(item.id)}
         summary={item.summary}
+        fullWidth
         headingLevel={headingLevel}
         open={openIds.includes(item.id)}
         disabled={item.disabled}

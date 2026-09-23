@@ -69,3 +69,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tabs: 'only manual gets a handler' for Enter/Space, but a button also turns Space/Enter into a native click, which goes through onClick again before the new selection renders, so onChange can fire twice (and preventDefault on keydown does not reliably cancel Space's click on keyup). Added a one-shot ref that skips a keyboard-synthesized click (event.detail === 0) on the tab the key just selected; the doc does not say how to avoid the double fire.
 - Tabs: defaultValue 'defaults to the first enabled tab' does not say what happens when every tab is disabled. Kept the existing fallback to the first tab.
 - Tabs: the behavior scenarios have no case for Enter/Space under manual activation, Home/End, RTL arrow swapping, or the tab stop following programmatic focus, so these rules are implemented but not tested by Tabs.test.tsx.
+
+## 2026-09-23 19:17 — round 1
+
+- Tabs: the spec says a `fill` list does not scroll, but the web notes also require `overflow-x: auto` on the list; I kept overflow auto on both fits and squeezed fill tabs to their minimum target size.
+- Tabs: `tabIcon` composition lists only `size: md` and the description says currentColor, but the web notes do not say whether the icon needs a wrapper element; I wrapped it in a `<span data-part="tabIcon">` so the part has a hook.
+- Tabs: the `TabsTab` deprecated alias is described as Lit-only, so I added nothing on web.
+- Tabs: `aria-disabled` tabs are also `tabIndex=-1` and skipped by arrows, but the spec does not say whether clicking a disabled tab may still move focus to it; I left the native button focus behaviour and only skip selection.

@@ -83,3 +83,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Select: the doc never says that minTargetSm needs its own hook read by the sm modifier (`--ds-select-min-target: var(--ds-select-min-target-sm)`) rather than the sm class setting the minTarget hook straight from the token; the gate requires it. The doc should state the pattern for size-keyed locked bindings.
 - Select: the doc does not say how the native single select shows its placeholder color; I added a `ds-select__native--placeholder` modifier set while nothing is selected, and reset <option> text to valueColor so the list itself is not muted.
 - Select: the hooks gate also fails for 49 other components, including Select (lit), which is outside this job; `pnpm gates:hooks` exits 1 overall even though Select (web) is clean.
+
+## 2026-09-23 19:20 — round 1
+
+- Select: the guidance says bindings realised by a child's tone (valueColor, placeholderColor, descriptionText, errorText) and chevron 'declare no --ds-select-* hook', while the package convention says locked bindings keep their hook. I kept the hooks on the root for page CSS, the naming codemod and the native <select>, which reads value and placeholder color directly. The doc should say which rule wins.
+- Select: the Behavior prose lists Listbox's `initialActiveValue` as the current selection, and the web notes also drive `activeValue` controlled. I pass both (`initialActiveValue` = first selected value, `activeValue` = state). The doc does not say which one wins on first paint.
+- Select: the doc does not say when Form validation runs relative to the value write for a trigger that stays focused, or whether blur validation should be skipped while the popup is open. I skip blur validation while open, and Tab commits and closes before the blur fires.
+- Select: `ref` type is unspecified because the root is a wrapper div but the control is a button or select. I chose `ref` reaches the control (trigger button, or native <select>); the doc should state what `ref` targets.

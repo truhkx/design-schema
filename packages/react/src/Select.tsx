@@ -449,7 +449,11 @@ export function Select({
     }
     if (!isControlled) setInternalValue(next);
     onChange?.(next);
-    if (form && validatesOnChange) form.validateField(name);
+    if (form && validatesOnChange) {
+      // validateField runs the registration's validate() before the re-render, so hand it the new value first.
+      latest.current.selectedValues = toArray(next);
+      form.validateField(name);
+    }
   };
 
   const changeOpen = (next: boolean) => {

@@ -70,3 +70,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Table: 'Activating one of those wrappers runs the control's own action' — Checkbox has no public toggle method and a click dispatched on its host never reaches its inner input, so a click on the selectCell/selectAllCell/sortButton wrapper outside the control runs Table's selection/sort logic directly rather than the child's action; the child's own change event does not fire in that case (the Table re-renders it from state).
 - Table: in responsive: stack the selectable: single header placeholder (an empty td with no part) is not mentioned by the stacked rules; chose to visually hide it with the plain column headers.
 - Table: the doc does not say whether headerShadow should show against the page scroll in responsive: scroll without maxHeight: viewport (the header does not stick there); chose to keep the observer off so no shadow ever appears on a non-sticky header.
+
+## 2026-09-23 13:49 — round 2
+
+- Table: cellMutedColor is a locked binding on the `cell` part, but the doc says secondary values render as Text tone muted (the Text carries the color), so no Table rule reads it; chose to declare --ds-table-cell-muted-color on :host only, so it is renameable and themeable, but it currently styles nothing in Table's own shadow tree.
+- Table: the gates:hooks gate is repo-wide and exits 1 over pre-existing debt in 72 other components (456 locked bindings, web and lit); Table itself no longer appears in it, but a per-component run of the gate would be needed for a job to report it green.

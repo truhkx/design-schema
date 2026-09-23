@@ -3,7 +3,7 @@ import { html, nothing } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Button.js';
 import './Icon.js';
-import type { ButtonSize, ButtonType, ButtonVariant } from './Button.js';
+import type { ButtonHaspopup, ButtonSize, ButtonType, ButtonVariant } from './Button.js';
 import type { IconName } from './Icon.js';
 
 interface ButtonArgs {
@@ -19,6 +19,7 @@ interface ButtonArgs {
   accessibleName?: string | undefined;
   overflowLabel?: string | undefined;
   expanded?: boolean | undefined;
+  haspopup?: ButtonHaspopup | undefined;
   /** The system Icon slotted as `leading-icon` (decorative). */
   leadingIcon?: IconName | undefined;
   /** The system Icon slotted as `trailing-icon` (decorative). */
@@ -43,6 +44,7 @@ const meta: Meta<ButtonArgs> = {
     accessibleName: { control: 'text' },
     overflowLabel: { control: 'text' },
     expanded: { control: 'boolean' },
+    haspopup: { control: 'select', options: ['menu', 'listbox', 'tree', 'grid', 'dialog'] },
     leadingIcon: { control: 'text' },
     trailingIcon: { control: 'text' },
   },
@@ -67,6 +69,7 @@ const meta: Meta<ButtonArgs> = {
       accessible-name=${ifDefined(args.accessibleName || undefined)}
       overflow-label=${ifDefined(args.overflowLabel || undefined)}
       .expanded=${args.expanded}
+      .haspopup=${args.haspopup}
       ?disabled=${args.disabled}
       ?icon-only=${args.iconOnly}
       ?loading=${args.loading}
@@ -99,6 +102,13 @@ export const SizeLg: Story = { args: { size: 'lg' } };
 /* type */
 export const TypeButton: Story = { args: { type: 'button' } };
 export const TypeSubmit: Story = { args: { type: 'submit', label: 'Sign in' } };
+
+/* haspopup: set by a parent whose popup the button opens, as a property (web and Lit only) */
+export const HaspopupMenu: Story = { args: { haspopup: 'menu', label: 'Actions', variant: 'secondary' } };
+export const HaspopupListbox: Story = { args: { haspopup: 'listbox', label: 'Choose a country', variant: 'secondary' } };
+export const HaspopupTree: Story = { args: { haspopup: 'tree', label: 'Choose a folder', variant: 'secondary' } };
+export const HaspopupGrid: Story = { args: { haspopup: 'grid', label: 'Choose a date', variant: 'secondary' } };
+export const HaspopupDialog: Story = { args: { haspopup: 'dialog', label: 'Edit profile', variant: 'secondary' } };
 
 /* notable states */
 export const Disabled: Story = { args: { disabled: true } };

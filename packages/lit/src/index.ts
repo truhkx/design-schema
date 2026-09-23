@@ -78,6 +78,7 @@ export type {
   ButtonVariant,
   ButtonSize,
   ButtonType,
+  ButtonHaspopup,
   ButtonPressDetail,
   ButtonTrackDetail,
   ButtonOverridableBinding,

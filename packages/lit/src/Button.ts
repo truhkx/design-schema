@@ -7,6 +7,8 @@ import { trackPress } from './custom/analytics.js';
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 export type ButtonType = 'button' | 'submit';
+/** ARIA's own `aria-haspopup` values, without `true` (which means `menu`). */
+export type ButtonHaspopup = 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog';
 
 /** Detail carried by the `press` CustomEvent (none). */
 export type ButtonPressDetail = void;
@@ -20,8 +22,8 @@ export interface ButtonTrackDetail {
 /**
  * Overridable style hooks; see the `overrides` property. The accessibility-bearing
  * bindings — `background`, `backgroundHover`, `foreground`, `focusRing`,
- * `focusRingWidth`, `inverseForeground`, `inverseFocusRing`, `minTarget` and
- * `spinnerStroke` — are locked and excluded; of those, only `spinnerStroke` keeps
+ * `focusRingWidth`, `focusRingOffset`, `inverseForeground`, `inverseFocusRing`,
+ * `minTarget` and `spinnerStroke` — are locked and excluded; of those, only `spinnerStroke` keeps
  * a CSS hook (`--ds-button-spinner-stroke`), the rest read their tokens directly.
  */
 export type ButtonOverridableBinding =
@@ -106,8 +108,9 @@ export class DsButton extends LitElement {
     /*
      * Hooks for the overridable bindings, plus spinnerStroke (locked, but its
      * binding keeps the hook). The other locked bindings (background,
-     * backgroundHover, foreground, focusRing, focusRingWidth, inverseForeground,
-     * inverseFocusRing, minTarget) have no hook: their rules read the token.
+     * backgroundHover, foreground, focusRing, focusRingWidth, focusRingOffset,
+     * inverseForeground, inverseFocusRing, minTarget) have no hook: their rules
+     * read the token.
      */
     :host {
       display: inline-flex;
@@ -251,7 +254,10 @@ export class DsButton extends LitElement {
       );
     }
 
-    /* focusRing / focusRingWidth: color.border.focus at border.width.focus, locked */
+    /*
+     * focusRing / focusRingWidth / focusRingOffset: color.border.focus at
+     * border.width.focus, offset by the same token so the ring clears the fill; locked
+     */
     [data-part='container']:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
@@ -337,6 +343,14 @@ export class DsButton extends LitElement {
    * attribute on the host does not reach the inner button.
    */
   @property({ attribute: false }) accessor expanded: boolean | undefined;
+
+  /**
+   * Set by a parent whose popup the button opens (Menu's trigger takes `menu`):
+   * rendered as `aria-haspopup` on the inner button, the element that carries the
+   * button role. A JS property only, like `expanded`; `undefined` (the default)
+   * means the button opens nothing and no `aria-haspopup` is written.
+   */
+  @property({ attribute: false }) accessor haspopup: ButtonHaspopup | undefined;
 
   /**
    * Prevents activation. The button stays in the tab order and is announced as
@@ -440,6 +454,7 @@ export class DsButton extends LitElement {
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
         aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
         aria-expanded=${ifDefined(this.expanded === undefined ? undefined : String(this.expanded))}
+        aria-haspopup=${ifDefined(this.haspopup)}
         aria-label=${ifDefined(this.accessibleName ?? (this.iconOnly ? this.label : undefined))}
         aria-describedby=${ifDefined(this.loading ? 'loading-description' : undefined)}
         @click=${this.handleClick}

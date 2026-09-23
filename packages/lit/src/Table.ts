@@ -221,14 +221,27 @@ export class DsTable extends LitElement {
       --ds-table-line-height: var(--font-line-height-normal);
       --ds-table-numeric-font: var(--font-family-mono);
       --ds-table-transition: var(--motion-duration-fast);
+      /* locked: out of the overrides API, still themeable from page CSS */
+      --ds-table-surface: var(--color-background);
+      --ds-table-header-surface: var(--color-background-subtle);
+      --ds-table-header-color: var(--color-foreground);
+      --ds-table-row-stripe: var(--color-background-subtle);
+      --ds-table-row-selected: var(--color-background-subtle);
+      --ds-table-row-selected-border: var(--color-control-selected-background);
+      --ds-table-row-selected-border-width: var(--border-width-focus);
+      --ds-table-cell-color: var(--color-foreground);
+      --ds-table-cell-muted-color: var(--color-foreground-muted);
+      --ds-table-stacked-label-color: var(--color-foreground-muted);
+      --ds-table-min-target: var(--size-target-min);
+      --ds-table-focus-ring: var(--color-border-focus);
+      --ds-table-focus-ring-width: var(--border-width-focus);
 
       display: block;
       container-type: inline-size;
       font-family: var(--ds-table-font-family);
       font-size: var(--ds-table-font-size);
       line-height: var(--ds-table-line-height);
-      /* cellColor: color.foreground (locked) */
-      color: var(--color-foreground);
+      color: var(--ds-table-cell-color);
     }
 
     /* cellPaddingInline by density */
@@ -288,8 +301,8 @@ export class DsTable extends LitElement {
       position: relative;
     }
     .region:has([data-part='scrollRegion']:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-table-focus-ring-width) solid var(--ds-table-focus-ring);
+      outline-offset: calc(-1 * var(--ds-table-focus-ring-width));
     }
     [data-part='scrollRegion']:focus-visible {
       outline: none;
@@ -298,8 +311,7 @@ export class DsTable extends LitElement {
     table {
       inline-size: 100%;
       border-collapse: collapse;
-      /* surface: color.background (locked) */
-      background: var(--color-background);
+      background: var(--ds-table-surface);
     }
 
     th,
@@ -315,9 +327,8 @@ export class DsTable extends LitElement {
     [data-part='columnHeader'],
     [data-part='selectAllCell'],
     .header-select {
-      /* headerSurface / headerColor (locked) */
-      background: var(--color-background-subtle);
-      color: var(--color-foreground);
+      background: var(--ds-table-header-surface);
+      color: var(--ds-table-header-color);
       font-weight: var(--ds-table-header-weight);
       font-size: var(--ds-table-header-size);
       border-block-end: var(--ds-table-header-border-width) solid var(--ds-table-header-border);
@@ -336,31 +347,30 @@ export class DsTable extends LitElement {
     }
 
     [data-part='row'] {
-      background: var(--color-background);
+      background: var(--ds-table-surface);
     }
 
     [data-part='row'] > th,
     [data-part='row'] > td {
-      color: var(--color-foreground);
+      color: var(--ds-table-cell-color);
       border-block-end: var(--ds-table-row-border-width) solid var(--ds-table-row-border);
     }
 
-    /* rowStripe (locked) */
     :host([striped]) [data-part='row']:nth-child(even) {
-      background: var(--color-background-subtle);
+      background: var(--ds-table-row-stripe);
     }
 
-    /* rowSelected (locked): the same tint as a stripe */
+    /* rowSelected: the same tint as a stripe */
     [data-part='row'][aria-selected='true'] {
-      background: var(--color-background-subtle);
+      background: var(--ds-table-row-selected);
     }
 
-    /* rowSelectedBorder / rowSelectedBorderWidth (locked): a start-edge bar, so selection is not fill alone */
+    /* rowSelectedBorder / rowSelectedBorderWidth: a start-edge bar, so selection is not fill alone */
     [data-part='row'][aria-selected='true'] > :first-child {
-      box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+      box-shadow: inset var(--ds-table-row-selected-border-width) 0 0 0 var(--ds-table-row-selected-border);
     }
     [data-part='row'][aria-selected='true'] > :first-child:dir(rtl) {
-      box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+      box-shadow: inset calc(-1 * var(--ds-table-row-selected-border-width)) 0 0 0 var(--ds-table-row-selected-border);
     }
 
     /* rowHover: interactive rows only. A render function's output cannot be inspected, so a
@@ -387,8 +397,7 @@ export class DsTable extends LitElement {
     [data-part='selectCell'],
     [data-part='selectAllCell'],
     .header-select {
-      /* minTarget (locked) */
-      inline-size: var(--size-target-min);
+      inline-size: var(--ds-table-min-target);
     }
 
     .align-end {
@@ -469,7 +478,7 @@ export class DsTable extends LitElement {
         flex-wrap: wrap;
         align-items: center;
         gap: var(--ds-table-stacked-row-gap);
-        background: var(--color-background-subtle);
+        background: var(--ds-table-header-surface);
         border-block-end: var(--ds-table-header-border-width) solid var(--ds-table-header-border);
       }
       :host([responsive='stack']:not([no-sticky-header])[data-header-scrolled]) [data-part='headerRow'] {
@@ -523,10 +532,11 @@ export class DsTable extends LitElement {
       }
 
       :host([responsive='stack']) [data-part='row'][aria-selected='true'] {
-        box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+        box-shadow: inset var(--ds-table-row-selected-border-width) 0 0 0 var(--ds-table-row-selected-border);
       }
       :host([responsive='stack']) [data-part='row'][aria-selected='true']:dir(rtl) {
-        box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+        box-shadow: inset calc(-1 * var(--ds-table-row-selected-border-width)) 0 0 0
+          var(--ds-table-row-selected-border);
       }
 
       /* stackedLabel, drawn as a pseudo-element with empty alternative text: the roles already associate the header */
@@ -534,8 +544,7 @@ export class DsTable extends LitElement {
         content: attr(data-label);
         content: attr(data-label) / '';
         display: block;
-        /* stackedLabelColor (locked) */
-        color: var(--color-foreground-muted);
+        color: var(--ds-table-stacked-label-color);
         font-size: var(--ds-table-stacked-label-size);
         font-weight: var(--ds-table-stacked-label-weight);
       }

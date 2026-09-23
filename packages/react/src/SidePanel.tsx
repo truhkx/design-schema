@@ -1,5 +1,7 @@
 import {
   cloneElement,
+  Fragment,
+  isValidElement,
   useEffect,
   useId,
   useImperativeHandle,
@@ -219,10 +221,13 @@ function useIsPersistent(persistent: SidePanelPersistent): boolean {
 export interface SidePanelProps extends Omit<ComponentPropsWithoutRef<'aside'>, 'children' | 'role' | 'hidden'> {
   /**
    * The Button that shows and hides the panel (usually `iconOnly` with the `menu` Icon and a label
-   * like "Menu"). It is the APG disclosure button: the panel sets aria-expanded and aria-controls on
-   * it, and it stays a toggle — pressing it again closes. Omit to control `open` from elsewhere (a
-   * Toolbar). Exactly one element: it is cloned, wrapped in an overlay-owned
-   * `<span data-part="trigger">` with display: contents, and that wrapper is what persistent mode hides.
+   * like "Menu"). It is the APG disclosure button: the panel sets aria-expanded on it, and
+   * aria-controls whenever the element it names is in the DOM — a modal panel's <dialog> unmounts
+   * when closed, so the attribute is dropped then. It stays a toggle — pressing it again closes. Omit
+   * to control `open` from elsewhere (a Toolbar). Exactly one element, because it is cloned to carry
+   * that wiring; a fragment or a bare string never opens the panel, so both warn in development. The
+   * clone sits in an overlay-owned `<span data-part="trigger">` with display: contents, and that
+   * wrapper — never the Button — is what persistent mode hides.
    */
   trigger?: ReactElement<{ onClick?: ((event: ReactMouseEvent<HTMLElement>) => void) | undefined }> | undefined;
   /**
@@ -376,6 +381,8 @@ export function SidePanel({
   const triggerRef = useRef<HTMLElement | null>(null);
   const slotRef = useRef<HTMLDivElement | null>(null);
   const escapeHandledRef = useRef(false);
+  // The reason of the last close: `navigation` leaves focus where the navigation put it.
+  const closeReasonRef = useRef<SidePanelOpenChangeReason | null>(null);
 
   // The one node the panel is portaled into; it moves, the React subtree does not.
   const [host] = useState<HTMLDivElement | null>(() =>
@@ -398,13 +405,26 @@ export function SidePanel({
   const rootShown = isPersistent || present;
   useImperativeHandle(ref, () => (rootShown ? rootRef.current : null) as HTMLElement, [rootShown, modalActive]);
 
+  // The trigger is cloned to carry its wiring, so it must be exactly one element.
+  const triggerCloneable = isValidElement(trigger) && trigger.type !== Fragment;
+
   const warnedRef = useRef(false);
-  if (process.env.NODE_ENV !== 'production' && !heading && !warnedRef.current) {
-    warnedRef.current = true;
-    console.warn('SidePanel: `heading` is required and becomes the accessible name; it must not be empty.');
+  const warnedTriggerRef = useRef(false);
+  if (process.env.NODE_ENV !== 'production') {
+    if (!heading && !warnedRef.current) {
+      warnedRef.current = true;
+      console.warn('SidePanel: `heading` is required and becomes the accessible name; it must not be empty.');
+    }
+    if (trigger != null && !triggerCloneable && !warnedTriggerRef.current) {
+      warnedTriggerRef.current = true;
+      console.warn(
+        'SidePanel: `trigger` must be exactly one element (a Button); a fragment or a bare string cannot carry aria-expanded, aria-controls and the toggle, so it never opens the panel.',
+      );
+    }
   }
 
   const changeOpen = (next: boolean, reason: SidePanelOpenChangeReason): void => {
+    closeReasonRef.current = next ? null : reason;
     if (!isControlled) setInternalOpen(next);
     onOpenChange?.(next, reason);
   };
@@ -414,6 +434,7 @@ export function SidePanel({
     if (DISMISS_REASONS.has(reason) && !dismissible) return;
     if (reason === 'escape' && !dismissible) {
       // Reported, not applied: the consumer decides; an uncontrolled panel stays open.
+      closeReasonRef.current = 'escape';
       onOpenChange?.(false, 'escape');
       return;
     }
@@ -463,14 +484,21 @@ export function SidePanel({
     if (!present || !open || isPersistent || !hydrated) return undefined;
     const frame = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(frame);
-  }, [present, open, isPersistent, hydrated]);
+  }, [present, open, isPersistent, modalActive, hydrated]);
 
-  // Non-modal close: focus inside the panel returns to the trigger (the modal's FocusScope restores on unmount).
+  // However it was opened (the trigger, a controlled prop), a new open forgets the last close reason.
+  useEffect(() => {
+    if (open) closeReasonRef.current = null;
+  }, [open]);
+
+  // Non-modal close: focus inside the panel returns to the trigger, unless a followed Link owns focus
+  // (the modal's FocusScope restores on unmount, under the same rule).
   const wasOpenRef = useRef(open);
   useEffect(() => {
     const wasOpen = wasOpenRef.current;
     wasOpenRef.current = open;
     if (!wasOpen || open || isPersistent || modalActive || !host) return;
+    if (closeReasonRef.current === 'navigation') return;
     const active = document.activeElement;
     if (active && host.contains(active)) triggerRef.current?.focus();
   }, [open, isPersistent, modalActive, host]);
@@ -592,8 +620,10 @@ export function SidePanel({
     button.click();
   };
 
-  // A Link followed inside the panel closes it; a client-side router's preventDefault still counts.
+  // A Link followed inside the panel closes it: a click whose path holds an <a href> and that nothing
+  // default-prevented. A modified click opens elsewhere and leaves this page (and the panel) as it was.
   const handleContentClick = (event: ReactMouseEvent<HTMLDivElement>): void => {
+    if (event.isDefaultPrevented() || event.nativeEvent.defaultPrevented) return;
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const anchor = (event.target as Element).closest('a[href]');
     if (!(anchor instanceof HTMLAnchorElement) || !event.currentTarget.contains(anchor)) return;
@@ -602,13 +632,16 @@ export function SidePanel({
     changeOpen(false, 'navigation');
   };
 
-  const clonedTrigger = trigger
+  // aria-controls only while the element it names is in the DOM: the non-modal surface stays mounted
+  // (hidden) once portaled, the modal <dialog> unmounts when closed.
+  const controlsPresent = hydrated && (isPersistent || !modalActive || present);
+  const clonedTrigger = triggerCloneable
     ? cloneElement(trigger, {
         'aria-expanded': open,
-        'aria-controls': panelId,
+        'aria-controls': controlsPresent ? panelId : undefined,
         onClick: handleTriggerClick,
       } as Partial<{ onClick: (event: ReactMouseEvent<HTMLElement>) => void }>)
-    : null;
+    : (trigger ?? null);
 
   const hasFooter = footer !== undefined && footer !== null && footer !== false;
   const closeShown = dismissible && !isPersistent;
@@ -726,7 +759,12 @@ export function SidePanel({
             surfaceRef.current = node;
           }}
         >
-          <FocusScope trapped autoFocus="none" restoreFocus returnFocusTo={triggerRef}>
+          <FocusScope
+            trapped
+            autoFocus="none"
+            restoreFocus={closeReasonRef.current !== 'navigation'}
+            returnFocusTo={triggerRef}
+          >
             {parts}
           </FocusScope>
         </div>
@@ -759,11 +797,14 @@ export function SidePanel({
           hidden={!rootShown}
           onKeyDown={handleRootKeyDown}
         >
-          <FocusScope trapped={false} autoFocus="none" restoreFocus={false}>
-            <Landmark role={role} as={role === 'navigation' ? 'nav' : 'aside'} aria-labelledby={headingId}>
+          {/* surface > Landmark > FocusScope > column, so the column sits directly inside FocusScope as
+              in the modal. The untrapped scope also stays in the persistent sidebar, so crossing the
+              breakpoint never changes the tree above the children and their state survives. */}
+          <Landmark role={role} as={role === 'navigation' ? 'nav' : 'aside'} aria-labelledby={headingId}>
+            <FocusScope trapped={false} autoFocus="none" restoreFocus={false}>
               {parts}
-            </Landmark>
-          </FocusScope>
+            </FocusScope>
+          </Landmark>
         </div>
       </>
     );

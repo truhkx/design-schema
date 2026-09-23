@@ -16,6 +16,7 @@
   --ds-action-sheet-title-size: var(--font-size-sm);
   --ds-action-sheet-font-family: var(--font-family-body);
   --ds-action-sheet-font-size: var(--font-size-md);
+  --ds-action-sheet-item-icon-size: var(--font-size-md);
   --ds-action-sheet-line-height: var(--font-line-height-normal);
   --ds-action-sheet-divider: var(--color-border);
   --ds-action-sheet-divider-width: var(--border-width-thin);
@@ -187,6 +188,12 @@
 .ds-action-sheet__icon {
   display: inline-flex;
   flex: none;
+}
+
+/* itemIconSize: forwarded to the composed Icon through its own size hook. Two classes of
+   specificity, so this wins over Icon's `.ds-icon--md`; an `overrides.size` passed inline still wins. */
+.ds-action-sheet .ds-action-sheet__icon [data-ds='Icon'] {
+  --ds-icon-size: var(--ds-action-sheet-item-icon-size);
 }
 
 .ds-action-sheet__label {

@@ -151,11 +151,13 @@ dialog.ds-side-panel:not([open]) {
 }
 
 /* focusScope: the overlay-owned column that holds header, body and footer. partGap is its gap and the
-   block edges are padded here once, never per part, so nothing doubles with the gap. */
+   block edges are padded here once, never per part, so nothing doubles with the gap.
+   It stays in flow and takes the full-height surface's size itself (the surface is fixed at
+   inset-block: 0), so the Landmark and FocusScope around it size from it rather than collapsing to
+   nothing — they are composed children and are never styled from here. */
 .ds-side-panel__scope {
   box-sizing: border-box;
-  position: absolute;
-  inset: 0;
+  block-size: 100dvh;
   display: flex;
   flex-direction: column;
   gap: var(--ds-side-panel-part-gap);
@@ -287,7 +289,7 @@ dialog.ds-side-panel:not([open]) {
 }
 
 .ds-side-panel__surface--persistent .ds-side-panel__scope {
-  position: static;
+  block-size: auto;
 }
 
 .ds-side-panel__surface--persistent .ds-side-panel__scroll {

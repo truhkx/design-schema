@@ -18,7 +18,7 @@ import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { FocusScope } from './FocusScope';
-import { Icon, type IconName } from './Icon';
+import { Icon, type IconName, type IconOverridableBinding } from './Icon';
 import {
   Menu,
   type MenuAction,
@@ -33,7 +33,13 @@ export type ActionSheetActionTone = 'default' | 'danger';
 export type ActionSheetCloseReason = 'escape' | 'scrim' | 'cancel' | 'drag';
 
 /** A single row in the sheet. */
-export type ActionSheetAction = { id: string; label: string; icon?: IconName; tone?: "default" | "danger"; disabled?: boolean };
+export type ActionSheetAction = {
+  id: string;
+  label: string;
+  icon?: IconName | undefined;
+  tone?: 'default' | 'danger' | undefined;
+  disabled?: boolean | undefined;
+};
 
 /**
  * Style bindings that can be overridden per instance; accessibility-bearing bindings (surface,
@@ -55,6 +61,7 @@ export type ActionSheetOverridableBinding =
   | 'titleSize'
   | 'fontFamily'
   | 'fontSize'
+  | 'itemIconSize'
   | 'lineHeight'
   | 'divider'
   | 'dividerWidth'
@@ -78,6 +85,7 @@ const OVERRIDE_HOOK: Record<ActionSheetOverridableBinding, string> = {
   titleSize: '--ds-action-sheet-title-size',
   fontFamily: '--ds-action-sheet-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--ds-action-sheet-font-size',
+  itemIconSize: '--ds-action-sheet-item-icon-size',
   lineHeight: '--ds-action-sheet-line-height',
   divider: '--ds-action-sheet-divider',
   dividerWidth: '--ds-action-sheet-divider-width',
@@ -96,6 +104,14 @@ const TEXT_FORWARD: Partial<Record<ActionSheetOverridableBinding, TextOverridabl
   titleSize: 'fontSize',
   fontFamily: 'fontFamily', // literal-ok: Text binding name, not a font stack
   lineHeight: 'lineHeight',
+};
+
+/**
+ * Bindings forwarded to each row's composed Icon, delivered as TEXT_FORWARD is: the stylesheet points
+ * `--ds-icon-size` at the sheet's hook, and `overrides` carries only what the caller set.
+ */
+const ICON_FORWARD: Partial<Record<ActionSheetOverridableBinding, IconOverridableBinding>> = {
+  itemIconSize: 'size',
 };
 
 /**
@@ -260,8 +276,10 @@ export interface ActionSheetProps
    */
   heading?: string | undefined;
   /**
-   * Two to about eight actions. `danger` actions are visually distinct and grouped last. The count
-   * is guidance, not enforced: no dev warning outside that range.
+   * Two to about eight actions. `danger` actions are visually distinct and grouped last: the
+   * component does the grouping, so the consumer may pass them in any order — the default actions
+   * render in the order given, then the danger ones in the order given. The count is guidance, not
+   * enforced: no dev warning outside that range.
    */
   actions: ActionSheetAction[];
   /**
@@ -595,7 +613,9 @@ export function ActionSheet({
     }
     if (choseRef.current) return;
     if (reason === 'escape') onClose?.('escape');
-    else if (reason === 'outside' || reason === 'tab-out' || reason === 'focus-out') onClose?.('scrim');
+    else if (reason === 'outside' || reason === 'tab-out') onClose?.('scrim');
+    // A `focus-out` raised because the window itself lost focus is no dismissal: report nothing.
+    else if (reason === 'focus-out' && document.hasFocus()) onClose?.('scrim');
   };
 
   const handleCancelRowClick = (event: ReactMouseEvent<HTMLDivElement>): void => {
@@ -638,12 +658,18 @@ export function ActionSheet({
 
   const rootStyle: Record<string, string> = {};
   const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  const iconOverrides: Partial<Record<IconOverridableBinding, TokenRef | undefined>> = {};
   for (const [binding, token] of Object.entries(overrides ?? {}) as [ActionSheetOverridableBinding, TokenRef | undefined][]) {
-    if (!token) continue;
-    rootStyle[OVERRIDE_HOOK[binding]] = cssVar(token);
-    const forward = TEXT_FORWARD[binding];
-    if (forward) textOverrides[forward] = token;
+    // Locked bindings passed from JavaScript have no hook and are ignored.
+    const hook = OVERRIDE_HOOK[binding] as string | undefined;
+    if (!token || !hook) continue;
+    rootStyle[hook] = cssVar(token);
+    const textForward = TEXT_FORWARD[binding];
+    if (textForward) textOverrides[textForward] = token;
+    const iconForward = ICON_FORWARD[binding];
+    if (iconForward) iconOverrides[iconForward] = token;
   }
+  const hasIconOverrides = Object.keys(iconOverrides).length > 0;
 
   const renderItem = (action: ActionSheetAction): ReactElement => (
     <button
@@ -671,7 +697,7 @@ export function ActionSheet({
     >
       {action.icon ? (
         <span className="ds-action-sheet__icon" data-part="itemIcon" aria-hidden="true">
-          <Icon name={action.icon} inline />
+          <Icon name={action.icon} overrides={hasIconOverrides ? iconOverrides : undefined} />
         </span>
       ) : null}
       <span className="ds-action-sheet__label">{action.label}</span>
@@ -680,7 +706,8 @@ export function ActionSheet({
 
   const className = [
     'ds-action-sheet',
-    visible ? 'ds-action-sheet--visible' : '',
+    // The open class follows the one DOM-driven flag, never the prop alone.
+    visible && open ? 'ds-action-sheet--visible' : '',
     dragPhase === 'dragging' ? 'ds-action-sheet--dragging' : '',
     dragPhase === 'settling' ? 'ds-action-sheet--settling' : '',
   ]

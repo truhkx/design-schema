@@ -1,6 +1,8 @@
 import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ActionSheet, type ActionSheetAction, type ActionSheetCloseReason } from './ActionSheet';
+import { Button } from './Button';
+import { Icon } from './Icon';
 
 const PHOTO_ACTIONS: ActionSheetAction[] = [
   { id: 'share', label: 'Share', icon: 'external' },
@@ -30,6 +32,38 @@ function Consumer(args: ComponentProps<typeof ActionSheet>): ReactElement {
         setOpen(false);
       }}
     />
+  );
+}
+
+/**
+ * The Keyboard story's consumer: as Consumer, plus the one trigger any story renders — an overflow
+ * Button labelled "More actions", which gives the wide presentation a real anchor.
+ */
+function KeyboardConsumer(args: ComponentProps<typeof ActionSheet>): ReactElement {
+  const [open, setOpen] = useState(args.open);
+  useEffect(() => setOpen(args.open), [args.open]);
+  return (
+    <>
+      <Button
+        variant="secondary"
+        iconOnly
+        label="More actions"
+        leadingIcon={<Icon name="ellipsis" />}
+        onClick={() => setOpen(true)}
+      />
+      <ActionSheet
+        {...args}
+        open={open}
+        onAction={(id: string) => {
+          args.onAction?.(id);
+          setOpen(false);
+        }}
+        onClose={(reason: ActionSheetCloseReason) => {
+          args.onClose?.(reason);
+          setOpen(false);
+        }}
+      />
+    </>
   );
 }
 
@@ -104,7 +138,8 @@ export const Closed: Story = {
   args: { open: false },
 };
 
-/** Open with four focusable actions and the Cancel row, for the keyboard gate. */
+/** Open with its "More actions" trigger, four focusable actions and the Cancel row, for the keyboard gate. */
 export const Keyboard: Story = {
   args: { open: true, heading: 'Photo.jpg', actions: PHOTO_ACTIONS },
+  render: (args) => <KeyboardConsumer {...args} />,
 };

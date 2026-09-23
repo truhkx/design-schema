@@ -28,19 +28,20 @@
     }
   },
   "ActionSheet.web": {
-    "hash": "e849de3914b7f9cd",
-    "lastAttemptHash": "e849de3914b7f9cd",
-    "generatedAt": "2026-09-21T13:32:54+00:00",
+    "hash": "36b532660cb3602c",
+    "lastAttemptHash": "36b532660cb3602c",
+    "generatedAt": "2026-09-23T08:34:05+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 12.6668,
+    "rounds": 1,
+    "costUsd": 1.0693,
     "files": [
       "packages/react/src/ActionSheet.css",
       "packages/react/src/ActionSheet.stories.tsx",
+      "packages/react/src/ActionSheet.test.tsx",
       "packages/react/src/ActionSheet.tsx"
     ],
-    "gaps": 28,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -985,20 +986,18 @@
     }
   },
   "SidePanel.web": {
-    "hash": "93cb7b98dfdaa4e3",
-    "lastAttemptHash": "93cb7b98dfdaa4e3",
-    "generatedAt": "2026-09-21T13:59:50+00:00",
+    "hash": "54f36b00a8bf73d2",
+    "lastAttemptHash": "54f36b00a8bf73d2",
+    "generatedAt": "2026-09-23T08:30:34+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 5.8653,
+    "rounds": 2,
+    "costUsd": 2.7578,
     "files": [
       "packages/react/src/SidePanel.css",
-      "packages/react/src/SidePanel.stories.tsx",
-      "packages/react/src/SidePanel.test.tsx",
       "packages/react/src/SidePanel.tsx"
     ],
-    "gaps": 13,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,

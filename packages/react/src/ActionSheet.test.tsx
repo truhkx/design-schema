@@ -80,4 +80,29 @@ describe('ActionSheet', () => {
     fireEvent.keyDown(document.activeElement ?? d.sheet()!, { key: 'Escape' });
     expect(d.onClose).toHaveBeenCalledWith('escape');
   });
+
+  // The sheet's own keyboard model: the browser gate runs at a desktop viewport (the wide Menu).
+  it('arrow keys rove over enabled actions, wrapping, with danger grouped last', () => {
+    setup({
+      open: true,
+      actions: [
+        { id: 'delete', label: 'Delete photo', tone: 'danger' },
+        { id: 'share', label: 'Share' },
+        { id: 'void', label: 'Void', disabled: true },
+      ],
+    });
+    const items = screen.getAllByRole('menuitem');
+    expect(items.map((item) => item.textContent)).toEqual(['Share', 'Void', 'Delete photo']);
+    expect(document.activeElement).toBe(items[0]);
+    fireEvent.keyDown(items[0]!, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(items[2]);
+    fireEvent.keyDown(items[2]!, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(items[0]);
+    fireEvent.keyDown(items[0]!, { key: 'ArrowUp' });
+    expect(document.activeElement).toBe(items[2]);
+    fireEvent.keyDown(items[2]!, { key: 'Home' });
+    expect(document.activeElement).toBe(items[0]);
+    fireEvent.keyDown(items[0]!, { key: 'End' });
+    expect(document.activeElement).toBe(items[2]);
+  });
 });

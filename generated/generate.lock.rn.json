@@ -216,16 +216,18 @@
     }
   },
   "Carousel.rn": {
-    "hash": "4556a090ca2a3277",
-    "lastAttemptHash": "4556a090ca2a3277",
-    "generatedAt": "2026-09-23T18:51:36+00:00",
-    "model": "opus",
+    "hash": "1fd2db7d5cca9baa",
+    "lastAttemptHash": "1fd2db7d5cca9baa",
+    "generatedAt": "2026-09-23T23:26:08+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8755,
+    "costUsd": 0.3294,
     "files": [
       "packages/rn/src/Carousel.stories.tsx",
-      "packages/rn/src/Carousel.tsx"
+      "packages/rn/src/Carousel.test.tsx",
+      "packages/rn/src/Carousel.tsx",
+      "packages/rn/src/index.ts"
     ],
     "gaps": 6,
     "gates": {
@@ -1051,17 +1053,20 @@
     }
   },
   "Table.rn": {
-    "hash": "0600392530d66c1b",
-    "lastAttemptHash": "0600392530d66c1b",
-    "generatedAt": "2026-09-23T18:53:20+00:00",
-    "model": "opus",
+    "hash": "dd559cbc36591720",
+    "lastAttemptHash": "dd559cbc36591720",
+    "generatedAt": "2026-09-23T23:34:28+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.0936,
+    "rounds": 2,
+    "costUsd": 0.8758,
     "files": [
-      "packages/rn/src/Table.tsx"
+      "packages/rn/src/Table.stories.tsx",
+      "packages/rn/src/Table.test.tsx",
+      "packages/rn/src/Table.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1140,19 +1145,17 @@
     }
   },
   "Toolbar.rn": {
-    "hash": "d4e40d23262aa729",
-    "lastAttemptHash": "d4e40d23262aa729",
-    "generatedAt": "2026-09-23T18:49:37+00:00",
-    "model": "opus",
+    "hash": "b0552d612404c968",
+    "lastAttemptHash": "b0552d612404c968",
+    "generatedAt": "2026-09-23T23:25:11+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7693,
+    "costUsd": 0.2634,
     "files": [
-      "packages/rn/src/Toolbar.stories.tsx",
-      "packages/rn/src/Toolbar.test.tsx",
       "packages/rn/src/Toolbar.tsx"
     ],
-    "gaps": 6,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,

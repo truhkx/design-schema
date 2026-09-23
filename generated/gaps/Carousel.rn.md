@@ -121,3 +121,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Carousel: the rn notes say a dot carries accessibilityState.selected as native's form of aria-current, but the mirror rule says to write aria-selected alongside accessibilityState, which axe rejects on role=button. Chose aria-current="true" on web for dots and aria-selected for tabs.
 - Carousel: the Keyboard story is 'those slides with picker: tabs'; its focusable children are previous, next, the tabs and the track (a tab stop on react-native-web). The previous story's per-slide Buttons were dropped, because on native the visible slide is one VoiceOver element and its inner controls are unreachable anyway.
 - Carousel: this job's file was edited concurrently by a second generator session on the same job (it added pendingSwipe, which reports a swipe at settle rather than mid-drag, plus a duplicate attribute-constant block). Kept its swipe change and its IS_WEB-guarded constants, and removed the duplicate.
+
+## 2026-09-23 19:25 — round 1
+
+- Carousel: the tabs picker is described as a Tabs-style tablist controlling slides, but the RN notes give no aria-controls or accessibilityControls wiring between a tab and its slide; I set role=tab and selected state only.
+- Carousel: 'slide movement is instant under reduced motion' is written for web scroll-snap; for RN I chose scrollToOffset with animated=false under reduced motion and on first positioning, since the doc names no RN equivalent.
+- Carousel: the RN notes say the arrow wrapper is inert, but not what a disabled arrow looks like beyond Button's own disabled state; I rely on Button's disabled handling (opacity.disabled) and add nothing on the wrapper.
+- Carousel: on RN, what a controlled activeIndex above total minus page does is not stated; I clamp it to total minus page, as the picker rule does.
+- Carousel: the Keyboard story's focusable count is described for the web (controls, tabs, viewport); the RN doc says nothing is focusable natively, so the story only exists for the axe gate on react-native-web.
+- Carousel: the tab label's a11y name uses the slide label, but the doc does not say whether a missing label should also drop the aria-selected mirror; I keep both and fall back to copy.goTo as the text.

@@ -350,7 +350,7 @@ function ToolbarFade({ edge, vertical, length, color }: ToolbarFadeProps): React
   const to = edge === 'start' ? '100%' : '0%';
 
   return (
-    <View style={position} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no">
+    <View style={position} pointerEvents="none" aria-hidden accessibilityElementsHidden importantForAccessibility="no">
       <Svg width="100%" height="100%">
         <Defs>
           <LinearGradient

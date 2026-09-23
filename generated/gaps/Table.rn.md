@@ -93,3 +93,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Table: the web contract gives the scroll region role=region; the rn notes only say it is labelled. I chose role="region" so its aria-label is allowed on react-native-web.
 - Table: numericFont asks for tabular figures, but Text has no fontVariant binding or style prop, so RN gets the mono family only.
 - Table: web makes the container the root, while RN needs testID="Table" on the root. I kept Table.container as an inner wrapper around the list, so the caption sits outside the container part on RN.
+
+## 2026-09-23 19:26 — round 1
+
+- Table: `numericFont` says body cells of `align: end` columns use the mono family plus tabular figures, but RN Text's `overrides` has no font-variant binding and Table may not restyle a child, so only the family is applied and tabular-nums is not. The spec should say whether Text grows a `fontVariant` binding or Table accepts the limit.
+- Table: `scrollFade` fades the edges for RTL 'mask flipped', but the RN spec gives no mirroring rule for the SVG gradient. I used logical `start`/`end` positions and left it at that.
+- Table: the scroll region on react-native-web needs `aria-describedby`, but RN has no such prop; I add it only when `Platform.OS === 'web'`. The spec does not say how `copy.rowCount` and `copy.scrollHint` reach the DOM on RN, beyond `accessibilityHint`.
+- Table: `rowCount` says it uses the runtime default locale on RN, which I followed with `new Intl.PluralRules()` and no locale argument. The spec does not say whether a non-English locale should still get the `one`/`other` English text.
+- Table: `stickyHeader` on a stacked table sticks the Toolbar band, but the spec does not say whether `headerShadow` applies to that band; I applied it, since the band is the stacked table's header.
+
+## 2026-09-23 19:34 — round 2
+
+- Table: the convention to mirror every accessibilityState prop as aria-* conflicts with axe for `selected`: aria-selected is not allowed on role=listitem, role=button or a role-less div, so on react-native-web selection is conveyed by the Checkbox and the start-edge bar only. The spec's rowSelected/aria-selected wording should say the RN row carries the native selected trait alone.
+- Table: the RN spec never says which role a selected row takes, so `aria-selected` is unsupported on it; a `row`/`option` role would allow it but breaks the required ul/li list structure.

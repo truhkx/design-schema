@@ -12,7 +12,13 @@ import './Link.js';
 import './Stack.js';
 import './Switch.js';
 import './Text.js';
-import type { DsPopover, PopoverHeadingLevel, PopoverOpenChangeDetail, PopoverPlacement } from './Popover.js';
+import type {
+  DsPopover,
+  PopoverHeadingLevel,
+  PopoverInitialFocus,
+  PopoverOpenChangeDetail,
+  PopoverPlacement,
+} from './Popover.js';
 
 interface PopoverArgs {
   /** Example description of the trigger; the render supplies the element. */
@@ -25,6 +31,7 @@ interface PopoverArgs {
   modal?: boolean | undefined;
   showArrow?: boolean | undefined;
   dismissible?: boolean | undefined;
+  initialFocus?: PopoverInitialFocus | undefined;
   open?: boolean | undefined;
 }
 
@@ -63,6 +70,7 @@ const meta: Meta<PopoverArgs> = {
     modal: false,
     showArrow: false,
     dismissible: true,
+    initialFocus: 'first',
   },
   argTypes: {
     trigger: { control: false },
@@ -75,12 +83,14 @@ const meta: Meta<PopoverArgs> = {
     modal: { control: 'boolean' },
     showArrow: { control: 'boolean' },
     dismissible: { control: 'boolean' },
+    initialFocus: { control: 'inline-radio', options: ['first', 'none'] },
     open: { control: 'boolean' },
   },
   render: (args) => html`
     <ds-popover
       heading=${ifDefined(args.heading)}
       heading-level=${args.headingLevel ?? '3'}
+      initial-focus=${args.initialFocus ?? 'first'}
       placement=${args.placement ?? 'bottom'}
       ?modal=${args.modal ?? false}
       ?show-arrow=${args.showArrow ?? false}
@@ -115,6 +125,10 @@ export const PlacementTopEnd: Story = { args: { placement: 'top-end' } };
 export const PlacementStart: Story = { args: { placement: 'start' } };
 export const PlacementEnd: Story = { args: { placement: 'end' } };
 
+/* initialFocus */
+export const InitialFocusFirst: Story = { args: { initialFocus: 'first' } };
+export const InitialFocusNone: Story = { args: { initialFocus: 'none' } };
+
 /* notable states */
 export const NotDismissible: Story = { args: { dismissible: false } };
 export const WithArrow: Story = { args: { showArrow: true } };
@@ -134,12 +148,14 @@ export const FilterPanel: Story = {
     modal: false,
     showArrow: false,
     dismissible: true,
+    initialFocus: 'first',
     open: undefined,
   },
   render: (args) => html`
     <ds-popover
       heading=${ifDefined(args.heading)}
       heading-level=${args.headingLevel ?? '3'}
+      initial-focus=${args.initialFocus ?? 'first'}
       placement=${args.placement ?? 'bottom'}
       ?modal=${args.modal ?? false}
       ?show-arrow=${args.showArrow ?? false}
@@ -153,7 +169,8 @@ export const FilterPanel: Story = {
 
 export const DatePickerPanel: Story = {
   args: {
-    trigger: 'A date field Button with the calendar Icon showing a fixed literal date label',
+    trigger:
+      'A date field Button with the calendar Icon labelled with the literal date "16 September 2026" (the story does not compute today, and every platform uses that same string)',
     children: 'Three quick-pick date Buttons: Today, Tomorrow, Next week',
     heading: undefined,
     headingLevel: '3',
@@ -161,12 +178,14 @@ export const DatePickerPanel: Story = {
     modal: false,
     showArrow: false,
     dismissible: true,
+    initialFocus: 'first',
     open: undefined,
   },
   render: (args) => html`
     <ds-popover
       heading=${ifDefined(args.heading)}
       heading-level=${args.headingLevel ?? '3'}
+      initial-focus=${args.initialFocus ?? 'first'}
       placement=${args.placement ?? 'bottom'}
       ?modal=${args.modal ?? false}
       ?show-arrow=${args.showArrow ?? false}
@@ -194,12 +213,14 @@ export const RequiredStep: Story = {
     modal: true,
     showArrow: false,
     dismissible: true,
+    initialFocus: 'first',
     open: undefined,
   },
   render: (args) => html`
     <ds-popover
       heading=${ifDefined(args.heading)}
       heading-level=${args.headingLevel ?? '3'}
+      initial-focus=${args.initialFocus ?? 'first'}
       placement=${args.placement ?? 'bottom'}
       ?modal=${args.modal ?? false}
       ?show-arrow=${args.showArrow ?? false}
@@ -224,12 +245,14 @@ export const ContextualHelp: Story = {
     modal: false,
     showArrow: true,
     dismissible: true,
+    initialFocus: 'first',
     open: undefined,
   },
   render: (args) => html`
     <ds-popover
       heading=${ifDefined(args.heading)}
       heading-level=${args.headingLevel ?? '3'}
+      initial-focus=${args.initialFocus ?? 'first'}
       placement=${args.placement ?? 'bottom'}
       ?modal=${args.modal ?? false}
       ?show-arrow=${args.showArrow ?? false}
@@ -252,6 +275,7 @@ export const Keyboard: Story = {
     <ds-popover
       heading=${ifDefined(args.heading)}
       heading-level=${args.headingLevel ?? '3'}
+      initial-focus=${args.initialFocus ?? 'first'}
       placement=${args.placement ?? 'bottom'}
       ?modal=${args.modal ?? false}
       ?show-arrow=${args.showArrow ?? false}

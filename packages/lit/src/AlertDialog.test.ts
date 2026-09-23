@@ -149,6 +149,8 @@ describe('ds-alert-dialog', () => {
   it('has-accessible-name', async () => {
     const d = await setup();
     expect(d.dialog()).toHaveAccessibleName(d.props.heading);
+    // The description goes through aria-describedby, not Chromium-only aria-description.
+    expect(d.dialog()).toHaveAccessibleDescription(d.props.description);
   });
 
   it('escape-fires-on-cancel', async () => {

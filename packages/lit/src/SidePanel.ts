@@ -28,7 +28,7 @@ export interface SidePanelOpenChangeDetail {
   reason: SidePanelOpenChangeReason;
 }
 
-/** Overridable style hooks; see the `overrides` property. `surface`, `focusRing` and `focusRingWidth` are locked and excluded. */
+/** Overridable style hooks; see the `overrides` property. `surface`, `focusRing` and `focusRingWidth` are locked and excluded, but keep their `:host` hooks. */
 export type SidePanelOverridableBinding =
   | 'scrim'
   | 'shadow'
@@ -214,6 +214,10 @@ export class DsSidePanel extends LitElement {
       --ds-side-panel-layer: var(--layer-sheet);
       --ds-side-panel-enter: var(--motion-duration-base);
       --ds-side-panel-exit: var(--motion-duration-fast);
+      /* Locked: out of the overrides type, still themeable and renameable through these hooks. */
+      --ds-side-panel-surface: var(--color-overlay-surface);
+      --ds-side-panel-focus-ring: var(--color-border-focus);
+      --ds-side-panel-focus-ring-width: var(--border-width-focus);
       --ds-side-panel-active-width: var(--ds-side-panel-width);
       /* 100% of the fixed containing block, which excludes the scrollbar gutter — never 100vw. */
       --ds-side-panel-inline-size: min(
@@ -266,16 +270,17 @@ export class DsSidePanel extends LitElement {
       }
     }
 
-    [data-part='surface'] {
+    /* Addressed by class: the body's <ds-box> writes its own data-part="surface" on its host. */
+    .surface {
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
       font-family: var(--font-family-body);
       color: var(--color-foreground);
-      /* surface: color.overlay.surface, locked — no override hook */
-      background: var(--color-overlay-surface);
+      /* surface: color.overlay.surface, locked — excluded from the overrides type, hook kept */
+      background: var(--ds-side-panel-surface);
     }
-    [data-part='surface'][hidden] {
+    .surface[hidden] {
       display: none;
     }
 
@@ -426,8 +431,8 @@ export class DsSidePanel extends LitElement {
       min-inline-size: 0;
     }
     [data-part='heading']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-side-panel-focus-ring-width) solid var(--ds-side-panel-focus-ring);
+      outline-offset: var(--ds-side-panel-focus-ring-width);
     }
 
     /* hideHeading: kept for the accessible name, removed from the visual layout. */
@@ -448,12 +453,16 @@ export class DsSidePanel extends LitElement {
       flex: none;
     }
 
-    /* inset: forwarded as the body Box's paddingInline; its block padding stays zero. */
+    /* Box never scrolls, so the body part is an overlay-owned scroll element around it;
+       partGap measures to this wrapper. */
     [data-part='body'] {
-      --ds-box-padding-inline: var(--ds-side-panel-inset);
       flex: 1 1 auto;
       min-block-size: 0;
       overflow-y: auto;
+    }
+    /* inset: forwarded as the body Box's paddingInline hook; its block padding stays zero. */
+    [data-part='body'] > ds-box {
+      --ds-box-padding-inline: var(--ds-side-panel-inset);
     }
 
     [data-part='footer'] {
@@ -524,7 +533,7 @@ export class DsSidePanel extends LitElement {
   /** Whether the footer slot has assigned content. */
   @state() private accessor hasFooter = false;
 
-  @query('[data-part="surface"]') private accessor surfaceEl!: HTMLElement | null;
+  @query('.surface') private accessor surfaceEl!: HTMLElement | null;
   @query('dialog') private accessor dialogEl!: HTMLDialogElement | null;
   @query('[data-part="heading"]') private accessor headingEl!: HTMLElement | null;
   @query('[data-part="closeButton"]') private accessor closeButtonEl!: HTMLElement | null;
@@ -535,7 +544,12 @@ export class DsSidePanel extends LitElement {
   private overlayModal = false;
   private holdsScrollLock = false;
   private openerEl: HTMLElement | null = null;
-  private focusTriggerOnClose = false;
+  /**
+   * Where focus goes when the pending close finishes: `trigger` always, `none`
+   * never (a followed Link owns focus; an outside press put it where it is),
+   * `auto` only if focus was inside or the panel was modal (a controlled close).
+   */
+  private closeFocus: 'trigger' | 'none' | 'auto' = 'auto';
   private exitTimer: ReturnType<typeof setTimeout> | undefined;
   private warnedHeading = false;
 
@@ -640,9 +654,11 @@ export class DsSidePanel extends LitElement {
       <ds-focus-scope .trapped=${useDialog} .active=${visible} auto-focus="none" .restoreFocus=${false}>
         <div part="focusScope" data-part="focusScope" @click=${this.handlePanelClick}>
           ${header}
-          <ds-box part="body" data-part="body" .overrides=${this.bodyOverrides()}>
-            <slot></slot>
-          </ds-box>
+          <div part="body" data-part="body">
+            <ds-box .overrides=${this.bodyOverrides()}>
+              <slot></slot>
+            </ds-box>
+          </div>
           <ds-stack
             part="footer"
             data-part="footer"
@@ -658,7 +674,7 @@ export class DsSidePanel extends LitElement {
       </ds-focus-scope>
     `;
 
-    const surfaceClass = isPersistent ? 'sidebar' : `overlay${closing}`;
+    const surfaceClass = isPersistent ? 'surface sidebar' : `surface overlay${closing}`;
     // Non-modal and persistent: the panel is the landmark the `role` prop names.
     const region =
       this.landmark === 'navigation'
@@ -702,7 +718,7 @@ export class DsSidePanel extends LitElement {
             @cancel=${this.handleCancel}
           >
             ${scrimTemplate}
-            <div part="surface" data-part="surface" class=${`overlay${closing}`}>${content}</div>
+            <div part="surface" data-part="surface" class=${`surface overlay${closing}`}>${content}</div>
           </dialog>`
         : html`${!isPersistent && this.scrim ? scrimTemplate : nothing}${region}`}
     `;
@@ -726,7 +742,12 @@ export class DsSidePanel extends LitElement {
 
   private readonly handleTriggerSlotChange = (event: Event): void => {
     const slot = event.target as HTMLSlotElement;
-    const next = (slot.assignedElements({ flatten: true })[0] as HTMLElement | undefined) ?? null;
+    const assigned = slot.assignedElements({ flatten: true });
+    // A text node cannot carry `slot`, so only a second element can reach this slot by mistake.
+    if (import.meta.env.DEV && assigned.length > 1) {
+      console.warn('<ds-side-panel> `trigger` must be exactly one element; only the first is wired.', this);
+    }
+    const next = (assigned[0] as HTMLElement | undefined) ?? null;
     if (next === this.triggerEl) {
       return;
     }
@@ -895,7 +916,7 @@ export class DsSidePanel extends LitElement {
     options: { apply: boolean; focusTrigger: boolean },
   ): void {
     if (!next) {
-      this.focusTriggerOnClose = options.focusTrigger;
+      this.closeFocus = options.focusTrigger ? 'trigger' : 'none';
     }
     if (options.apply && this.open === undefined) {
       this.internalOpen = next;
@@ -912,6 +933,7 @@ export class DsSidePanel extends LitElement {
   private openOverlay(): void {
     clearTimeout(this.exitTimer);
     this.closing = false;
+    this.closeFocus = 'auto';
     const active = deepActiveElement();
     this.openerEl = active instanceof HTMLElement && active !== document.body ? active : null;
     this.overlayModal = this.modal;
@@ -964,13 +986,15 @@ export class DsSidePanel extends LitElement {
     }
     this.releaseScrollLock();
     this.closing = false;
-    if (this.focusTriggerOnClose || focusWasInside || this.overlayModal) {
+    const restore =
+      this.closeFocus === 'trigger' || (this.closeFocus === 'auto' && (focusWasInside || this.overlayModal));
+    if (restore) {
       const target = this.triggerEl ?? this.openerEl;
       if (target?.isConnected) {
         target.focus();
       }
     }
-    this.focusTriggerOnClose = false;
+    this.closeFocus = 'auto';
     this.overlayModal = false;
     this.openerEl = null;
   }

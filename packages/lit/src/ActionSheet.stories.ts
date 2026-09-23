@@ -2,6 +2,8 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './ActionSheet.js';
+import './Button.js';
+import './Icon.js';
 import type { ActionSheetAction, DsActionSheet } from './ActionSheet.js';
 
 interface ActionSheetArgs {
@@ -21,11 +23,19 @@ const PHOTO_ACTIONS: ActionSheetAction[] = [
 
 /**
  * The consumer's side of the controlled contract: `open` is owned here, and both a choice and a
- * dismissal close the sheet. No trigger is rendered — there is no copy key for one — so the sheet's
- * own rows and the Cancel row are the only focusable elements on the page.
+ * dismissal close the sheet (the `action` and `close` handles log them first). Only the Keyboard
+ * story renders a trigger; every other story renders none, since there is no copy key for one.
  */
 function closeSheet(event: Event): void {
   (event.currentTarget as DsActionSheet).open = false;
+}
+
+/** The Keyboard story's trigger reopens the sheet rendered right after it. */
+function openSheet(event: Event): void {
+  const sheet = (event.currentTarget as HTMLElement).nextElementSibling;
+  if (sheet instanceof HTMLElement && sheet.localName === 'ds-action-sheet') {
+    (sheet as DsActionSheet).open = true;
+  }
 }
 
 const meta: Meta<ActionSheetArgs> = {
@@ -107,7 +117,24 @@ export const Closed: Story = {
   args: { open: false },
 };
 
-/** Open with four focusable actions and the Cancel row, for the keyboard gate. */
+/**
+ * Open with its "More actions" trigger, four focusable actions and the Cancel row, for the keyboard
+ * gate. The trigger is the only one in the module: it gives the wide presentation a real anchor.
+ */
 export const Keyboard: Story = {
   args: { open: true, heading: 'Photo.jpg', actions: PHOTO_ACTIONS },
+  render: (args) => html`
+    <ds-button icon-only label="More actions" @press=${openSheet}
+      ><ds-icon slot="leading-icon" name="ellipsis"></ds-icon
+    ></ds-button>
+    <ds-action-sheet
+      ?open=${args.open}
+      heading=${ifDefined(args.heading)}
+      .actions=${args.actions}
+      ?no-dismiss=${args.dismissible === false}
+      cancel-label=${ifDefined(args.cancelLabel)}
+      @action=${closeSheet}
+      @close=${closeSheet}
+    ></ds-action-sheet>
+  `,
 };

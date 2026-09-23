@@ -260,6 +260,18 @@ export class DsMenu extends LitElement {
       --ds-menu-layer: var(--layer-dropdown);
       --ds-menu-enter: var(--motion-duration-fast);
       --ds-menu-enter-distance: var(--space-1);
+      /* Locked bindings: outside the overrides type, but still hooks so page CSS can re-theme them. */
+      --ds-menu-surface: var(--color-overlay-surface);
+      /* phoneBreakpoint is read on rn only; declared here so the binding stays renameable. */
+      --ds-menu-phone-breakpoint: var(--layout-max-width-prose);
+      --ds-menu-item-hover: var(--color-background-subtle);
+      --ds-menu-item-color: var(--color-foreground);
+      --ds-menu-item-danger-color: var(--color-foreground-danger);
+      --ds-menu-group-label-color: var(--color-foreground-muted);
+      --ds-menu-shortcut-color: var(--color-foreground-muted);
+      --ds-menu-min-target: var(--size-target-min);
+      --ds-menu-focus-ring: var(--color-border-focus);
+      --ds-menu-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -281,9 +293,9 @@ export class DsMenu extends LitElement {
       border-color: var(--ds-menu-border);
       border-radius: var(--ds-menu-radius);
       /* surface: color.overlay.surface, locked */
-      background: var(--color-overlay-surface);
+      background: var(--ds-menu-surface);
       box-shadow: var(--ds-menu-shadow);
-      color: var(--color-foreground);
+      color: var(--ds-menu-item-color);
       z-index: var(--ds-menu-layer);
       /* minWidth: an override replaces the base; the × 2.5 stays in the rule, and the trigger's
          measured width is the runtime floor (0 in anchor mode, which has no trigger). */
@@ -300,15 +312,6 @@ export class DsMenu extends LitElement {
       transition:
         opacity var(--ds-menu-enter) var(--motion-easing-standard),
         transform var(--ds-menu-enter) var(--motion-easing-standard);
-    }
-
-    /* popupOffset: the gap between trigger and popup, on the side facing the trigger */
-    [data-part='popup'][data-side='bottom'] {
-      margin-block-start: var(--ds-menu-popup-offset);
-    }
-
-    [data-part='popup'][data-side='top'] {
-      margin-block-end: var(--ds-menu-popup-offset);
     }
 
     [data-part='popup'][hidden] {
@@ -345,7 +348,7 @@ export class DsMenu extends LitElement {
       padding-inline: var(--ds-menu-item-padding-inline);
       font-size: var(--ds-menu-group-label-size);
       font-weight: var(--ds-menu-group-label-weight);
-      color: var(--color-foreground-muted);
+      color: var(--ds-menu-group-label-color);
     }
 
     /* borderWidth also sets the separator thickness */
@@ -361,12 +364,12 @@ export class DsMenu extends LitElement {
       align-items: center;
       gap: var(--ds-menu-item-gap);
       /* minTarget: size.target.min, locked */
-      min-block-size: var(--size-target-min);
+      min-block-size: var(--ds-menu-min-target);
       padding-block: var(--ds-menu-item-padding-block);
       padding-inline: var(--ds-menu-item-padding-inline);
       border-radius: var(--ds-menu-item-radius);
       /* itemColor: color.foreground, locked */
-      color: var(--color-foreground);
+      color: var(--ds-menu-item-color);
       cursor: pointer;
       user-select: none;
       outline: none;
@@ -376,13 +379,13 @@ export class DsMenu extends LitElement {
        never hover-only. The highlight changes instantly: enter is the popup's transition only. */
     [data-part='item']:hover,
     [data-part='item']:focus {
-      background: var(--color-background-subtle);
+      background: var(--ds-menu-item-hover);
     }
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
     [data-part='item']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-menu-focus-ring-width) solid var(--ds-menu-focus-ring);
+      outline-offset: calc(-1 * var(--ds-menu-focus-ring-width));
     }
 
     [data-part='item'][aria-disabled='true'] {
@@ -396,7 +399,7 @@ export class DsMenu extends LitElement {
 
     /* itemDangerColor: color.foreground.danger, locked */
     [data-part='item'][data-tone='danger'] {
-      color: var(--color-foreground-danger);
+      color: var(--ds-menu-item-danger-color);
     }
 
     [data-part='itemIcon'] {
@@ -412,7 +415,7 @@ export class DsMenu extends LitElement {
     [data-part='itemShortcut'] {
       flex: none;
       font-size: var(--ds-menu-shortcut-size);
-      color: var(--color-foreground-muted);
+      color: var(--ds-menu-shortcut-color);
     }
   `;
 
@@ -577,6 +580,7 @@ export class DsMenu extends LitElement {
                 label=${this.label}
                 ?icon-only=${this.iconOnly}
                 .expanded=${isOpen}
+                .haspopup=${'menu'}
                 @press=${this.handleTriggerPress}
                 @keydown=${this.handleTriggerKeydown}
               >
@@ -924,11 +928,14 @@ export class DsMenu extends LitElement {
     const gutter = readLengthPx(popup, HOOKS.gutter) ?? 0;
     const rtl = getComputedStyle(reference).direction === 'rtl';
     const rect = reference.getBoundingClientRect();
-    const size = popup.getBoundingClientRect();
+    // Layout size, not the rect: the enter transform must not skew the measurement.
+    const width = popup.offsetWidth;
+    const height = popup.offsetHeight;
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     const [preferred, side] = this.placement.split('-') as ['bottom' | 'top', 'start' | 'end'];
-    const needed = size.height + offset;
+    // The flip check includes the offset and the gutter kept from the block edges.
+    const needed = height + offset + gutter;
 
     let vertical = preferred;
     if (vertical === 'bottom' && rect.bottom + needed > viewportHeight && rect.top - needed >= 0) {
@@ -939,15 +946,26 @@ export class DsMenu extends LitElement {
 
     // `start` is the reference's leading edge: its left in left-to-right, its right in right-to-left.
     const alignsToLeadingEdge = rtl ? side === 'end' : side === 'start';
-    const preferredLeft = alignsToLeadingEdge ? rect.left : rect.right - size.width;
-    const furthestLeft = Math.max(gutter, viewportWidth - gutter - size.width);
-    const left = Math.min(Math.max(preferredLeft, gutter), furthestLeft);
+    const preferredLeft = alignsToLeadingEdge ? rect.left : rect.right - width;
+    // When the popup is wider than the viewport minus 2 × gutter the leading edge wins, clamped to gutter.
+    const furthestLeft = viewportWidth - gutter - width;
+    const left =
+      furthestLeft < gutter
+        ? rtl
+          ? furthestLeft
+          : gutter
+        : Math.min(Math.max(preferredLeft, gutter), furthestLeft);
 
-    popup.dataset['side'] = vertical;
+    // popupOffset is the gap on the side facing the trigger; the block edges keep `gutter` too, so a
+    // popup that could not flip is clamped rather than sitting against the edge.
+    const preferredTop = vertical === 'bottom' ? rect.bottom + offset : rect.top - offset - height;
+    const top = Math.max(gutter, Math.min(preferredTop, viewportHeight - gutter - height));
+
+    if (popup.dataset['side'] !== vertical) popup.dataset['side'] = vertical;
     popup.style.left = `${left}px`;
     popup.style.right = 'auto';
-    popup.style.top = vertical === 'bottom' ? `${rect.bottom}px` : 'auto';
-    popup.style.bottom = vertical === 'top' ? `${viewportHeight - rect.top}px` : 'auto';
+    popup.style.top = `${top}px`;
+    popup.style.bottom = 'auto';
   }
 
   private applyOverrides(): void {

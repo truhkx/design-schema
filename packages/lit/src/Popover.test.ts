@@ -11,13 +11,13 @@ import './Checkbox.js';
 import type { DsPopover, PopoverOpenChangeDetail } from './Popover.js';
 import meta, { Default } from './Popover.stories.js';
 
-type Given = Partial<Pick<DsPopover, 'heading' | 'headingLevel' | 'placement' | 'modal' | 'showArrow' | 'dismissible' | 'open'>>;
+type Given = Partial<Pick<DsPopover, 'heading' | 'headingLevel' | 'placement' | 'modal' | 'showArrow' | 'dismissible' | 'initialFocus' | 'open'>>;
 
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element with the story's trigger and body. */
 async function setup(given: Given = {}) {
   const el = document.createElement('ds-popover');
   const props = { ...meta.args, ...Default.args, ...given } as Record<string, unknown>;
-  for (const key of ['heading', 'headingLevel', 'placement', 'modal', 'showArrow', 'dismissible', 'open']) {
+  for (const key of ['heading', 'headingLevel', 'placement', 'modal', 'showArrow', 'dismissible', 'initialFocus', 'open']) {
     if (props[key] !== undefined) (el as unknown as Record<string, unknown>)[key] = props[key];
   }
 
@@ -94,6 +94,14 @@ describe('ds-popover', () => {
   for (const placement of ['bottom-start', 'bottom', 'bottom-end', 'top-start', 'top', 'top-end', 'start', 'end'] as const) {
     it(`renders-placement-${placement}`, async () => {
       const { el } = await setup({ placement });
+      expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+    });
+  }
+
+  /* derived: props.initialFocus */
+  for (const initialFocus of ['first', 'none'] as const) {
+    it(`renders-initial-focus-${initialFocus}`, async () => {
+      const { el } = await setup({ initialFocus });
       expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
     });
   }

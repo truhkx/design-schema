@@ -166,6 +166,10 @@ export class DsDialog extends LitElement {
     :host {
       display: contents;
       --ds-dialog-scrim: var(--color-overlay-scrim);
+      /* Locked: not in the overrides type, but still a hook, themeable from page CSS. */
+      --ds-dialog-surface: var(--color-overlay-surface);
+      --ds-dialog-focus-ring: var(--color-border-focus);
+      --ds-dialog-focus-ring-width: var(--border-width-focus);
       --ds-dialog-border: var(--color-border);
       --ds-dialog-border-width: var(--border-width-thin);
       --ds-dialog-shadow: var(--shadow-overlay);
@@ -202,13 +206,18 @@ export class DsDialog extends LitElement {
       background: transparent;
       color: inherit;
       overflow: hidden;
+      place-items: center;
       /* Only a non-top-layer fallback honours this; the top layer ignores z-index. */
       z-index: var(--ds-dialog-layer);
+      /* The native <dialog> closes at the start of the exit (focus restore, page no longer inert);
+         these keep it painted in the top layer until the exit transition ends. */
+      transition:
+        display var(--ds-dialog-exit) allow-discrete,
+        overlay var(--ds-dialog-exit) allow-discrete;
     }
 
     dialog[open] {
       display: grid;
-      place-items: center;
     }
 
     /* The scrim is the element below; the native backdrop stays clear. */
@@ -251,8 +260,7 @@ export class DsDialog extends LitElement {
       padding-block: var(--ds-dialog-inset);
       font-family: var(--font-family-body);
       color: var(--color-foreground);
-      /* surface: color.overlay.surface, locked — no hook */
-      background: var(--color-overlay-surface);
+      background: var(--ds-dialog-surface);
       border-style: solid;
       border-width: var(--ds-dialog-border-width);
       border-color: var(--ds-dialog-border);
@@ -294,6 +302,7 @@ export class DsDialog extends LitElement {
     }
 
     @media (prefers-reduced-motion: reduce) {
+      dialog,
       .scrim,
       .surface {
         transition: none;
@@ -332,8 +341,8 @@ export class DsDialog extends LitElement {
       outline: none;
     }
     .heading:has(:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-dialog-focus-ring-width) solid var(--ds-dialog-focus-ring);
+      outline-offset: var(--ds-dialog-focus-ring-width);
     }
 
     /* hideHeading: out of view, still the accessible name and still a focus target. */
@@ -580,7 +589,7 @@ export class DsDialog extends LitElement {
   };
 
   private readonly handleScrimClick = (event: MouseEvent): void => {
-    if (!this.dismissible || event.target !== event.currentTarget) {
+    if (!this.open || !this.dismissible || event.target !== event.currentTarget) {
       return;
     }
     this.dispatchClose('scrim');
@@ -589,7 +598,9 @@ export class DsDialog extends LitElement {
   private readonly handleCloseButtonPress = (event: Event): void => {
     // The composite reports `close`; the inner button's `press` stays inside.
     event.stopPropagation();
-    this.dispatchClose('close-button');
+    if (this.open) {
+      this.dispatchClose('close-button');
+    }
   };
 
   /** A slotted form submitted with method="dialog" (or a formmethod="dialog" submitter) asks to close. */
@@ -647,18 +658,20 @@ export class DsDialog extends LitElement {
   }
 
   private async handleClose(): Promise<void> {
-    await this.updateComplete;
-    await this.transitionsSettled();
-    if (this.open) {
-      return;
-    }
+    // Focus restore runs at the start of the exit: closing the native <dialog> now lifts the page's
+    // inertness and returns focus to the element focused at showModal() time, while the CSS
+    // `display`/`overlay` transitions keep it painted in the top layer for the exit.
     const dialog = this.dialogEl;
     if (dialog?.open) {
       this.closingProgrammatically = true;
       dialog.close();
     }
     this.releaseScroll();
-    // Rendering nothing disconnects the FocusScope, which returns focus to the opener.
+    await this.transitionsSettled();
+    if (this.open) {
+      return;
+    }
+    // Rendering nothing disconnects the FocusScope, which restores the opener if focus is still unplaced.
     this.closing = false;
   }
 

@@ -8,7 +8,7 @@ import './Button.js';
 import './Icon.js';
 import './FocusScope.js';
 import './Menu.js';
-import type { IconName } from './Icon.js';
+import type { IconName, IconOverridableBinding } from './Icon.js';
 import type { DsFocusScope } from './FocusScope.js';
 import type { TextOverridableBinding } from './Text.js';
 import type {
@@ -61,6 +61,7 @@ export type ActionSheetOverridableBinding =
   | 'titleSize'
   | 'fontFamily'
   | 'fontSize'
+  | 'itemIconSize'
   | 'lineHeight'
   | 'divider'
   | 'dividerWidth'
@@ -70,9 +71,9 @@ export type ActionSheetOverridableBinding =
 
 /**
  * Host hooks, one per overridable binding. `titleSize`, `fontFamily` and `lineHeight` reach the
- * composed heading Text through Text's own documented hooks, set from these in the stylesheet, so
- * consumer CSS on the sheet hook still lands; `overrides` also forwards them to Text's `overrides`
- * when the caller set one.
+ * composed heading Text, and `itemIconSize` each row's Icon, through the child's own documented
+ * hooks, set from these in the stylesheet, so consumer CSS on the sheet hook still lands;
+ * `overrides` also forwards them to the child's `overrides` when the caller set one.
  */
 const HOOKS: Record<ActionSheetOverridableBinding, string> = {
   scrim: '--ds-action-sheet-scrim',
@@ -89,6 +90,7 @@ const HOOKS: Record<ActionSheetOverridableBinding, string> = {
   titleSize: '--ds-action-sheet-title-size',
   fontFamily: '--ds-action-sheet-font-family',
   fontSize: '--ds-action-sheet-font-size',
+  itemIconSize: '--ds-action-sheet-item-icon-size',
   lineHeight: '--ds-action-sheet-line-height',
   divider: '--ds-action-sheet-divider',
   dividerWidth: '--ds-action-sheet-divider-width',
@@ -160,6 +162,25 @@ function lengthInPx(element: Element, value: string): number {
 
 function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+/**
+ * `showModal()` is what makes the background inert. Where it does not exist or throws (an
+ * already-open or detached dialog) the `open` attribute only lets the sheet render; it makes nothing
+ * inert and is not a supported browser path. The failure is caught rather than unmounting the sheet.
+ */
+function showDialog(dialog: HTMLDialogElement): void {
+  try {
+    if (typeof dialog.showModal === 'function') {
+      dialog.showModal();
+      return;
+    }
+  } catch {
+    // Fall through to the attribute fallback.
+  }
+  if (!dialog.open) {
+    dialog.setAttribute('open', '');
+  }
 }
 
 function getDeepActiveElement(): Element | null {
@@ -272,12 +293,27 @@ export class DsActionSheet extends LitElement {
       --ds-action-sheet-title-size: var(--font-size-sm);
       --ds-action-sheet-font-family: var(--font-family-body);
       --ds-action-sheet-font-size: var(--font-size-md);
+      --ds-action-sheet-item-icon-size: var(--font-size-md);
       --ds-action-sheet-line-height: var(--font-line-height-normal);
       --ds-action-sheet-divider: var(--color-border);
       --ds-action-sheet-divider-width: var(--border-width-thin);
       --ds-action-sheet-layer: var(--layer-sheet);
       --ds-action-sheet-enter: var(--motion-duration-base);
       --ds-action-sheet-exit: var(--motion-duration-fast);
+      /* Locked bindings: out of the overrides API, still hooks, so page CSS can re-theme them and
+         the naming codemod can rename them. */
+      --ds-action-sheet-surface: var(--color-overlay-surface);
+      --ds-action-sheet-handle: var(--color-foreground-muted);
+      --ds-action-sheet-item-hover: var(--color-background-subtle);
+      --ds-action-sheet-item-color: var(--color-foreground);
+      --ds-action-sheet-item-danger-color: var(--color-foreground-danger);
+      --ds-action-sheet-title-color: var(--color-foreground-muted);
+      --ds-action-sheet-min-target: var(--size-target-comfortable);
+      /* maxWidth: the presentation breakpoint is built from the theme token on the root, never per
+         instance (see watchBreakpoint); declared here so the binding stays renameable. */
+      --ds-action-sheet-max-width: var(--layout-max-width-prose);
+      --ds-action-sheet-focus-ring: var(--color-border-focus);
+      --ds-action-sheet-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -336,9 +372,9 @@ export class DsActionSheet extends LitElement {
       min-inline-size: 0;
       max-block-size: 100%;
       padding-block-end: env(safe-area-inset-bottom);
-      color: var(--color-foreground);
-      /* surface: color.overlay.surface, locked — no hook */
-      background: var(--color-overlay-surface);
+      color: var(--ds-action-sheet-item-color);
+      /* surface: color.overlay.surface, locked */
+      background: var(--ds-action-sheet-surface);
       border-start-start-radius: var(--ds-action-sheet-radius);
       border-start-end-radius: var(--ds-action-sheet-radius);
       box-shadow: var(--ds-action-sheet-shadow);
@@ -405,7 +441,7 @@ export class DsActionSheet extends LitElement {
       inline-size: var(--ds-action-sheet-handle-width);
       block-size: var(--ds-action-sheet-handle-height);
       border-radius: var(--ds-action-sheet-handle-radius);
-      background: var(--color-foreground-muted);
+      background: var(--ds-action-sheet-handle);
     }
 
     /* heading: the sheet-owned wrapper around the composed <ds-text> (ds-* hosts carry no data-part
@@ -414,6 +450,7 @@ export class DsActionSheet extends LitElement {
        consumer CSS on the --ds-action-sheet-* hooks lands even though Text sets its own from
        size="sm". */
     .heading ds-text {
+      --ds-text-color: var(--ds-action-sheet-title-color);
       --ds-text-font-size: var(--ds-action-sheet-title-size);
       --ds-text-font-family: var(--ds-action-sheet-font-family);
       --ds-text-line-height: var(--ds-action-sheet-line-height);
@@ -433,14 +470,14 @@ export class DsActionSheet extends LitElement {
       align-items: center;
       gap: var(--ds-action-sheet-item-gap);
       /* minTarget: size.target.comfortable, locked */
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-action-sheet-min-target);
       margin: 0;
       padding-block: var(--ds-action-sheet-item-padding-block);
       padding-inline: var(--ds-action-sheet-item-padding-inline);
       border: 0;
       background: transparent;
       /* itemColor: color.foreground, locked */
-      color: var(--color-foreground);
+      color: var(--ds-action-sheet-item-color);
       font-family: var(--ds-action-sheet-font-family);
       font-size: var(--ds-action-sheet-font-size);
       line-height: var(--ds-action-sheet-line-height);
@@ -451,12 +488,12 @@ export class DsActionSheet extends LitElement {
 
     /* itemDangerColor: color.foreground.danger, locked */
     .item[data-tone='danger'] {
-      color: var(--color-foreground-danger);
+      color: var(--ds-action-sheet-item-danger-color);
     }
 
     /* itemHover: color.background.subtle, locked */
     .item:hover:not([aria-disabled='true']) {
-      background: var(--color-background-subtle);
+      background: var(--ds-action-sheet-item-hover);
     }
 
     .item:focus {
@@ -465,8 +502,8 @@ export class DsActionSheet extends LitElement {
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
     .item:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-action-sheet-focus-ring-width) solid var(--ds-action-sheet-focus-ring);
+      outline-offset: calc(-1 * var(--ds-action-sheet-focus-ring-width));
     }
 
     .item[aria-disabled='true'] {
@@ -474,9 +511,15 @@ export class DsActionSheet extends LitElement {
       opacity: var(--opacity-disabled);
     }
 
+    /* itemIcon: the sheet-owned span wrapping the composed <ds-icon>; itemIconSize reaches Icon
+       through its documented size hook, which this outer-tree rule sets over Icon's own :host. */
     .item-icon {
       display: inline-flex;
       flex: none;
+    }
+
+    .item-icon ds-icon {
+      --ds-icon-size: var(--ds-action-sheet-item-icon-size);
     }
 
     .item-label {
@@ -545,9 +588,11 @@ export class DsActionSheet extends LitElement {
   private scrollLocked = false;
   private closingProgrammatically = false;
   private focusBeforeCancel: HTMLElement | null = null;
+  private escapeReported = false;
   private wideQuery: MediaQueryList | null = null;
+  private breakpointRetry = false;
   private gesture: DragGesture | null = null;
-  /** The wide Menu reported a choice since `open` became true: no later (or earlier, pending) close is a dismissal. */
+  /** The wide Menu reported a choice since `open` became true: no later close is a dismissal. */
   private menuChoiceMade = false;
   /** A wide dismissal is already queued in this task (Menu can follow `outside` with `focus-out`). */
   private menuCloseQueued = false;
@@ -555,11 +600,6 @@ export class DsActionSheet extends LitElement {
   private readonly handleWideChange = (event: MediaQueryListEvent): void => {
     this.wide = event.matches;
   };
-
-  /** The sheet presentation's shadow `<dialog>` (the forwarded ref); null while closed and in the wide presentation. */
-  get dialog(): HTMLDialogElement | null {
-    return this.wide || !this.open ? null : (this.dialogEl ?? null);
-  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -740,7 +780,9 @@ export class DsActionSheet extends LitElement {
         @click=${() => this.handleItemClick(action)}
       >
         ${action.icon
-          ? html`<span class="item-icon" part="itemIcon" data-part="itemIcon"><ds-icon name=${action.icon}></ds-icon></span>`
+          ? html`<span class="item-icon" part="itemIcon" data-part="itemIcon"
+              ><ds-icon name=${action.icon} .overrides=${this.iconOverrides()}></ds-icon
+            ></span>`
           : nothing}
         <span class="item-label">${action.label}</span>
       </button>
@@ -778,7 +820,13 @@ export class DsActionSheet extends LitElement {
     return forwarded;
   }
 
-  private menuOverrides(): Partial<Record<MenuOverridableBinding, TokenRef | undefined>> | undefined {
+  /** itemIconSize is forwarded to each row's Icon as its `size`, only when the caller set it. */
+  private iconOverrides(): Partial<Record<IconOverridableBinding, TokenRef | undefined>> | undefined {
+    const ref = this.overrides?.itemIconSize;
+    return ref === undefined ? undefined : { size: ref };
+  }
+
+  private menuOverrides():Partial<Record<MenuOverridableBinding, TokenRef | undefined>> | undefined {
     const overrides = this.overrides;
     if (!overrides) {
       return undefined;
@@ -853,8 +901,13 @@ export class DsActionSheet extends LitElement {
   private readonly handleCancel = (event: Event): void => {
     // The consumer owns `open`: never let the browser close the <dialog> on its own.
     event.preventDefault();
-    const active = getDeepActiveElement();
-    this.focusBeforeCancel = active instanceof HTMLElement ? active : null;
+    // A non-cancelable `cancel` is followed by a native `close`: remember that this Escape is
+    // reported and where focus was, so the reopen there neither reports twice nor loses focus.
+    if (!event.cancelable) {
+      const active = getDeepActiveElement();
+      this.focusBeforeCancel = active instanceof HTMLElement ? active : null;
+      this.escapeReported = true;
+    }
     this.dispatchClose('escape');
   };
 
@@ -863,18 +916,27 @@ export class DsActionSheet extends LitElement {
       this.closingProgrammatically = false;
       return;
     }
-    // Chromium closes without a cancelable `cancel` when Escape arrives with no user activation.
+    // Chromium closes without a cancelable `cancel` when Escape arrives with no user activation: that
+    // close was never reported, so report it now, then reopen, since the consumer owns `open`.
     const dialog = this.dialogEl;
+    const reported = this.escapeReported;
+    const previous = this.focusBeforeCancel;
+    this.escapeReported = false;
+    this.focusBeforeCancel = null;
     if (this.open && dialog && !dialog.open) {
-      dialog.showModal();
-      const previous = this.focusBeforeCancel;
+      if (!reported) {
+        this.dispatchClose('escape');
+      }
+      if (!this.open) {
+        return;
+      }
+      showDialog(dialog);
       if (previous?.isConnected) {
         previous.focus();
       } else {
         this.applyInitialFocus();
       }
     }
-    this.focusBeforeCancel = null;
   };
 
   private readonly handleScrimClick = (event: MouseEvent): void => {
@@ -1028,23 +1090,23 @@ export class DsActionSheet extends LitElement {
       this.menuChoiceMade = true;
       return;
     }
+    // The `focus-out` Menu raises when the window itself loses focus is no dismissal by the user.
+    if (reason === 'focus-out' && !document.hasFocus()) {
+      return;
+    }
     const mapped: ActionSheetCloseReason | null =
       reason === 'escape' ? 'escape' : reason === 'outside' || reason === 'tab-out' || reason === 'focus-out' ? 'scrim' : null;
+    // Menu fires `open-change` (false, 'action') synchronously before `action`, so a choice is already
+    // marked here and needs no delay. One report per task, so an `outside` followed by the
+    // `focus-out` of the same pointer press reports once.
     if (mapped === null || this.menuChoiceMade || this.menuCloseQueued) {
       return;
     }
-    // A close that accompanies a choice is never a dismissal, whichever of the two Menu reports first:
-    // wait out the current task's synchronous dispatches before reporting it. One report per task, so
-    // an `outside` followed by the `focus-out` of the same pointer press reports once.
     this.menuCloseQueued = true;
-    queueMicrotask(() => {
-      if (!this.menuChoiceMade && this.open && this.wide) {
-        this.dispatchClose(mapped);
-      }
-    });
     setTimeout(() => {
       this.menuCloseQueued = false;
     });
+    this.dispatchClose(mapped);
   };
 
   /* ---- lifecycle helpers ---- */
@@ -1059,7 +1121,7 @@ export class DsActionSheet extends LitElement {
       this.scrollLocked = true;
     }
     if (!dialog.open) {
-      dialog.showModal();
+      showDialog(dialog);
       this.activeId = null;
       await this.scopeEl?.updateComplete;
       if (!this.open || this.closing || this.wide) {
@@ -1129,14 +1191,40 @@ export class DsActionSheet extends LitElement {
     // maxWidth is locked: the breakpoint is the theme token, never a per-instance value.
     const breakpoint = getComputedStyle(document.documentElement).getPropertyValue(MAX_WIDTH_PROPERTY).trim();
     if (!breakpoint) {
+      // Unresolvable (no theme stylesheet yet): the sheet presentation, retried while the document
+      // is still loading so a late stylesheet corrects it.
+      if (document.readyState !== 'complete' && !this.breakpointRetry) {
+        this.breakpointRetry = true;
+        document.addEventListener('readystatechange', this.handleReadyStateChange);
+      }
       return;
     }
+    this.stopBreakpointRetry();
     this.wideQuery = matchMedia(`(width > ${breakpoint})`);
     this.wide = this.wideQuery.matches;
     this.wideQuery.addEventListener('change', this.handleWideChange);
   }
 
+  private readonly handleReadyStateChange = (): void => {
+    if (this.wideQuery || !this.isConnected) {
+      this.stopBreakpointRetry();
+      return;
+    }
+    this.watchBreakpoint();
+    if (document.readyState === 'complete') {
+      this.stopBreakpointRetry();
+    }
+  };
+
+  private stopBreakpointRetry(): void {
+    if (this.breakpointRetry) {
+      this.breakpointRetry = false;
+      document.removeEventListener('readystatechange', this.handleReadyStateChange);
+    }
+  }
+
   private unwatchBreakpoint(): void {
+    this.stopBreakpointRetry();
     this.wideQuery?.removeEventListener('change', this.handleWideChange);
     this.wideQuery = null;
   }

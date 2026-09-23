@@ -78,7 +78,8 @@ export interface MeterProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
   tone?: MeterTone | undefined;
   /**
    * Hides the visible value text (a boolean attribute can only turn things on, so the flag is the hiding
-   * one). The accessible value is always exposed.
+   * one). The header row stays — the label is always visible — and only the value text and its wrapper are
+   * omitted. The accessible value is always exposed.
    */
   hideValue?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
@@ -164,21 +165,18 @@ export function Meter({
       style={overrides ? rootStyle(overrides) : undefined}
     >
       <div className="ds-meter__header" data-part="header">
-        <Text
-          element="span"
-          size="sm"
-          weight="medium"
-          tone="default"
-          id={labelId}
-          data-part="label"
-          overrides={labelOverrides}
-        >
-          {label}
-        </Text>
-        {hideValue ? null : (
-          <Text element="span" size="sm" tone="muted" data-part="valueText" overrides={valueOverrides}>
-            {resolvedValueText}
+        {/* The part wrappers are Meter-owned, so the row's shrink rules never restyle a composed Text. */}
+        <span className="ds-meter__label" data-part="label">
+          <Text element="span" size="sm" weight="medium" tone="default" id={labelId} overrides={labelOverrides}>
+            {label}
           </Text>
+        </span>
+        {hideValue ? null : (
+          <span className="ds-meter__value-text" data-part="valueText">
+            <Text element="span" size="sm" tone="muted" overrides={valueOverrides}>
+              {resolvedValueText}
+            </Text>
+          </span>
         )}
       </div>
       <div

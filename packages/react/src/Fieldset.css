@@ -1,11 +1,13 @@
 /* Fieldset — styled only through Design Schema token custom properties.
- * legendColor, descriptionText and errorText are the composed Texts' tones (locked, no hooks);
  * legendSize, legendWeight, helperSize, fontFamily and lineHeight reach the Texts through their
- * `overrides`, and fieldsGap reaches the Stack through its `overrides.gap`. */
+ * `overrides`, and fieldsGap reaches the Stack through its `overrides.gap`, so they declare no hook. */
 
 .ds-fieldset {
   --ds-fieldset-part-gap: var(--layout-gap-tight);
   --ds-fieldset-disabled-opacity: var(--opacity-disabled);
+  --ds-fieldset-legend-color: var(--color-foreground);
+  --ds-fieldset-description-text: var(--color-foreground-muted);
+  --ds-fieldset-error-text: var(--color-foreground-danger);
   display: flex;
   flex-direction: column;
   gap: var(--ds-fieldset-part-gap);
@@ -19,6 +21,21 @@
 .ds-fieldset__legend {
   padding: 0;
   margin-block-end: var(--ds-fieldset-part-gap);
+}
+
+/* legendColor, descriptionText and errorText are locked and realised by the Texts' tones (default,
+ * muted, danger). Each Fieldset-owned wrapper re-scopes the token its Text's tone reads to the
+ * Fieldset hook, so page CSS and the naming codemod reach them without restyling the Text. */
+.ds-fieldset__legend {
+  --color-foreground: var(--ds-fieldset-legend-color);
+}
+
+.ds-fieldset__description {
+  --color-foreground-muted: var(--ds-fieldset-description-text);
+}
+
+.ds-fieldset__error {
+  --color-foreground-danger: var(--ds-fieldset-error-text);
 }
 
 /* disabled: the group's own text dims; fields dim by their own disabled rule, so the fields wrapper is not dimmed. */

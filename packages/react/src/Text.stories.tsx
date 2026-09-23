@@ -39,7 +39,7 @@ export const WeightBold: Story = { args: { weight: 'bold' } };
 export const ToneDefault: Story = { args: { tone: 'default' } };
 export const ToneStrong: Story = { args: { tone: 'strong' } };
 export const ToneMuted: Story = { args: { tone: 'muted' } };
-export const ToneDanger: Story = { args: { tone: 'danger', children: 'Error: enter an email address like name@example.com.' } };
+export const ToneDanger: Story = { args: { tone: 'danger', children: 'Error: enter an email address like name@example.com' } };
 export const ToneOnAction: Story = {
   args: { tone: 'onAction', children: 'Text on an action background' },
   decorators: [

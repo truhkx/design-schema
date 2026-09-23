@@ -8,7 +8,14 @@
   --ds-progress-bar-label-gap: var(--space-2);
   --ds-progress-bar-transition: var(--motion-duration-base);
   --ds-progress-bar-indeterminate-loop: var(--motion-duration-loop);
+  --ds-progress-bar-indeterminate-reduced-opacity: var(--opacity-disabled);
   --ds-progress-bar-sweep-easing: var(--motion-easing-standard);
+  /* Locked: no `overrides` entry, but the hooks stay so page CSS and the naming codemod can reach them. */
+  --ds-progress-bar-fill: var(--color-control-selected-background);
+  --ds-progress-bar-fill-success: var(--color-status-success-icon);
+  --ds-progress-bar-fill-danger: var(--color-status-danger-icon);
+  --ds-progress-bar-label-color: var(--color-foreground);
+  --ds-progress-bar-value-color: var(--color-foreground-muted);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -24,15 +31,27 @@
   gap: var(--ds-progress-bar-label-gap);
 }
 
+/* The label's wrapper shrinks so a long label wraps inside the row instead of pushing the value text out. */
+.ds-progress-bar__label {
+  flex-shrink: 1;
+  min-inline-size: 0;
+}
+
+/* labelColor / valueColor: realised by the Texts' tones (default, muted), which resolve their token on the
+ * Text itself. The wrappers re-scope that token from the hook, as an inverse surface does — the Text is
+ * never restyled. */
+.ds-progress-bar__label { --color-foreground: var(--ds-progress-bar-label-color); }
+.ds-progress-bar__value { --color-foreground-muted: var(--ds-progress-bar-value-color); }
+
 /* hideLabel with visible value text: the hidden label leaves the flow, the value text stays at the end. */
 .ds-progress-bar__header--label-hidden {
   justify-content: flex-end;
 }
 
-/* tone → fill color; neutral is the selected-control color guaranteed 3:1 against the page. Locked: no hook. */
-.ds-progress-bar--neutral { --ds-progress-bar-fill: var(--color-control-selected-background); }
-.ds-progress-bar--success { --ds-progress-bar-fill: var(--color-status-success-icon); }
-.ds-progress-bar--danger { --ds-progress-bar-fill: var(--color-status-danger-icon); }
+/* tone → fill color (fill, fillSuccess, fillDanger); neutral is the selected-control color, 3:1 against the page. */
+.ds-progress-bar--neutral { --ds-progress-bar-tone-fill: var(--ds-progress-bar-fill); }
+.ds-progress-bar--success { --ds-progress-bar-tone-fill: var(--ds-progress-bar-fill-success); }
+.ds-progress-bar--danger { --ds-progress-bar-tone-fill: var(--ds-progress-bar-fill-danger); }
 
 /* track + radius: the track clips the fill to its rounded ends. */
 .ds-progress-bar__track {
@@ -47,7 +66,7 @@
 .ds-progress-bar__fill {
   block-size: 100%;
   border-radius: var(--ds-progress-bar-radius);
-  background-color: var(--ds-progress-bar-fill);
+  background-color: var(--ds-progress-bar-tone-fill);
 }
 
 /* transition: fill inline-size change with motion.easing.standard; instant under reduced motion. */
@@ -72,11 +91,11 @@
   }
 }
 
-/* reduced motion: no sweep — the fill covers the whole track, static, at opacity.disabled, keeping its tone. */
+/* indeterminateReducedOpacity: no sweep under reduced motion — a static full-width fill, keeping its tone. */
 @media (prefers-reduced-motion: reduce) {
   .ds-progress-bar__track[aria-busy='true'] .ds-progress-bar__fill {
     inline-size: 100%;
-    opacity: var(--opacity-disabled);
+    opacity: var(--ds-progress-bar-indeterminate-reduced-opacity);
   }
 }
 

@@ -1,5 +1,6 @@
 /* Toolbar — styled only through Design Schema token custom properties. */
 
+/* The root carries the surface: background, border, radius and padding. */
 .ds-toolbar {
   --ds-toolbar-background: var(--color-background-subtle);
   --ds-toolbar-border: var(--color-border);
@@ -17,8 +18,6 @@
   box-sizing: border-box;
   position: relative;
   display: flex;
-  align-items: center;
-  gap: var(--ds-toolbar-item-gap);
   min-inline-size: 0;
   padding-inline: var(--ds-toolbar-padding-inline);
   padding-block: var(--ds-toolbar-padding-block);
@@ -36,26 +35,47 @@
   --ds-toolbar-item-gap: var(--layout-gap-tight);
 }
 
+/* The row inside the padding: lays out, wraps, clips or scrolls, and carries the fade mask. */
+.ds-toolbar__row {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--ds-toolbar-item-gap);
+  min-inline-size: 0;
+  min-block-size: 0;
+}
+
 .ds-toolbar--vertical {
   flex-direction: column;
-  align-items: stretch;
   inline-size: fit-content;
 }
 
-.ds-toolbar--overflow-wrap {
+.ds-toolbar--vertical > .ds-toolbar__row {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* On a vertical toolbar, wrap flows onto more columns (given a bounded height from the parent). */
+.ds-toolbar--overflow-wrap > .ds-toolbar__row {
   flex-wrap: wrap;
 }
 
-.ds-toolbar--overflow-menu {
+/* Collapsing stops when no Button entry is left; what still does not fit clips at the edge. */
+.ds-toolbar--overflow-menu > .ds-toolbar__row {
   flex-wrap: nowrap;
   overflow: hidden;
 }
 
 /* Each edge fades only while content is hidden past it: the component toggles --fade-start and
-   --fade-end on scroll and on size changes, and each sets its stop's length to fadeWidth. */
+   --fade-end on scroll and on size changes, and each sets its stop's length to fadeWidth. The
+   edges are physical (left/right, top/bottom when vertical), so RTL needs no special case. */
 .ds-toolbar--overflow-scroll {
   --ds-toolbar-fade-start: 0px; /* literal-ok: zero-length fade stop */
   --ds-toolbar-fade-end: 0px; /* literal-ok: zero-length fade stop */
+}
+
+.ds-toolbar--overflow-scroll > .ds-toolbar__row {
   flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
@@ -72,12 +92,15 @@
   --ds-toolbar-fade-end: var(--ds-toolbar-fade-width);
 }
 
-.ds-toolbar--overflow-scroll::-webkit-scrollbar {
+.ds-toolbar--overflow-scroll > .ds-toolbar__row::-webkit-scrollbar {
   display: none;
 }
 
 .ds-toolbar--vertical.ds-toolbar--overflow-scroll {
   --ds-toolbar-fade-direction: to bottom;
+}
+
+.ds-toolbar--vertical.ds-toolbar--overflow-scroll > .ds-toolbar__row {
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -91,19 +114,27 @@
   min-inline-size: 0;
 }
 
+/* A group takes its wrapping from the toolbar: under wrap it may shrink to the line and wrap inside. */
+.ds-toolbar--overflow-wrap .ds-toolbar__group {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+}
+
 .ds-toolbar--vertical .ds-toolbar__group {
   flex-direction: column;
   align-items: stretch;
 }
 
-/* separator: shorter than the toolbar. groupGap replaces itemGap either side of it — the flex gap
-   already contributes itemGap, so the part pads only the difference (a negative calc clamps to 0). */
+/* separator: shorter than the toolbar and centred on the cross axis. groupGap replaces itemGap
+   either side of it — the flex gap already contributes itemGap, so the part pads only the
+   difference, clamped at 0 so a groupGap under itemGap has no effect. */
 .ds-toolbar__separator {
   box-sizing: content-box;
   display: flex;
   flex: 0 0 auto;
   align-items: stretch;
   justify-content: center;
+  align-self: center;
   block-size: var(--ds-toolbar-separator-length);
   padding-inline: max(0px, calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap))); /* literal-ok: zero clamp, so a groupGap under itemGap has no effect */
 }
@@ -114,7 +145,6 @@
   block-size: auto;
   padding-inline: 0;
   padding-block: max(0px, calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap))); /* literal-ok: zero clamp, so a groupGap under itemGap has no effect */
-  align-self: center;
 }
 
 .ds-toolbar--vertical .ds-toolbar__separator > * {

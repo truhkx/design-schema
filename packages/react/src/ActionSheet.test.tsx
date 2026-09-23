@@ -4,7 +4,7 @@
  * (site/src/content/docs/components/action-sheet.md) is the source of truth.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { ActionSheet } from './ActionSheet';
 import meta from './ActionSheet.stories';
@@ -104,5 +104,27 @@ describe('ActionSheet', () => {
     expect(document.activeElement).toBe(items[0]);
     fireEvent.keyDown(items[0]!, { key: 'End' });
     expect(document.activeElement).toBe(items[2]);
+  });
+
+  it('a scrim click dismisses, a click that bubbles to the scrim does not', () => {
+    const d = setup({ open: true });
+    const scrim = d.sheet()!.querySelector<HTMLElement>('[data-part="scrim"]')!;
+    const child = document.createElement('span');
+    scrim.appendChild(child);
+    fireEvent.click(child);
+    expect(d.onClose).not.toHaveBeenCalled();
+    fireEvent.click(scrim);
+    expect(d.onClose).toHaveBeenCalledWith('scrim');
+  });
+
+  it('the focusScope part is present inside the sheet', () => {
+    const d = setup({ open: true });
+    expect(d.sheet()!.querySelector('[data-part="focusScope"] [data-part="surface"]')).not.toBeNull();
+  });
+
+  it('a sheet closed before its enter frame unmounts instead of staying modal', async () => {
+    const d = setup({ open: true });
+    d.rerender(<ActionSheet {...d.props} open={false} />);
+    await waitFor(() => expect(d.sheet()).toBeNull());
   });
 });

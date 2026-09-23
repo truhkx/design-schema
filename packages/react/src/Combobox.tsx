@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ChangeEvent,
   type ComponentPropsWithoutRef,
   type CSSProperties,
@@ -190,8 +191,15 @@ function parseTime(value: string): number | null {
   return match[2] === 's' ? amount * 1000 : amount;
 }
 
-/** Which option becomes active when the Listbox is (re)mounted; resolved against the rows on screen. */
+/**
+ * Which option is active, resolved against the rows on screen at every render and passed to the
+ * Listbox as its controlled `activeValue`: an opening rule, type-ahead, or the value the Listbox
+ * last reported through `onActiveChange`.
+ */
 type ActiveIntent = 'none' | 'selected' | 'selectedOrFirst' | 'selectedOrLast' | 'typeahead' | { value: string };
+
+/** The hydration gate: false on the server and through hydration, true on a client-only mount. */
+const subscribeNothing = (): (() => void) => () => {};
 
 type PopupPosition = {
   vertical: 'top' | 'bottom';
@@ -264,7 +272,12 @@ export interface ComboboxProps
   value?: ComboboxValue | undefined;
   /** Initial value(s). */
   defaultValue?: ComboboxValue | undefined;
-  /** Controlled popup state, for programmatic use and for stories and tests. Omit for the typing-driven default. */
+  /**
+   * Controlled popup state, for programmatic use and for stories and tests. Omit for the
+   * typing-driven default. Opening the list this way claims DOM focus for the input when focus is
+   * not already inside the field — `aria-activedescendant` announces nothing otherwise — but never
+   * takes it from a focused clear or chip-remove Button.
+   */
   open?: boolean | undefined;
   /** Controlled text of the input (what the user has typed). Usually uncontrolled; controlled by consumers driving `async` filtering. */
   inputValue?: string | undefined;
@@ -282,8 +295,9 @@ export interface ComboboxProps
    * diacritic-insensitive match) commits that option's `value`, never a custom string. If the
    * matching option is disabled, the row stays suppressed and the commit does nothing (neither the
    * disabled value nor a custom string). With `multiple`, text matching an already-selected option
-   * leaves it selected (no `onChange`, unlike Enter on its row, which toggles) and clears the text.
-   * A comma typed when there is nothing to commit (empty text, or only a disabled match) is dropped
+   * leaves it selected (no `onChange`, unlike Enter on its row, which toggles) and clears the text —
+   * that clear does fire `onInputChange`, like any other commit. The synthetic row is independent of
+   * `filter`: it shows with `filter: none` too. A comma typed when there is nothing to commit (empty text, or only a disabled match) is dropped
    * and the text before it kept.
    */
   allowCustom?: boolean | undefined;
@@ -304,11 +318,11 @@ export interface ComboboxProps
   disabled?: boolean | undefined;
   /** Marks the field invalid. */
   invalid?: boolean | undefined;
-  /** Error message; implies invalid. */
+  /** Error message; implies invalid. An empty string is not a message (as Input): nothing renders, though a Form entry still marks the field. */
   error?: string | undefined;
   /** For `async`: show the loading row and announce it. The consumer sets it around its request. */
   loading?: boolean | undefined;
-  /** Show a clear button when there is a value or text. */
+  /** Show a clear button when there is a value or text. It also gates Escape-clears-text. */
   clearable?: boolean | undefined;
   /** Portal target for the popup. Defaults to `document.body`. Platform prop; never affects semantics. */
   container?: HTMLElement | undefined;
@@ -320,10 +334,11 @@ export interface ComboboxProps
    * Fired on every text change the user causes — each keystroke, and the text a commit, Escape-to-clear
    * or the clear button leaves behind (so `async` consumers can reset) — with the input text. Not fired
    * when a controlled `value` change rewrites the label, nor when a commit, Escape or the clear button
-   * leaves the text unchanged. The hook for `async` filtering.
+   * leaves the text unchanged ("unchanged" against the text the input shows now, which for a
+   * controlled `inputValue` is the consumer's prop). The hook for `async` filtering.
    */
   onInputChange?: ((value: string) => void) | undefined;
-  /** Fired when the list opens or closes. */
+  /** Fired when the list opens or closes — including the closes the component causes itself (a blur, a single-select commit, Escape, Tab). */
   onOpenChange?: ((open: boolean) => void) | undefined;
 }
 
@@ -411,31 +426,28 @@ export function Combobox({
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = (openProp ?? internalOpen) && !isDisabled;
 
+  const hydrated = useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
   const [showAll, setShowAll] = useState(false);
-  const [activeValue, setActiveValue] = useState<string | null>(null);
+  const [activeIntent, setActiveIntent] = useState<ActiveIntent>(isOpen ? 'selectedOrFirst' : 'none');
+  // The toggle, a click in the input and the `open` prop open with the selected option, else the first.
   const [openIntent, setOpenIntent] = useState<ActiveIntent>('selectedOrFirst');
-  const [activeRequest, setActiveRequest] = useState<{ generation: number; intent: ActiveIntent }>({
-    generation: 0,
-    intent: 'selectedOrFirst',
-  });
   const [seenOpen, setSeenOpen] = useState(isOpen);
   const [position, setPosition] = useState<PopupPosition | null>(null);
+  const [visible, setVisible] = useState(false);
   const [statusText, setStatusText] = useState('');
 
-  /** Remounts the Listbox with a new starting active option: the only way to reset its internal state. */
-  const requestActive = (intent: ActiveIntent) => {
-    setActiveValue(null);
-    setActiveRequest((request) => ({ generation: request.generation + 1, intent }));
-  };
-
-  // Opening from any source (typing, a key, the toggle, the `open` prop) starts a fresh list.
+  // Opening from any source (typing, a key, the toggle, the `open` prop) starts from its opening rule.
   if (isOpen !== seenOpen) {
     setSeenOpen(isOpen);
-    setActiveValue(null);
     if (isOpen) {
-      setActiveRequest((request) => ({ generation: request.generation + 1, intent: openIntent }));
+      setActiveIntent(openIntent);
       setOpenIntent('selectedOrFirst');
     } else {
+      setActiveIntent('none');
       setShowAll(false);
     }
   }
@@ -491,14 +503,8 @@ export function Combobox({
     }
     return enabledRows.some((row) => row.value === intent.value) ? intent.value : undefined;
   };
-  const requestedActive = resolveIntent(activeRequest.intent);
-
-  // The Listbox takes its starting active option when it receives focus; signal that without moving DOM focus.
-  useLayoutEffect(() => {
-    if (!isOpen || requestedActive === undefined) return;
-    listboxRef.current?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, activeRequest.generation]);
+  // The Listbox's controlled `activeValue`: DOM focus stays in the input, so the list never owns it.
+  const activeValue: string | null = isOpen ? (resolveIntent(activeIntent) ?? null) : null;
 
   // An open list is driven from the input: DOM focus never leaves it, so aria-activedescendant has a
   // focused element to announce from and Escape, Tab and the arrows reach the input's own handler. An
@@ -517,8 +523,7 @@ export function Combobox({
   useEffect(() => {
     if (lastRowSignature.current === rowSignature) return;
     lastRowSignature.current = rowSignature;
-    if (isOpen) requestActive('none');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setActiveIntent('none');
   }, [rowSignature]);
 
   // A single selection that changes from outside shows its label.
@@ -548,7 +553,7 @@ export function Combobox({
       isDisabled: () => latest.current.disabled,
       validate: () => {
         const current = latest.current;
-        if (current.error !== undefined) return current.error;
+        if (current.error !== undefined && current.error !== '') return current.error;
         if (current.required && toArray(current.selected).length === 0) return COPY.required.replace('{label}', current.label);
         if (current.invalid) return COPY.invalid.replace('{label}', current.label);
         return null;
@@ -583,9 +588,20 @@ export function Combobox({
     return () => clearTimeout(timer);
   }, [isOpen, isLoading, resultCount]);
 
+  // The fade-in follows the DOM: the surface mounts without `--visible` and gains it a frame later,
+  // whichever path (typing, the toggle, the `open` prop) opened it.
+  useLayoutEffect(() => {
+    if (!isOpen || !hydrated) {
+      setVisible(false);
+      return undefined;
+    }
+    const frame = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(frame);
+  }, [isOpen, hydrated]);
+
   // Anchor to the field; follow scrolling and resizing.
   useLayoutEffect(() => {
-    if (!isOpen) return undefined;
+    if (!isOpen || !hydrated) return undefined;
     const reposition = () => {
       const field = fieldRef.current;
       const popup = popupRef.current;
@@ -600,7 +616,7 @@ export function Combobox({
       window.removeEventListener('scroll', reposition, true);
       window.removeEventListener('resize', reposition);
     };
-  }, [isOpen, listOptions]);
+  }, [isOpen, hydrated, listOptions]);
 
   const setOpenState = (next: boolean) => {
     if (next === isOpen || (next && isDisabled)) return;
@@ -610,7 +626,7 @@ export function Combobox({
 
   const openWith = (intent: ActiveIntent) => {
     if (isOpen) {
-      requestActive(intent);
+      setActiveIntent(intent);
       return;
     }
     setOpenIntent(intent);
@@ -662,7 +678,7 @@ export function Combobox({
     if (multiple) {
       if (!selectedValues.includes(committed)) commitValue([...selectedValues, committed]);
       updateText('');
-      requestActive('none');
+      setActiveIntent('none');
     } else {
       if (committed !== singleValue) commitValue(committed);
       updateText(match?.label ?? raw);
@@ -681,7 +697,7 @@ export function Combobox({
         selectedValues.includes(rowValue) ? selectedValues.filter((v) => v !== rowValue) : [...selectedValues, rowValue],
       );
       updateText('');
-      requestActive({ value: rowValue });
+      setActiveIntent({ value: rowValue });
     } else {
       if (rowValue !== singleValue) commitValue(rowValue);
       updateText(labelFor(rowValue));
@@ -941,11 +957,11 @@ export function Combobox({
       {selectedValues.map((hiddenValue) => (
         <input key={hiddenValue} type="hidden" name={name} value={hiddenValue} disabled={isDisabled} />
       ))}
-      {isOpen && typeof document !== 'undefined'
+      {isOpen && hydrated
         ? createPortal(
             <div
               ref={popupRef}
-              className="ds-combobox__popup"
+              className={visible ? 'ds-combobox__popup ds-combobox__popup--visible' : 'ds-combobox__popup'}
               data-part="popup"
               data-vertical={position?.vertical ?? 'bottom'}
               style={popupStyle}
@@ -954,7 +970,6 @@ export function Combobox({
               onClick={handlePopupClick}
             >
               <Listbox
-                key={activeRequest.generation}
                 ref={listboxRef}
                 id={listboxId}
                 label={label}
@@ -967,9 +982,9 @@ export function Combobox({
                 loading={isLoading}
                 disabled={isDisabled}
                 emptyMessage={COPY.empty}
-                initialActiveValue={requestedActive}
+                activeValue={activeValue}
                 onChange={handleListboxChange}
-                onActiveChange={setActiveValue}
+                onActiveChange={(next) => setActiveIntent(next === null ? 'none' : { value: next })}
               />
             </div>,
             container ?? document.body,

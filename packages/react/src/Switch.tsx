@@ -115,7 +115,9 @@ export interface SwitchProps
   defaultChecked?: boolean | undefined;
   /**
    * Cannot be toggled. Stays visible, readable and focusable. A disabled switch contributes no key
-   * to the Form's values: it unregisters while disabled and registers again when re-enabled.
+   * to the Form's values: it stays registered and reports itself through the registration's
+   * `isDisabled()`, which the Form uses to skip it, as Checkbox does. The input also drops `name`
+   * while disabled, so a native <form> submits nothing for it.
    */
   disabled?: boolean | undefined;
   /** Persistent helper text below the label explaining the effect. */
@@ -130,6 +132,8 @@ export interface SwitchProps
   /**
    * Fired when the user changes the state, with the new boolean. The change is already in effect;
    * there is nothing to submit. A controlled prop change fires nothing, and nothing fires on mount.
+   * Every native toggle flips the value, so a controlled switch whose prop never moves reports
+   * `onChange(!checked)` on every click.
    */
   onChange?: ((checked: boolean) => void) | undefined;
 }
@@ -182,10 +186,11 @@ export function Switch({
   latest.current = { label, disabled: isDisabled, checked: isChecked };
 
   // A Switch contributes its boolean under `name` and never validates — it has no error state. A
-  // nameless switch never registers, and a disabled one unregisters until it is enabled again, so
-  // neither contributes a key to the Form's values.
+  // nameless switch never registers. A disabled one stays registered and reports itself through
+  // `isDisabled()`, which the Form uses to skip it — the same mechanism as Checkbox, rather than
+  // unregistering and re-registering as the prop flips.
   useEffect(() => {
-    if (!form || !name || isDisabled) return undefined;
+    if (!form || !name) return undefined;
     return form.register({
       name,
       id,
@@ -197,7 +202,7 @@ export function Switch({
       validate: () => null,
       focus: () => inputRef.current?.focus(),
     });
-  }, [form, name, id, isDisabled]);
+  }, [form, name, id]);
 
   const handleClick = (event: MouseEvent<HTMLInputElement>) => {
     if (isDisabled) {
@@ -265,7 +270,8 @@ export function Switch({
               id={id}
               type="checkbox"
               role="switch"
-              name={name}
+              // `name` only while enabled, so a native <form> submits nothing for a disabled switch.
+              name={isDisabled ? undefined : name}
               defaultChecked={isChecked}
               className="ds-switch__control"
               data-part="track"

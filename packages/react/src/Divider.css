@@ -4,6 +4,13 @@
   --ds-divider-color: var(--color-border);
   --ds-divider-thickness: var(--border-width-thin);
   --ds-divider-label-gap: var(--layout-gap-normal);
+  /*
+   * labelColor is locked and deliberately not enforced here: the label colour arrives from the
+   * composed Text's `tone: muted` (the same token), and a colour rule on the Text would restyle a
+   * composed child. The hook is declared so the binding keeps its name for tools/naming.ts; no rule
+   * reads it.
+   */
+  --ds-divider-label-color: var(--color-foreground-muted);
   box-sizing: border-box;
   display: block;
   flex-shrink: 0;

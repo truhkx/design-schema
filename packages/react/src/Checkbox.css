@@ -21,8 +21,15 @@
   --ds-checkbox-min-target: var(--size-target-comfortable);
   --ds-checkbox-disabled-opacity: var(--opacity-disabled);
   --ds-checkbox-transition: var(--motion-duration-fast);
-  /* indicator, indicatorStroke, helperSize, descriptionText and errorText have no hook: the composed
-     Icon and Texts realise them through their own props and overrides. */
+  /* Locked bindings realised by composed children keep a declared hook (so the naming codemod and page
+     CSS can address them), but no Checkbox rule reads it: the composed Icon applies its own stroke on
+     the same token, and the description / error Texts take these colors from their `muted` / `danger`
+     tones. Restyling those children from here is not allowed. */
+  --ds-checkbox-indicator-stroke: var(--border-width-focus);
+  --ds-checkbox-description-text: var(--color-foreground-muted);
+  --ds-checkbox-error-text: var(--color-foreground-danger);
+  /* indicator reaches the Icon only through its `color` override, and helperSize only through the
+     Texts' `fontSize` override; both are forwarded, so they declare no hook. */
 
   /* The label's first line box; the control centres on it and the row is padded around it. */
   --ds-checkbox-line-box: calc(var(--ds-checkbox-label-size) * var(--ds-checkbox-line-height));
@@ -35,10 +42,14 @@
    cross axis and the padding makes a single-line row exactly minTarget tall, so a wrapping label or
    a description grows the row downwards without pulling the control off the first line. */
 .ds-checkbox__row {
+  position: relative;
+  box-sizing: border-box;
   display: flex;
   align-items: flex-start;
   gap: var(--ds-checkbox-gap);
-  padding-block: calc((var(--ds-checkbox-min-target) - var(--ds-checkbox-line-box)) / 2);
+  /* Clamped at zero: a line box taller than the target grows the row instead. */
+  padding-block: max(0px, calc((var(--ds-checkbox-min-target) - var(--ds-checkbox-line-box)) / 2));
+  min-block-size: var(--ds-checkbox-min-target);
   cursor: pointer;
 }
 

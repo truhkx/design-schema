@@ -128,7 +128,10 @@ export interface RadioGroupProps
   options: { value: string; label: string; description?: string; disabled?: boolean }[];
   /** Controlled selected value. Omit for an uncontrolled group. */
   value?: string | undefined;
-  /** Initial selection for an uncontrolled group. Omit to start with nothing selected. */
+  /**
+   * Initial selection for an uncontrolled group. Omit to start with nothing selected. It is read once,
+   * when the group first renders: assigning it later is a no-op, exactly as a React state initialiser is.
+   */
   defaultValue?: string | undefined;
   /** Layout of the options. Horizontal only for two or three short labels; it wraps rather than overflows. */
   orientation?: RadioGroupOrientation | undefined;
@@ -136,7 +139,11 @@ export interface RadioGroupProps
   required?: boolean | undefined;
   /** Marks the group as failing validation. Usually set by the Form; can be set directly. */
   invalid?: boolean | undefined;
-  /** Disables every option. Individual options use `options[].disabled`. */
+  /**
+   * Disables every option. Individual options use `options[].disabled`. The group's state folds into
+   * each option's, so every radio announces as disabled rather than only the group. A disabled group
+   * submits nothing and validates clean, so a disabled required group never blocks a submit.
+   */
   disabled?: boolean | undefined;
   /** Persistent helper text under the legend. */
   description?: string | undefined;
@@ -208,12 +215,20 @@ export function RadioGroup({
       get label() {
         return latest.current.label;
       },
-      // form.valueType is string: the selected value, or no key when nothing is selected.
-      getValue: () => latest.current.selected,
+      // form.valueType is string: the selected value, or no key when nothing is selected. A disabled
+      // group submits nothing and validates clean, as a native disabled control does.
+      getValue: () => (latest.current.disabled ? undefined : latest.current.selected),
       isDisabled: () => latest.current.disabled,
       validate: () => {
-        const { label: currentLabel, required: isRequired, invalid: isInvalidProp, error: errorProp, selected: current } =
-          latest.current;
+        const {
+          label: currentLabel,
+          required: isRequired,
+          invalid: isInvalidProp,
+          error: errorProp,
+          selected: current,
+          disabled: isDisabledNow,
+        } = latest.current;
+        if (isDisabledNow) return null;
         if (errorProp !== undefined) return errorProp;
         if (isRequired && current === undefined) return COPY.required.replace('{label}', currentLabel);
         if (isInvalidProp) return COPY.invalid.replace('{label}', currentLabel);
@@ -247,11 +262,9 @@ export function RadioGroup({
     if (isDisabled) event.preventDefault();
   };
 
-  const handleChange = (option: RadioGroupOption) => (event: ChangeEvent<HTMLInputElement>) => {
-    if (isDisabled || option.disabled) {
-      event.preventDefault();
-      return;
-    }
+  // `change` is not cancelable: a disabled group or option stops here with an early return.
+  const handleChange = (option: RadioGroupOption) => (_event: ChangeEvent<HTMLInputElement>) => {
+    if (isDisabled || option.disabled) return;
     if (!isControlled) setInternalValue(option.value);
     onChange?.(option.value);
     if (form && validatesOnChange) form.validateField(name);
@@ -311,79 +324,79 @@ export function RadioGroup({
         {label}
         {required ? COPY.requiredIndicator : null}
       </legend>
-      {description ? (
-        <Text
-          element="p"
-          id={descriptionId}
-          data-part="description"
-          size="sm"
-          tone="muted"
-          className="ds-radio-group__description"
-          overrides={helperOverrides}
-        >
-          {description}
-        </Text>
-      ) : null}
-      <div className="ds-radio-group__list">
-        {options.map((option) => {
-          const optionId = `${id}-${option.value}`;
-          const optionDescriptionId = `${optionId}-description`;
-          // A disabled group dims every row once (on the root class); an option dims only its own row.
-          const optionClasses = ['ds-radio-group__option', option.disabled ? 'ds-radio-group__option--disabled' : null]
-            .filter(Boolean)
-            .join(' ');
-          return (
-            <div key={option.value} className={optionClasses} onClick={handleRowClick(option)}>
-              <input
-                ref={setRadioRef(option.value)}
-                id={optionId}
-                type="radio"
-                name={name}
-                value={option.value}
-                data-part="radio"
-                checked={selected === option.value}
-                className="ds-radio-group__control"
-                // Per-option disabled is the native attribute so native arrow movement skips it.
-                disabled={option.disabled === true}
-                aria-describedby={option.description ? optionDescriptionId : undefined}
-                aria-disabled={isDisabled ? 'true' : undefined}
-                onClick={handleClick}
-                onChange={handleChange(option)}
-              />
-              <label htmlFor={optionId} data-part="radioLabel" className="ds-radio-group__label">
-                {option.label}
-              </label>
-              {option.description ? (
-                <Text
-                  element="p"
-                  id={optionDescriptionId}
-                  data-part="radioDescription"
-                  size="sm"
-                  tone="muted"
-                  className="ds-radio-group__option-description"
-                  overrides={helperOverrides}
-                >
-                  {option.description}
-                </Text>
-              ) : null}
-            </div>
-          );
-        })}
+      {/* A legend is outside the fieldset's flex flow: the other parts stack in their own body. */}
+      <div className="ds-radio-group__body">
+        {description ? (
+          <Text element="p" id={descriptionId} data-part="description" size="sm" tone="muted" overrides={helperOverrides}>
+            {description}
+          </Text>
+        ) : null}
+        <div className="ds-radio-group__list">
+          {options.map((option) => {
+            const optionId = `${id}-${option.value}`;
+            const optionDescriptionId = `${optionId}-description`;
+            // A disabled group dims every row once (on the root class); an option dims only its own row.
+            const optionClasses = ['ds-radio-group__option', option.disabled ? 'ds-radio-group__option--disabled' : null]
+              .filter(Boolean)
+              .join(' ');
+            return (
+              <div key={option.value} className={optionClasses} onClick={handleRowClick(option)}>
+                {/* The input comes first so `:checked + label` can show the indicator inside the label. */}
+                <input
+                  ref={setRadioRef(option.value)}
+                  id={optionId}
+                  type="radio"
+                  name={name}
+                  value={option.value}
+                  data-part="radio"
+                  checked={selected === option.value}
+                  className="ds-radio-group__control"
+                  // Per-option disabled is the native attribute so native arrow movement skips it.
+                  disabled={option.disabled === true}
+                  aria-describedby={option.description ? optionDescriptionId : undefined}
+                  aria-disabled={isDisabled ? 'true' : undefined}
+                  onClick={handleClick}
+                  onChange={handleChange(option)}
+                />
+                <label htmlFor={optionId} data-part="radioLabel" className="ds-radio-group__label">
+                  {/* radioIndicator: the dot, a real node (Firefox draws no pseudo-elements on inputs),
+                      laid over the input and transparent to the pointer. Decorative: the input's
+                      checked state is what is announced. */}
+                  <span className="ds-radio-group__indicator" data-part="radioIndicator" aria-hidden="true" />
+                  {option.label}
+                </label>
+                {option.description ? (
+                  <div className="ds-radio-group__option-description">
+                    <Text
+                      element="p"
+                      id={optionDescriptionId}
+                      data-part="radioDescription"
+                      size="sm"
+                      tone="muted"
+                      overrides={helperOverrides}
+                    >
+                      {option.description}
+                    </Text>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        {resolvedError ? (
+          <Text
+            element="p"
+            id={errorId}
+            role="alert"
+            data-part="errorMessage"
+            size="sm"
+            tone="danger"
+            overrides={helperOverrides}
+          >
+            {resolvedError}
+          </Text>
+        ) : null}
       </div>
-      {resolvedError ? (
-        <Text
-          element="p"
-          id={errorId}
-          role="alert"
-          data-part="errorMessage"
-          size="sm"
-          tone="danger"
-          className="ds-radio-group__error"
-          overrides={helperOverrides}
-        >
-          {resolvedError}
-        </Text>
-      ) : null}
     </fieldset>
   );
 }

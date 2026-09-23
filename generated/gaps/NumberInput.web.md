@@ -68,3 +68,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - NumberInput: the doc does not say what aria-valuenow should report on an empty field. Chose to omit the attribute rather than emit an invented 0, since APG allows omission when the value is unknown.
 - NumberInput: hold-to-repeat is specified for timings only. Unspecified: whether the click that follows pointerdown steps a second time, and whether repeat halts at a bound. Chose — pointerdown steps and schedules, the following click is swallowed, repeat stops on reaching min/max.
 - NumberInput: the generic rule 'a component with a keyboard block ships a Keyboard story with at least three focusable children' is contradicted by the guidance ('the field is a single tab stop, so the three-focusable rule does not apply'). Followed the guidance and shipped one field with min 0 / max 20.
+
+## 2026-09-23 16:07 — round 1
+
+- NumberInput: the rules say attach `ref` to the root, but platforms.web names `input` as the element and Input puts its ref on the `<input>`; kept Ref<HTMLInputElement> on the input for consistency with Input.
+- NumberInput: disabledOpacity says 'the root group … carries aria-disabled' but no `role` for the root is declared anywhere; rendered the root as an unnamed role="group" with aria-disabled when disabled. The doc should say whether the root is a group and whether it is named (aria-labelledby the label would double-announce).
+- NumberInput: Behavior says the errorMessage part draws copy.invalid only 'while invalid is true', but also that committed non-numeric text 'reports invalid … so the user sees what was invalid'. Outside a Form nothing sets `invalid`, so a strict reading hides the message. Chose to draw copy.invalid for committed non-numeric text even without `invalid` (as a clamp message is drawn without it).
+- NumberInput: 'Typed text wins over the value whenever it exists, which after a commit is only the non-numeric case' leaves open what an external controlled change to null does while non-numeric text is shown after a commit; chose to keep the typed text (it wins) until the next edit.
+- NumberInput: the doc does not say whether a Form-context `disabled` (FormContext.disabled) disables the field; web notes mention only Fieldset's prop. Kept honouring both.
+- NumberInput: minTargetSm says the stepper Buttons 'stretch to the field's height' but no binding places them; implemented as flex stretch on the NumberInput-owned wrapper spans (layout only, no rule on Button).
+
+## 2026-09-23 16:08 — round 2
+
+- NumberInput: descriptionText and errorText are locked bindings, so check_hooks requires a --ds-number-input-* hook for each, but both parts are the composed Text (tone muted / danger), which draws the colour itself and must never be restyled. Declared both hooks on the root; the description wrapper reads its hook as `color`, but the Text inside covers it, so re-theming it from page CSS does nothing. The doc should say whether these two bindings are forwarded to Text (tone, making them exempt like helperSize) or whether Text should read an inherited hook.
+- NumberInput: errorMessage has no NumberInput-owned wrapper (the Text carries data-part itself), unlike description, so --ds-number-input-error-text is declared but no rule reads it. The doc should either give errorMessage a wrapper like description or mark errorText as forwarded to Text's tone.

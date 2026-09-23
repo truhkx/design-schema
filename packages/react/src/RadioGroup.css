@@ -1,7 +1,12 @@
 /* RadioGroup — styled only through Design Schema token custom properties. */
 
-/* descriptionText and errorText are realised by Text's tones and helperSize by Text's fontSize override: no hooks here. */
+/* descriptionText and errorText are locked and keep their hooks (for page CSS and the naming codemod),
+   but the description / error Texts take these colors from their `muted` / `danger` tones: restyling
+   those children from here is not allowed. helperSize reaches the Texts only through their `fontSize`
+   override; it is forwarded, so it declares no hook. */
 .ds-radio-group {
+  --ds-radio-group-description-text: var(--color-foreground-muted);
+  --ds-radio-group-error-text: var(--color-foreground-danger);
   --ds-radio-group-control-background: var(--color-control-background);
   --ds-radio-group-control-border: var(--color-control-border);
   --ds-radio-group-control-border-width: var(--border-width-thin);
@@ -29,9 +34,6 @@
   --ds-radio-group-min-target: var(--size-target-comfortable);
   --ds-radio-group-disabled-opacity: var(--opacity-disabled);
   --ds-radio-group-transition: var(--motion-duration-fast);
-  display: flex;
-  flex-direction: column;
-  gap: var(--ds-radio-group-part-gap);
   min-inline-size: 0;
   margin: 0;
   padding: 0;
@@ -43,19 +45,18 @@
 .ds-radio-group__legend {
   padding: 0;
   color: var(--ds-radio-group-legend-color);
+  font-family: var(--ds-radio-group-font-family);
   font-size: var(--ds-radio-group-legend-size);
   font-weight: var(--ds-radio-group-legend-weight);
+  line-height: var(--ds-radio-group-line-height);
 }
 
-/* Descriptions and the error are Text (tone muted / danger); this only lays them out. */
-.ds-radio-group__description,
-.ds-radio-group__error,
-.ds-radio-group__option-description {
-  margin: 0;
-}
-
-/* A legend does not take part in the fieldset's flex gap; partGap below it is a margin. */
-.ds-radio-group__legend + * {
+/* description, list and error stack with partGap. A legend does not take part in the fieldset's
+   flex gap, so partGap below it is a margin on the body. */
+.ds-radio-group__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-radio-group-part-gap);
   margin-block-start: var(--ds-radio-group-part-gap);
 }
 
@@ -72,7 +73,8 @@
   flex-wrap: wrap;
 }
 
-/* The option row: radio, radioLabel and radioDescription. minTarget tall; the whole row is the hit area. */
+/* The option row (no part): radio, radioLabel and radioDescription. At least minTarget tall; the
+   whole row is the hit area. */
 .ds-radio-group__option {
   box-sizing: border-box;
   display: grid;
@@ -86,13 +88,13 @@
   cursor: pointer;
 }
 
-/* The radio: a native input drawn with the control tokens. */
+/* The radio: a native input drawn with the control tokens. Border-box, so it stays controlSize when
+   the focus border thickens. */
 .ds-radio-group__control {
   box-sizing: border-box;
   grid-column: 1;
   grid-row: 1;
-  display: inline-grid;
-  place-items: center;
+  align-self: center;
   inline-size: var(--ds-radio-group-control-size);
   block-size: var(--ds-radio-group-control-size);
   margin: 0;
@@ -105,34 +107,58 @@
   appearance: none;
 }
 
-/* indicator: the centre dot, controlSize minus 2 × indicatorInset in diameter, always a circle
+/* The label spans the control's column too, stretched to the first row, so the indicator inside it
+   can sit exactly over the input: the input is centred in that row and so is the dot. The text starts
+   after the control and the gap. */
+.ds-radio-group__label {
+  position: relative;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding-inline-start: calc(var(--ds-radio-group-control-size) + var(--ds-radio-group-option-gap));
+  cursor: inherit;
+  color: var(--ds-radio-group-label-color);
+  font-family: var(--ds-radio-group-font-family);
+  font-size: var(--ds-radio-group-label-size);
+  font-weight: var(--ds-radio-group-label-weight);
+  line-height: var(--ds-radio-group-line-height);
+}
+
+/* indicator: the centre dot, controlSize − 2 × indicatorInset in diameter, centred, always a circle
    (it does not follow controlRadius). Its size is fixed, so the thicker focus border eats into the
    inset rather than shrinking the dot. */
-.ds-radio-group__control::before {
-  content: '';
-  display: block;
+.ds-radio-group__indicator {
+  position: absolute;
+  inset-inline-start: var(--ds-radio-group-indicator-inset);
+  inset-block-start: calc(50% - var(--ds-radio-group-control-size) / 2 + var(--ds-radio-group-indicator-inset));
   inline-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
   block-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
   border-radius: var(--radius-full);
   background-color: var(--ds-radio-group-indicator);
   opacity: 0;
+  pointer-events: none;
 }
 
-/* controlSelectedBackground: selected border color; the fill stays controlBackground. */
+.ds-radio-group__control:checked + .ds-radio-group__label .ds-radio-group__indicator {
+  opacity: 1;
+}
+
+.ds-radio-group__option-description {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* Border colour precedence: invalid, then selected, then rest. Focus changes the width and, outside
+   an invalid group, the colour. */
+
+/* controlSelectedBackground: selected border colour; the fill stays controlBackground. */
 .ds-radio-group__control:checked {
   border-color: var(--ds-radio-group-control-selected-background);
 }
 
-.ds-radio-group__control:checked::before {
-  opacity: 1;
-}
-
-/* controlBorderInvalid: aria-invalid lives on the fieldset only. */
-.ds-radio-group--invalid .ds-radio-group__control {
-  border-color: var(--ds-radio-group-control-border-invalid);
-}
-
-/* focusRing: the radio's border becomes focusRingWidth in the focus color; the row is not outlined.
+/* focusRing: the radio's border becomes focusRingWidth in the focus colour; the row is not outlined.
    The transparent outline keeps a ring in forced-colors mode. */
 .ds-radio-group__control:focus-visible {
   outline: var(--ds-radio-group-focus-ring-width) solid transparent;
@@ -140,18 +166,11 @@
   border-color: var(--ds-radio-group-focus-ring);
 }
 
-.ds-radio-group__label {
-  grid-column: 2;
-  grid-row: 1;
-  cursor: inherit;
-  color: var(--ds-radio-group-label-color);
-  font-size: var(--ds-radio-group-label-size);
-  font-weight: var(--ds-radio-group-label-weight);
-}
-
-.ds-radio-group__option-description {
-  grid-column: 2;
-  grid-row: 2;
+/* controlBorderInvalid: aria-invalid lives on the fieldset only. Declared after focus so a focused
+   invalid radio keeps the danger colour and takes only the focus width. */
+.ds-radio-group--invalid .ds-radio-group__control,
+.ds-radio-group--invalid .ds-radio-group__control:focus-visible {
+  border-color: var(--ds-radio-group-control-border-invalid);
 }
 
 /* disabledOpacity dims option rows only, once: an option dims its own row, a disabled group every row. */
@@ -161,14 +180,14 @@
   opacity: var(--ds-radio-group-disabled-opacity);
 }
 
-/* transition: the selected border color and the dot's opacity, fading in and out. The focus border
-   (color and width) and the invalid border switch instantly, so neither is in the transition and
-   both states clear it. Removed entirely under reduced motion. */
+/* transition: the selected border colour and the dot's opacity, fading in and out. Entering focus or
+   invalid switches instantly (the transition is cleared in those states); leaving them fades back.
+   Removed entirely under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .ds-radio-group__control {
     transition: border-color var(--ds-radio-group-transition) var(--motion-easing-standard);
   }
-  .ds-radio-group__control::before {
+  .ds-radio-group__indicator {
     transition: opacity var(--ds-radio-group-transition) var(--motion-easing-standard);
   }
   .ds-radio-group__control:focus-visible,

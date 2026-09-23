@@ -12,7 +12,7 @@
  */
 
 export { Button } from './Button';
-export type { ButtonProps, ButtonVariant, ButtonSize, ButtonType, ButtonOverridableBinding } from './Button';
+export type { ButtonProps, ButtonVariant, ButtonSize, ButtonType, ButtonHaspopup, ButtonOverridableBinding } from './Button';
 
 export { Heading } from './Heading';
 export type { HeadingProps, HeadingLevel, HeadingSize, HeadingOverridableBinding } from './Heading';
@@ -151,6 +151,8 @@ export type {
   PopoverProps,
   PopoverPlacement,
   PopoverHeadingLevel,
+  PopoverInitialFocus,
+  PopoverCloseReason,
   PopoverOpenChangeReason,
   PopoverOverridableBinding,
 } from './Popover';
@@ -202,7 +204,7 @@ export type {
   SegmentedControlOverridableBinding,
 } from './SegmentedControl';
 
-export { Listbox } from './Listbox';
+export { Listbox, LISTBOX_COPY } from './Listbox';
 export type {
   ListboxProps,
   ListboxOption,

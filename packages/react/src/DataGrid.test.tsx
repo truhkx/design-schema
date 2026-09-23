@@ -16,145 +16,113 @@ function setup(given: Partial<Props> = {}) {
   return { ...utils, props, grid: () => screen.getByRole('grid') };
 }
 
+const skuHeader = { key: 'sku', header: 'SKU', isRowHeader: true };
+
 describe('DataGrid', () => {
   it('activating-a-sortable-header-reports-the-sort', () => {
     const onSortChange = vi.fn();
-    setup({
-      columns: [
-        { key: 'sku', header: 'SKU', isRowHeader: true },
-        { key: 'price', header: 'Price', align: 'end', sortable: true },
-      ],
+    const s = setup({
+      columns: [skuHeader, { key: 'price', header: 'Price', align: 'end', sortable: true }],
       data: [
         { id: 'a', sku: 'A-1', price: 10 },
         { id: 'b', sku: 'B-2', price: 20 },
       ],
       onSortChange,
     });
-    const sortButton = document.querySelector('[data-part="sortButton"]');
-    expect(sortButton).not.toBeNull();
-    fireEvent.click(sortButton!);
-    expect(onSortChange).toHaveBeenCalled();
+    const part = s.container.querySelector('[data-part="sortButton"]');
+    expect(part).not.toBeNull();
+    fireEvent.click(part!);
+    expect(onSortChange).toHaveBeenCalledWith('price', 'ascending');
   });
 
   it('enter-on-a-sortable-header-sorts', () => {
     const onSortChange = vi.fn();
     const s = setup({
-      columns: [
-        { key: 'sku', header: 'SKU', isRowHeader: true, sortable: true },
-        { key: 'price', header: 'Price', align: 'end' },
-      ],
+      columns: [{ ...skuHeader, sortable: true }, { key: 'price', header: 'Price', align: 'end' }],
       data: [
         { id: 'a', sku: 'A-1', price: 10 },
         { id: 'b', sku: 'B-2', price: 20 },
       ],
       onSortChange,
     });
-    s.grid().focus();
-    fireEvent.keyDown(s.grid(), { key: 'Enter' });
-    expect(onSortChange).toHaveBeenCalled();
+    const grid = s.grid();
+    grid.focus();
+    fireEvent.keyDown(grid, { key: 'Enter' });
+    expect(onSortChange).toHaveBeenCalledWith('sku', 'ascending');
   });
 
   it('selecting-a-row-reports-the-selection', () => {
     const onSelectionChange = vi.fn();
-    setup({
+    const s = setup({
       selectable: 'row',
-      columns: [{ key: 'sku', header: 'SKU', isRowHeader: true }],
+      columns: [skuHeader],
       data: [
         { id: 'a', sku: 'A-1' },
         { id: 'b', sku: 'B-2' },
       ],
       onSelectionChange,
     });
-    const selectCell = document.querySelector('[data-part="selectCell"]');
-    expect(selectCell).not.toBeNull();
-    fireEvent.click(selectCell!);
-    expect(onSelectionChange).toHaveBeenCalled();
+    const part = s.container.querySelector('[data-part="selectCell"]');
+    expect(part).not.toBeNull();
+    fireEvent.click(part!);
+    expect(onSelectionChange).toHaveBeenCalledWith(['a']);
   });
 
   it('a-selected-row-is-marked-selected', () => {
-    setup({
+    const s = setup({
       selectable: 'row',
       selected: ['a'],
-      columns: [{ key: 'sku', header: 'SKU', isRowHeader: true }],
+      columns: [skuHeader],
       data: [
         { id: 'a', sku: 'A-1' },
         { id: 'b', sku: 'B-2' },
       ],
     });
-    const row = document.querySelector('[data-part="row"]');
-    expect(row).toHaveAttribute('aria-selected', 'true');
+    const row = s.container.querySelector('[data-part="row"]');
+    expect(row).not.toBeNull();
+    expect(row!.getAttribute('aria-selected')).toBe('true');
   });
 
   it('the-empty-message-shows-when-there-are-no-rows', () => {
-    setup({ columns: [{ key: 'sku', header: 'SKU', isRowHeader: true }], data: [] });
-    expect(screen.getByText('Nothing to show.')).toBeInTheDocument();
+    setup({ columns: [skuHeader], data: [] });
+    expect(screen.getByText('Nothing to show.')).toBeTruthy();
   });
 
   it('a-custom-empty-message-replaces-the-default', () => {
-    setup({ emptyMessage: 'No prices loaded.', columns: [{ key: 'sku', header: 'SKU', isRowHeader: true }], data: [] });
-    expect(screen.getByText('No prices loaded.')).toBeInTheDocument();
+    setup({ emptyMessage: 'No prices loaded.', columns: [skuHeader], data: [] });
+    expect(screen.getByText('No prices loaded.')).toBeTruthy();
   });
 
   it('loading-marks-the-grid-busy', () => {
-    const s = setup({ loading: true, columns: [{ key: 'sku', header: 'SKU', isRowHeader: true }], data: [{ id: 'a', sku: 'A-1' }] });
-    expect(s.grid()).toHaveAttribute('aria-busy', 'true');
+    const s = setup({ loading: true, columns: [skuHeader], data: [{ id: 'a', sku: 'A-1' }] });
+    expect(s.grid().getAttribute('aria-busy')).toBe('true');
   });
 
-  /* derived */
   it('renders', () => {
-    expect(setup().grid()).toBeInTheDocument();
+    const s = setup();
+    expect(s.grid()).toBeTruthy();
   });
 
-  it('renders-caption-level-2', () => {
-    expect(setup({ captionLevel: '2' }).grid()).toBeInTheDocument();
-  });
-
-  it('renders-caption-level-3', () => {
-    expect(setup({ captionLevel: '3' }).grid()).toBeInTheDocument();
-  });
-
-  it('renders-caption-level-4', () => {
-    expect(setup({ captionLevel: '4' }).grid()).toBeInTheDocument();
-  });
-
-  it('renders-selectable-none', () => {
-    expect(setup({ selectable: 'none' }).grid()).toBeInTheDocument();
-  });
-
-  it('renders-selectable-row', () => {
-    expect(setup({ selectable: 'row' }).grid()).toBeInTheDocument();
-  });
-
-  it('renders-selectable-cell', () => {
-    expect(setup({ selectable: 'cell' }).grid()).toBeInTheDocument();
-  });
-
-  it('renders-selectable-range', () => {
-    expect(setup({ selectable: 'range' }).grid()).toBeInTheDocument();
-  });
-
-  it('renders-density-compact', () => {
-    expect(setup({ density: 'compact' }).grid()).toBeInTheDocument();
-  });
-
-  it('renders-density-comfortable', () => {
-    expect(setup({ density: 'comfortable' }).grid()).toBeInTheDocument();
-  });
-
-  it('renders-height-content', () => {
-    expect(setup({ height: 'content' }).grid()).toBeInTheDocument();
-  });
-
-  it('renders-height-viewport', () => {
-    expect(setup({ height: 'viewport' }).grid()).toBeInTheDocument();
-  });
-
-  it('renders-height-fixed', () => {
-    expect(setup({ height: 'fixed' }).grid()).toBeInTheDocument();
+  it.each([
+    ['renders-caption-level-2', { captionLevel: '2' }],
+    ['renders-caption-level-3', { captionLevel: '3' }],
+    ['renders-caption-level-4', { captionLevel: '4' }],
+    ['renders-selectable-none', { selectable: 'none' }],
+    ['renders-selectable-row', { selectable: 'row' }],
+    ['renders-selectable-cell', { selectable: 'cell' }],
+    ['renders-selectable-range', { selectable: 'range' }],
+    ['renders-density-compact', { density: 'compact' }],
+    ['renders-density-comfortable', { density: 'comfortable' }],
+    ['renders-height-content', { height: 'content' }],
+    ['renders-height-viewport', { height: 'viewport' }],
+    ['renders-height-fixed', { height: 'fixed' }],
+  ] as [string, Partial<Props>][])('%s', (_name, given) => {
+    const s = setup(given);
+    expect(s.grid()).toBeTruthy();
   });
 
   it('has-accessible-name', () => {
-    const s = setup();
-    expect(s.grid()).toHaveAccessibleName(s.props.caption);
+    setup();
+    expect(screen.getByRole('grid', { name: meta.args!.caption as string })).toBeTruthy();
   });
 });

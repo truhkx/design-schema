@@ -6,12 +6,12 @@
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import { Box, type BoxProps } from './Box';
-import meta from './Box.stories';
+import meta, { Default } from './Box.stories';
 import type { ComponentProps } from 'react';
 
 /** The Default story's args plus the scenario's `given`. */
 function setup(given: Partial<BoxProps> = {}) {
-  const props = { ...meta.args, ...given };
+  const props = { ...meta.args, ...Default.args, ...given };
   return render(<Box {...(props as ComponentProps<typeof Box>)} />);
 }
 

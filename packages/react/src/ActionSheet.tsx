@@ -166,10 +166,15 @@ function prefersReducedMotion(): boolean {
     : false;
 }
 
-/** Wide when the viewport is strictly wider than `layout.maxWidth.prose`, read from the theme stylesheet. */
+/** Wide when the viewport is strictly wider than the maxWidth hook (`layout.maxWidth.prose` by default). */
 function wideQuery(): MediaQueryList | null {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
-  const breakpoint = getComputedStyle(document.documentElement).getPropertyValue('--layout-max-width-prose').trim();
+  // maxWidth is locked, but its hook stays re-themable page-wide: the decision is made before the
+  // sheet's <dialog> exists, so a `--ds-action-sheet-max-width` set on :root wins over the token.
+  const rootStyle = getComputedStyle(document.documentElement);
+  const breakpoint =
+    rootStyle.getPropertyValue('--ds-action-sheet-max-width').trim() ||
+    rootStyle.getPropertyValue('--layout-max-width-prose').trim();
   return breakpoint ? window.matchMedia(`(width > ${breakpoint})`) : null;
 }
 
@@ -227,6 +232,8 @@ interface DragSample {
 
 interface DragState {
   pointerId: number;
+  /** `dragSlop` in px, read once at gesture start. */
+  slop: number;
   /** Where the pointer went down; the slop is measured from here. */
   startY: number;
   /** Where the slop was crossed; the drag offset counts from here, so the surface does not jump. */
@@ -359,6 +366,9 @@ export function ActionSheet({
   const [visible, setVisible] = useState(false);
   const [dragPhase, setDragPhase] = useState<DragPhase>('idle');
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Whether the enter frame has run: a sheet closed before it never moved, so no transition will end.
+  const visibleRef = useRef(false);
+  visibleRef.current = visible;
 
   if (open && !present) setPresent(true);
 
@@ -374,7 +384,7 @@ export function ActionSheet({
   useLayoutEffect(() => {
     if (!present || isWide || !open || !hydrated) return undefined;
     const dialog = dialogRef.current;
-    if (!dialog) return undefined;
+    if (!dialog || !surfaceRef.current) return undefined;
     if (!dialog.open) {
       // inert-background is showModal()'s guarantee; the `open`-attribute fallback exists only so
       // tests can render in jsdom and makes nothing inert. A refused showModal() (the dialog is
@@ -421,7 +431,9 @@ export function ActionSheet({
       }
       setPresent(false);
     };
-    if (isWide || !surface || hasNoTransition(surface)) {
+    // Closed in its first frame (before `--visible` came on), the surface is already at rest off
+    // screen: no transition runs, so waiting for one would leave the page modal-open and inert.
+    if (isWide || !surface || !visibleRef.current || hasNoTransition(surface)) {
       finish();
       return undefined;
     }
@@ -487,6 +499,12 @@ export function ActionSheet({
     onClose?.(reason);
   };
 
+  // A scrim dismiss is a click whose target is the scrim element itself.
+  const handleScrimClick = (event: ReactMouseEvent<HTMLDivElement>): void => {
+    if (event.target !== event.currentTarget || !open) return;
+    requestClose('scrim');
+  };
+
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDialogElement>): void => {
     if (event.key !== 'Escape') return;
     // The consumer owns `open`; preventing the keydown also suppresses the native `cancel`.
@@ -504,11 +522,15 @@ export function ActionSheet({
   // the pointer has moved `dragSlop` downward, so a tap on the header is not a drag.
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
     if (!dismissible || !open || dragRef.current) return;
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    // A non-primary pointer and a secondary mouse button never claim the gesture.
+    if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
     // No coordinate, no gesture: an environment without Pointer Events must not translate the surface.
     if (!Number.isFinite(event.clientY)) return;
+    const surface = surfaceRef.current;
+    if (!surface) return;
     dragRef.current = {
       pointerId: event.pointerId,
+      slop: resolveDragSlop(surface),
       startY: event.clientY,
       originY: event.clientY,
       claimed: false,
@@ -524,7 +546,7 @@ export function ActionSheet({
     if (!Number.isFinite(event.clientY)) return;
     if (!drag.claimed) {
       const moved = event.clientY - drag.startY;
-      if (moved <= 0 || moved < resolveDragSlop(surface)) return;
+      if (moved <= 0 || moved < drag.slop) return;
       drag.claimed = true;
       // The offset counts from where the slop was crossed, so the surface does not jump.
       drag.originY = event.clientY;
@@ -726,8 +748,10 @@ export function ActionSheet({
       onKeyDown={handleKeyDown}
       onCancel={handleCancel}
     >
-      <div className="ds-action-sheet__scrim" data-part="scrim" aria-hidden="true" onClick={() => requestClose('scrim')} />
-      <FocusScope trapped autoFocus="none" restoreFocus active={open} returnFocusTo={openerRef} data-part="focusScope">
+      <div className="ds-action-sheet__scrim" data-part="scrim" aria-hidden="true" onClick={handleScrimClick} />
+      {/* FocusScope writes its own data-part="scope", so the focusScope part is this wrapper inside it. */}
+      <FocusScope trapped autoFocus="none" restoreFocus active={open} returnFocusTo={openerRef}>
+        <div className="ds-action-sheet__scope" data-part="focusScope">
         <div ref={surfaceRef} className="ds-action-sheet__surface" data-part="surface">
           {dismissible || heading ? (
             <div
@@ -780,6 +804,7 @@ export function ActionSheet({
               </div>
             </>
           ) : null}
+        </div>
         </div>
       </FocusScope>
     </dialog>,

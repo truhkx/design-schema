@@ -8,7 +8,6 @@ const meta: Meta<typeof Heading> = {
   args: {
     level: '2',
     children: 'Account settings',
-    align: 'start',
   },
 };
 

@@ -144,7 +144,11 @@ export interface TabsProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   label: string;
   /** Controlled selected tab id. Omit for uncontrolled. */
   value?: string | undefined;
-  /** Initially selected tab id. Defaults to the first enabled tab. */
+  /**
+   * Initially selected tab id. Defaults to the first enabled tab. Taken verbatim, never corrected:
+   * one naming a disabled tab selects it and shows its panel, one matching no tab selects nothing —
+   * in both cases the roving tab stop falls back to the first enabled tab, and neither warns.
+   */
   defaultValue?: string | undefined;
   /**
    * `automatic` selects a tab as arrow keys move to it (fine when panels are cheap); `manual`
@@ -231,6 +235,8 @@ export function Tabs({
   // animates only when the selection moves from one tab to another.
   const [indicator, setIndicator] = useState<{ style: CSSProperties; animate: boolean } | undefined>(undefined);
   const placedFor = useRef<string | undefined>(undefined);
+  // The tab a manual Enter/Space just selected, so the key's synthesized click does not repeat it.
+  const keySelectedId = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     setActiveId(selected);
@@ -259,17 +265,26 @@ export function Tabs({
     const moved = placedFor.current !== undefined && placedFor.current !== selected;
     placedFor.current = selected;
 
+    // The tab's box within the list's client (padding) box, in the list's current scroll position.
+    const clientBox = (): { left: number; right: number; top: number; bottom: number } => {
+      const listRect = list.getBoundingClientRect();
+      const tabRect = tabEl.getBoundingClientRect();
+      const left = tabRect.left - listRect.left - list.clientLeft;
+      const top = tabRect.top - listRect.top - list.clientTop;
+      return { left, right: left + tabRect.width, top, bottom: top + tabRect.height };
+    };
+
     let last = '';
     const measure = (): void => {
-      // inset-inline-start is measured from the list's inline-start edge, so under RTL it is
-      // computed from the right rather than taken from offsetLeft directly.
-      const inlineStart = isRtl(list)
-        ? list.clientWidth - tabEl.offsetLeft - tabEl.offsetWidth + list.scrollLeft
-        : tabEl.offsetLeft;
+      // inset-inline-start is measured from the list's inline-start edge (from the right under RTL),
+      // in scroll-content coordinates, so the value holds whatever the list's scroll offset is —
+      // RTL browsers report a negative scrollLeft, which the subtraction below accounts for.
+      const box = clientBox();
+      const inlineStart = isRtl(list) ? list.clientWidth - box.right - list.scrollLeft : box.left + list.scrollLeft;
       const next =
         orientation === 'horizontal'
           ? { insetInlineStart: inlineStart, inlineSize: tabEl.offsetWidth }
-          : { insetBlockStart: tabEl.offsetTop, blockSize: tabEl.offsetHeight };
+          : { insetBlockStart: box.top + list.scrollTop, blockSize: tabEl.offsetHeight };
       const key = JSON.stringify(next);
       // Writing only on a real change keeps the ResizeObserver from re-firing itself.
       if (key === last) return;
@@ -278,21 +293,24 @@ export function Tabs({
       setIndicator({ style: next, animate: moved && isFirst });
     };
 
-    // Scroll the list only, never the page (no scrollIntoView) — before measuring, since the
-    // indicator's RTL offset is computed from the list's scroll offset.
-    if (orientation === 'horizontal') {
-      const start = tabEl.offsetLeft;
-      const end = start + tabEl.offsetWidth;
-      if (start < list.scrollLeft) list.scrollLeft = start;
-      else if (end > list.scrollLeft + list.clientWidth) list.scrollLeft = end - list.clientWidth;
-    } else {
-      const start = tabEl.offsetTop;
-      const end = start + tabEl.offsetHeight;
-      if (start < list.scrollTop) list.scrollTop = start;
-      else if (end > list.scrollTop + list.clientHeight) list.scrollTop = end - list.clientHeight;
-    }
-
     measure();
+
+    // Keep the selected tab in view by scrolling the list only, never the page (no scrollIntoView),
+    // on first render too. Measured from the tab's offset within the list's client box, so it works
+    // in both directions; animated unless reduced motion is on.
+    const box = clientBox();
+    const size = orientation === 'horizontal' ? list.clientWidth : list.clientHeight;
+    const start = orientation === 'horizontal' ? box.left : box.top;
+    const end = orientation === 'horizontal' ? box.right : box.bottom;
+    const delta = start < 0 ? start : end > size ? Math.min(end - size, start) : 0;
+    if (delta !== 0) {
+      const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const behavior: ScrollBehavior = reduced ? 'auto' : 'smooth';
+      if (typeof list.scrollBy === 'function') {
+        list.scrollBy(orientation === 'horizontal' ? { left: delta, behavior } : { top: delta, behavior });
+      } else if (orientation === 'horizontal') list.scrollLeft += delta;
+      else list.scrollTop += delta;
+    }
 
     if (typeof ResizeObserver === 'undefined') return undefined;
     const observer = new ResizeObserver(measure);
@@ -301,6 +319,7 @@ export function Tabs({
   }, [selected, orientation, fit, tabs.length]);
 
   const handleListKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    keySelectedId.current = undefined;
     if (enabled.length === 0) return;
     const focusedId = (event.target as HTMLElement).closest<HTMLElement>('[role="tab"]')?.dataset.tabId ?? tabStopId;
     const currentIndex = enabled.findIndex((tab) => tab.id === focusedId);
@@ -337,6 +356,8 @@ export function Tabs({
       case ' ':
         if (activation === 'manual' && focusedId && currentIndex >= 0) {
           event.preventDefault();
+          // The native click a button may still synthesize from this key must not select twice.
+          keySelectedId.current = focusedId;
           selectTab(focusedId);
         }
         break;
@@ -345,10 +366,18 @@ export function Tabs({
     }
   };
 
+  // While focus is inside the list the tab stop follows the focused tab, however focus arrived
+  // (key, click or a programmatic focus()), so an arrow always moves from the tab that has focus.
+  const handleListFocus = (event: ReactFocusEvent<HTMLDivElement>): void => {
+    const id = (event.target as HTMLElement).closest<HTMLElement>('[role="tab"]')?.dataset.tabId;
+    if (id !== undefined && id !== activeId && enabled.some((tab) => tab.id === id)) setActiveId(id);
+  };
+
   // Tab from outside lands on the selected tab: once focus leaves the list, the stop returns to it.
   const handleListBlur = (event: ReactFocusEvent<HTMLDivElement>): void => {
     const next = event.relatedTarget as Node | null;
     if (!next || !listRef.current?.contains(next)) {
+      keySelectedId.current = undefined;
       if (activeId !== selected) setActiveId(selected);
     }
   };
@@ -371,6 +400,7 @@ export function Tabs({
         data-part="tablist"
         className="ds-tabs__tablist"
         onKeyDown={handleListKeyDown}
+        onFocus={handleListFocus}
         onBlur={handleListBlur}
       >
         {tabs.map((tab) => {
@@ -398,8 +428,12 @@ export function Tabs({
               ]
                 .filter(Boolean)
                 .join(' ')}
-              onClick={() => {
+              onClick={(event) => {
                 if (tab.disabled) return;
+                if (event.detail === 0 && keySelectedId.current === tab.id) {
+                  keySelectedId.current = undefined;
+                  return;
+                }
                 setActiveId(tab.id);
                 selectTab(tab.id);
               }}

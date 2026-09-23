@@ -11,25 +11,30 @@
   --ds-select-trigger-padding-block: var(--space-sm);
   --ds-select-trigger-gap: var(--layout-gap-normal);
   --ds-select-chevron-reserve: var(--font-size-sm);
+  /* Locked bindings keep their hook even where a composed child realises them: valueColor and
+     placeholderColor are the value Text's tones in popup mode and are read here by the native <select>;
+     descriptionText and errorText are the helper Texts' muted and danger tones, and their hooks exist
+     for page CSS and the naming codemod — never applied to the child. chevron is forwarded into the
+     Icon's overrides and so has no hook. */
   --ds-select-value-color: var(--color-foreground);
   --ds-select-placeholder-color: var(--color-foreground-muted);
-  --ds-select-chevron: var(--color-foreground-muted);
+  --ds-select-description-text: var(--color-foreground-muted);
+  --ds-select-error-text: var(--color-foreground-danger);
   --ds-select-part-gap: var(--space-1);
   --ds-select-font-family: var(--font-family-body);
   --ds-select-font-size: var(--font-size-md);
   --ds-select-font-weight: var(--font-weight-regular);
   --ds-select-line-height: var(--font-line-height-normal);
   --ds-select-min-target: var(--size-target-comfortable);
+  --ds-select-min-target-sm: var(--size-target-min);
   --ds-select-focus-ring-width: var(--border-width-focus);
-  /* focusRingWidth replaces triggerBorderWidth on focus; each padding shrinks by the difference,
-     clamped at zero, so the trigger never shifts. (0px is the clamp floor, not a size.) */
-  --ds-select-focus-padding-inline: max(
-    0px, /* literal-ok: the zero floor of the focus-ring padding clamp */
-    calc(var(--ds-select-trigger-padding-inline) - (var(--ds-select-focus-ring-width) - var(--ds-select-trigger-border-width)))
+  /* focusRingWidth replaces triggerBorderWidth on focus; each padding shrinks by the difference so the
+     trigger never shifts — the same unclamped rule Input uses. */
+  --ds-select-focus-padding-inline: calc(
+    var(--ds-select-trigger-padding-inline) - (var(--ds-select-focus-ring-width) - var(--ds-select-trigger-border-width))
   );
-  --ds-select-focus-padding-block: max(
-    0px, /* literal-ok: the zero floor of the focus-ring padding clamp */
-    calc(var(--ds-select-trigger-padding-block) - (var(--ds-select-focus-ring-width) - var(--ds-select-trigger-border-width)))
+  --ds-select-focus-padding-block: calc(
+    var(--ds-select-trigger-padding-block) - (var(--ds-select-focus-ring-width) - var(--ds-select-trigger-border-width))
   );
   --ds-select-disabled-opacity: var(--opacity-disabled);
   display: flex;
@@ -43,7 +48,7 @@
 .ds-select--sm {
   --ds-select-trigger-padding-block: var(--space-1);
   --ds-select-font-size: var(--font-size-sm);
-  --ds-select-min-target: var(--size-target-min);
+  --ds-select-min-target: var(--ds-select-min-target-sm);
 }
 
 .ds-select__label {
@@ -79,6 +84,7 @@
   border: var(--ds-select-trigger-border-width) solid var(--ds-select-trigger-border);
   border-radius: var(--ds-select-trigger-radius);
   background-color: var(--ds-select-trigger-background);
+  /* The native <select> draws its own text; in popup mode the value Text's tone wins inside the trigger. */
   color: var(--ds-select-value-color);
   font-family: var(--ds-select-font-family);
   font-size: var(--ds-select-font-size);
@@ -87,6 +93,15 @@
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
+}
+
+/* The native single select showing its placeholder option (nothing selected). */
+.ds-select__native--placeholder {
+  color: var(--ds-select-placeholder-color);
+}
+
+.ds-select__native--placeholder option {
+  color: var(--ds-select-value-color);
 }
 
 .ds-select--invalid .ds-select__trigger,
@@ -149,11 +164,6 @@
   text-align: start;
 }
 
-/* The error region is a layout-only wrapper: it carries role="alert" and the id, never type styles. */
-.ds-select__error {
-  display: block;
-}
-
 /* valueColor, placeholderColor and chevron are realised by the composed Text tones and Icon color. */
 .ds-select__chevron {
   flex: 0 0 auto;
@@ -200,7 +210,7 @@
   min-inline-size: 100%;
 }
 
-.ds-select__popup--entered {
+.ds-select__popup--visible {
   opacity: 1;
 }
 

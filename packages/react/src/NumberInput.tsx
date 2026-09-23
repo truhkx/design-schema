@@ -376,9 +376,12 @@ export function NumberInput({
     const prev = lastSynced.current;
     if (Object.is(prev.value, committedValue) && prev.formatKey === formatKey) return;
     lastSynced.current = { value: committedValue, formatKey };
-    if (typingRef.current && prev.formatKey === formatKey) {
+    if (prev.formatKey === formatKey) {
       const typed = parseTyped(inputRef.current?.value ?? '');
-      if (Object.is(typed.kind === 'number' ? typed.value : undefined, committedValue)) return;
+      // Typed text wins over an empty value: while typing (a controlled change to null keeps the
+      // text until blur/Enter), and after a commit of non-numeric text, which stays as typed.
+      if (committedValue === undefined && (typingRef.current || typed.kind === 'invalid')) return;
+      if (typingRef.current && Object.is(typed.kind === 'number' ? typed.value : undefined, committedValue)) return;
     }
     typingRef.current = false;
     setText(committedValue === undefined ? '' : formatNumber(committedValue, format, digits, currency, unit));
@@ -627,23 +630,30 @@ export function NumberInput({
 
   // What the errorMessage part draws, following Input: the `error` prop, the Form's context entry,
   // then — only while the field is marked invalid — copy.required for an empty required field, else
-  // copy.invalid; then committed non-numeric text, then a clamp. An empty required field is never
-  // flagged on first render, so `required` alone draws nothing here.
+  // copy.invalid for committed non-numeric text; then a clamp. `invalid` over a valid number draws
+  // nothing (aria-invalid and the border carry it). An empty required field is never flagged on
+  // first render, so `required` alone draws nothing here.
   const withLabel = (message: string): string => message.replace('{label}', label);
   const formError = form?.errors[name];
   const markedInvalid = invalid || formError !== undefined;
+  const derivedMessage =
+    required && committedValue === undefined && !textInvalid
+      ? withLabel(COPY.required)
+      : textInvalid
+        ? withLabel(COPY.invalid)
+        : undefined;
   const slotMessage =
     error !== undefined && error !== ''
       ? error
       : formError !== undefined && formError !== ''
         ? formError
-        : markedInvalid
-          ? withLabel(required && committedValue === undefined && !textInvalid ? COPY.required : COPY.invalid)
+        : markedInvalid && derivedMessage !== undefined
+          ? derivedMessage
           : textInvalid
             ? withLabel(COPY.invalid)
             : rangeMessage;
-  const isInvalid = slotMessage !== undefined;
-  const describedBy = [description ? descriptionId : null, isInvalid ? errorId : null].filter(Boolean).join(' ');
+  const isInvalid = markedInvalid || slotMessage !== undefined;
+  const describedBy = [description ? descriptionId : null, slotMessage !== undefined ? errorId : null].filter(Boolean).join(' ');
 
   const valueText =
     committedValue === undefined
@@ -667,7 +677,15 @@ export function NumberInput({
     : { rootStyle: undefined, helperOverrides: undefined };
 
   return (
-    <div className={classes} data-ds="NumberInput" data-ds-field style={rootStyle}>
+    // The root is the group every dimmed part sits in, so it carries aria-disabled beside the input's.
+    <div
+      className={classes}
+      role="group"
+      aria-disabled={isDisabled ? 'true' : undefined}
+      data-ds="NumberInput"
+      data-ds-field
+      style={rootStyle}
+    >
       <label className={labelClasses} htmlFor={id} data-part="label">
         {label}
         {required ? COPY.requiredIndicator : null}
@@ -765,7 +783,7 @@ export function NumberInput({
           </span>
         )}
       </div>
-      {isInvalid ? (
+      {slotMessage !== undefined ? (
         <Text
           element="p"
           id={errorId}

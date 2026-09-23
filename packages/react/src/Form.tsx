@@ -197,12 +197,18 @@ export function Form({
   // submit and reused as the summary shrinks, since the heading is announced once.
   const [locale, setLocale] = useState<string | undefined>(undefined);
   const summaryRef = useRef<HTMLDivElement | null>(null);
+  // Bumped when the registry changes, so a summary entry turns into plain Text when its field
+  // unregisters (and back into a Link when it returns). The context value does not depend on it.
+  const [, setRegistryVersion] = useState(0);
 
   const register = useCallback((field: FormFieldRegistration) => {
     fieldsRef.current.set(field.name, field);
     knownFieldsRef.current.set(field.name, field);
+    setRegistryVersion((version) => version + 1);
     return () => {
-      if (fieldsRef.current.get(field.name) === field) fieldsRef.current.delete(field.name);
+      if (fieldsRef.current.get(field.name) !== field) return;
+      fieldsRef.current.delete(field.name);
+      setRegistryVersion((version) => version + 1);
     };
   }, []);
 

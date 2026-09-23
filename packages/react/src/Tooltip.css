@@ -11,8 +11,11 @@
   --ds-tooltip-layer: var(--layer-toast);
   --ds-tooltip-enter: var(--motion-duration-fast);
   --ds-tooltip-exit: var(--motion-duration-fast);
-  /* text (locked): re-scope the foreground so the composed Text reads color.inverse.foreground unchanged. */
-  --color-foreground: var(--color-inverse-foreground);
+  /* surface and text are locked: out of `overrides`, but their hooks stay themeable from page CSS. */
+  --ds-tooltip-surface: var(--color-inverse-surface);
+  --ds-tooltip-text: var(--color-inverse-foreground);
+  /* text: re-scope the foreground so the composed Text reads color.inverse.foreground unchanged. */
+  --color-foreground: var(--ds-tooltip-text);
   box-sizing: border-box;
   /* Coordinates (including the `offset` gap) are set inline from the trigger rect. */
   position: fixed;
@@ -23,8 +26,8 @@
   padding-block: var(--ds-tooltip-padding-block);
   padding-inline: var(--ds-tooltip-padding-inline);
   /* surface (locked): inverted, so the tooltip reads as a label, not a panel. */
-  background-color: var(--color-inverse-surface);
-  color: var(--color-inverse-foreground);
+  background-color: var(--ds-tooltip-surface);
+  color: var(--ds-tooltip-text);
   border-radius: var(--ds-tooltip-radius);
   box-shadow: var(--ds-tooltip-shadow);
   overflow-wrap: break-word;
@@ -33,7 +36,7 @@
 }
 
 /* enter: fade in. */
-.ds-tooltip--entered {
+.ds-tooltip--visible {
   opacity: 1;
   transition-duration: var(--ds-tooltip-enter);
 }

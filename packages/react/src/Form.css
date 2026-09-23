@@ -6,6 +6,11 @@
   --ds-form-error-summary-border-width: var(--border-width-thin);
   --ds-form-error-summary-radius: var(--radius-md);
   --ds-form-error-summary-padding: var(--space-md);
+  /* Locked (the contrast pair and the line height that keeps the item Links at the target floor):
+     not in the `overrides` type, but they keep their hooks so page CSS and the naming codemod reach them. */
+  --ds-form-error-summary-text: var(--color-foreground-danger);
+  --ds-form-error-summary-background: var(--color-background-subtle);
+  --ds-form-error-summary-line-height: var(--font-line-height-normal);
   display: flex;
   flex-direction: column;
   gap: var(--ds-form-gap);
@@ -28,21 +33,20 @@
   align-items: flex-start;
 }
 
-/* errorSummary: a focusable alert region that links to each invalid field. errorSummaryText and
-   errorSummaryBackground are locked and read their tokens directly (no hook). errorSummaryGap reaches
+/* errorSummary: a focusable alert region that links to each invalid field. errorSummaryGap reaches
    the summary's Stacks through their `gap` override, not through CSS here. */
 .ds-form__error-summary {
   box-sizing: border-box;
   padding: var(--ds-form-error-summary-padding);
   border: var(--ds-form-error-summary-border-width) solid var(--ds-form-error-summary-border);
   border-radius: var(--ds-form-error-summary-radius);
-  background-color: var(--color-background-subtle);
-  color: var(--color-foreground-danger);
+  background-color: var(--ds-form-error-summary-background);
+  color: var(--ds-form-error-summary-text);
   /* The item Links are bare text in this box, so they would inherit the document's `line-height:
      normal` rather than the system's body rhythm the heading Text already sets. Setting it here puts
      each item on a full 24px line box, which is also its target size (WCAG 2.5.8): the Link is not
      restyled — it inherits, as it does the danger color. */
-  line-height: var(--font-line-height-normal);
+  line-height: var(--ds-form-error-summary-line-height);
 }
 
 .ds-form__error-summary:focus-visible {

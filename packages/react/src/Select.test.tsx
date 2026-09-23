@@ -85,6 +85,7 @@ describe('Select', () => {
   it('invalid-is-reported-on-the-trigger', () => {
     const s = setup({ invalid: true });
     expect(s.trigger()).toHaveAttribute('aria-invalid', 'true');
+    expect(s.root().querySelector('[data-part="errorMessage"]')).toHaveTextContent('Country is not valid.');
   });
 
   it('renders', () => {

@@ -146,3 +146,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Container: `element` is div|main|section but props are typed against `'div'` only, so the component is not polymorphic and the tag is cast to `ElementType`. The spec doesn't say whether attribute props should narrow per element value; chose Box's approach (one prop type, cast) for consistency, which means e.g. no element-specific attributes are typed.
 - Container: an override at a no-op value could either be skipped or written anyway (the literal rule would win regardless). The spec only states the result is a no-op with no warning; chose to skip writing the hook, so the inline style stays empty and the consumer's own CSS hook is not shadowed by a value that does nothing.
 - Container: the spec describes the fixed gutters as outranking "the bare responsive rules inside both media queries", implying the media queries contain unscoped `.ds-container` rules. Chose instead to scope both media queries to `.ds-container--gutter-default`, which makes narrow/wide/none fixed by construction rather than by specificity — same observable result, fewer rules to reason about.
+
+## 2026-09-23 14:17 — round 1
+
+- Container: the `children` prop description mixes prop documentation with instructions for stories (render the label in a Text, the Default children string). Only the first sentence went into the JSDoc; the rest was applied to the stories.
+- Container: the derived `renders*` scenarios name no element or attribute to assert on. The test checks that the render container has a first child, not the `data-ds` root specifically.
+- Container: the web notes don't say whether `element: section` with no accessible name should warn or accept an `aria-label`. It renders a plain unnamed `<section>` that inherits `aria-*` from `...rest`, with no warning, matching the doc's 'author's responsibility' stance on `main`.
+- Container: the example stories inherit the meta defaults (`gutter: default`, `align: center`, `element: div`) as well as their `given` args. I read 'exactly its given as args' as 'given layered on the Default args', the same way the scenarios work.

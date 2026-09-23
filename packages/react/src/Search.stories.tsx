@@ -77,11 +77,21 @@ export const SuggestionsFromOnChange: Story = {
   },
 };
 
+/** Inside a search landmark of its own, with `landmark` off: a plain form. */
+export const LandmarkOff: Story = { args: { landmark: false } };
+
 /**
- * For the keyboard gate: the closed field with a query and suggestions, so the input, the clear
- * button (there is text) and the submit button are the three focus stops the Tab rule walks, and the
- * first ArrowDown opens the list. There is no `open` prop — focus alone never opens it.
+ * For the keyboard gate: the closed field with a query and the `with-suggestions` example's
+ * suggestions, so the input, the clear button (there is text) and the submit button are the three
+ * focus stops the Tab rule walks, and the first ArrowDown opens the list. There is no `open` prop —
+ * focus alone never opens it.
  */
 export const Keyboard: Story = {
-  args: { defaultValue: 'invoices', suggestions: SUGGESTIONS },
+  args: {
+    defaultValue: 'invoices',
+    suggestions: [
+      { value: 'invoices-march', label: 'Invoices from March' },
+      { value: 'invoices-april', label: 'Invoices from April' },
+    ],
+  },
 };

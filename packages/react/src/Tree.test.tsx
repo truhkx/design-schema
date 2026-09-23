@@ -161,3 +161,58 @@ describe('Tree', () => {
     expect(tree()).toHaveAccessibleName();
   });
 });
+
+describe('Tree (platform notes)', () => {
+  it('names each treeitem from its label and badge, not its contents', () => {
+    setup({ nodes: [{ id: 'docs', label: 'Documents', badge: '3', children: [{ id: 'a', label: 'A' }] }] });
+    expect(screen.getByRole('treeitem')).toHaveAccessibleName('Documents, 3');
+  });
+
+  it('moves focus to the ancestor a controlled collapse hides', () => {
+    const nodes = [{ id: 'docs', label: 'Documents', children: [{ id: 'invoices', label: 'Invoices' }] }];
+    const { rerender } = render(<Tree label="Folders" nodes={nodes} expanded={['docs']} />);
+    const child = screen.getByRole('treeitem', { name: 'Invoices' });
+    child.focus();
+    fireEvent.focus(child);
+    rerender(<Tree label="Folders" nodes={nodes} expanded={[]} />);
+    expect(screen.getByRole('treeitem', { name: 'Documents' })).toHaveFocus();
+  });
+
+  it('an opened lazy node shows a non-navigable placeholder and is busy', () => {
+    setup({ nodes: [{ id: 'docs', label: 'Documents', children: 'lazy' }] });
+    fireEvent.click(part('expandButton')!);
+    const parent = screen.getByRole('treeitem', { name: 'Documents' });
+    expect(parent).toHaveAttribute('aria-busy', 'true');
+    const placeholder = screen.getByText('Loading').closest('[role="treeitem"]')!;
+    expect(placeholder).toHaveAttribute('aria-disabled', 'true');
+    expect(placeholder).not.toHaveAttribute('tabindex');
+    expect(placeholder).not.toHaveAttribute('data-part');
+  });
+
+  it('Ctrl+A with selectChildren skips a collapsed parent whose hidden children stay unselected', () => {
+    const onSelectionChange = vi.fn();
+    setup({
+      selectable: 'multiple',
+      selectChildren: true,
+      defaultExpanded: [],
+      nodes: [{ id: 'docs', label: 'Documents', children: [{ id: 'a', label: 'A' }] }, { id: 'notes', label: 'Notes' }],
+      onSelectionChange,
+    });
+    fireEvent.keyDown(tabStop(), { key: 'a', code: 'KeyA', ctrlKey: true });
+    expect(onSelectionChange).toHaveBeenCalledWith(['notes']);
+  });
+
+  it('Enter on an href node in multiple mode follows the link without toggling', () => {
+    const onSelectionChange = vi.fn();
+    const onActivate = vi.fn();
+    setup({
+      selectable: 'multiple',
+      nodes: [{ id: 'account', label: 'Account', href: '#account' }],
+      onSelectionChange,
+      onActivate,
+    });
+    fireEvent.keyDown(tabStop(), { key: 'Enter', code: 'Enter' });
+    expect(onSelectionChange).not.toHaveBeenCalled();
+    expect(onActivate).not.toHaveBeenCalled();
+  });
+});

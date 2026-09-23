@@ -5,9 +5,11 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type ReactElement,
   type Ref,
   type SyntheticEvent,
@@ -108,6 +110,17 @@ function lockScroll(): () => void {
   };
 }
 
+/** False on the server and through hydration, true on a client-only mount and after hydration. */
+function subscribeNothing(): () => void {
+  return () => {};
+}
+
+/** A press that lands on a part wrapper, not on its Button, is forwarded to the Button. */
+function forwardToButton(event: ReactMouseEvent<HTMLElement>): void {
+  const button = event.currentTarget.querySelector('button');
+  if (button && !button.contains(event.target as Node)) button.click();
+}
+
 export interface AlertDialogProps
   extends Omit<
     ComponentPropsWithoutRef<'dialog'>,
@@ -174,6 +187,13 @@ export function AlertDialog({
   const headingId = `ds-alert-dialog${generatedId}-heading`;
   const descriptionId = `ds-alert-dialog${generatedId}-description`;
 
+  // The portal needs `document`: render nothing until hydrated, exactly as the server did.
+  const hydrated = useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
+
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const setDialogNode = useCallback(
     (node: HTMLDialogElement | null): void => {
@@ -193,17 +213,22 @@ export function AlertDialog({
 
   // Mounted while open, and while the exit transition finishes after `open` goes false.
   const [present, setPresent] = useState(open);
-  // Drives the entered/exited CSS state; set a frame after mount so the enter transition runs.
+  // Drives the entered/exited CSS state; turned on a frame after the surface is in the DOM.
   const [visible, setVisible] = useState(false);
 
   const latestOpen = useRef(open);
   latestOpen.current = open;
 
   const warnedRef = useRef(false);
-  if (process.env.NODE_ENV !== 'production' && !warnedRef.current && (!heading || !description || !confirmLabel)) {
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    open &&
+    !warnedRef.current &&
+    (!heading || !description || !confirmLabel)
+  ) {
     warnedRef.current = true;
     console.warn(
-      'AlertDialog: `heading`, `description` and `confirmLabel` are required; the heading is the accessible name and the description states the consequence.',
+      'AlertDialog: `heading`, `description` and `confirmLabel` are required and must not be empty; an empty heading removes the accessible name.',
     );
   }
 
@@ -218,9 +243,10 @@ export function AlertDialog({
   // Open: showModal(), move focus to Cancel, then reveal on the next frame. FocusScope takes
   // autoFocus `none` because its layout effect runs first (a child's fires before its parent's),
   // while the <dialog> is still closed and cannot take focus; it keeps the trap and the restore.
-  // This also runs when `open` returns true while the exit transition is still running.
+  // Keyed on everything that decides whether the surface exists, so the flip is never scheduled
+  // before it is in the DOM; this also runs when `open` returns true during the exit transition.
   useLayoutEffect(() => {
-    if (!present || !open) return undefined;
+    if (!hydrated || !present || !open) return undefined;
     const dialog = dialogRef.current;
     const surface = surfaceRef.current;
     if (!dialog || !surface) return undefined;
@@ -234,7 +260,7 @@ export function AlertDialog({
     focusCancel();
     const frame = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(frame);
-  }, [present, open]);
+  }, [hydrated, present, open]);
 
   // Close: run the exit transition, then close() and unmount (FocusScope restores the opener).
   useEffect(() => {
@@ -264,9 +290,9 @@ export function AlertDialog({
 
   // Scroll lock on <html> while the alert dialog is present.
   useEffect(() => {
-    if (!present) return undefined;
+    if (!hydrated || !present) return undefined;
     return lockScroll();
-  }, [present]);
+  }, [hydrated, present]);
 
   /** Each Escape is reported exactly once, whichever of keydown or `cancel` reaches us first. */
   const reportEscape = (): void => {
@@ -312,7 +338,7 @@ export function AlertDialog({
     });
   };
 
-  if (!present) return null;
+  if (!present || !hydrated) return null;
 
   const classes = [
     'ds-alert-dialog',
@@ -342,9 +368,10 @@ export function AlertDialog({
     >
       {/* A real element inside the full-viewport <dialog>, as in Dialog, with no click listener:
           a scrim click answers nothing. */}
-      <div className="ds-alert-dialog__scrim" data-part="scrim" />
-      {/* FocusScope writes its own data-part="scope", so the focusScope part is this wrapper inside it. */}
-      <FocusScope trapped autoFocus="none" restoreFocus>
+      <div className="ds-alert-dialog__scrim" data-part="scrim" aria-hidden="true" />
+      {/* FocusScope writes its own data-part="scope", so the focusScope part is this wrapper inside it.
+          `active` follows `open`, so the trap releases when the exit starts. */}
+      <FocusScope trapped autoFocus="none" restoreFocus active={open}>
         <div className="ds-alert-dialog__scope" data-part="focusScope">
           <div className="ds-alert-dialog__surface" ref={surfaceRef} data-part="surface">
             {/* The icon-and-text row is AlertDialog-owned and carries no data-part: it only holds iconGap. */}
@@ -379,7 +406,7 @@ export function AlertDialog({
               >
                 {/* Cancel first in DOM order: the first focusable, focused on open; `justify: end`
                     puts the confirming action at the visual end of the row. */}
-                <span className="ds-alert-dialog__action" data-part="cancelButton">
+                <span className="ds-alert-dialog__action" data-part="cancelButton" onClick={forwardToButton}>
                   <Button
                     ref={cancelButtonRef}
                     variant="secondary"
@@ -388,7 +415,7 @@ export function AlertDialog({
                     onClick={() => onCancel?.('cancel')}
                   />
                 </span>
-                <span className="ds-alert-dialog__action" data-part="confirmButton">
+                <span className="ds-alert-dialog__action" data-part="confirmButton" onClick={forwardToButton}>
                   <Button
                     variant={CONFIRM_VARIANT[tone]}
                     size="md"

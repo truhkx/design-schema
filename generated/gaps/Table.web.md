@@ -67,3 +67,28 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Table: hideCaption 'sends space.0 in place of captionGap', and the forward does reach Heading's overrides, but the visually-hidden clip pattern's `margin: -1px` then wins over the Heading's own margin rule, so -1px and not space.0 is the used value. Same outcome (no gap above the header); the doc should say the clip is what takes effect.
 - Table: copy.sortToolbarLabel and copy.cellLabel are in the copy table, and the generator rule says every copy.* string is used verbatim, but the Behavior section says web and Lit render neither. I left both out of the web COPY constant (as the prior generation did). Worth stating in the copy entries themselves which platforms render them, so the rule and the prose stop disagreeing.
 - Table: the arrow-scroll step is now specified as space.10 'read from the built token (px and rem both parsed)', but calm-precise builds px (--space-10: 40px), so nothing in this repo exercises the rem branch — it is written but untested by any gate here.
+
+## 2026-09-23 13:45 — round 1
+
+- Table: the web note says pressing a part wrapper runs the control's action but never says what happens to a click that lands on the Checkbox's own (visually hidden) label or its wrapper div; I forward only presses outside the control and outside any <label>, as Carousel does.
+- Table: 'Inside a Form, the selection Checkboxes are not form fields' gives no mechanism, and Checkbox always registers with FormContext; I wrap each selection Checkbox in <FormContext value={null}>. A Checkbox prop to opt out of registration would be cleaner, but the doc doesn't name one.
+- Table: copy.rowCount's locale is document.documentElement.lang, but the SSR rule forbids reading document in render; I read it via useSyncExternalStore (empty on the server and during hydration, so the runtime default is used first and the page language applies after mount). The doc should say the row count may re-select its plural form after hydration.
+- Table: the ArrowRight/ArrowLeft keyboard rule says the region scrolls 'below the breakpoint', but the guidance says the region is present and focusable whenever responsive: scroll; I scroll at every width.
+- Table: the web note makes aria-rowcount 'data rows plus the header row' but doesn't cover empty data, where one empty-state row is rendered; I kept data.length + 1 (= 1).
+- Table: the sortedAnnouncement fires on activation even while `sort` is controlled and the caller hasn't updated it yet; the doc says RN announces 'when the shown state changes' but web doesn't say, so web announces on press.
+- Table: selection-cell wrapper clicks are excluded from onRowPress via a [data-part="selectCell"] check; the doc doesn't say whether a press on the sortButton wrapper or the actions cell padding counts as 'outside a control' — only the selection cell is excluded besides real controls.
+
+## 2026-09-23 13:47 — round 2
+
+- Table: cellMutedColor is locked with part `cell`, but secondary values are 'rendered with Text tone muted', so Text's own tone paints them and no Table rule can read `--ds-table-cell-muted-color`. I declare the hook to meet the contract, but it styles nothing on web; the doc should say whether Table must use this hook to style muted cell text or whether the binding describes Text's tone.
+- Table: rowSelected and rowStripe share a token, and the doc doesn't say which wins on an even, selected row in a striped table. The striped rule is more specific in both layouts, so if a page re-themes `--ds-table-row-selected`, even-numbered selected rows show the stripe color instead. I kept that order; the start-edge bar still marks selection.
+- Table: the Lit package fails the same check (13 locked bindings without a hook in packages/lit/src/Table). It is outside this web job and was left untouched.
+
+## 2026-09-23 16:24 — round 1
+
+- Table: the web notes say each theme's CSS build stamps its own prose and content widths into the container queries, but nothing in tools/ does that. Table.css hard-codes calm-precise's 572px and 960px, and warm-sleek builds layout.maxWidth.content as 1040px, so a warm-sleek table hides `hideBelow: content` columns at the wrong width. I kept the calm-precise numbers with `literal-ok`.
+- Table: 'Below' is strictly less, so I used `@container (width < Npx)` range syntax instead of `max-width`. The spec doesn't name the CSS form, and Carousel and Stepper still use the inclusive `max-width: 572px`.
+- Table: with `selectable: single`, the header's empty <td role=cell> selection spacer has no rule for the stacked header row. It stays visible as an empty cell in that row; I left it as is.
+- Table: the keyboard rule says the scroll region is focusable 'below the breakpoint', but the guidance says the region exists whenever `responsive: scroll`. I followed the guidance: the region is always present and focusable, and arrows scroll it at any width.
+- Table: `aria-selected` on a role=row inside a role=table (not a grid) is what the spec asks for, but ARIA only defines it for rows in grid or treegrid. I kept it as specified; an axe aria-allowed-attr check may flag it.
+- Table: TableColumn's optional fields are written as the schema `shape` verbatim (`abbr?: string`), without the package's `| undefined` convention. Under exactOptionalPropertyTypes a caller can't pass `abbr: undefined`. I kept the shape verbatim, as the rules require.

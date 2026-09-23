@@ -1,6 +1,6 @@
 import { useState, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Popover, type PopoverOpenChangeReason, type PopoverProps } from './Popover';
+import { Popover, type PopoverCloseReason, type PopoverProps } from './Popover';
 import { Button } from './Button';
 import { Form } from './Form';
 import { Icon } from './Icon';
@@ -25,7 +25,7 @@ const filterForm = (
  */
 function OpenHarness(props: PopoverProps): ReactElement {
   const [open, setOpen] = useState(props.open ?? true);
-  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {
+  const handleOpenChange = (next: boolean, reason: PopoverCloseReason): void => {
     setOpen(next);
     props.onOpenChange?.(next, reason);
   };
@@ -50,11 +50,13 @@ const meta: Meta<typeof Popover> = {
     modal: false,
     showArrow: false,
     dismissible: true,
+    initialFocus: 'first',
   },
   argTypes: {
     trigger: { control: false },
     children: { control: false },
     headingLevel: { control: 'inline-radio', options: ['2', '3', '4'] },
+    initialFocus: { control: 'inline-radio', options: ['first', 'none'] },
     placement: {
       control: 'select',
       options: ['bottom-start', 'bottom', 'bottom-end', 'top-start', 'top', 'top-end', 'start', 'end'],
@@ -84,6 +86,10 @@ export const PlacementTopEnd: Story = { args: { placement: 'top-end' }, render: 
 export const PlacementStart: Story = { args: { placement: 'start' }, render: controlled };
 export const PlacementEnd: Story = { args: { placement: 'end' }, render: controlled };
 
+/* initialFocus */
+export const InitialFocusFirst: Story = { args: { initialFocus: 'first' }, render: controlled };
+export const InitialFocusNone: Story = { args: { initialFocus: 'none' }, render: controlled };
+
 /* notable states */
 export const NotDismissible: Story = { args: { dismissible: false }, render: controlled };
 export const WithArrow: Story = { args: { showArrow: true }, render: controlled };
@@ -103,6 +109,7 @@ export const FilterPanel: Story = {
     modal: false,
     showArrow: false,
     dismissible: true,
+    initialFocus: 'first',
     open: undefined,
   },
   render: uncontrolled,
@@ -124,6 +131,7 @@ export const DatePickerPanel: Story = {
     modal: false,
     showArrow: false,
     dismissible: true,
+    initialFocus: 'first',
     open: undefined,
   },
   render: uncontrolled,
@@ -143,6 +151,7 @@ export const RequiredStep: Story = {
     modal: true,
     showArrow: false,
     dismissible: true,
+    initialFocus: 'first',
     open: undefined,
   },
   render: uncontrolled,
@@ -162,6 +171,7 @@ export const ContextualHelp: Story = {
     modal: false,
     showArrow: true,
     dismissible: true,
+    initialFocus: 'first',
     open: undefined,
   },
   render: uncontrolled,

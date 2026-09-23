@@ -141,4 +141,17 @@ describe('Heading', () => {
     expect(heading).toHaveAttribute('data-part', 'text');
     expect(heading).toHaveClass('ds-heading--size-md', 'ds-heading--align-start');
   });
+
+  it('writes a marginBlockEnd override of space.0 out as a zero margin', () => {
+    setup({ overrides: { marginBlockEnd: 'space.0' } });
+    const heading = screen.getByRole('heading', { level: 2 });
+    expect(heading.style.getPropertyValue('--ds-heading-margin-block-end')).toBe('var(--space-0)');
+  });
+
+  it('ignores an override of the locked color binding', () => {
+    const overrides = { color: 'color.foreground.default' } as unknown as ComponentProps<typeof Heading>['overrides'];
+    setup({ overrides });
+    const heading = screen.getByRole('heading', { level: 2 });
+    expect(heading.style.getPropertyValue('--ds-heading-color')).toBe('');
+  });
 });

@@ -17,6 +17,15 @@
   --ds-bottom-sheet-layer: var(--layer-sheet);
   --ds-bottom-sheet-enter: var(--motion-duration-base);
   --ds-bottom-sheet-exit: var(--motion-duration-fast);
+  /* Locked: not in `overrides`, but still a hook page CSS and the naming codemod can reach. */
+  --ds-bottom-sheet-surface: var(--color-overlay-surface);
+  --ds-bottom-sheet-handle: var(--color-foreground-muted);
+  --ds-bottom-sheet-min-target: var(--size-target-comfortable);
+  --ds-bottom-sheet-focus-ring: var(--color-border-focus);
+  --ds-bottom-sheet-focus-ring-width: var(--border-width-focus);
+  /* maxWidth: the breakpoint only, so this hook styles nothing. The presentation is chosen in script
+     from the theme's --layout-max-width-prose on the document root, never per instance. */
+  --ds-bottom-sheet-max-width: var(--layout-max-width-prose);
   box-sizing: border-box;
   position: fixed;
   inset: 0;
@@ -78,7 +87,7 @@
   inline-size: 100%;
   padding-block-start: var(--ds-bottom-sheet-inset);
   padding-block-end: calc(var(--ds-bottom-sheet-inset) + env(safe-area-inset-bottom));
-  background-color: var(--color-overlay-surface);
+  background-color: var(--ds-bottom-sheet-surface);
   border-start-start-radius: var(--ds-bottom-sheet-radius);
   border-start-end-radius: var(--ds-bottom-sheet-radius);
   box-shadow: var(--ds-bottom-sheet-shadow);
@@ -149,7 +158,7 @@
   inline-size: var(--ds-bottom-sheet-handle-width);
   block-size: var(--ds-bottom-sheet-handle-height);
   border-radius: var(--ds-bottom-sheet-handle-radius);
-  background-color: var(--color-foreground-muted);
+  background-color: var(--ds-bottom-sheet-handle);
 }
 
 /* headerGap: the heading row's flex gap, between the heading and the close button. With the heading
@@ -168,8 +177,8 @@
 
 /* focusRing / focusRingWidth (locked): drawn by the heading wrapper when the heading holds focus. */
 .ds-bottom-sheet__heading:has(:focus-visible) {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: var(--border-width-focus);
+  outline: var(--ds-bottom-sheet-focus-ring-width) solid var(--ds-bottom-sheet-focus-ring);
+  outline-offset: var(--ds-bottom-sheet-focus-ring-width);
 }
 
 .ds-bottom-sheet__heading :focus-visible {
@@ -197,8 +206,8 @@
   justify-content: center;
   flex: 0 0 auto;
   margin-inline-start: auto;
-  min-inline-size: var(--size-target-comfortable);
-  min-block-size: var(--size-target-comfortable);
+  min-inline-size: var(--ds-bottom-sheet-min-target);
+  min-block-size: var(--ds-bottom-sheet-min-target);
 }
 
 /* The sheet-owned scroll container: the only region that scrolls, so header and footer stay put. */

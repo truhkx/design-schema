@@ -91,3 +91,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tooltip: the spec does not say what happens when a re-show interrupts an exit fade. Chose to keep the bubble mounted and re-apply the entered class, so the fade reverses from its current opacity instead of unmounting and remounting at 0.
 - Tooltip: a non-focusable child is called 'an error', but only the Lit notes describe an actual development warning, and web has no stated rule. Kept a dev warning when the cloned child's ref resolves to an element with `tabIndex < 0`; it cannot catch a non-focusable child that forwards no ref at all, and a composed Button always reports 0.
 - Tooltip: while `open` is controlled, the spec says hover and focus must not affect visibility, but does not say whether the internal timers should still run. Chose to keep arming them (their result is masked by `open`), so internal state is consistent if `open` is later removed.
+
+## 2026-09-23 15:13 — round 1
+
+- Tooltip: the web notes say `role="tooltip"`, the id and `data-ds` are on the visually-hidden span and that Tooltip exposes no ref, but the generic rule asks for `Tooltip({ ref, … })` with the ref on the root. I followed the component doc: no `ref` prop, and a caller's ref on the child is merged and kept.
+- Tooltip: the attributes list names `aria-describedby`/`aria-labelledby` as element attributes, but they go on the cloned child, not the tooltip element. I put them on the child and only `id`/`role`/`data-placement` on Tooltip's own nodes (`data-placement` on the bubble).
+- Tooltip: locked `surface` and `text` must keep a styling hook, but the doc never names them. I used `--ds-tooltip-surface` and `--ds-tooltip-text`, and the bubble re-scopes `--color-foreground` from `--ds-tooltip-text`.
+- Tooltip: the overlay convention's visible class (`--visible` / `__surface--visible`) doesn't say which applies to a bubble that is itself the root-styled `ds-tooltip`. I used `ds-tooltip--visible` on the bubble.
+- Tooltip: the non-focusable-child development warning is described for Lit but not for web. On web it fires when the child's ref resolves to an element with tabIndex < 0 or to no element at all (a child that doesn't forward ref).
+- Tooltip: the doc doesn't say how cross-axis overflow is handled for the flipped bubble. I clamp the cross axis into the viewport as the RN notes describe, and flip only on the main axis when the opposite side fits.
+- Tooltip: the Keyboard story's layout wrapper uses an inline `gap: var(--space-2)` because the doc names no layout component for the three triggers. Stack would work, but the doc doesn't ask for it.
+- Tooltip: the docs don't say which Tooltip scenarios run on web vs native, and the Escape behaviour (closes, focus unchanged, dialog double-Escape) has no scenario, so no test covers it; it is implemented but untested.

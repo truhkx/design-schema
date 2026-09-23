@@ -69,6 +69,10 @@ function overridesToStyle(overrides: Partial<Record<SegmentedControlOverridableB
   return style as CSSProperties;
 }
 
+/* segmentColor / segmentSelectedColor, forwarded to the segment Icon's `overrides.color`. */
+const SEGMENT_COLOR: TokenRef = 'color.foreground.muted';
+const SELECTED_COLOR: TokenRef = 'color.foreground.strong';
+
 function firstEnabledValue(options: SegmentedControlOption[]): string | undefined {
   return options.find((option) => !option.disabled)?.value;
 }
@@ -100,7 +104,8 @@ export interface SegmentedControlProps extends Omit<ComponentPropsWithoutRef<'di
    */
   defaultValue?: string | undefined;
   /**
-   * Show icons only (every option must have one); labels become accessible names and Tooltips. An
+   * Show icons only (every option must have one); labels become accessible names and Tooltips,
+   * disabled segments included (an `aria-disabled` button still takes pointer events). An
    * option without `icon` warns in development once per instance (one message listing every option
    * without an icon) and that segment shows its label as text instead, so it never renders empty;
    * that segment gets no Tooltip and no `aria-label`, since its visible text is its name.
@@ -221,7 +226,9 @@ export function SegmentedControl({
     const group = event.currentTarget;
     const focusedIndex = options.findIndex((_, index) => getSegmentElement(index) === event.target);
     const tabStopIndex = options.findIndex((option) => option.value === tabStop);
-    const current = enabled.indexOf(focusedIndex >= 0 ? focusedIndex : tabStopIndex);
+    // Focus first: only a genuinely focused enabled segment can hand an outward arrow to a toolbar.
+    const focusedPosition = enabled.indexOf(focusedIndex);
+    const current = focusedIndex >= 0 ? focusedPosition : enabled.indexOf(tabStopIndex);
     const rtl = typeof getComputedStyle === 'function' && getComputedStyle(group).direction === 'rtl';
     // Inside a toolbar the arrows do not wrap, and Home/End belong to the toolbar.
     const inToolbar = group.parentElement?.closest('[role="toolbar"]') != null;
@@ -259,7 +266,7 @@ export function SegmentedControl({
     } else {
       targetPosition = current + step;
       if (targetPosition < 0 || targetPosition >= enabled.length) {
-        if (inToolbar) return;
+        if (inToolbar && focusedPosition >= 0) return;
         targetPosition = (targetPosition + enabled.length) % enabled.length;
       }
     }
@@ -317,7 +324,8 @@ export function SegmentedControl({
           >
             {option.icon ? (
               <span className="ds-segmented-control__segment-icon" data-part="segmentIcon">
-                <Icon name={option.icon} size={size} />
+                {/* The segment's own colour, forwarded rather than inherited, as on every platform. */}
+                <Icon name={option.icon} size={size} overrides={{ color: isSelected ? SELECTED_COLOR : SEGMENT_COLOR }} />
               </span>
             ) : null}
             {showsIconOnly ? null : (

@@ -118,7 +118,9 @@ export interface AlertProps
   /**
    * How the alert is announced when it appears. `status` is polite (most messages), `alert`
    * interrupts (only for errors that block the user), `off` for alerts already present when the
-   * view loads. Maps to role=status, role=alert, or a plain region. Never use `alert` for success or info.
+   * view loads. Changing `live` after the first render swaps the role in place and never
+   * re-announces the message: only a change to the heading or the body is a new message.
+   * Maps to role=status, role=alert, or a plain region. Never use `alert` for success or info.
    */
   live?: AlertLive | undefined;
   /**
@@ -126,7 +128,11 @@ export interface AlertProps
    * removes the alert (the component is controlled by its presence in the tree).
    */
   dismissible?: boolean | undefined;
-  /** Fired when the user activates the dismiss button. The consumer removes the alert. */
+  /**
+   * Fired when the user activates the dismiss button. The consumer removes the alert. The
+   * focus-onward step runs first, so focus has already left the alert by the time the handler runs
+   * and may unmount it synchronously. It carries no payload.
+   */
   onDismiss?: (() => void) | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<AlertOverridableBinding, TokenRef | undefined>> | undefined;
@@ -163,8 +169,10 @@ export function Alert({
 
   // The component is controlled by its presence in the tree: the consumer removes it on dismiss.
   const handleDismiss = (): void => {
-    // Activation happened inside the alert; move focus out first so it is never lost.
-    if (rootRef.current) focusOutside(rootRef.current);
+    // Move focus out first so it is never lost when the consumer unmounts the alert — but only when
+    // focus is inside it: a mouse press that focused nothing must not move the user's focus.
+    const root = rootRef.current;
+    if (root !== null && root.matches(':focus-within')) focusOutside(root);
     onDismiss?.();
   };
 

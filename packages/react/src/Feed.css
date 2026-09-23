@@ -4,6 +4,16 @@
   --ds-feed-item-gap: var(--layout-gap-normal);
   --ds-feed-unread-border: var(--color-control-selected-background);
   --ds-feed-unread-border-width: var(--border-width-focus);
+  --ds-feed-article-radius: var(--radius-lg);
+  /* Locked, expressed through composed children on web: the Text's tone="muted" (timestamp, end message,
+     empty state) and the Card's and Button's own focus rings. The hooks are declared so page CSS and
+     tools/naming.ts can reach the binding; timestamp-color is read by Feed's own <time>. The rest are
+     child-owned and read by nothing here, since Feed never restyles a child. */
+  --ds-feed-timestamp-color: var(--color-foreground-muted);
+  --ds-feed-end-message-color: var(--color-foreground-muted);
+  --ds-feed-empty-state-color: var(--color-foreground-muted);
+  --ds-feed-focus-ring: var(--color-border-focus);
+  --ds-feed-focus-ring-width: var(--border-width-focus);
   --ds-feed-new-items-offset: var(--space-3);
   --ds-feed-new-items-layer: var(--layer-raised);
   --ds-feed-loading-inset: var(--layout-inset-md);
@@ -36,19 +46,21 @@
   gap: var(--ds-feed-item-gap);
 }
 
-/* unreadBorder / unreadBorderWidth (locked): a start-edge bar drawn by Feed's own item wrapper, beside
-   the Card rather than on it, paired with the visually-hidden "unread" word. */
+/* unreadBorder / unreadBorderWidth (locked): a start-edge bar drawn by Feed's own item wrapper over the
+   Card's start edge (mirrored in RTL), paired with the visually-hidden "unread" word. The Card is not
+   restyled. articleRadius rounds the bar's ends to follow the Card's corners: the overlay spans the
+   wrapper and draws only its inline-start border. */
 .ds-feed__item {
   position: relative;
+  border-radius: var(--ds-feed-article-radius);
 }
 
 .ds-feed__item--unread::before {
   content: '';
   position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  inline-size: var(--ds-feed-unread-border-width);
-  background: var(--ds-feed-unread-border);
+  inset: 0;
+  border-inline-start: var(--ds-feed-unread-border-width) solid var(--ds-feed-unread-border);
+  border-radius: var(--ds-feed-article-radius);
   pointer-events: none;
 }
 
@@ -56,6 +68,11 @@
    Feed-owned wrapper with no box of its own; articleBodyGap is the Stack's gap (override forwarded). */
 .ds-feed__part {
   display: contents;
+}
+
+/* The timestamp part is Feed's own <time> inside the muted Text; it reads the locked colour hook. */
+.ds-feed__timestamp {
+  color: var(--ds-feed-timestamp-color);
 }
 
 .ds-feed__visually-hidden {

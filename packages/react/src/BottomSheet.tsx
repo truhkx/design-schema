@@ -5,6 +5,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -169,17 +170,30 @@ function wideQuery(): MediaQueryList | null {
   return window.matchMedia(`(width > ${breakpoint})`);
 }
 
-function useIsWideViewport(): boolean {
-  const [isWide, setIsWide] = useState<boolean>(() => wideQuery()?.matches ?? false);
-  useEffect(() => {
+/**
+ * The presentation, decided after mount: null until the layout effect has read the breakpoint (the
+ * server and the hydration render never read `matchMedia`), then false for the sheet, true for Dialog.
+ * Nothing renders while it is null, which is also what the server rendered, since both forms portal.
+ */
+function useIsWideViewport(): boolean | null {
+  const [isWide, setIsWide] = useState<boolean | null>(null);
+  useLayoutEffect(() => {
     const query = wideQuery();
-    if (!query) return undefined;
+    if (!query) {
+      setIsWide(false);
+      return undefined;
+    }
     const update = (): void => setIsWide(query.matches);
     update();
     query.addEventListener('change', update);
     return () => query.removeEventListener('change', update);
   }, []);
   return isWide;
+}
+
+/** False on the server and through hydration, true on a client-only mount and after hydration. */
+function subscribeNothing(): () => void {
+  return () => {};
 }
 
 interface DragSample {
@@ -189,6 +203,8 @@ interface DragSample {
 
 interface DragState {
   pointerId: number;
+  /** `dragSlop` in px, read once at gesture start. */
+  slop: number;
   /** Where the pointer went down; the slop is measured from here. */
   startY: number;
   /** Where the slop was crossed; the drag offset counts from here, so the surface does not jump. */
@@ -283,6 +299,14 @@ export function BottomSheet({
   ...rest
 }: BottomSheetProps & { ref?: Ref<HTMLDialogElement> | undefined }): ReactElement | null {
   const isWide = useIsWideViewport();
+  // The portal needs `document`: render nothing until hydrated, exactly as the server did.
+  const hydrated = useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
+  /** The narrow sheet is on screen only once hydrated and the breakpoint says so. */
+  const isSheet = hydrated && isWide === false;
 
   const generatedId = useId();
   const headingId = `ds-bottom-sheet${generatedId}-heading`;
@@ -339,12 +363,13 @@ export function BottomSheet({
     headingElement.focus();
   };
 
-  // Narrow open: showModal(), move focus in, reveal on the next frame. It also runs when `open`
-  // returns true while the exit transition is still running, which reveals the surface again.
+  // Narrow open: showModal(), move focus in, reveal on the next frame. Keyed on everything that decides
+  // whether the surface exists (present, open, the presentation, hydrated), so the flip is never
+  // scheduled before it is in the DOM; it also runs when `open` returns true during the exit transition.
   useLayoutEffect(() => {
-    if (!present || isWide) return undefined;
+    if (!isSheet || !present || !open) return undefined;
     const dialog = dialogRef.current;
-    if (!dialog) return undefined;
+    if (!dialog || !surfaceRef.current) return undefined;
     selfClosingRef.current = false;
     if (!dialog.open) {
       // showModal() gives the top layer, Escape and background inertness. jsdom implements the
@@ -355,11 +380,11 @@ export function BottomSheet({
     placeInitialFocus();
     const frame = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(frame);
-  }, [present, isWide]);
+  }, [isSheet, present, open]);
 
   // Narrow close: run the exit transition, then close() and unmount (FocusScope restores the opener).
   useEffect(() => {
-    if (open || !present || isWide) return undefined;
+    if (open || !present || !isSheet) return undefined;
     setVisible(false);
     const dialog = dialogRef.current;
     const surface = surfaceRef.current;
@@ -381,7 +406,7 @@ export function BottomSheet({
     };
     surface.addEventListener('transitionend', handleExited);
     return () => surface.removeEventListener('transitionend', handleExited);
-  }, [open, present, isWide]);
+  }, [open, present, isSheet]);
 
   // The released offset stays on the surface until the consumer's next render decides what it means.
   useLayoutEffect(() => {
@@ -427,9 +452,9 @@ export function BottomSheet({
 
   // Scroll lock on <html> while the narrow sheet is present; Dialog locks its own.
   useEffect(() => {
-    if (!present || isWide) return undefined;
+    if (!present || !isSheet) return undefined;
     return lockScroll();
-  }, [present, isWide]);
+  }, [present, isSheet]);
 
   /** Each Escape is reported exactly once, whichever of keydown, `cancel` or `close` reaches us first. */
   const reportEscape = (): void => {
@@ -480,8 +505,9 @@ export function BottomSheet({
     reopenAfterNativeClose();
   };
 
-  const handleScrimClick = (): void => {
-    if (!open || !dismissible) return;
+  // A scrim dismiss is a click whose target is the scrim element itself.
+  const handleScrimClick = (event: ReactMouseEvent<HTMLDivElement>): void => {
+    if (event.target !== event.currentTarget || !open || !dismissible) return;
     onClose?.('scrim');
   };
 
@@ -501,11 +527,15 @@ export function BottomSheet({
   // has moved `dragSlop` downward, so a tap on the close button still activates it.
   const handleHeaderPointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
     if (!canDrag || !open || dragRef.current) return;
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    // A non-primary pointer and a secondary mouse button never claim the gesture.
+    if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
     // No coordinate, no gesture: an environment without Pointer Events must not translate the surface.
     if (!Number.isFinite(event.clientY)) return;
+    const surface = surfaceRef.current;
+    if (!surface) return;
     dragRef.current = {
       pointerId: event.pointerId,
+      slop: resolveDragSlop(surface),
       startY: event.clientY,
       originY: event.clientY,
       claimed: false,
@@ -521,7 +551,7 @@ export function BottomSheet({
     if (!Number.isFinite(event.clientY)) return;
     if (!drag.claimed) {
       const moved = event.clientY - drag.startY;
-      if (moved <= 0 || moved < resolveDragSlop(surface)) return;
+      if (moved <= 0 || moved < drag.slop) return;
       drag.claimed = true;
       // The offset counts from where the slop was crossed, so the surface does not jump.
       drag.originY = event.clientY;
@@ -554,7 +584,8 @@ export function BottomSheet({
     }
     const fastEnough = velocity > DISMISS_VELOCITY;
 
-    if (cancelled || !open || !(pastDistance || fastEnough)) {
+    // A close that raced the gesture (`open` already false) is a spring-back that reports nothing.
+    if (cancelled || !latest.current.open || !(pastDistance || fastEnough)) {
       setDragPhase('settling');
       return;
     }
@@ -567,6 +598,9 @@ export function BottomSheet({
   // Above the breakpoint the sheet *is* a Dialog: the root carries Dialog's own hooks, `ref` resolves
   // to its <dialog>, and its `escape` / `close-button` / `scrim` / `action` reasons pass straight
   // through. `drag` has no Dialog source, and Dialog's `onOpened` is not re-emitted.
+  // Nothing is decided before the breakpoint is read after mount; the server rendered nothing too.
+  if (isWide === null) return null;
+
   if (isWide) {
     let dialogOverrides: Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined;
     for (const binding of DIALOG_FORWARDED) {
@@ -592,7 +626,7 @@ export function BottomSheet({
     );
   }
 
-  if (!present) return null;
+  if (!present || !hydrated) return null;
 
   const classes = [
     'ds-bottom-sheet',
@@ -642,7 +676,7 @@ export function BottomSheet({
       onCancel={handleCancel}
       onClose={handleNativeClose}
     >
-      <div className="ds-bottom-sheet__scrim" data-part="scrim" onClick={handleScrimClick} />
+      <div className="ds-bottom-sheet__scrim" data-part="scrim" aria-hidden="true" onClick={handleScrimClick} />
       {/* FocusScope writes its own data-part="scope", so the focusScope part is this wrapper inside it. */}
       <FocusScope trapped autoFocus="none" restoreFocus>
         <div className="ds-bottom-sheet__scope" data-part="focusScope">
@@ -692,6 +726,7 @@ export function BottomSheet({
                 <Stack
                   direction="horizontal"
                   justify="end"
+                  wrap
                   overrides={footerGapOverride ? { gap: footerGapOverride } : undefined}
                 >
                   {footer}

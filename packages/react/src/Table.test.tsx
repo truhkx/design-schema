@@ -29,9 +29,9 @@ describe('Table', () => {
       ],
       onSortChange,
     });
-    const header = s.container.querySelector('[data-part="columnHeader"] button');
-    expect(header).not.toBeNull();
-    fireEvent.click(header!);
+    const part = s.container.querySelector('[data-part="sortButton"]');
+    expect(part).not.toBeNull();
+    fireEvent.click(part!);
     expect(onSortChange).toHaveBeenCalled();
   });
 
@@ -46,10 +46,10 @@ describe('Table', () => {
       ],
       onSelectionChange,
     });
-    const checkbox = s.container.querySelector<HTMLInputElement>('[data-part="selectCell"] input');
-    expect(checkbox).not.toBeNull();
-    fireEvent.click(checkbox!);
-    expect(onSelectionChange).toHaveBeenCalled();
+    const part = s.container.querySelector('[data-part="selectCell"]');
+    expect(part).not.toBeNull();
+    fireEvent.click(part!);
+    expect(onSelectionChange).toHaveBeenCalledWith(['a']);
   });
 
   it('select-all-reports-the-whole-selection', () => {
@@ -63,10 +63,10 @@ describe('Table', () => {
       ],
       onSelectionChange,
     });
-    const checkbox = s.container.querySelector<HTMLInputElement>('[data-part="selectAllCell"] input');
-    expect(checkbox).not.toBeNull();
-    fireEvent.click(checkbox!);
-    expect(onSelectionChange).toHaveBeenCalled();
+    const part = s.container.querySelector('[data-part="selectAllCell"]');
+    expect(part).not.toBeNull();
+    fireEvent.click(part!);
+    expect(onSelectionChange).toHaveBeenCalledWith(['a', 'b']);
   });
 
   it('the-empty-message-shows-when-there-are-no-rows', () => {

@@ -2,6 +2,7 @@
  * Carousel — behavior scenarios from the component doc, one test each, in the doc's order.
  * The doc (site/src/content/docs/components/carousel.md) is the source of truth.
  */
+import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -11,8 +12,8 @@ import meta from './Carousel.stories';
 /** The Default story's args plus the scenario's `given`, with a mock for every event prop. */
 function setup(given: Partial<CarouselProps> = {}) {
   const onChange = vi.fn();
-  const props = { ...meta.args, ...given, onChange } as CarouselProps;
-  const utils = render(<Carousel {...props} />);
+  const props = { ...meta.args, ...given, onChange };
+  const utils = render(<Carousel {...(props as ComponentProps<typeof Carousel>)} />);
   const user = userEvent.setup();
   const part = (name: string): HTMLElement => utils.container.querySelector<HTMLElement>(`[data-part="${name}"]`)!;
   const root = (): HTMLElement => utils.container.querySelector<HTMLElement>('[data-ds="Carousel"]')!;

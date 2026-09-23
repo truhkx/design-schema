@@ -127,7 +127,8 @@ export interface CheckboxProps
   /**
    * What a native HTML <form> submits under `name` when checked (web and Lit only). The enclosing Form
    * (React, React Native, ds-form) ignores it and collects the boolean `checked`. Checkboxes sharing a
-   * `name` are not a multi-select under Form; give each its own name.
+   * `name` are not a multi-select under Form; give each its own name. React Native accepts it
+   * (default 'on') for API parity and does nothing with it.
    */
   value?: string | undefined;
   /** Controlled checked state. Omit for an uncontrolled control. */
@@ -136,10 +137,17 @@ export interface CheckboxProps
   defaultChecked?: boolean | undefined;
   /**
    * Shows the mixed indicator, for a parent checkbox whose children are partly selected. Visual and
-   * announced only; the submitted value still follows `checked`.
+   * announced only; the submitted value still follows `checked`. With `checked` also true, mixed wins
+   * for both the glyph and the announced state — a partly selected parent is mixed, whatever its own
+   * box would say — while the submitted value stays `checked`.
    */
   indeterminate?: boolean | undefined;
-  /** Cannot be toggled and is not submitted. Stays visible, readable and focusable. */
+  /**
+   * Cannot be toggled and is skipped by the Form. Stays visible, readable and focusable, which is why
+   * it is `aria-disabled` and not the native attribute — with the accepted consequence that a native
+   * HTML `<form>` still submits a disabled-but-checked box's `value`, since only the native attribute
+   * excludes it.
+   */
   disabled?: boolean | undefined;
   /** Must be checked to submit — for consent and agreement. Shown in the label, not only by color. */
   required?: boolean | undefined;
@@ -282,15 +290,14 @@ export function Checkbox({
       event.preventDefault();
       return;
     }
-    const next = event.target.checked;
-    if (isControlled) {
-      // Controlled: report the change, then write the prop back, so the box follows the prop.
-      event.target.checked = isChecked;
-    } else {
-      setUncontrolledChecked(next);
-    }
+    const input = event.target;
+    const next = input.checked;
+    if (!isControlled) setUncontrolledChecked(next);
     if (isMixed) setMixedCleared(true);
     onChange?.(next);
+    // Controlled: after reporting the change, write the prop back so the box follows the prop. A new
+    // prop value re-renders and the sync effect above writes that instead.
+    if (isControlled) input.checked = isChecked;
     // There is no useful blur moment for a checkbox: `blur` mode validates on change too.
     if (form && validatesOnChange) form.validateField(name);
   };

@@ -1,6 +1,7 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -453,8 +454,14 @@ export function DatePicker({
   const errorId = `${id}-error`;
   const gridLabelId = `${id}-grid-label`;
 
-  const locale =
-    localeProp ?? (typeof document !== 'undefined' && document.documentElement.lang ? document.documentElement.lang : undefined);
+  // `document.documentElement.lang` is read after mount, never in render: the server has no document,
+  // so the first client render must use the same default the server did.
+  const [documentLang, setDocumentLang] = useState<string | undefined>(undefined);
+  useLayoutEffect(() => {
+    const lang = document.documentElement.lang;
+    setDocumentLang(lang ? lang : undefined);
+  }, []);
+  const locale = localeProp ?? documentLang;
   const pattern = localePattern(locale);
   const isDisabled = disabled || (form?.disabled ?? false);
 
@@ -527,14 +534,21 @@ export function DatePicker({
   const focusDayPending = useRef(false);
   const wasOpen = useRef(false);
 
-  // Focus the roving day on open and after keyboard movement. A passive effect, so it runs after
-  // Popover's layout effect has moved focus to the panel's first control.
+  // Focus the roving day on open and after keyboard movement. The Popover opens with
+  // `initialFocus="none"`, so this is the only focus move on open; it stays pending until the
+  // portaled grid exists (the panel renders only once hydrated).
   useEffect(() => {
     if (open && !wasOpen.current) focusDayPending.current = true;
     wasOpen.current = open;
-    if (!open || !focusDayPending.current) return;
+    if (!open) {
+      focusDayPending.current = false;
+      return;
+    }
+    if (!focusDayPending.current) return;
+    const day = calendarRef.current?.querySelector<HTMLElement>('[data-part="day"][tabindex="0"]');
+    if (!day) return;
     focusDayPending.current = false;
-    calendarRef.current?.querySelector<HTMLElement>('[data-part="day"][tabindex="0"]')?.focus();
+    day.focus();
   });
 
   function showDate(iso: string): void {
@@ -647,8 +661,21 @@ export function DatePicker({
     requestOpen(true);
   }
 
+  /**
+   * On blur the inputs show the formatted committed value, so a controlled owner that did not take
+   * the typed date sees the text revert. Text that does not parse, and one end of an incomplete
+   * range, are kept: they are what `copy.invalid` and `copy.required` report.
+   */
   function handleInputBlur(event: FocusEvent<HTMLInputElement>): void {
     onBlur?.(event);
+    const texts = textsRef.current;
+    const current = valueRef.current;
+    if (!range) {
+      if (parseTyped(texts.start, pattern) !== undefined) setStartText(formatField(startOf(current), locale));
+    } else if (parseTyped(texts.start, pattern) !== undefined && parseTyped(texts.end, pattern) !== undefined) {
+      setStartText(formatField(startOf(current), locale));
+      setEndText(formatField(endOf(current), locale));
+    }
     if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
   }
 
@@ -657,11 +684,13 @@ export function DatePicker({
 
   /**
    * Arrow movement: steps by `delta` days until an enabled day, turning pages as needed. `undefined`
-   * (stay put) once the step passes min or max; without bounds, after ten years of disabled days.
+   * (stay put) once the step passes min or max; with no bound in that direction, after 3660 days
+   * (about ten years) of disabled days.
    */
   function stepEnabled(from: string, delta: number): string | undefined {
+    const bound = delta < 0 ? min : max;
     let candidate = from;
-    for (let i = 0; i < 3660; i += 1) {
+    for (let travelled = 0; bound !== undefined || travelled < 3660; travelled += Math.abs(delta)) {
       candidate = addDays(candidate, delta);
       if ((min !== undefined && candidate < min) || (max !== undefined && candidate > max)) return undefined;
       if (!dayDisabled(candidate)) return candidate;
@@ -734,17 +763,17 @@ export function DatePicker({
   }
 
   /**
-   * Escape closes the calendar wherever the focus is, and returns it to the calendar button. The
-   * Popover only hears the key when focus is inside its portaled panel — from the field itself (the
-   * input, or the calendar button, which is the trigger and so never inside the panel) the keydown
-   * reaches this root instead. Popover stops propagation on the Escape it handles, so exactly one of
-   * the two runs.
+   * Escape closes the calendar wherever the focus is. The Popover only hears the key when focus is
+   * inside its portaled panel (and then returns focus to the calendar button itself, once the state
+   * changes); from the field — an input, or the calendar button, which is the trigger and so never
+   * inside the panel — the keydown reaches this root instead, and focus stays where it is, since
+   * Escape only takes back focus the calendar took. Popover stops propagation on the Escape it
+   * handles, so exactly one of the two runs.
    */
   function handleRootKeyDown(event: ReactKeyboardEvent<HTMLDivElement>): void {
     if (event.key !== 'Escape' || !open || event.defaultPrevented) return;
     event.preventDefault();
     requestOpen(false);
-    calendarButtonRef.current?.focus();
   }
 
   /* --- Form registration ------------------------------------------------------------------------ */
@@ -779,10 +808,10 @@ export function DatePicker({
         const start = startOf(current);
         const end = endOf(current);
         if (c.min !== undefined && ((start !== undefined && start < c.min) || (end !== undefined && end < c.min))) {
-          return interpolate(COPY.tooEarly, { label: c.label, min: formatField(c.min, c.locale) });
+          return interpolate(COPY.tooEarly, { label: c.label, min: formatField(c.min, c.locale) || c.min });
         }
         if (c.max !== undefined && ((start !== undefined && start > c.max) || (end !== undefined && end > c.max))) {
-          return interpolate(COPY.tooLate, { label: c.label, max: formatField(c.max, c.locale) });
+          return interpolate(COPY.tooLate, { label: c.label, max: formatField(c.max, c.locale) || c.max });
         }
         if (start !== undefined && end !== undefined && end < start) return COPY.rangeOrder;
         return null;
@@ -968,6 +997,7 @@ export function DatePicker({
             trigger={calendarButton}
             open={open}
             placement="bottom-start"
+            initialFocus="none"
             dismissible={false}
             container={container}
             overrides={resolved?.popoverOverrides}

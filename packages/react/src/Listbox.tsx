@@ -39,14 +39,24 @@ export type ListboxItem = ListboxOption | ListboxGroup;
 export type ListboxValue = string | string[];
 export type ListboxMaxVisible = '5' | '8' | '12' | 'all' | 5 | 8 | 12;
 
-/** copy.* — used verbatim; `{label}` is replaced by the `label` prop. */
-const COPY = {
+/**
+ * copy.* — used verbatim; `{label}` is replaced by the `label` prop. `selectedCount` is not rendered
+ * by the list: it is exported for a host (Select, Combobox) or the surrounding UI to show.
+ */
+export const LISTBOX_COPY: {
+  readonly empty: 'No options';
+  readonly required: '{label} is required.';
+  readonly invalid: '{label} is not valid.';
+  readonly selectedCount: '{count} selected';
+  readonly loading: 'Loading…';
+} = {
   empty: 'No options',
   required: '{label} is required.',
   invalid: '{label} is not valid.',
   selectedCount: '{count} selected',
   loading: 'Loading…',
-} as const;
+};
+const COPY = LISTBOX_COPY;
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type ListboxOverridableBinding =
@@ -128,9 +138,16 @@ function flattenRows(items: ListboxItem[]): ListboxOption[] {
   return result;
 }
 
-function toArray(value: ListboxValue | undefined): string[] {
-  if (Array.isArray(value)) return value;
-  return value === undefined ? [] : [value];
+/**
+ * The selection as a list, normalised to the mode rather than warned about: a single-select list
+ * takes an array's first entry, a multi-select list reads a bare string as a one-entry array.
+ */
+function normalise(value: ListboxValue | undefined, multiple: boolean): string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) return [value];
+  if (multiple) return value;
+  const first = value[0];
+  return first === undefined ? [] : [first];
 }
 
 /** A CSS time (`120ms`, `1.2s`) in milliseconds; 0 when it cannot be read (no stylesheet loaded). */
@@ -177,7 +194,12 @@ export interface ListboxProps
    * multi-select.
    */
   multiple?: boolean | undefined;
-  /** Controlled selection: a value, or with `multiple` the exported `ListboxValue` (`string | string[]`). Omit for uncontrolled. */
+  /**
+   * Controlled selection: a value, or with `multiple` the exported `ListboxValue` (`string |
+   * string[]`). Omit for uncontrolled. A shape that does not match the mode is normalised: a
+   * single-select list takes an array's first entry, a multi-select list reads a bare string as a
+   * one-entry array.
+   */
   value?: ListboxValue | undefined;
   /** Initial selection (or array). */
   defaultValue?: ListboxValue | undefined;
@@ -191,49 +213,64 @@ export interface ListboxProps
   /**
    * Marks the list invalid (aria-invalid, and `borderInvalid` when not `embedded`) with
    * `copy.invalid`. The list is invalid while this is true OR `error` is non-empty; clearing
-   * `error` never clears an explicitly set `invalid`.
+   * `error` never clears an explicitly set `invalid`. A Form-supplied message makes it invalid too.
    */
   invalid?: boolean | undefined;
   /**
    * Error message rendered below the list and linked by aria-describedby; implies invalid. The
    * displayed message is `error`, then the Form's message, then while invalid `copy.required`
-   * (required and nothing selected) else `copy.invalid`.
+   * (required and nothing selected) else `copy.invalid`. Not a live region.
    */
   error?: string | undefined;
   /**
    * The list lives inside a popup (Select, Combobox) that owns the border, surface and radius; the
    * list draws none of its own. It keeps its own `listPadding`, and an override of `border`,
-   * `borderWidth`, `surface` or `radius` is a no-op while it is set. An embedded list is not a tab
-   * stop (`tabindex="-1"`): its host keeps focus on the trigger or input and forwards keys.
+   * `borderWidth`, `borderInvalid`, `surface` or `radius` is a no-op while it is set. An embedded
+   * list is not a tab stop (`tabindex="-1"`): its host keeps focus on the trigger or input and
+   * forwards keys.
    */
   embedded?: boolean | undefined;
   /**
    * The option that is active when the list first receives focus (Select opens with the selected
    * option active). It wins when it names an enabled option; otherwise the first selected, else the
-   * first enabled.
+   * first enabled. When it changes while the list does not contain the focused element, the active
+   * option moves to it without firing `onActiveChange`.
    */
   initialActiveValue?: string | undefined;
+  /**
+   * The active option, driven by a host that keeps focus on its own trigger or input and forwards
+   * keys (Select, Combobox, Search). Set, it wins over `initialActiveValue` and needs no focus in
+   * the list; `null` means no option is active. Forwarded keys then move nothing on their own: they
+   * report the option they would make active through `onActiveChange`. Omitted, the list owns the
+   * active option. Option ids are `${id}-option-${value}`.
+   */
+  activeValue?: string | null | undefined;
   /** Options are being fetched (async Combobox); the list shows `copy.loading` in place of the empty message and is aria-busy. */
   loading?: boolean | undefined;
   /**
-   * The whole list is inert but readable: it stays focusable (tabindex=0, aria-disabled=true), keys,
-   * hover and clicks do nothing, and `disabledOpacity` dims the list once.
+   * The whole list is inert but readable: it stays focusable (aria-disabled=true), keys, hover and
+   * clicks do nothing, and `disabledOpacity` dims the list once. Focusing it sets no active option
+   * and reports nothing; the focus ring is still drawn.
    */
   disabled?: boolean | undefined;
   /**
    * Field name for Form collection. The submitted value is a string in single-select and an array
-   * of strings with `multiple`; nothing selected submits no key.
+   * of strings with `multiple`; nothing selected submits no key. Without `name` nothing is submitted.
    */
   name?: string | undefined;
   /** Shown when `options` is empty (a filtered Combobox with no matches). Defaults to `copy.empty`. */
   emptyMessage?: string | undefined;
-  /** Height in rows before the list scrolls; `all` never scrolls. */
+  /** Height in rows before the list scrolls; `all` never scrolls. Computed from tokens, never measured. */
   maxVisible?: ListboxMaxVisible | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<ListboxOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selection changes, with the new value (array when `multiple`). */
   onChange?: ((value: string | string[]) => void) | undefined;
-  /** Fired as the focused (active) option changes, with its value; null when the list loses focus. */
+  /**
+   * Fired as the focused (active) option changes, with its value: on keyboard moves, hover (deduped),
+   * the option made active when the list receives focus, and null when the list loses focus. Never
+   * on mount.
+   */
   onActiveChange?: ((value: string | null) => void) | undefined;
 }
 
@@ -245,7 +282,7 @@ export interface ListboxProps
  *
  * The root is a wrapper `div` (data-ds, data-ds-field) holding the `role="listbox"` list and the
  * error message. `id` names the list, and option ids are `${id}-option-${value}`. Keyboard and focus
- * handlers sit on the wrapper, so a host (Select) may dispatch `keydown`/`focusin` on the ref.
+ * handlers sit on the wrapper, so a host may dispatch `keydown`/`focusin` on the ref.
  */
 export function Listbox({
   ref,
@@ -261,6 +298,7 @@ export function Listbox({
   error,
   embedded = false,
   initialActiveValue,
+  activeValue: activeValueProp,
   loading = false,
   disabled = false,
   name,
@@ -300,25 +338,36 @@ export function Listbox({
 
   const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = useState<ListboxValue | undefined>(defaultValue);
-  const selected = isControlled ? value : internalValue;
-  const selectedValues = toArray(selected);
+  const selectedValues = normalise(isControlled ? value : internalValue, multiple);
 
-  const [activeValue, setActiveValueState] = useState<string | null>(null);
+  const activeControlled = activeValueProp !== undefined;
+  const [internalActive, setInternalActive] = useState<string | null>(null);
+  const ownActive = activeControlled ? activeValueProp : internalActive;
 
   const isDisabled = disabled || (form?.disabled ?? false);
   const nothingSelected = selectedValues.length === 0;
   const formError = name ? form?.errors[name] : undefined;
-  const isInvalid = invalid || (error !== undefined && error !== '');
+  const hasError = error !== undefined && error !== '';
   // Precedence: error → the Form's message → while invalid, copy.required (required, nothing selected) else copy.invalid.
   const resolvedError =
-    (error !== undefined && error !== '' ? error : undefined) ??
+    (hasError ? error : undefined) ??
     formError ??
-    (isInvalid ? (required && nothingSelected ? COPY.required : COPY.invalid).replace('{label}', label) : undefined);
-  const showsInvalid = isInvalid || resolvedError !== undefined;
+    (invalid ? (required && nothingSelected ? COPY.required : COPY.invalid).replace('{label}', label) : undefined);
+  const showsInvalid = invalid || hasError || resolvedError !== undefined;
 
   const rows = useMemo(() => flattenRows(options), [options]);
   const enabledRows = useMemo(() => rows.filter((row) => !row.disabled), [rows]);
   const maxVisibleKey = String(maxVisible) as '5' | '8' | '12' | 'all';
+
+  // A disabled list keeps its active option in state but draws and points at none.
+  const renderedActive =
+    !isDisabled && ownActive !== null && rows.some((row) => row.value === ownActive) ? ownActive : null;
+
+  // The active option is always scrolled into view (a real element, never a Fragment ref).
+  useEffect(() => {
+    if (renderedActive === null) return;
+    optionRefs.current.get(renderedActive)?.scrollIntoView?.({ block: 'nearest' });
+  }, [renderedActive]);
 
   // When `initialActiveValue` changes while the list has no focus (Combobox updates it as the user
   // types), the active option moves to it — silently, without firing onActiveChange.
@@ -329,11 +378,11 @@ export function Listbox({
     const list = listRef.current;
     if (initialActiveValue === undefined || (list !== null && list.contains(document.activeElement))) return;
     if (!enabledRows.some((row) => row.value === initialActiveValue)) return;
-    setActiveValueState((current) => (current === initialActiveValue ? current : initialActiveValue));
+    setInternalActive((current) => (current === initialActiveValue ? current : initialActiveValue));
   }, [initialActiveValue, enabledRows]);
 
-  const latest = useRef({ label, required, invalid, error, disabled: isDisabled, selected, multiple });
-  latest.current = { label, required, invalid, error, disabled: isDisabled, selected, multiple };
+  const latest = useRef({ label, required, invalid, error, disabled: isDisabled, selectedValues, multiple });
+  latest.current = { label, required, invalid, error, disabled: isDisabled, selectedValues, multiple };
 
   useEffect(() => {
     // Without `name` the list submits nothing (Form skips unnamed fields).
@@ -346,17 +395,16 @@ export function Listbox({
       },
       // form.valueType is string[]: every selected value with `multiple`, the value otherwise; no key when empty.
       getValue: () => {
-        const values = toArray(latest.current.selected);
+        const values = latest.current.selectedValues;
         if (values.length === 0) return undefined;
         return latest.current.multiple ? values : values[0];
       },
       isDisabled: () => latest.current.disabled,
       validate: () => {
-        const { label: currentLabel, required: isRequired, invalid: isInvalidProp, error: errorProp, selected: current } =
-          latest.current;
-        if (errorProp !== undefined && errorProp !== '') return errorProp;
-        if (isRequired && toArray(current).length === 0) return COPY.required.replace('{label}', currentLabel);
-        if (isInvalidProp) return COPY.invalid.replace('{label}', currentLabel);
+        const current = latest.current;
+        if (current.error !== undefined && current.error !== '') return current.error;
+        if (current.required && current.selectedValues.length === 0) return COPY.required.replace('{label}', current.label);
+        if (current.invalid) return COPY.invalid.replace('{label}', current.label);
         return null;
       },
       focus: () => listRef.current?.focus(),
@@ -365,43 +413,47 @@ export function Listbox({
 
   const isSelected = (optionValue: string) => selectedValues.includes(optionValue);
 
-  const commitValue = (next: ListboxValue) => {
-    if (!Array.isArray(next) && next === selected) return;
-    if (!isControlled) setInternalValue(next);
-    onChange?.(next);
-    if (form && name && form.validate === 'change') form.validateField(name);
-  };
-
   /** onChange receives the array in option order. */
   const inOptionOrder = (values: string[]) => rows.map((row) => row.value).filter((v) => values.includes(v));
 
-  const setActiveValue = (next: string | null) => {
-    if (next !== null) optionRefs.current.get(next)?.scrollIntoView?.({ block: 'nearest' });
-    if (next === activeValue) return;
-    setActiveValueState(next);
+  const commitValues = (next: string[]) => {
+    if (multiple) {
+      if (next.length === selectedValues.length && next.every((v, i) => v === selectedValues[i])) return;
+      if (!isControlled) setInternalValue(next);
+      onChange?.(next);
+    } else {
+      const single = next[0];
+      if (single === undefined || single === selectedValues[0]) return;
+      if (!isControlled) setInternalValue(single);
+      onChange?.(single);
+    }
+    if (form && name && form.validate === 'change') form.validateField(name);
+  };
+
+  /**
+   * Reports a new active option. Owned: it moves; driven by `activeValue`: it only reports, and the
+   * host passes the value back.
+   */
+  const reportActive = (next: string | null) => {
+    if (!activeControlled) setInternalActive(next);
     onActiveChange?.(next);
   };
 
   /** Arrows, Home/End, PageUp/PageDown and typeahead all move this way: select too when selection follows focus. */
   const moveActive = (optionValue: string) => {
-    setActiveValue(optionValue);
-    if (!multiple && selectionFollowsFocus) commitValue(optionValue);
-  };
-
-  const toggle = (optionValue: string) => {
-    commitValue(
-      inOptionOrder(
-        selectedValues.includes(optionValue)
-          ? selectedValues.filter((v) => v !== optionValue)
-          : [...selectedValues, optionValue],
-      ),
-    );
+    reportActive(optionValue);
+    if (!multiple && selectionFollowsFocus) commitValues([optionValue]);
   };
 
   const selectRow = (row: ListboxOption) => {
     if (isDisabled || row.disabled) return;
-    if (multiple) toggle(row.value);
-    else commitValue(row.value);
+    if (!multiple) {
+      commitValues([row.value]);
+      return;
+    }
+    commitValues(
+      inOptionOrder(isSelected(row.value) ? selectedValues.filter((v) => v !== row.value) : [...selectedValues, row.value]),
+    );
   };
 
   /** Where focus lands first: `initialActiveValue` when enabled, else the first selected, else the first enabled. */
@@ -423,13 +475,17 @@ export function Listbox({
       state.buffer = '';
     }, reset);
 
-    const count = enabledRows.length;
-    // A repeated single letter cycles; a longer prefix keeps matching the current option first.
-    const startOffset = state.buffer.length > 1 || currentIndex === -1 ? 0 : 1;
+    // One letter repeated collapses to that letter and searches from the option after the active
+    // one (so it cycles); any other buffer is a prefix searched from the active one.
+    const first = state.buffer[0]!;
+    const repeated = [...state.buffer].every((c) => c === first);
+    const search = repeated ? first : state.buffer;
     const start = currentIndex === -1 ? 0 : currentIndex;
+    const startOffset = currentIndex !== -1 && repeated ? 1 : 0;
+    const count = enabledRows.length;
     for (let offset = startOffset; offset < count + startOffset; offset++) {
       const candidate = enabledRows[(start + offset) % count];
-      if (candidate && candidate.label.toLowerCase().startsWith(state.buffer)) {
+      if (candidate && candidate.label.toLowerCase().startsWith(search)) {
         moveActive(candidate.value);
         return;
       }
@@ -439,7 +495,7 @@ export function Listbox({
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(event);
     if (event.defaultPrevented || isDisabled || enabledRows.length === 0) return;
-    const currentIndex = activeValue === null ? -1 : enabledRows.findIndex((row) => row.value === activeValue);
+    const currentIndex = ownActive === null ? -1 : enabledRows.findIndex((row) => row.value === ownActive);
     const last = enabledRows.length - 1;
 
     switch (event.key) {
@@ -453,8 +509,8 @@ export function Listbox({
         const target = enabledRows[targetIndex]!;
         if (multiple && event.shiftKey) {
           // Add only: an already-selected option stays selected.
-          setActiveValue(target.value);
-          if (!selectedValues.includes(target.value)) commitValue(inOptionOrder([...selectedValues, target.value]));
+          reportActive(target.value);
+          if (!isSelected(target.value)) commitValues(inOptionOrder([...selectedValues, target.value]));
         } else {
           moveActive(target.value);
         }
@@ -473,7 +529,7 @@ export function Listbox({
         event.preventDefault();
         const down = event.key === 'PageDown';
         let targetIndex: number;
-        // With no active option PageDown lands on the first enabled option and PageUp on the last.
+        // Counts enabled options, not drawn rows; with no active option PageDown lands first, PageUp last.
         if (currentIndex === -1) targetIndex = down ? 0 : last;
         else if (maxVisibleKey === 'all') targetIndex = down ? last : 0;
         else targetIndex = Math.min(Math.max(currentIndex + (down ? 1 : -1) * Number(maxVisibleKey), 0), last);
@@ -485,7 +541,7 @@ export function Listbox({
         const target = currentIndex === -1 ? resolveInitialActive() : enabledRows[currentIndex]!.value;
         const row = enabledRows.find((candidate) => candidate.value === target);
         if (!row) break;
-        setActiveValue(row.value);
+        if (currentIndex === -1) reportActive(row.value);
         selectRow(row);
         break;
       }
@@ -495,18 +551,18 @@ export function Listbox({
         const target = currentIndex === -1 ? resolveInitialActive() : enabledRows[currentIndex]!.value;
         if (target === undefined) break;
         event.preventDefault();
-        setActiveValue(target);
-        commitValue(target);
+        if (currentIndex === -1) reportActive(target);
+        commitValues([target]);
         break;
       }
       default: {
-        if (multiple && event.ctrlKey && !event.altKey && !event.metaKey && event.key.toLowerCase() === 'a') {
+        if (multiple && (event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'a') {
           event.preventDefault();
           const all = enabledRows.map((row) => row.value);
-          const allSelected = all.every((v) => selectedValues.includes(v));
+          const allSelected = all.every((v) => isSelected(v));
           // Selected disabled options stay selected either way.
           const keep = selectedValues.filter((v) => !all.includes(v));
-          commitValue(inOptionOrder(allSelected ? keep : [...keep, ...all]));
+          commitValues(inOptionOrder(allSelected ? keep : [...keep, ...all]));
         } else if (/^[a-z]$/i.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
           handleTypeahead(event.key, currentIndex);
         }
@@ -516,24 +572,29 @@ export function Listbox({
 
   const handleFocus = (event: FocusEvent<HTMLDivElement>) => {
     onFocus?.(event);
-    // Focusing a disabled list sets no active option and fires no onActiveChange; the ring still shows.
-    if (isDisabled) return;
-    // The list itself, or a host signalling focus on the root (Select keeps DOM focus on its trigger).
-    if ((event.target !== listRef.current && event.target !== event.currentTarget) || activeValue !== null) return;
-    const initial = resolveInitialActive();
-    if (initial !== undefined) setActiveValue(initial);
+    // The list itself, or a host signalling focus on the root.
+    if (event.target !== listRef.current && event.target !== event.currentTarget) return;
+    const next = ownActive ?? resolveInitialActive();
+    if (isDisabled) {
+      // Resolved and kept in state, so enabling the list picks up here; nothing drawn, nothing reported.
+      if (!activeControlled && internalActive === null && next !== undefined) setInternalActive(next);
+      return;
+    }
+    // Every real focus reports, even when the pre-highlighted option has not changed.
+    if (next !== undefined) reportActive(next);
   };
 
   const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
     onBlur?.(event);
     if (event.target !== listRef.current) return;
-    setActiveValue(null);
+    if (!isDisabled) reportActive(null);
     if (form && name && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
   };
 
   const handleRowPointerMove = (row: ListboxOption) => {
-    if (isDisabled || row.disabled) return;
-    setActiveValue(row.value);
+    // Only hover is deduped against the current active value.
+    if (isDisabled || row.disabled || row.value === ownActive) return;
+    reportActive(row.value);
   };
 
   const handleRowClick = (row: ListboxOption) => (event: ReactMouseEvent<HTMLDivElement>) => {
@@ -541,13 +602,19 @@ export function Listbox({
       event.preventDefault();
       return;
     }
-    setActiveValue(row.value);
+    if (row.value !== ownActive) reportActive(row.value);
     selectRow(row);
   };
 
   const setRowRef = (rowValue: string) => (element: HTMLDivElement | null) => {
     if (element) optionRefs.current.set(rowValue, element);
     else optionRefs.current.delete(rowValue);
+  };
+
+  // Composed Texts take the root's typeface and line height (not fontSize: each carries its own size).
+  const textOverrides = {
+    fontFamily: overrides?.fontFamily ?? 'font.family.body', // literal-ok: a TokenRef forwarded to Text, not a font stack
+    lineHeight: overrides?.lineHeight ?? 'font.lineHeight.normal',
   };
 
   const renderRow = (row: ListboxOption) => {
@@ -557,7 +624,7 @@ export function Listbox({
     const rowDisabled = isDisabled || row.disabled === true;
     const classes = [
       'ds-listbox__option',
-      row.value === activeValue ? 'ds-listbox__option--active' : null,
+      row.value === renderedActive ? 'ds-listbox__option--active' : null,
       rowSelected ? 'ds-listbox__option--selected' : null,
       row.disabled ? 'ds-listbox__option--disabled' : null,
     ]
@@ -571,6 +638,7 @@ export function Listbox({
         id={optionId}
         role="option"
         data-part="option"
+        data-value={row.value}
         aria-selected={rowSelected ? 'true' : 'false'}
         aria-disabled={rowDisabled ? 'true' : undefined}
         aria-describedby={descriptionId}
@@ -587,7 +655,8 @@ export function Listbox({
         ) : null}
         {row.icon ? (
           <span className="ds-listbox__icon" data-part="optionIcon" aria-hidden="true">
-            <Icon name={row.icon} size="sm" />
+            {/* optionColor reaches the icon the same way, so it matches the row's label. */}
+            <Icon name={row.icon} size="sm" overrides={{ color: 'color.foreground' }} />
           </span>
         ) : null}
         <span className="ds-listbox__text">
@@ -651,13 +720,13 @@ export function Listbox({
         id={id}
         data-part="list"
         role="listbox"
-        // Embedded lists are not a tab stop: the host popup keeps focus on its trigger or input.
+        // Embedded lists are not a tab stop, disabled or not: the host keeps focus on its trigger or input.
         tabIndex={embedded ? -1 : 0}
         className="ds-listbox__list"
         aria-label={label}
         aria-labelledby={labelledBy}
         aria-multiselectable={multiple ? 'true' : undefined}
-        aria-activedescendant={activeValue !== null ? `${id}-option-${activeValue}` : undefined}
+        aria-activedescendant={renderedActive !== null ? `${id}-option-${renderedActive}` : undefined}
         aria-invalid={showsInvalid ? 'true' : undefined}
         aria-required={required ? 'true' : undefined}
         aria-describedby={describedBy}
@@ -671,7 +740,7 @@ export function Listbox({
            * resolves hidden text): the still-focusable empty list announces "No options" either way.
            */
           <div id={emptyId} className="ds-listbox__empty" aria-hidden="true">
-            <Text data-part="emptyState" tone="muted">
+            <Text data-part="emptyState" element="p" tone="muted" overrides={textOverrides}>
               {loading ? COPY.loading : (emptyMessage ?? COPY.empty)}
             </Text>
           </div>
@@ -680,9 +749,12 @@ export function Listbox({
         )}
       </div>
       {resolvedError !== undefined ? (
-        <Text id={errorId} data-part="errorMessage" size="sm" tone="danger">
-          {resolvedError}
-        </Text>
+        // A plain wrapper carrying the errorText hook; the part hook and id stay on the Text.
+        <div className="ds-listbox__error">
+          <Text id={errorId} data-part="errorMessage" element="p" size="sm" tone="danger" overrides={textOverrides}>
+            {resolvedError}
+          </Text>
+        </div>
       ) : null}
     </div>
   );

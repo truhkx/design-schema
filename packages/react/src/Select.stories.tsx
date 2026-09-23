@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Select } from './Select';
 import type { ListboxItem, ListboxOption } from './Listbox';
@@ -123,18 +123,27 @@ export const WithError: Story = { args: { error: 'Choose the country you ship to
 
 export const DefaultValue: Story = { args: { defaultValue: 'fr' } };
 
+/** Disabled wins over a controlled `open`: no popup, aria-expanded="false". */
+export const DisabledOpen: Story = { args: { disabled: true, open: true } };
+
 /**
  * Open with its trigger, for the keyboard gate: the popup's Listbox holds the six country options
  * (focusable children through aria-activedescendant) while focus stays on the trigger. Args come
- * from the story URL; the story owns `open` so Escape and Tab really close it.
+ * from the story URL; the story owns `open` so Escape and Tab really close it, and focuses the
+ * trigger before any key is sent, since focus never leaves it.
  */
 export const Keyboard: Story = {
   args: { open: true },
   render: function KeyboardStory(args) {
     const [open, setOpen] = useState(args.open ?? true);
+    const triggerRef = useRef<HTMLButtonElement | HTMLSelectElement | null>(null);
+    useEffect(() => {
+      triggerRef.current?.focus();
+    }, []);
     return (
       <Select
         {...args}
+        ref={triggerRef}
         open={open}
         onOpenChange={(next) => {
           setOpen(next);

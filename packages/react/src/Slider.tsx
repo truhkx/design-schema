@@ -274,7 +274,10 @@ export function Slider({
   // The comparison for "did the value change" is against the last value emitted; the displayed value
   // resets from the prop on every render.
   const latestValue = useRef<SliderValue>(current);
-  latestValue.current = current;
+  // Within one interaction the comparison stays on the last value emitted, so a controlled owner that
+  // never updates `value` gets each new target once; between interactions it follows the render.
+  const interacting = useRef(false);
+  if (!interacting.current) latestValue.current = current;
 
   const isDisabled = disabled || (form?.disabled ?? false);
   const errorMessage = error ?? form?.errors[name] ?? (invalid ? COPY.invalid.replace('{label}', label) : undefined);
@@ -293,6 +296,8 @@ export function Slider({
   const [activeKey, setActiveKey] = useState<ThumbKey | null>(null);
   const [focusedKey, setFocusedKey] = useState<ThumbKey | null>(null);
   const dragIndex = useRef<0 | 1 | null | undefined>(undefined);
+  // A press inside a thumb drags from its current value rather than jumping to the press position.
+  const grabOffset = useRef(0);
   const changedInInteraction = useRef(false);
 
   const format = formatValue ?? ((v: number) => String(v));
@@ -379,7 +384,15 @@ export function Slider({
     if (form && validatesOnChange) form.validateField(name);
   }
 
+  function beginInteraction(): void {
+    if (interacting.current) return;
+    interacting.current = true;
+    latestValue.current = current;
+    changedInInteraction.current = false;
+  }
+
   function endInteraction(): void {
+    interacting.current = false;
     if (!changedInInteraction.current) return;
     changedInInteraction.current = false;
     onChangeEnd?.(latestValue.current);
@@ -407,20 +420,30 @@ export function Slider({
     if (isDisabled || event.button !== 0) return;
     event.preventDefault();
     const raw = valueAt(event.clientX);
-    // Nearest thumb; when the thumbs coincide, the side of the press decides (exactly on it, the low one).
-    const index: 0 | 1 | null = range ? (raw > high || (raw > low && raw - low > high - raw) ? 1 : 0) : null;
+    beginInteraction();
+    const target = event.target as Node;
+    const grabbed = thumbs.find((t) => thumbRefs.current[t.key]?.contains(target));
+    let index: 0 | 1 | null;
+    if (grabbed) {
+      // A press inside a thumb's hit area drags that thumb from where it is: a click on it changes nothing.
+      index = grabbed.index;
+      grabOffset.current = grabbed.value - raw;
+    } else {
+      // Nearest thumb; when the thumbs coincide, the side of the press decides (exactly on it, the low one).
+      index = range ? (raw > high || (raw > low && raw - low > high - raw) ? 1 : 0) : null;
+      grabOffset.current = 0;
+      commit(index, snapPointer(raw));
+    }
     dragIndex.current = index;
-    changedInInteraction.current = false;
     setActiveKey(keyFor(index));
-    commit(index, snapPointer(raw));
-    const target = event.currentTarget;
-    if (typeof target.setPointerCapture === 'function') target.setPointerCapture(event.pointerId);
+    const area = event.currentTarget;
+    if (typeof area.setPointerCapture === 'function') area.setPointerCapture(event.pointerId);
     thumbRefs.current[keyFor(index)]?.focus();
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>): void => {
     if (dragIndex.current === undefined) return;
-    commit(dragIndex.current, snapPointer(valueAt(event.clientX)));
+    commit(dragIndex.current, snapPointer(valueAt(event.clientX) + grabOffset.current));
   };
 
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>): void => {
@@ -472,7 +495,14 @@ export function Slider({
         return;
     }
     event.preventDefault();
+    beginInteraction();
     commit(thumb.index, next);
+  };
+
+  // A key interaction ends at key-up; focus leaving mid-press ends it too, so the next one starts fresh.
+  const handleBlur = (): void => {
+    setFocusedKey(null);
+    if (interacting.current && dragIndex.current === undefined) endInteraction();
   };
 
   const thumbs: Thumb[] = range
@@ -520,9 +550,11 @@ export function Slider({
           {label}
         </Text>
         {showValue === 'always' ? (
-          <Text element="span" data-part="valueText" size="sm" tone="default" overrides={resolved.value}>
-            {range ? COPY.rangeText.replace('{low}', format(low)).replace('{high}', format(high)) : format(single)}
-          </Text>
+          <span className="ds-slider__value">
+            <Text element="span" data-part="valueText" size="sm" tone="default" overrides={resolved.value}>
+              {range ? COPY.rangeText.replace('{low}', format(low)).replace('{high}', format(high)) : format(single)}
+            </Text>
+          </span>
         ) : null}
       </div>
       <div className="ds-slider__control">
@@ -584,7 +616,7 @@ export function Slider({
                   onKeyDown={handleKeyDown(thumb)}
                   onKeyUp={endInteraction}
                   onFocus={() => setFocusedKey(thumb.key)}
-                  onBlur={() => setFocusedKey(null)}
+                  onBlur={handleBlur}
                 >
                   <span className="ds-slider__knob" aria-hidden="true" />
                   {showValue === 'hover' ? (
@@ -627,12 +659,14 @@ export function Slider({
         <input type="hidden" name={name} value={String(single)} disabled={isDisabled} />
       )}
       {description ? (
-        <Text element="span" id={descriptionId} data-part="description" size="sm" tone="muted" overrides={resolved.helper}>
-          {description}
-        </Text>
+        <div className="ds-slider__description">
+          <Text element="span" id={descriptionId} data-part="description" size="sm" tone="muted" overrides={resolved.helper}>
+            {description}
+          </Text>
+        </div>
       ) : null}
       {errorMessage ? (
-        <div role="alert">
+        <div role="alert" className="ds-slider__error">
           <Text element="span" id={errorId} data-part="errorMessage" size="sm" tone="danger" overrides={resolved.helper}>
             {errorMessage}
           </Text>

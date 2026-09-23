@@ -57,7 +57,9 @@ export interface StackProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
   justify?: StackJustify | undefined;
   /**
    * Allow horizontal stacks to wrap onto new lines instead of overflowing. It is set whatever the
-   * direction — on a column it is inert unless the block size is bounded.
+   * direction — on a column it is inert unless the block size is bounded — rather than being silently
+   * ignored on a vertical Stack. Prefer wrapping over horizontal scrolling so content reflows at 320px
+   * and 400% zoom.
    */
   wrap?: boolean | undefined;
   /**

@@ -18,12 +18,28 @@
   --ds-tree-line-height: var(--font-line-height-normal);
   --ds-tree-disabled-opacity: var(--opacity-disabled);
   --ds-tree-transition: var(--motion-duration-fast);
+  /* Locked bindings: not in the overrides API, but their hooks stay themeable from page CSS. */
+  --ds-tree-row-height: var(--size-target-min);
+  --ds-tree-row-selected: var(--color-background-strong);
+  --ds-tree-row-selected-border: var(--color-control-selected-background);
+  --ds-tree-row-selected-border-width: var(--border-width-focus);
+  --ds-tree-label-color: var(--color-foreground);
+  /* badgeColor, locked: the badge Text draws it through its own tone="muted" (Text.color is locked and
+     not forwarded, and the tree never restyles a child), so this hook names the binding for tools/naming.ts. */
+  --ds-tree-badge-color: var(--color-foreground-muted);
+  --ds-tree-expand-button-size: var(--size-target-min);
+  --ds-tree-checkbox-border: var(--color-control-border);
+  --ds-tree-checkbox-selected: var(--color-control-selected-background);
+  --ds-tree-checkbox-mark: var(--color-control-selected-foreground);
+  --ds-tree-min-target: var(--size-target-min);
+  --ds-tree-focus-ring: var(--color-border-focus);
+  --ds-tree-focus-ring-width: var(--border-width-focus);
   display: block;
   font-family: var(--ds-tree-font-family);
   font-size: var(--ds-tree-font-size);
   line-height: var(--ds-tree-line-height);
-  /* labelColor: color.foreground, locked */
-  color: var(--color-foreground);
+  /* labelColor, locked */
+  color: var(--ds-tree-label-color);
 }
 
 .ds-tree__tree,
@@ -43,7 +59,7 @@
   position: absolute;
   inset-block: 0;
   inset-inline-start: calc(
-    var(--ds-tree-row-padding-inline) + var(--ds-tree-indent) * var(--ds-tree-level) + var(--size-target-min) / 2
+    var(--ds-tree-row-padding-inline) + var(--ds-tree-indent) * var(--ds-tree-level) + var(--ds-tree-expand-button-size) / 2
   );
   inline-size: var(--ds-tree-guide-line-width);
   background-color: var(--ds-tree-guide-line);
@@ -64,8 +80,8 @@
 }
 
 .ds-tree__node:focus-visible > .ds-tree__row {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: calc(-1 * var(--border-width-focus));
+  outline: var(--ds-tree-focus-ring-width) solid var(--ds-tree-focus-ring);
+  outline-offset: calc(-1 * var(--ds-tree-focus-ring-width));
 }
 
 .ds-tree__row {
@@ -74,35 +90,32 @@
   display: flex;
   align-items: center;
   /* rowHeight / minTarget: size.target.min, locked */
-  min-block-size: var(--size-target-min);
-  min-inline-size: var(--size-target-min);
+  min-block-size: var(--ds-tree-row-height);
+  min-inline-size: var(--ds-tree-min-target);
   padding-inline: var(--ds-tree-row-padding-inline);
   border-radius: var(--ds-tree-row-radius);
   cursor: default;
 }
 
+/* rowHover: a selected (or checked) row keeps rowSelected, and the lazy placeholder is not a target. */
 @media (hover: hover) {
-  .ds-tree__row:hover {
+  .ds-tree__row:not(.ds-tree__row--selected, .ds-tree__row--placeholder):hover {
     background-color: var(--ds-tree-row-hover);
   }
 }
 
 /* rowSelected / rowSelectedBorder / rowSelectedBorderWidth, locked: a fill plus a start-edge bar. */
 .ds-tree__row--selected {
-  background-color: var(--color-background-strong);
-  box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+  background-color: var(--ds-tree-row-selected);
+  box-shadow: inset var(--ds-tree-row-selected-border-width) 0 0 0 var(--ds-tree-row-selected-border);
 }
 
 .ds-tree:dir(rtl) .ds-tree__row--selected {
-  box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+  box-shadow: inset calc(-1 * var(--ds-tree-row-selected-border-width)) 0 0 0 var(--ds-tree-row-selected-border);
 }
 
 .ds-tree__row--disabled {
   opacity: var(--ds-tree-disabled-opacity);
-}
-
-.ds-tree__row--placeholder:hover {
-  background-color: transparent;
 }
 
 .ds-tree__indent {
@@ -123,8 +136,8 @@
   flex: none;
   display: inline-grid;
   place-items: center;
-  inline-size: var(--size-target-min);
-  min-block-size: var(--size-target-min);
+  inline-size: var(--ds-tree-expand-button-size);
+  min-block-size: var(--ds-tree-expand-button-size);
 }
 
 .ds-tree__chevron {
@@ -167,17 +180,17 @@
   inline-size: var(--ds-tree-checkbox-size);
   block-size: var(--ds-tree-checkbox-size);
   /* checkboxBorder: locked; checkboxBorderWidth: overridable */
-  border: var(--ds-tree-checkbox-border-width) solid var(--color-control-border);
+  border: var(--ds-tree-checkbox-border-width) solid var(--ds-tree-checkbox-border);
   border-radius: var(--ds-tree-checkbox-radius);
   background-color: var(--ds-tree-checkbox-background);
   /* checkboxMark: locked */
-  color: var(--color-control-selected-foreground);
+  color: var(--ds-tree-checkbox-mark);
 }
 
 /* checkboxSelected: locked, fill when checked or indeterminate. */
 .ds-tree__checkbox--checked {
-  border-color: var(--color-control-selected-background);
-  background-color: var(--color-control-selected-background);
+  border-color: var(--ds-tree-checkbox-selected);
+  background-color: var(--ds-tree-checkbox-selected);
 }
 
 /* iconColor is forwarded to the composed Icon's own `overrides`, never applied as CSS on the child. */

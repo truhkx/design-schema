@@ -250,6 +250,23 @@ describe('FocusScope', () => {
     expect(screen.getByRole('button', { name: 'Last real' })).toHaveFocus();
   });
 
+  it('walks a shadow host in rendered order, visiting slotted children once', () => {
+    render(
+      <FocusScope autoFocus="none">
+        <div data-testid="host">
+          <button>Light</button>
+        </div>
+      </FocusScope>,
+    );
+    // The shadow root renders the slot first, then its own button: rendered order is Light, Shadow.
+    const shadow = screen.getByTestId('host').attachShadow({ mode: 'open' });
+    shadow.innerHTML = '<slot></slot><button>Shadow</button>';
+    const light = screen.getByRole('button', { name: 'Light' });
+    light.focus();
+    fireEvent.keyDown(light, { key: 'Tab', shiftKey: true });
+    expect(shadow.activeElement).toBe(shadow.querySelector('button'));
+  });
+
   it('restores past the opener when the opener and its marker were removed together', () => {
     function Harness({ phase }: { phase: 'before' | 'open' | 'gone' }) {
       return (

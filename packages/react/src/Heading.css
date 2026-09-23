@@ -5,14 +5,15 @@
   --ds-heading-font-weight: var(--font-weight-semibold);
   --ds-heading-line-height: var(--font-line-height-tight);
   --ds-heading-margin-block-end: var(--space-sm);
+  /* locked by the AAA pair: not in the overrides type, but keeps its hook for page CSS and renaming */
+  --ds-heading-color: var(--color-foreground-strong);
   /* reset of the user-agent top margin, not a binding */
   margin-block-start: 0;
   font-family: var(--ds-heading-font-family);
   font-size: var(--ds-heading-font-size);
   font-weight: var(--ds-heading-font-weight);
   line-height: var(--ds-heading-line-height);
-  /* locked by the AAA pair: no hook */
-  color: var(--color-foreground-strong);
+  color: var(--ds-heading-color);
   margin-block-end: var(--ds-heading-margin-block-end);
 }
 

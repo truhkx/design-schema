@@ -87,3 +87,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Icon: round-3 `keyboard-run` failed only on other components (Dialog, Feed, FocusScope, Listbox, Menu, RadioGroup, Search, SegmentedControl, Slider, Stepper, Table, Tabs, Toast, Toolbar, Tooltip, Tree), and the set differs from round 2 (Dialog/Feed/FocusScope/Listbox new; Menu Shift+Tab, Toolbar Home/End, Tree ArrowDown gone), which looks like flakiness. Icon declares no `keyboard` block, and its rendered output is unchanged from HEAD (the only Icon.tsx diff is the text of the dev-only unknown-name warning, now the spec's exact `Icon: unknown name "<name>"`), so composed Icons cannot have changed those results. No code change.
 - Icon: round-3 `axe` timed out at 900s. That gate visits every story across the Storybooks, so its run time is the whole package's, not Icon's. Scoped to Icon/React (35 stories × light/dark, wcag2a/2aa/22aa via logs/icon-axe.spec.ts) it passes with zero violations. No code change; the gate's time limit is outside the component's files.
+
+## 2026-09-23 13:40 — round 1
+
+- Icon: the web note asks for `stroke-width: var(--border-width-focus)` and `vector-effect` on paths in CSS, while the strokeWidth binding asks for a `--ds-icon-stroke-width` hook; kept the hook (defaulting to the token) and read it in `stroke-width` on the root svg, which the paths inherit.
+- Icon: the dev-warning guard needs a `declare const process` shim; if the bundler does not define `process`, the unknown-name warning is skipped entirely. The spec says 'warns on every render' without saying what to do when NODE_ENV cannot be read; chose to stay silent.
+- Icon: the spec does not say whether IconName/IconSize/IconOverridableBinding are exported types; they are exported from index.ts (the `paths` table is not, as the note requires).
+- Icon: `Object.hasOwn` guards a prototype key (`name="toString"`) as unknown; the spec's unknown-name rule does not mention prototype keys.

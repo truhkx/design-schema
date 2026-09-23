@@ -9,8 +9,14 @@
   --ds-tree-grid-guide-line-width: var(--border-width-thin);
   --ds-tree-grid-parent-weight: var(--font-weight-medium);
   --ds-tree-grid-transition: var(--motion-duration-fast);
+  /* Locked bindings: out of the `overrides` API, but still hooks themeable from page CSS. */
+  --ds-tree-grid-expand-button-size: var(--size-target-min);
+  --ds-tree-grid-loading-color: var(--color-foreground-muted);
+  --ds-tree-grid-focus-ring: var(--color-border-focus);
+  --ds-tree-grid-focus-ring-width: var(--border-width-focus);
+  --ds-tree-grid-min-target: var(--size-target-min);
   /* Internal, not override hooks: DataGrid's own bindings at DataGrid's default tokens. */
-  --ds-tree-grid-row-size: var(--size-target-min);
+  --ds-tree-grid-row-size: var(--ds-tree-grid-min-target);
   --ds-tree-grid-column-size: calc(var(--space-20) * 2);
   --ds-tree-grid-resize-step: var(--space-4);
   /* Internal: where the row-header column starts inside a row (after the selection column). */
@@ -25,23 +31,28 @@
   color: var(--color-foreground);
 }
 
-.ds-tree-grid--density-comfortable {
+/* rowHeightComfortable (DataGrid's): the comfortable density, and every grid with a selection column,
+   whose Checkbox is a full minimum target a compact row cannot hold. */
+.ds-tree-grid--density-comfortable,
+.ds-tree-grid--selectable-row {
   --ds-tree-grid-row-size: var(--size-target-comfortable);
 }
 
 .ds-tree-grid--selectable-row {
-  --ds-tree-grid-guide-start: calc(var(--size-target-min) + 2 * var(--ds-tree-grid-cell-padding-inline));
+  --ds-tree-grid-guide-start: calc(var(--ds-tree-grid-min-target) + 2 * var(--ds-tree-grid-cell-padding-inline));
 }
 
+/* captionGap (DataGrid's) does the spacing; the Heading's own margin is space.0. */
 .ds-tree-grid__caption {
+  display: block;
   padding-block-end: var(--space-2);
 }
 
 .ds-tree-grid__visually-hidden {
   position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  margin: -1px;
+  inline-size: 1px; /* literal-ok: visually-hidden clip pattern */
+  block-size: 1px; /* literal-ok: visually-hidden clip pattern */
+  margin: -1px; /* literal-ok: visually-hidden clip pattern */
   padding: 0;
   overflow: hidden;
   clip-path: inset(50%);
@@ -63,7 +74,7 @@
 }
 .ds-tree-grid__sizer--target {
   /* minTarget: locked */
-  inline-size: var(--size-target-min);
+  inline-size: var(--ds-tree-grid-min-target);
 }
 
 .ds-tree-grid__scroll-region {
@@ -93,12 +104,14 @@
 .ds-tree-grid__grid {
   position: relative;
   min-inline-size: max-content;
+  outline: none;
 }
 
-/* focusRing / focusRingWidth: locked */
-.ds-tree-grid__grid:focus-visible {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: calc(-1 * var(--border-width-focus));
+/* focusRing / focusRingWidth (locked): drawn by the scroll region while the grid inside it is
+   :focus-visible, so the region's own overflow never clips it, as DataGrid. */
+.ds-tree-grid__scroll-region:has(> .ds-tree-grid__grid:focus-visible) {
+  outline: var(--ds-tree-grid-focus-ring-width) solid var(--ds-tree-grid-focus-ring);
+  outline-offset: 0;
 }
 
 .ds-tree-grid__header {
@@ -160,15 +173,16 @@
 
 /* guideLine / guideLineWidth: one vertical line per ancestor level, drawn the full height of every
    descendant row and centred on that ancestor's expand button — indent guides, no elbows and no
-   termination at the last child. Decorative; drawn inside the row header cell's inline flow, at
-   cellPaddingInline + indent × (ancestor level − 1) + expandButtonSize / 2 from the cell's start. */
+   termination at the last child. Decorative; drawn on the row, not in the row header cell (whose
+   overflow is hidden), at cellPaddingInline + indent × (ancestor level − 1) + expandButtonSize / 2
+   from the row header's start, offset by the selection column when there is one. */
 .ds-tree-grid__row--nested::before {
   content: '';
   position: absolute;
   inset-block: 0;
   inset-inline-start: calc(
     var(--ds-tree-grid-guide-start) + var(--ds-tree-grid-cell-padding-inline) +
-      (var(--size-target-min) - var(--ds-tree-grid-guide-line-width)) / 2
+      (var(--ds-tree-grid-expand-button-size) - var(--ds-tree-grid-guide-line-width)) / 2
   );
   inline-size: calc(var(--ds-tree-grid-indent) * var(--ds-tree-grid-depth));
   background-image: repeating-linear-gradient(
@@ -267,9 +281,10 @@
   outline-color: var(--color-border-danger);
 }
 
-/* loadingColor: locked — the lazy-loading placeholder row. */
+/* loadingColor: locked — the lazy-loading placeholder row. The composed Text reaches the same token
+   through tone="muted"; this hook colours the placeholder cells themselves. */
 .ds-tree-grid__cell--placeholder {
-  color: var(--color-foreground-muted);
+  color: var(--ds-tree-grid-loading-color);
 }
 
 .ds-tree-grid__editor {
@@ -299,8 +314,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  inline-size: var(--size-target-min);
-  min-block-size: var(--size-target-min);
+  inline-size: var(--ds-tree-grid-expand-button-size);
+  min-block-size: var(--ds-tree-grid-expand-button-size);
 }
 
 .ds-tree-grid__expand--expanded {
@@ -315,11 +330,6 @@
   .ds-tree-grid__expand {
     transition: transform var(--ds-tree-grid-transition) var(--motion-easing-standard);
   }
-}
-
-.ds-tree-grid__select-spacer {
-  flex: none;
-  inline-size: calc(var(--size-target-min) + var(--ds-tree-grid-cell-padding-inline));
 }
 
 /* ---- sort, resize, empty, status bar (as DataGrid) ---- */

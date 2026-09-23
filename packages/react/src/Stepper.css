@@ -30,6 +30,13 @@
   --ds-stepper-min-target: var(--size-target-min);
   --ds-stepper-focus-ring: var(--color-border-focus);
   --ds-stepper-focus-ring-width: var(--border-width-focus);
+  /* labelColor, labelUpcomingColor, descriptionColor, countColor (locked): the composed Text draws them
+     through its own `tone` (Text.color is locked and not forwarded, and Stepper never restyles a child),
+     so these hooks name the bindings for tools/naming.ts and page CSS; no Stepper rule reads them. */
+  --ds-stepper-label-color: var(--color-foreground);
+  --ds-stepper-label-upcoming-color: var(--color-foreground-muted);
+  --ds-stepper-description-color: var(--color-foreground-muted);
+  --ds-stepper-count-color: var(--color-foreground-muted);
   /* The count follows the list, stepGap after it; while it is display:none the gap collapses with it. */
   display: flex;
   flex-direction: column;
@@ -50,6 +57,7 @@
 }
 
 .ds-stepper__step {
+  position: relative; /* containing block for the clipped status word and compact labels */
   display: flex;
   min-inline-size: 0;
 }
@@ -209,7 +217,8 @@
 .ds-stepper--vertical .ds-stepper__connector {
   align-self: flex-start;
   inline-size: var(--ds-stepper-connector-width);
-  min-block-size: var(--ds-stepper-step-gap);
+  /* No free space in a column of auto-height steps: the connector is exactly stepGap tall. */
+  block-size: var(--ds-stepper-step-gap);
   margin-inline-start: calc(
     var(--ds-stepper-step-padding) + (var(--ds-stepper-indicator-size) - var(--ds-stepper-connector-width)) / 2
   );
@@ -217,7 +226,7 @@
 
 /* compact (horizontal only): the indicators stay, only the current step's label shows, then "Step n of m".
    Hidden labels are clipped, not removed, so they stay reachable by a screen reader. */
-.ds-stepper--horizontal.ds-stepper--compact .ds-stepper__step:not(.ds-stepper__step--selected) .ds-stepper__content {
+.ds-stepper--horizontal.ds-stepper--compact .ds-stepper__step:not(.ds-stepper__step--revealed) .ds-stepper__content {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
@@ -234,7 +243,7 @@
 }
 
 @container (max-width: 572px) { /* literal-ok: breakpoint from layout.maxWidth.prose */
-  .ds-stepper--horizontal .ds-stepper__step:not(.ds-stepper__step--selected) .ds-stepper__content {
+  .ds-stepper--horizontal .ds-stepper__step:not(.ds-stepper__step--revealed) .ds-stepper__content {
     position: absolute; /* literal-ok: visually-hidden clip pattern */
     inline-size: 1px; /* literal-ok: visually-hidden clip pattern */
     block-size: 1px; /* literal-ok: visually-hidden clip pattern */

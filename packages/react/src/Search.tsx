@@ -5,6 +5,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ChangeEvent,
   type ComponentPropsWithoutRef,
   type CSSProperties,
@@ -42,6 +43,9 @@ const COPY = {
   noSuggestions: 'No suggestions',
 } as const;
 
+/** constant `statusDebounce`: motion.duration.base × 2, read from the theme at run time. */
+const STATUS_DEBOUNCE = { token: '--motion-duration-base', multiply: 2 } as const;
+
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type SearchOverridableBinding =
   | 'borderWidth'
@@ -63,7 +67,7 @@ export type SearchOverridableBinding =
   | 'labelWeight'
   | 'disabledOpacity';
 
-/** Hooks on the root. `labelWeight` has none: it is forwarded to the label Text. */
+/** Hooks on the root. `labelWeight` has none: it is forwarded to the label Text (as `fontSize` also is). */
 const ROOT_HOOK: Partial<Record<SearchOverridableBinding, string>> = {
   borderWidth: '--ds-search-border-width',
   radius: '--ds-search-radius',
@@ -109,25 +113,22 @@ function resolveOverrides(overrides: Partial<Record<SearchOverridableBinding, To
   };
 }
 
-/** A CSS time (`200ms`, `0.2s`) in milliseconds; 0 when it cannot be read (no stylesheet loaded). */
-function parseTime(raw: string): number {
-  const match = /^(-?[\d.]+)(ms|s)$/.exec(raw.trim());
-  if (!match) return 0;
+/** A resolved CSS time (`200ms`, `0.2s`) in ms; `null` when it cannot be read (no theme loaded, jsdom). */
+function parseTime(raw: string): number | null {
+  const match = /^(-?\d*\.?\d+)(ms|s)$/.exec(raw.trim());
+  if (!match) return null;
   const amount = Number(match[1]);
   return match[2] === 's' ? amount * 1000 : amount;
 }
 
-/** Constant `statusDebounce`: motion.duration.base × 2, in ms, read from the theme on `el`. */
-function statusDebounce(el: Element | null): number {
-  if (!el || typeof getComputedStyle === 'undefined') return 0;
-  return parseTime(getComputedStyle(el).getPropertyValue('--motion-duration-base')) * 2;
-}
+/** The hydration gate: false on the server and through hydration, true on a client-only mount. */
+const subscribeNothing = (): (() => void) => () => {};
 
 type PopupPosition = {
   vertical: 'top' | 'bottom';
   left: number;
-  top: number | undefined;
-  bottom: number | undefined;
+  /** The field edge the popup hangs from; CSS adds `suggestionsOffset` to it. */
+  anchor: number;
   minInlineSize: number;
 };
 
@@ -141,8 +142,7 @@ function computePosition(field: DOMRect, popup: DOMRect): PopupPosition {
   return {
     vertical,
     left,
-    top: vertical === 'bottom' ? field.bottom : undefined,
-    bottom: vertical === 'top' ? viewportHeight - field.top : undefined,
+    anchor: vertical === 'bottom' ? field.bottom : viewportHeight - field.top,
     minInlineSize: field.width,
   };
 }
@@ -152,8 +152,7 @@ function samePosition(a: PopupPosition | null, b: PopupPosition): boolean {
     a !== null &&
     a.vertical === b.vertical &&
     a.left === b.left &&
-    a.top === b.top &&
-    a.bottom === b.bottom &&
+    a.anchor === b.anchor &&
     a.minInlineSize === b.minInlineSize
   );
 }
@@ -213,14 +212,15 @@ export interface SearchProps
    * `onChange` (debounced by the caller). Setting the prop at all is what turns the field into a
    * combobox, including an explicitly empty array after a fetch that found nothing, which shows
    * `copy.noSuggestions`; leaving it undefined keeps a plain search field. The list opens on typing
-   * and on ArrowDown — never on focus alone, and an array arriving while the field is focused but
-   * untouched does not open it — and closes on Escape, Tab, blur to an element outside Search (a
-   * blur with no new focus target, such as a window switch, does not close it), a pointer press
-   * outside the field and list, a chosen suggestion, clear, and submit. ArrowDown on the last
+   * and on ArrowDown — never on focus alone — and closes on Escape, Tab, blur or a pointer press
+   * outside Search, a chosen suggestion, clear, and every submit attempt. ArrowDown on the last
    * suggestion stays there, as ArrowUp never wraps.
    */
   suggestions?: SearchSuggestion[] | undefined;
-  /** Suggestions are being fetched; announced through `copy.loading`. */
+  /**
+   * Suggestions are being fetched; announced through `copy.loading` whenever `suggestions` is set
+   * and this is true, list open or not.
+   */
   loading?: boolean | undefined;
   /**
    * Give the field the `search` landmark. Turn off when the Search sits inside another search
@@ -234,8 +234,8 @@ export interface SearchProps
    * Not editable, still readable and focusable: the input is read-only with aria-disabled, both
    * Buttons are disabled (the clear Button still renders when there is text), every key in the
    * keyboard table is inert, suggestions never open and an open list closes, no event fires, the
-   * label, glyph and input dim to `disabledOpacity` (the Buttons dim through their own style and the
-   * field frame is not dimmed), and a disabled Search is not registered with (or submitted by) a Form.
+   * component dims to `disabledOpacity`, and a disabled Search is not registered with (or submitted
+   * by) a Form.
    */
   disabled?: boolean | undefined;
   /** Portal target for the suggestions popup. Defaults to `document.body`. Platform prop; never affects semantics. */
@@ -244,8 +244,8 @@ export interface SearchProps
   overrides?: Partial<Record<SearchOverridableBinding, TokenRef | undefined>> | undefined;
   /**
    * Fired on every keystroke with the query; the caller fetches suggestions here. Also fired whenever
-   * Search itself changes the text: with "" before `onClear`, and with the suggestion's `label` before
-   * `onSubmit` when one is chosen.
+   * Search itself changes the text, so a controlled value can follow: with "" before `onClear`
+   * (clear button or Escape), and with the suggestion's `label` before `onSubmit` when one is chosen.
    */
   onChange?: ((value: string) => void) | undefined;
   /** Fired on Enter, the submit button, or choosing a suggestion, with the trimmed query. Never with an empty query. */
@@ -322,11 +322,19 @@ export function Search({
 
   const isDisabled = disabled || (form?.disabled ?? false);
   const hasSuggestions = suggestions !== undefined;
+  const hydrated = useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
   const [open, setOpen] = useState(false);
   const [activeValue, setActiveValue] = useState<string | null>(null);
   const [generation, setGeneration] = useState(0);
   const [position, setPosition] = useState<PopupPosition | null>(null);
   const showPopup = open && hasSuggestions && !isDisabled;
+
+  // A disabled Search closes an open list.
+  if (open && isDisabled) setOpen(false);
 
   /** Remounts the Listbox with no highlight: the only way to reset its internal active option. */
   const resetHighlight = () => {
@@ -344,7 +352,8 @@ export function Search({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature]);
 
-  // Form registration: the trimmed query under `name` ("" when empty, never omitted); always valid; a disabled Search is not registered.
+  // Form registration: the trimmed query under `name` ("" when empty, never omitted); always valid;
+  // a disabled Search (its own `disabled` or the Form's) is not registered.
   const latest = useRef({ label, text });
   latest.current = { label, text };
   useEffect(() => {
@@ -362,9 +371,9 @@ export function Search({
     });
   }, [form, name, id, isDisabled]);
 
-  // Anchor to the field; follow scrolling and resizing; forward a queued arrow once the list mounts.
+  // Anchor to the field; follow scrolling and resizing; forward a queued ArrowDown once the list mounts.
   useLayoutEffect(() => {
-    if (!showPopup) {
+    if (!showPopup || !hydrated) {
       setPosition(null);
       return undefined;
     }
@@ -387,7 +396,7 @@ export function Search({
       window.removeEventListener('scroll', reposition, true);
       window.removeEventListener('resize', reposition);
     };
-  }, [showPopup, generation, signature]);
+  }, [showPopup, hydrated, generation, signature]);
 
   const closeList = () => {
     if (!open) return;
@@ -397,23 +406,19 @@ export function Search({
   const closeRef = useRef(closeList);
   closeRef.current = closeList;
 
-  // Outside pointerdown and focus moving outside close the list. The two have different scopes: a
-  // pointer press closes it from anywhere outside the field and the list, while focus only closes it
-  // when it lands outside Search as a whole (Tab to the clear or submit Button keeps it open).
+  // A pointer press or a focus move outside Search (its root and its portaled list) closes the list;
+  // both use the same scope, so a press on a shown label or on the submit Button keeps it open.
   useEffect(() => {
     if (!showPopup) return undefined;
-    const outsideOf = (root: HTMLElement | null, target: EventTarget | null) =>
-      !(target instanceof Node) || (!root?.contains(target) && !popupRef.current?.contains(target));
+    const isOutside = (target: EventTarget | null) =>
+      !(target instanceof Node) || (!rootRef.current?.contains(target) && !popupRef.current?.contains(target));
     const handlePointerDown = (event: PointerEvent) => {
-      if (outsideOf(fieldRef.current, event.target)) closeRef.current();
+      if (isOutside(event.target)) closeRef.current();
     };
     const handleFocusOut = (event: FocusEvent) => {
-      // A blur with no new focus target (a window switch) leaves the list open; only focus landing
-      // outside Search closes it.
+      // A blur with no new focus target (a window switch) leaves the list open.
       if (event.relatedTarget === null) return;
-      if (rootRef.current?.contains(event.target as Node) && outsideOf(rootRef.current, event.relatedTarget)) {
-        closeRef.current();
-      }
+      if (rootRef.current?.contains(event.target as Node) && isOutside(event.relatedTarget)) closeRef.current();
     };
     document.addEventListener('pointerdown', handlePointerDown);
     document.addEventListener('focusout', handleFocusOut);
@@ -423,27 +428,42 @@ export function Search({
     };
   }, [showPopup]);
 
-  // Live region: count, loading or no-suggestions, settled for `statusDebounce` before it updates.
+  // Live region: loading whenever suggestions are set and loading (open or not); the count and
+  // no-suggestions only while the list is open. Emptied when the list closes.
   const count = loading ? 0 : (suggestions?.length ?? 0);
-  const statusText = !showPopup
-    ? ''
-    : loading
-      ? COPY.loading
-      : count === 0
-        ? COPY.noSuggestions
-        : COPY.suggestionsCount[new Intl.PluralRules(undefined).select(count) === 'one' ? 'one' : 'other'].replace(
-            '{count}',
-            String(count),
-          );
+  const statusKind: 'none' | 'loading' | 'empty' | 'count' =
+    hasSuggestions && loading && !isDisabled ? 'loading' : !showPopup ? 'none' : count === 0 ? 'empty' : 'count';
   const [announced, setAnnounced] = useState('');
   useEffect(() => {
-    if (statusText === '') {
+    if (statusKind === 'none') {
       setAnnounced('');
       return undefined;
     }
-    const timer = setTimeout(() => setAnnounced(statusText), statusDebounce(rootRef.current));
+    let message: string;
+    if (statusKind === 'loading') message = COPY.loading;
+    else if (statusKind === 'empty') message = COPY.noSuggestions;
+    else {
+      // The plural follows the nearest `lang` ancestor, else the runtime locale.
+      const locale =
+        rootRef.current?.closest('[lang]')?.getAttribute('lang') ||
+        (typeof navigator === 'undefined' ? undefined : navigator.language);
+      let rules: Intl.PluralRules;
+      try {
+        rules = new Intl.PluralRules(locale);
+      } catch {
+        rules = new Intl.PluralRules();
+      }
+      const phrase = rules.select(count) === 'one' ? COPY.suggestionsCount.one : COPY.suggestionsCount.other;
+      message = phrase.replace('{count}', String(count));
+    }
+    const base = rootRef.current ? parseTime(getComputedStyle(rootRef.current).getPropertyValue(STATUS_DEBOUNCE.token)) : null;
+    if (base === null) {
+      setAnnounced(message);
+      return undefined;
+    }
+    const timer = setTimeout(() => setAnnounced(message), base * STATUS_DEBOUNCE.multiply);
     return () => clearTimeout(timer);
-  }, [statusText]);
+  }, [statusKind, count]);
 
   const updateText = (next: string) => {
     if (!isControlled) setInternalValue(next);
@@ -453,14 +473,14 @@ export function Search({
   /**
    * Submits `raw`. Outside a Form every route goes through the native form, so with `action` it is a
    * GET submit; inside a Form Search fires `onSubmit` itself and never submits the enclosing Form.
+   * Every attempt closes the list, including one an empty query refuses to send.
    */
   const submit = (raw: string) => {
     if (isDisabled) return;
+    closeList();
     if (inForm) {
       const query = raw.trim();
-      if (query === '') return;
-      closeList();
-      onSubmit?.(query);
+      if (query !== '') onSubmit?.(query);
       return;
     }
     pendingQuery.current = raw;
@@ -470,12 +490,12 @@ export function Search({
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
     const query = (pendingQuery.current ?? text).trim();
     pendingQuery.current = null;
+    closeList();
     // The field never submits an empty query.
     if (isDisabled || query === '') {
       event.preventDefault();
       return;
     }
-    closeList();
     onSubmit?.(query);
     // The form data set is built after this event: the URL carries the trimmed query.
     if (action && queryRef.current) queryRef.current.value = query;
@@ -490,12 +510,11 @@ export function Search({
     inputRef.current?.focus();
   };
 
+  /** Fills the query with the suggestion's label and submits it; focus stays where it is. */
   const choose = (rowValue: string) => {
     const row = suggestions?.find((candidate) => candidate.value === rowValue);
     if (!row || isDisabled) return;
     updateText(row.label);
-    closeList();
-    inputRef.current?.focus();
     submit(row.label);
   };
 
@@ -511,15 +530,6 @@ export function Search({
       if (open) resetHighlight();
       else setOpen(true);
     }
-  };
-
-  const forwardToListbox = (key: string) => {
-    const target = listboxRef.current;
-    if (!target) {
-      pendingForward.current = key;
-      return;
-    }
-    target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
   };
 
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
@@ -552,12 +562,14 @@ export function Search({
       case 'ArrowDown': {
         if (!hasSuggestions) break;
         event.preventDefault();
-        if (!showPopup) {
+        const target = listboxRef.current;
+        if (!showPopup || !target) {
+          // Opens and highlights the first once the list mounts.
           pendingForward.current = 'ArrowDown';
           setOpen(true);
         } else {
           // Listbox clamps at the last option, so ArrowDown never wraps.
-          forwardToListbox('ArrowDown');
+          target.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
         }
         break;
       }
@@ -566,10 +578,11 @@ export function Search({
         if (!showPopup || activeValue === null) break;
         event.preventDefault();
         if (activeValue === (loading ? undefined : suggestions?.[0]?.value)) resetHighlight();
-        else forwardToListbox('ArrowUp');
+        else listboxRef.current?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true, cancelable: true }));
         break;
       }
       case 'Tab': {
+        // Focus moves on natively (to the clear or submit Button); the list closes explicitly.
         closeList();
         break;
       }
@@ -582,19 +595,27 @@ export function Search({
 
   const listOptions: ListboxOption[] = loading
     ? []
-    : (suggestions ?? []).map((row) => ({ value: row.value, label: row.label, description: row.description }));
+    : (suggestions ?? []).map((row) =>
+        row.description === undefined
+          ? { value: row.value, label: row.label }
+          : { value: row.value, label: row.label, description: row.description },
+      );
 
   const classes = ['ds-search', `ds-search--${size}`, isDisabled ? 'ds-search--disabled' : null]
     .filter(Boolean)
     .join(' ');
   const labelClasses = ['ds-search__label', showLabel ? null : 'ds-search__label--hidden'].filter(Boolean).join(' ');
 
-  const popupStyle: CSSProperties = {
+  const popupStyle = {
     ...resolved.popup,
     ...(position
-      ? { left: position.left, top: position.top, bottom: position.bottom, minInlineSize: position.minInlineSize }
+      ? {
+          left: position.left,
+          minInlineSize: position.minInlineSize,
+          '--ds-search-anchor': `${position.anchor}px`,
+        }
       : null),
-  };
+  } as CSSProperties;
 
   const content = (
     <>
@@ -610,6 +631,7 @@ export function Search({
         </Text>
       </label>
       <div ref={fieldRef} className="ds-search__field" data-part="field">
+        {/* Icon owns its own data-part ("glyph"), so the anatomy name is on the wrapper. */}
         <span className="ds-search__icon" data-part="icon">
           <Icon name="search" size={size === 'lg' ? 'md' : 'sm'} overrides={{ color: 'color.foreground.muted' }} />
         </span>
@@ -625,11 +647,13 @@ export function Search({
           value={text}
           placeholder={placeholder}
           readOnly={isDisabled}
-          role={hasSuggestions ? 'combobox' : undefined}
+          role={hasSuggestions ? 'combobox' : 'searchbox'}
           aria-autocomplete={hasSuggestions ? 'list' : undefined}
           aria-expanded={hasSuggestions ? (showPopup ? 'true' : 'false') : undefined}
-          aria-controls={hasSuggestions ? listboxId : undefined}
-          aria-activedescendant={showPopup && activeValue !== null ? `${listboxId}-option-${activeValue}` : undefined}
+          aria-controls={showPopup && hydrated ? listboxId : undefined}
+          aria-activedescendant={
+            showPopup && hydrated && activeValue !== null ? `${listboxId}-option-${activeValue}` : undefined
+          }
           aria-disabled={isDisabled ? 'true' : undefined}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -665,7 +689,7 @@ export function Search({
       <div role="status" aria-live="polite" className="ds-search__status">
         {announced}
       </div>
-      {showPopup && typeof document !== 'undefined'
+      {showPopup && hydrated
         ? createPortal(
             <div
               ref={popupRef}
@@ -685,7 +709,7 @@ export function Search({
                 value=""
                 options={listOptions}
                 selectionFollowsFocus={false}
-                emptyMessage={listOptions.length === 0 ? (loading ? COPY.loading : COPY.noSuggestions) : undefined}
+                emptyMessage={loading ? COPY.loading : COPY.noSuggestions}
                 onChange={handleListboxChange}
                 onActiveChange={setActiveValue}
               />
@@ -704,6 +728,7 @@ export function Search({
         data-ds-field=""
         data-part="form"
         role={landmark ? 'search' : undefined}
+        aria-disabled={isDisabled ? 'true' : undefined}
         className={classes}
         style={resolved.root}
       >
@@ -719,6 +744,7 @@ export function Search({
       data-ds-field=""
       data-part="form"
       role={landmark ? 'search' : undefined}
+      aria-disabled={isDisabled ? 'true' : undefined}
       className={classes}
       style={resolved.root}
       method={action ? 'get' : undefined}

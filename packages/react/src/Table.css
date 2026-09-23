@@ -25,6 +25,21 @@
   --ds-table-line-height: var(--font-line-height-normal);
   --ds-table-numeric-font: var(--font-family-mono);
   --ds-table-transition: var(--motion-duration-fast);
+  /* Locked bindings: not in the `overrides` type, but still hooks — themeable from page CSS and
+     renameable by the naming codemod. Rules read these, never the tokens. */
+  --ds-table-surface: var(--color-background);
+  --ds-table-header-surface: var(--color-background-subtle);
+  --ds-table-header-color: var(--color-foreground);
+  --ds-table-row-stripe: var(--color-background-subtle);
+  --ds-table-row-selected: var(--color-background-subtle);
+  --ds-table-row-selected-border: var(--color-control-selected-background);
+  --ds-table-row-selected-border-width: var(--border-width-focus);
+  --ds-table-cell-color: var(--color-foreground);
+  --ds-table-cell-muted-color: var(--color-foreground-muted);
+  --ds-table-stacked-label-color: var(--color-foreground-muted);
+  --ds-table-min-target: var(--size-target-min);
+  --ds-table-focus-ring: var(--color-border-focus);
+  --ds-table-focus-ring-width: var(--border-width-focus);
   position: relative;
   container-type: inline-size;
   font-family: var(--ds-table-font-family);
@@ -96,8 +111,8 @@
   outline: none;
 }
 .ds-table__scroll-outline:has(> .ds-table__scroll-region:focus-visible) {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: calc(-1 * var(--border-width-focus));
+  outline: var(--ds-table-focus-ring-width) solid var(--ds-table-focus-ring);
+  outline-offset: calc(-1 * var(--ds-table-focus-ring-width));
 }
 
 .ds-table__table {
@@ -105,7 +120,7 @@
   border-collapse: separate;
   border-spacing: 0;
   /* surface, locked */
-  background-color: var(--color-background);
+  background-color: var(--ds-table-surface);
 }
 
 .ds-table__column-header,
@@ -118,8 +133,8 @@
   text-align: start;
   vertical-align: middle;
   /* cellColor, locked */
-  color: var(--color-foreground);
-  background-color: var(--color-background);
+  color: var(--ds-table-cell-color);
+  background-color: var(--ds-table-surface);
 }
 
 .ds-table__body > .ds-table__row > * {
@@ -133,8 +148,8 @@
 /* header part */
 .ds-table__header-row > * {
   /* headerSurface / headerColor, locked */
-  background-color: var(--color-background-subtle);
-  color: var(--color-foreground);
+  background-color: var(--ds-table-header-surface);
+  color: var(--ds-table-header-color);
   font-size: var(--ds-table-header-size);
   font-weight: var(--ds-table-header-weight);
   border-block-end: var(--ds-table-header-border-width) solid var(--ds-table-header-border);
@@ -150,9 +165,14 @@
   box-shadow: var(--ds-table-header-shadow);
 }
 
+/* sortButton part: the wrapper around the composed Button, which keeps its own styling. */
+.ds-table__sort {
+  display: inline-flex;
+}
+
 .ds-table__select {
-  inline-size: var(--size-target-min);
-  min-inline-size: var(--size-target-min);
+  inline-size: var(--ds-table-min-target);
+  min-inline-size: var(--ds-table-min-target);
 }
 
 .ds-table__cell--align-end {
@@ -184,18 +204,18 @@
 
 /* rowStripe, locked */
 .ds-table--striped .ds-table__body > .ds-table__row:nth-child(even) > * {
-  background-color: var(--color-background-subtle);
+  background-color: var(--ds-table-row-stripe);
 }
 
 /* rowSelected + rowSelectedBorder + rowSelectedBorderWidth, locked */
 .ds-table__row--selected > * {
-  background-color: var(--color-background-subtle);
+  background-color: var(--ds-table-row-selected);
 }
 .ds-table__row--selected > :first-child {
-  box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+  box-shadow: inset var(--ds-table-row-selected-border-width) 0 0 0 var(--ds-table-row-selected-border);
 }
 .ds-table__row--selected > :first-child:dir(rtl) {
-  box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+  box-shadow: inset calc(-1 * var(--ds-table-row-selected-border-width)) 0 0 0 var(--ds-table-row-selected-border);
 }
 
 /* rowHover: interactive rows only (onRowPress, or a Link in the row header) */
@@ -239,14 +259,15 @@
   padding-block-start: var(--ds-table-cell-padding-block);
 }
 
-/* Container conditions cannot read custom properties; the numbers are the built tokens. */
-@container (max-width: 960px) { /* literal-ok: breakpoint from layout.maxWidth.content */
+/* Container conditions cannot read custom properties; the numbers are the built tokens. "Below"
+   is strictly less: at exactly the token width the table is still columnar. */
+@container (width < 960px) { /* literal-ok: breakpoint from layout.maxWidth.content */
   .ds-table--stack .ds-table__cell--hide-below-content {
     display: none;
   }
 }
 
-@container (max-width: 572px) { /* literal-ok: breakpoint from layout.maxWidth.prose */
+@container (width < 572px) { /* literal-ok: breakpoint from layout.maxWidth.prose */
   .ds-table--stack .ds-table__cell--hide-below-prose {
     display: none;
   }
@@ -268,7 +289,7 @@
   /* headerSurface (locked) and headerBorder move to the row, so a wrap gap is filled and a
      wrapped header still reads as one band. Stacked, what sticks is that whole row. */
   .ds-table--stack .ds-table__header-row {
-    background-color: var(--color-background-subtle);
+    background-color: var(--ds-table-header-surface);
     border-block-end: var(--ds-table-header-border-width) solid var(--ds-table-header-border);
   }
   .ds-table--sticky-header.ds-table--stack .ds-table__header-row {
@@ -313,7 +334,7 @@
     padding: var(--ds-table-stacked-row-inset);
     border: var(--ds-table-row-border-width) solid var(--ds-table-row-border);
     border-radius: var(--ds-table-stacked-row-radius);
-    background-color: var(--color-background);
+    background-color: var(--ds-table-surface);
   }
 
   .ds-table--stack .ds-table__body > .ds-table__row > * {
@@ -334,15 +355,15 @@
     justify-content: flex-start;
   }
 
-  .ds-table--striped.ds-table--stack .ds-table__body > .ds-table__row:nth-child(even),
-  .ds-table--stack .ds-table__body > .ds-table__row--selected {
-    background-color: var(--color-background-subtle);
+  .ds-table--striped.ds-table--stack .ds-table__body > .ds-table__row:nth-child(even) {
+    background-color: var(--ds-table-row-stripe);
   }
   .ds-table--stack .ds-table__body > .ds-table__row--selected {
-    box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+    background-color: var(--ds-table-row-selected);
+    box-shadow: inset var(--ds-table-row-selected-border-width) 0 0 0 var(--ds-table-row-selected-border);
   }
   .ds-table--stack .ds-table__body > .ds-table__row--selected:dir(rtl) {
-    box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+    box-shadow: inset calc(-1 * var(--ds-table-row-selected-border-width)) 0 0 0 var(--ds-table-row-selected-border);
   }
   .ds-table--stack .ds-table__body > .ds-table__row--interactive:hover,
   .ds-table--stack .ds-table__body > .ds-table__row:has(> .ds-table__row-header a[href]):hover {
@@ -354,7 +375,7 @@
     content: attr(data-label);
     content: attr(data-label) / ''; /* empty alt text: the roles already associate the header */
     display: block;
-    color: var(--color-foreground-muted);
+    color: var(--ds-table-stacked-label-color);
     font-size: var(--ds-table-stacked-label-size);
     font-weight: var(--ds-table-stacked-label-weight);
   }

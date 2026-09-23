@@ -12,16 +12,16 @@ const ELEMENTS = ['header', 'nav', 'main', 'aside', 'footer', 'section', 'form',
 
 /**
  * A scenario for another role does not inherit the Default story's label: the roles that refuse
- * one get none, `region` and `form` get the label that makes them a landmark.
+ * one get none, every other role gets the label the doc assigns it.
  */
 const LABEL_FOR_ROLE: Record<LandmarkRole, string | undefined> = {
   banner: undefined,
-  navigation: 'Main',
+  navigation: 'Primary',
   main: undefined,
-  complementary: undefined,
+  complementary: 'Related links',
   contentinfo: undefined,
   region: 'Related articles',
-  search: undefined,
+  search: 'Site search',
   form: 'Sign in',
 };
 
@@ -44,8 +44,15 @@ describe('Landmark', () => {
   });
 
   it('main-is-the-primary-content-landmark', () => {
-    const { getByRole } = setup({ role: 'main' });
+    const { getByRole } = setup({ role: 'main', label: '' });
     expect(getByRole('main').getAttribute('data-ds')).toBe('Landmark');
+  });
+
+  it('a-label-is-dropped-on-a-role-that-refuses-one', () => {
+    const { container } = setup({ role: 'banner', label: 'Site header' });
+    const root = container.querySelector('[data-ds="Landmark"]');
+    expect(root).not.toBeNull();
+    expect(root?.getAttribute('aria-label')).toBeNull();
   });
 
   it('a-region-is-named-by-its-label', () => {
@@ -56,7 +63,7 @@ describe('Landmark', () => {
   });
 
   it('an-overridden-element-still-carries-its-role', () => {
-    const { container, getByRole } = setup({ role: 'banner', as: 'div' });
+    const { container, getByRole } = setup({ role: 'banner', as: 'div', label: '' });
     const root = container.querySelector('[data-ds="Landmark"]');
     expect(root?.getAttribute('role')).toBe('banner');
     expect(getByRole('banner')).toBe(root);

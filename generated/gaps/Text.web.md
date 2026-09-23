@@ -85,3 +85,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Text: the `styles.color` description says Text has no `--ds-text-color` hook, but the hooks gate and package convention require one. The hook is kept (`.ds-text--tone-*` set it, `.ds-text` reads it), and the default tone still resolves `var(--color-foreground)` on the Text element, so inverse-surface re-scoping still works. Lit's Text needs the same fix (carried over from round 2).
 - Text: `ToneDanger` uses only the `inline-error-wording` children, not that example's `element: span`; the doc doesn't say which (carried over from round 1).
 - Text: the doc doesn't say whether a consumer `title=""` counts as passed. It currently wins and suppresses the automatic title (carried over from round 1).
+
+## 2026-09-23 18:50 — round 1
+
+- Text: the `color` binding is locked and the spec says it has no hook, but the override contract says locked bindings 'still declare their hook'. I followed the Text-specific description (no `--ds-text-color`, tone rules read the token variable directly).
+
+## 2026-09-23 18:51 — round 2
+
+- Text: the spec's `styles.color` description says the locked `color` binding has NO `--ds-text-color` hook on web/Lit and that tone rules read the token's own custom property directly, but the `hooks` gate (check_hooks, and the template rule 'locked keeps its hook') fails any locked binding without a `--ds-<component>-<binding>` hook. I kept the hook (set per tone class on the element itself, defaulting to the token), which keeps the inverse-surface re-scoping behaviour the spec wants; the spec text or the gate needs to be reconciled (either drop the 'no hook' sentence or exempt Text's color in check_hooks).

@@ -94,3 +94,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Icon: the dev-warning guard needs a `declare const process` shim; if the bundler does not define `process`, the unknown-name warning is skipped entirely. The spec says 'warns on every render' without saying what to do when NODE_ENV cannot be read; chose to stay silent.
 - Icon: the spec does not say whether IconName/IconSize/IconOverridableBinding are exported types; they are exported from index.ts (the `paths` table is not, as the note requires).
 - Icon: `Object.hasOwn` guards a prototype key (`name="toString"`) as unknown; the spec's unknown-name rule does not mention prototype keys.
+
+## 2026-09-23 18:49 — round 1
+
+- Icon: the spec types the ref as Ref<HTMLElement>, but the root is an svg, so I kept the existing Ref<SVGSVGElement>. The spec could say 'the root element's type' explicitly for svg roots.
+- Icon: icon-paths.json's about text says the JS packages 'still carry their own copies' and will read the JSON in their next regeneration, but the React table was already verbatim. The doc does not say whether to import the JSON (packages cannot import from tools/) or keep a hand copy, so I kept the hand copy.

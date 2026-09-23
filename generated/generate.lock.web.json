@@ -611,19 +611,16 @@
   },
   "Heading.web": {
     "hash": "e3004151a3a561b2",
-    "lastAttemptHash": "e3004151a3a561b2",
-    "generatedAt": "2026-09-23T17:46:39+00:00",
-    "model": "opus",
+    "lastAttemptHash": "f93d770d04c265b3",
+    "generatedAt": "2026-09-23T22:54:00+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.0988,
+    "rounds": 3,
+    "costUsd": 0.7604,
     "files": [
-      "packages/react/src/Heading.css",
-      "packages/react/src/Heading.stories.tsx",
-      "packages/react/src/Heading.test.tsx",
-      "packages/react/src/Heading.tsx"
+      "packages/react/src/Heading.css"
     ],
-    "gaps": 9,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -631,19 +628,19 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
-      "hooks": true,
+      "hooks": false,
       "keyboard": true,
       "axe": true
     }
   },
   "Icon.web": {
-    "hash": "fc295e464215a820",
-    "lastAttemptHash": "fc295e464215a820",
-    "generatedAt": "2026-09-23T17:40:48+00:00",
-    "model": "opus",
+    "hash": "d9e62892b1a9a9dc",
+    "lastAttemptHash": "d9e62892b1a9a9dc",
+    "generatedAt": "2026-09-23T22:50:07+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5238,
+    "costUsd": 0.2428,
     "files": [
       "packages/react/src/Icon.css",
       "packages/react/src/Icon.stories.tsx",
@@ -651,7 +648,7 @@
       "packages/react/src/Icon.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 4,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1142,19 +1139,21 @@
     }
   },
   "Stack.web": {
-    "hash": "9703afd3d66c8249",
-    "lastAttemptHash": "9703afd3d66c8249",
-    "generatedAt": "2026-09-23T17:49:13+00:00",
-    "model": "opus",
+    "hash": "4e6e3aafd94e93ff",
+    "lastAttemptHash": "4e6e3aafd94e93ff",
+    "generatedAt": "2026-09-23T22:54:48+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.1212,
+    "rounds": 1,
+    "costUsd": 0.2021,
     "files": [
-      "logs/stack-axe.config.ts",
+      "packages/react/src/Stack.css",
       "packages/react/src/Stack.stories.tsx",
-      "packages/react/src/Stack.tsx"
+      "packages/react/src/Stack.test.tsx",
+      "packages/react/src/Stack.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1280,22 +1279,18 @@
     }
   },
   "Text.web": {
-    "hash": "9fcda2ad29416046",
-    "lastAttemptHash": "9fcda2ad29416046",
-    "generatedAt": "2026-09-23T17:44:26+00:00",
-    "model": "opus",
+    "hash": "abe7e7041167a482",
+    "lastAttemptHash": "abe7e7041167a482",
+    "generatedAt": "2026-09-23T22:51:53+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 2.1544,
+    "rounds": 2,
+    "costUsd": 0.536,
     "files": [
-      "logs/text-axe.mjs",
       "packages/react/src/Text.css",
-      "packages/react/src/Text.stories.tsx",
-      "packages/react/src/Text.test.tsx",
-      "packages/react/src/Text.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Text.tsx"
     ],
-    "gaps": 11,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,

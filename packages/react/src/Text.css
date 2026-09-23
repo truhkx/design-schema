@@ -26,7 +26,7 @@
 .ds-text--weight-bold { --ds-text-font-weight: var(--font-weight-bold); }
 
 /* tone → color.foreground.{tone} */
-/* `color` is locked: it is absent from `overrides` but keeps its `--ds-text-color` hook, so page CSS
+/* `color` is locked: absent from `overrides` but it keeps its `--ds-text-color` hook, so page CSS
  * and the naming codemod can still reach it. The hook is set on the Text element itself, so
  * `default` still resolves the `--color-foreground` it inherits — an inverse surface (Toast,
  * Tooltip) that re-scopes that property on its own container recolours default Text as before. */

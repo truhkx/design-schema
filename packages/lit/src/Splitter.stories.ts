@@ -51,7 +51,9 @@ const meta: Meta<SplitterArgs> = {
   // The splitter fills its parent, so a vertical one needs a parent with a definite height; the
   // frame is a plain, non-focusable box.
   render: (args) => html`
-    <div style="block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);">
+    <div
+      style="inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);"
+    >
       <ds-splitter
         label=${args.label}
         orientation=${args.orientation}
@@ -99,7 +101,9 @@ export const Collapsed: Story = { args: { collapsible: true, defaultCollapsed: t
 export const Keyboard: Story = {
   args: { collapsible: true, stackBelow: 'never' },
   render: (args) => html`
-    <div style="block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);">
+    <div
+      style="inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);"
+    >
       <ds-splitter
         label=${args.label}
         orientation=${args.orientation}

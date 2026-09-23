@@ -60,6 +60,9 @@ export class DsDivider extends LitElement {
       --ds-divider-color: var(--color-border);
       --ds-divider-thickness: var(--border-width-thin);
       --ds-divider-label-gap: var(--layout-gap-normal);
+      /* locked labelColor: declared for the CSS escape hatch and the naming codemod; the label's colour
+         comes from the composed Text's tone="muted" (same token), so no rule restyles the child */
+      --ds-divider-label-color: var(--color-foreground-muted);
       display: flex;
       box-sizing: border-box;
       block-size: var(--ds-divider-thickness);

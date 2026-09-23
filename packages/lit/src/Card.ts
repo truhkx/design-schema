@@ -108,10 +108,21 @@ export class DsCard extends LitElement {
       --ds-card-border-width: var(--border-width-thin);
       --ds-card-radius: var(--radius-lg);
       --ds-card-transition: var(--motion-duration-fast);
+      /* locked: not in the overrides API, but still themeable from page CSS */
+      --ds-card-background: var(--color-background);
+      --ds-card-hover-background: var(--color-background-subtle);
+      --ds-card-focus-ring: var(--color-border-focus);
+      --ds-card-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
       display: none;
+    }
+
+    /* background: color.background.{surface}; default drops the segment. hoverBackground: by surface. */
+    :host([surface='subtle']) {
+      --ds-card-background: var(--color-background-subtle);
+      --ds-card-hover-background: var(--color-background-strong);
     }
 
     /* paddingBlock / paddingInline: layout.inset.{inset} */
@@ -139,12 +150,7 @@ export class DsCard extends LitElement {
       border-width: 0;
       border-color: transparent;
       border-radius: var(--ds-card-radius);
-      /* background: color.background.{surface}, locked; default drops the segment */
-      background-color: var(--color-background);
-    }
-
-    :host([surface='subtle']) [data-part='surface'] {
-      background-color: var(--color-background-subtle);
+      background-color: var(--ds-card-background);
     }
 
     /* borderWidth / border: rendered only with surface default */
@@ -197,7 +203,7 @@ export class DsCard extends LitElement {
       position: relative;
     }
     :host([interactive]) [data-part='surface'] {
-      border-width: var(--border-width-focus);
+      border-width: var(--ds-card-focus-ring-width);
       border-color: var(--ds-card-border);
       transition:
         background-color var(--ds-card-transition) var(--motion-easing-standard),
@@ -213,17 +219,14 @@ export class DsCard extends LitElement {
       z-index: 1;
     }
 
-    /* hoverBackground: color.background.subtle, locked; subtle cards use color.background.strong. Only with a live target. */
+    /* hoverBackground: locked; only with a live, enabled target */
     :host([interactive]:state(has-target):not(:state(target-disabled)):hover) [data-part='surface'] {
-      background-color: var(--color-background-subtle);
-    }
-    :host([interactive][surface='subtle']:state(has-target):not(:state(target-disabled)):hover) [data-part='surface'] {
-      background-color: var(--color-background-strong);
+      background-color: var(--ds-card-hover-background);
     }
 
     /* focusRing: locked; drawn on the card only while its target has keyboard focus */
     :host([interactive]:state(target-focus)) [data-part='surface'] {
-      border-color: var(--color-border-focus);
+      border-color: var(--ds-card-focus-ring);
     }
 
     /*
@@ -238,7 +241,7 @@ export class DsCard extends LitElement {
     :host([focusable]:not([interactive]):focus-visible) [data-part='surface'],
     :host([focusable]:not([interactive]):state(focus-ring)) [data-part='surface'] {
       /* no outline-offset: the ring sits on the card's edge */
-      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline: var(--ds-card-focus-ring-width) solid var(--ds-card-focus-ring);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -317,6 +320,8 @@ export class DsCard extends LitElement {
     this.targetObserver.disconnect();
     this.setCustomState('target-focus', false);
     this.setCustomState('focus-ring', false);
+    // The zero-or-several warning is latched per mount: a remounted card may warn again.
+    this.warnedTarget = false;
   }
 
   protected override willUpdate(changed: PropertyValues): void {

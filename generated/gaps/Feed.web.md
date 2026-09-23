@@ -82,3 +82,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Feed: after onShowNew the first new article is also scrolled into view (smooth, or 'auto' under reduced motion); only the Lit notes mention scrolling.
 - Feed: the Ctrl+Home/End boundary is the outer shell (including the new-items row), not the role=feed column; the doc doesn't pick one.
 - Feed: fontFamily is not forwarded to the loadingIndicator's ProgressBar, which the forward list omits.
+
+## 2026-09-23 16:43 — round 1
+
+- Feed: the web notes say the loading indicator is 'not live, aria-busy covers loading', but the ProgressBar they specify (`label={copy.loading} hideLabel`) announces `copy.indeterminate` by default (announce defaults to `complete`). I passed `announce="none"`; the notes should list that prop on the composed ProgressBar.
+- Feed: relative timestamps are 'computed at render' from Date.now() and `Intl.DateTimeFormat(undefined, …)`, but the SSR rule says the first client render must match the server's. A minute boundary crossed between server render and hydration, or a server locale different from the browser's, changes the text and title. I kept render-time computation as specified; the doc doesn't say whether this hydration mismatch is accepted or should be fixed in a layout effect after mount.
+- Feed: the `newItemsButton` part hook is on the always-present role="status" row, but the doc doesn't say whether the hook exists while no button is shown. I put `data-part="newItemsButton"` on the row only while the button is shown, while `newItemsLayer` (z-index) applies to the row at all times.
+- Feed: timestampColor is 'expressed as the composed Text's tone="muted"', yet the locked binding still declares its hook. I also read `--ds-feed-timestamp-color` on Feed's own <time>, so the hook is live from page CSS. The doc doesn't say whether the hook should style the <time> or only be declared, as endMessageColor and emptyStateColor are.

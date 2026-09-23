@@ -67,3 +67,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Splitter: the transition says the animate hook is 'set when the collapsed state changes'. It doesn't say whether stacking and unstacking count as a change when the collapsed state is only hidden. I key it on the real collapsed state, so crossing the breakpoint doesn't set it, and restoring a saved state on mount doesn't set it either.
 - Splitter: 'cleared by … the next pointerdown' doesn't say whether that includes a pointerdown on a collapsed separator, where drags do nothing. I clear it on any pointerdown on the separator.
 - Splitter: F6's 'standard selector' for focusable elements isn't written down anywhere. I used a[href], area[href], enabled button/input/select/textarea, iframe, contenteditable and [tabindex], then dropped negative tabindex, anything inside [inert], and aria-disabled="true".
+
+## 2026-09-23 16:42 — round 1
+
+- Splitter: onSizeChange 'never repeats the size it last reported' is undefined for a controlled splitter whose parent ignores the report — pressing End twice re-reports maxSize because the comparison is against the rendered (prop) size, not the last reported value; chose to compare against the rendered size
+- Splitter: `size` changes from a controlled parent are not stated to clear the `ds-splitter--animate` hook ('cleared by the next size change'); chose to clear it only on user-driven size changes and pointerdown
+- Splitter: the web notes give the grid tracks but not how the stacked single-column grid sizes its rows; chose `auto auto` in source order
+- Splitter: the web notes say the collapsed primary pane gets 'inline-size 0', which only fits a horizontal splitter; chose block-size 0 for a vertical one
+- Splitter: separatorHover is not scoped away from the collapsed state or the focus-visible/dragging colour; chose hover < focus-visible/dragging by source order and left hover active while collapsed
+- Splitter: the Keyboard story needs 'at least three focusable children' but the schema does not say which pane holds them; chose two links in the primary pane and a Button in the secondary, plus the separator and collapse Button
+- Splitter: the React stories need a definite height for a vertical splitter, but only the Lit notes specify the frame (layout.maxWidth.prose); chose a non-focusable decorator with block-size var(--layout-max-width-prose)

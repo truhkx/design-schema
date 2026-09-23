@@ -517,7 +517,8 @@ export function Feed({
           without it shows copy.empty, then a feed with items and without `hasMore` shows the end message. */}
       {loading ? (
         <div className="ds-feed__loading" data-part="loadingIndicator">
-          <ProgressBar label={COPY.loading} hideLabel />
+          {/* Not live: aria-busy on the feed covers loading, so the bar announces nothing of its own. */}
+          <ProgressBar label={COPY.loading} hideLabel announce="none" />
         </div>
       ) : total === 0 ? (
         hasMore ? null : (

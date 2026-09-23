@@ -158,22 +158,14 @@ export class DsRadioGroup extends LitElement implements DsFormField {
       --ds-radio-group-indicator: var(--color-control-selected-background);
       --ds-radio-group-legend-color: var(--color-foreground);
       --ds-radio-group-label-color: var(--color-foreground);
-      --ds-radio-group-description-text: var(--color-foreground-muted);
-      --ds-radio-group-error-text: var(--color-foreground-danger);
       --ds-radio-group-focus-ring: var(--color-border-focus);
       --ds-radio-group-focus-ring-width: var(--border-width-focus);
       --ds-radio-group-min-target: var(--size-target-comfortable);
-      /* helperSize has no hook: it reaches the composed Texts only through their overrides. */
-    }
-
-    /* descriptionText, errorText: the Texts' tone draws them; the parent's hook feeds Text's own
-       documented --ds-text-color hook on the child host, never the child's shadow tree. */
-    [data-part='description'],
-    [data-part='radioDescription'] {
-      --ds-text-color: var(--ds-radio-group-description-text);
-    }
-    [data-part='errorMessage'] {
-      --ds-text-color: var(--ds-radio-group-error-text);
+      --ds-radio-group-description-text: var(--color-foreground-muted);
+      --ds-radio-group-error-text: var(--color-foreground-danger);
+      /* helperSize has no hook: it reaches the composed Texts only through their overrides.
+         description-text and error-text are declared for page CSS and the naming codemod only: the
+         composed Texts' tone muted / danger draw the colour, and Text has no colour hook to feed. */
     }
 
     :host([hidden]) {
@@ -516,7 +508,6 @@ export class DsRadioGroup extends LitElement implements DsFormField {
               id="description"
               part="description"
               data-part="description"
-              element="p"
               size="sm"
               tone="muted"
               .overrides=${textOverrides}
@@ -556,7 +547,6 @@ export class DsRadioGroup extends LitElement implements DsFormField {
                       class="option-description"
                       part="radioDescription"
                       data-part="radioDescription"
-                      element="p"
                       size="sm"
                       tone="muted"
                       .overrides=${textOverrides}
@@ -573,7 +563,6 @@ export class DsRadioGroup extends LitElement implements DsFormField {
               role="alert"
               part="errorMessage"
               data-part="errorMessage"
-              element="p"
               size="sm"
               tone="danger"
               .overrides=${textOverrides}

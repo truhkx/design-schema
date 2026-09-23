@@ -16,7 +16,9 @@
  *
  * Exemption: a binding the doc forwards to a composed child (`composition.<part>.forwards.<binding>`)
  * declares no hook on the parent — the child carries it in its own `overrides`, and a parent hook
- * would be dead CSS. Those are skipped and counted separately.
+ * would be dead CSS. Those are skipped and counted separately. Likewise a binding whose `part` is a composed
+ * child (`composition.<part>`), realised by that child's own props (a Text's `danger` tone, an Icon's colour):
+ * the child paints it, so a parent hook could not reach it without restyling the child.
  *
  * Platforms: `web` and `lit` only. Both spell the hook identically (`--ds-<name-kebab>-<binding-kebab>`,
  * on `.ds-<name>` for React and on `:host` for Lit), so one rule covers both; `rn` and `swiftui` have
@@ -91,9 +93,11 @@ export function checkComponent(root: string, platform: string, component: Dict):
   const forwards = forwardedBindings(component);
   const missing: string[] = [];
   const forwarded: string[] = [];
-  for (const [binding] of locked) {
+  const composed = (component.composition ?? {}) as Dict;
+  for (const [binding, s] of locked) {
     if (text.includes(`${hookName(component.name as string, binding)}:`)) continue;
-    if (forwards.has(binding)) forwarded.push(binding);
+    const part = (s as Dict).part;
+    if (forwards.has(binding) || (typeof part === 'string' && composed[part] != null)) forwarded.push(binding);
     else missing.push(binding);
   }
   if (missing.length === 0 && forwarded.length === 0) return null;
@@ -182,7 +186,7 @@ export function main(argv: string[] = process.argv.slice(2)): number {
     process.stdout.write(
       'A locked binding leaves the `overrides` type but keeps its hook: rules read `var(--ds-<component>-<binding>)`,\n' +
         'not the token directly, or the binding can never be re-themed from CSS nor renamed by tools/naming.ts.\n' +
-        'See prompts/templates/{web,lit}.md and foundations/styling-and-overrides.md. Forwarded bindings are exempt.\n',
+        'See prompts/templates/{web,lit}.md and foundations/styling-and-overrides.md. Forwarded bindings, and bindings on a composed child\'s part, are exempt.\n',
     );
   }
   return findings.length ? 1 : 0;

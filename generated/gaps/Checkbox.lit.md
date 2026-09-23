@@ -58,3 +58,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Checkbox: partGap asks for padding-inline-start 'on the message itself'. The message is the composed ds-text, so the padding goes on the child's host, which sits badly with 'never restyle a child'. I kept it on the host rather than adding a wrapper.
 - Checkbox: minTarget says a hidden label 'still sets the line box'. The visually-hidden label takes no space, so I reserve the line with an empty ::before in the text column, sized to labelSize × lineHeight. The doc doesn't say how to build this.
 - Checkbox: 'controlled-follows-prop' excludes Lit, but React exports a `Controlled` story. For parity Lit keeps a `Controlled` story (`checked: true`), where `checked` is only the initial attribute.
+
+## 2026-09-23 19:02 — round 1
+
+- Checkbox: the `disabled` description gives no validity rule for a disabled field. I kept the existing behaviour: a disabled field submits no value and reports valid, like a native disabled control.
+- Checkbox: the `indicatorStroke`, `descriptionText` and `errorText` bindings say 'no hook', but the overrides contract and the Lit conventions say a locked binding keeps its `:host` hook. I followed the binding text and declared no hooks for them. The doc should say which rule wins.
+
+## 2026-09-23 19:03 — round 2
+
+- Checkbox: the `indicatorStroke`, `descriptionText` and `errorText` bindings say they declare no --ds-checkbox-* hook, but the hooks gate requires every locked binding to keep one unless it is forwarded through the child's `overrides`. These three are realised by the Icon's own stroke and the Text tones rather than forwarded, so they fall under the gate. I declared the hooks (defaulting to the same tokens the children use) and applied them through the children's documented `--ds-icon-stroke-width` and `--ds-text-color` hooks. The doc should either drop the 'no hook' wording or the gate should exempt these bindings.
+- Checkbox: the disabled description gives no validity rule for a disabled field. I kept the existing behaviour: a disabled field submits no value and reports valid.

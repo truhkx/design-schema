@@ -57,3 +57,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Meter: the label wrapper's `flex-shrink: 1` alone does not let a long label wrap in a flex row without `min-inline-size: 0`; added `min-inline-size: 0` to the label wrapper, which the doc does not list.
 - Meter: the doc names `--ds-meter-fill` as a locked hook but not how the tone-interpolated value is declared; chose one `--ds-meter-fill` redefined per `:host([tone=…])`.
 - Meter: stories beyond the enum values and examples (Empty, Full, AboveMaximum, and ToneWarning/ToneDanger's non-default `value`) come from React's stories rather than the doc; kept them for parity.
+
+## 2026-09-23 19:10 — round 1
+
+- Meter: the spec asks for a `Keyboard` story only for components with a `keyboard` block; Meter has none, so none was added.
+- Meter: the spec doesn't say whether the ds-text host that aria-labelledby points at should be given the fixed id `label`; I used `id="label"`, which is unique within the one shadow root.
+- Meter: the spec doesn't say whether `--ds-meter-label-color` / `--ds-meter-value-color` hooks should exist for the locked labelColor/valueColor bindings, given they are 'realised by the Text tone'; I declared them on :host, unread by any rule, so the CSS escape hatch and naming codemod still see them.

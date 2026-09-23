@@ -81,26 +81,9 @@ export class DsFieldset extends LitElement {
       display: block;
       --ds-fieldset-part-gap: var(--layout-gap-tight);
       --ds-fieldset-disabled-opacity: var(--opacity-disabled);
-      /* Locked: out of the overrides type, but they keep their hook so page CSS can re-theme them
-         and the naming codemod can rename them. */
-      --ds-fieldset-legend-color: var(--color-foreground);
-      --ds-fieldset-description-text: var(--color-foreground-muted);
-      --ds-fieldset-error-text: var(--color-foreground-danger);
-      /* legendSize, legendWeight, helperSize, fontFamily, lineHeight and fieldsGap only forward:
-         the composed Text and Stack realise them through their own overrides, so no hook. */
-    }
-
-    /* legendColor, descriptionText, errorText: the Texts' tones draw them; the parent's hook feeds
-       Text's own documented --ds-text-color hook on the child host (an outer-scope rule, so it
-       wins over the child's :host([tone]) declaration), never the child's shadow tree. */
-    legend > ds-text {
-      --ds-text-color: var(--ds-fieldset-legend-color);
-    }
-    [data-part='description'] > ds-text {
-      --ds-text-color: var(--ds-fieldset-description-text);
-    }
-    [data-part='errorMessage'] > ds-text {
-      --ds-text-color: var(--ds-fieldset-error-text);
+      /* legendColor, descriptionText and errorText are realised by the Texts' tones; legendSize,
+         legendWeight, helperSize, fontFamily, lineHeight and fieldsGap only forward through the
+         children's overrides. None of them declares a hook here. */
     }
 
     :host([hidden]) {
@@ -200,13 +183,17 @@ export class DsFieldset extends LitElement {
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
         aria-invalid=${ifDefined(this.error ? 'true' : undefined)}
       >
-        <legend part="legend" data-part="legend"
+        <legend part="legend" data-part="legend" aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
           ><ds-text element="span" tone="default" size="md" weight="medium" .overrides=${this.legendOverrides}
             >${this.legend}${this.allFieldsRequired ? COPY_REQUIRED_INDICATOR : nothing}</ds-text
           ></legend
         >
         ${this.description
-          ? html`<div id="description" part="description" data-part="description"
+          ? html`<div
+              id="description"
+              part="description"
+              data-part="description"
+              aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
               ><ds-text element="span" tone="muted" size="sm" .overrides=${helper}>${this.description}</ds-text></div
             >`
           : nothing}

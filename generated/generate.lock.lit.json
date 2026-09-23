@@ -53,18 +53,19 @@
     }
   },
   "Alert.lit": {
-    "hash": "4589b284f8a1d88c",
-    "lastAttemptHash": "4589b284f8a1d88c",
-    "generatedAt": "2026-09-23T18:14:18+00:00",
-    "model": "opus",
+    "hash": "7cd80d8098ff44d3",
+    "lastAttemptHash": "7cd80d8098ff44d3",
+    "generatedAt": "2026-09-23T23:08:28+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.6044,
+    "costUsd": 0.2538,
     "files": [
+      "packages/lit/src/Alert.stories.ts",
       "packages/lit/src/Alert.test.ts",
       "packages/lit/src/Alert.ts"
     ],
-    "gaps": 5,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -160,20 +161,20 @@
     }
   },
   "Breadcrumb.lit": {
-    "hash": "7a5e6ac7eabb2106",
-    "lastAttemptHash": "7a5e6ac7eabb2106",
-    "generatedAt": "2026-09-23T18:17:09+00:00",
-    "model": "opus",
+    "hash": "57e906a409080372",
+    "lastAttemptHash": "57e906a409080372",
+    "generatedAt": "2026-09-23T23:09:48+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8216,
+    "costUsd": 0.2291,
     "files": [
       "packages/lit/src/Breadcrumb.stories.ts",
       "packages/lit/src/Breadcrumb.test.ts",
       "packages/lit/src/Breadcrumb.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -269,20 +270,17 @@
     }
   },
   "Checkbox.lit": {
-    "hash": "417b7d2a79726e5d",
-    "lastAttemptHash": "417b7d2a79726e5d",
-    "generatedAt": "2026-09-23T18:05:50+00:00",
-    "model": "opus",
+    "hash": "860981c14afe5562",
+    "lastAttemptHash": "860981c14afe5562",
+    "generatedAt": "2026-09-23T23:03:24+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 2,
-    "costUsd": 1.7995,
+    "costUsd": 0.7152,
     "files": [
-      "packages/lit/src/Checkbox.stories.ts",
-      "packages/lit/src/Checkbox.test.ts",
-      "packages/lit/src/Checkbox.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Checkbox.ts"
     ],
-    "gaps": 13,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -434,18 +432,20 @@
     }
   },
   "Disclosure.lit": {
-    "hash": "2d5b837bb784dbf7",
-    "lastAttemptHash": "2d5b837bb784dbf7",
-    "generatedAt": "2026-09-23T18:13:13+00:00",
-    "model": "opus",
+    "hash": "4757d3936fbb0727",
+    "lastAttemptHash": "4757d3936fbb0727",
+    "generatedAt": "2026-09-23T23:07:34+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.699,
+    "costUsd": 0.2826,
     "files": [
       "packages/lit/src/Disclosure.stories.ts",
-      "packages/lit/src/Disclosure.ts"
+      "packages/lit/src/Disclosure.test.ts",
+      "packages/lit/src/Disclosure.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -514,20 +514,17 @@
     }
   },
   "Fieldset.lit": {
-    "hash": "e5e2a8559bd3a6b0",
-    "lastAttemptHash": "e5e2a8559bd3a6b0",
-    "generatedAt": "2026-09-23T18:21:22+00:00",
-    "model": "opus",
+    "hash": "6906e7d654e9bba8",
+    "lastAttemptHash": "6906e7d654e9bba8",
+    "generatedAt": "2026-09-23T23:11:23+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.5581,
+    "rounds": 1,
+    "costUsd": 0.265,
     "files": [
-      "packages/lit/src/Fieldset.stories.ts",
-      "packages/lit/src/Fieldset.test.ts",
-      "packages/lit/src/Fieldset.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Fieldset.ts"
     ],
-    "gaps": 12,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -669,20 +666,19 @@
     }
   },
   "Landmark.lit": {
-    "hash": "668727253d002c0f",
-    "lastAttemptHash": "668727253d002c0f",
-    "generatedAt": "2026-09-23T18:15:23+00:00",
-    "model": "opus",
+    "hash": "0f3bbc188eb7fddb",
+    "lastAttemptHash": "0f3bbc188eb7fddb",
+    "generatedAt": "2026-09-23T23:09:08+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5146,
+    "costUsd": 0.2018,
     "files": [
       "packages/lit/src/Landmark.stories.ts",
-      "packages/lit/src/Landmark.test.ts",
       "packages/lit/src/Landmark.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 4,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -776,20 +772,19 @@
     }
   },
   "Meter.lit": {
-    "hash": "4bfa01e4aec2b6c7",
-    "lastAttemptHash": "4bfa01e4aec2b6c7",
-    "generatedAt": "2026-09-23T18:19:04+00:00",
-    "model": "opus",
+    "hash": "4233b59cdc1c1bc4",
+    "lastAttemptHash": "4233b59cdc1c1bc4",
+    "generatedAt": "2026-09-23T23:10:30+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.2623,
+    "rounds": 1,
+    "costUsd": 0.2516,
     "files": [
       "packages/lit/src/Meter.stories.ts",
-      "packages/lit/src/Meter.test.ts",
       "packages/lit/src/Meter.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -908,20 +903,17 @@
     }
   },
   "RadioGroup.lit": {
-    "hash": "4fad644e2c93a778",
-    "lastAttemptHash": "4fad644e2c93a778",
-    "generatedAt": "2026-09-23T18:11:49+00:00",
-    "model": "opus",
+    "hash": "7afdbe34b9c563ed",
+    "lastAttemptHash": "7afdbe34b9c563ed",
+    "generatedAt": "2026-09-23T23:06:37+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 2,
-    "costUsd": 2.5704,
+    "costUsd": 0.7715,
     "files": [
-      "packages/lit/src/RadioGroup.stories.ts",
-      "packages/lit/src/RadioGroup.test.ts",
-      "packages/lit/src/RadioGroup.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/RadioGroup.ts"
     ],
-    "gaps": 12,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1151,17 +1143,17 @@
     }
   },
   "Switch.lit": {
-    "hash": "582ef4ded6c10bca",
-    "lastAttemptHash": "582ef4ded6c10bca",
-    "generatedAt": "2026-09-23T18:08:06+00:00",
-    "model": "opus",
+    "hash": "88ce97d0205c5a67",
+    "lastAttemptHash": "88ce97d0205c5a67",
+    "generatedAt": "2026-09-23T23:04:45+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 2,
-    "costUsd": 1.7216,
+    "costUsd": 0.6088,
     "files": [
       "packages/lit/src/Switch.ts"
     ],
-    "gaps": 15,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -50,9 +50,9 @@
 
 .ds-tree-grid__visually-hidden {
   position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  margin: -1px;
+  inline-size: 1px; /* literal-ok: visually-hidden clip pattern */
+  block-size: 1px; /* literal-ok: visually-hidden clip pattern */
+  margin: -1px; /* literal-ok: visually-hidden clip pattern */
   padding: 0;
   overflow: hidden;
   clip-path: inset(50%);
@@ -173,8 +173,9 @@
 
 /* guideLine / guideLineWidth: one vertical line per ancestor level, drawn the full height of every
    descendant row and centred on that ancestor's expand button — indent guides, no elbows and no
-   termination at the last child. Decorative; drawn inside the row header cell's inline flow, at
-   cellPaddingInline + indent × (ancestor level − 1) + expandButtonSize / 2 from the cell's start. */
+   termination at the last child. Decorative; drawn on the row, not in the row header cell (whose
+   overflow is hidden), at cellPaddingInline + indent × (ancestor level − 1) + expandButtonSize / 2
+   from the row header's start, offset by the selection column when there is one. */
 .ds-tree-grid__row--nested::before {
   content: '';
   position: absolute;

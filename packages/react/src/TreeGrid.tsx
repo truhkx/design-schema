@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type FocusEvent as ReactFocusEvent,
@@ -129,14 +130,27 @@ function interpolate(template: string, values: Record<string, string | number>):
   return text;
 }
 
-function pluralForm(forms: { one: string; other: string }, count: number): string {
-  const locale = typeof document !== 'undefined' ? document.documentElement.lang || undefined : undefined;
-  return new Intl.PluralRules(locale).select(count) === 'one' ? forms.one : forms.other;
+function pluralForm(forms: { one: string; other: string }, count: number, locale: string): string {
+  return new Intl.PluralRules(locale || undefined).select(count) === 'one' ? forms.one : forms.other;
 }
 
+/* The page locale is read after hydration only: the server and the first client render agree on ''. */
+function subscribeNothing(): () => void {
+  return () => {};
+}
+function readPageLocale(): string {
+  return document.documentElement.lang;
+}
+function serverPageLocale(): string {
+  return '';
+}
+
+/** localeCompare (numeric) for strings, subtraction for numbers; missing values sort last, as DataGrid. */
 function compareValues(a: unknown, b: unknown): number {
+  if (a === undefined || a === null) return b === undefined || b === null ? 0 : 1;
+  if (b === undefined || b === null) return -1;
   if (typeof a === 'number' && typeof b === 'number') return a - b;
-  return String(a ?? '').localeCompare(String(b ?? ''), undefined, { numeric: true });
+  return String(a).localeCompare(String(b), undefined, { numeric: true });
 }
 
 function textOf(value: unknown): string {
@@ -323,7 +337,9 @@ export function TreeGrid({
     const rowHeaders = columns.filter((column) => column.isRowHeader).length;
     if (rowHeaders !== 1) console.warn(`TreeGrid: exactly one column must be \`isRowHeader\`; found ${rowHeaders}.`);
     else if (!columns[0]?.isRowHeader) console.warn('TreeGrid: the `isRowHeader` column must come first.');
+    else if (columns[0]?.pinned) console.warn('TreeGrid: the `isRowHeader` column is never pinned; the guide lines are measured from its start.');
   }
+  const pageLocale = useSyncExternalStore(subscribeNothing, readPageLocale, serverPageLocale);
 
   /* ---------- columns ---------- */
   const hasSelectColumn = selectable === 'row';
@@ -518,6 +534,9 @@ export function TreeGrid({
       current = current.startsWith(PLACEHOLDER_PREFIX) ? current.slice(PLACEHOLDER_PREFIX.length) : (parentById.get(current) ?? null);
     }
     if (current === id && active.key !== id) setActiveState({ key: id, col: active.col });
+    // A collapsed lazy row is closed again for good: only another user act reopens it, never a
+    // controlled `expanded` that lists it.
+    if (openedLazy.includes(id)) setOpenedLazy((prev) => prev.filter((existing) => existing !== id));
     commitExpanded(
       reportedIds.filter((existing) => existing !== id),
       [],
@@ -1428,7 +1447,7 @@ export function TreeGrid({
   }
 
   /* ---------- status bar ---------- */
-  const summary = [interpolate(pluralForm(COPY.rowCount, total), { count: total })];
+  const summary = [interpolate(pluralForm(COPY.rowCount, total, pageLocale), { count: total })];
   if (selectable === 'row' && selectedIds.length > 0) summary.push(interpolate(COPY.selectedRows, { count: selectedIds.length, total }));
   const liveText = loading ? COPY.loading : editError ? interpolate(COPY.invalid, { message: editError }) : announcement;
   const activeColumn = dataColumnAt(activeCol);

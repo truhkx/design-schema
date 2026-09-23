@@ -358,21 +358,20 @@
     }
   },
   "DataGrid.web": {
-    "hash": "dc6a0976ef8dbb2a",
-    "lastAttemptHash": "dc6a0976ef8dbb2a",
-    "generatedAt": "2026-09-22T00:00:36+00:00",
+    "hash": "28cc3c5569455c89",
+    "lastAttemptHash": "28cc3c5569455c89",
+    "generatedAt": "2026-09-23T20:36:34+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.5907,
+    "costUsd": 3.3188,
     "files": [
       "packages/react/src/DataGrid.css",
       "packages/react/src/DataGrid.stories.tsx",
       "packages/react/src/DataGrid.test.tsx",
-      "packages/react/src/DataGrid.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/DataGrid.tsx"
     ],
-    "gaps": 13,
+    "gaps": 19,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -380,6 +379,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -1393,18 +1393,21 @@
     }
   },
   "Tree.web": {
-    "hash": "65813ff40c4b6325",
-    "lastAttemptHash": "65813ff40c4b6325",
-    "generatedAt": "2026-09-22T02:06:41+00:00",
+    "hash": "5354dc8ed8438102",
+    "lastAttemptHash": "5354dc8ed8438102",
+    "generatedAt": "2026-09-23T20:41:00+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 6.7482,
+    "costUsd": 1.0066,
     "files": [
+      "packages/react/src/Tree.css",
       "packages/react/src/Tree.stories.tsx",
-      "packages/react/src/Tree.tsx"
+      "packages/react/src/Tree.test.tsx",
+      "packages/react/src/Tree.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1412,24 +1415,28 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
     }
   },
   "TreeGrid.web": {
-    "hash": "56da4498c315c701",
-    "lastAttemptHash": "56da4498c315c701",
-    "generatedAt": "2026-09-22T01:39:45+00:00",
+    "hash": "e9fbd0fcc2425a36",
+    "lastAttemptHash": "e9fbd0fcc2425a36",
+    "generatedAt": "2026-09-23T20:38:50+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 6.3175,
+    "costUsd": 1.3562,
     "files": [
       "packages/react/src/TreeGrid.css",
-      "packages/react/src/TreeGrid.tsx"
+      "packages/react/src/TreeGrid.stories.tsx",
+      "packages/react/src/TreeGrid.test.tsx",
+      "packages/react/src/TreeGrid.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1437,6 +1444,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true

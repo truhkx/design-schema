@@ -766,6 +766,7 @@ export function Tree({
         {isExpanded ? (
           <ul role="group" data-part="group" className="ds-tree__group">
             {loading ? (
+              /* Not a node: not navigable, so no tabindex and no data-part. */
               <li
                 role="treeitem"
                 className="ds-tree__node"
@@ -774,7 +775,6 @@ export function Tree({
                 aria-setsize={1}
                 aria-posinset={1}
                 aria-disabled
-                tabIndex={-1}
               >
                 <div className="ds-tree__row ds-tree__row--placeholder">
                   <span className="ds-tree__indent" aria-hidden="true" />

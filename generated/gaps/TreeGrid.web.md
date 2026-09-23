@@ -93,3 +93,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - TreeGrid: carried over from round 1. The expandButton wrapper doesn't forward its click to the Button (the React convention), because the row-header cell's click already toggles the row and forwarding would toggle it twice.
 - TreeGrid: carried over from round 1. onEditStart is cancelable but has no event argument; only a return value of false cancels it.
 - TreeGrid: carried over from round 1. The caption part is a span around an h2–h4 heading, kept to match DataGrid, with display:block.
+
+## 2026-09-23 16:38 — round 1
+
+- TreeGrid: onEditStart is declared `cancelable` ('skips the default action when the handler returns false or calls preventDefault() on the event it receives'), but its payload is positional (rowId, column) with no event object, so on web only `return false` cancels; kept that, as DataGrid does.
+- TreeGrid: the spec says the isRowHeader column is 'never pinned, never reordered' but does not say what happens when a caller pins it or places it elsewhere; chose a one-time dev warning and render as given (guide lines are then misplaced).
+- TreeGrid: copy.selectedRows `count` is 'how many rows are selected', and it is unclear whether ids in `selected` that are not loaded rows count, or whether a selectChildren parent shown checked only because all its descendants are (its own id absent) counts; chose the length of the selected-id array as given.
+- TreeGrid: once a lazy row is collapsed, the spec does not say whether its user-opened state persists if a controlled `expanded` lists it again; chose to clear it on collapse so it cannot be reopened programmatically ('a lazy row cannot be opened programmatically at all').
+- TreeGrid: 'DataGrid's own bindings apply at DataGrid's default token' does not say whether TreeGrid should read DataGrid's --ds-data-grid-* hooks or declare its own internal copies; TreeGrid keeps internal --ds-tree-grid-* values (row size, column size, resize step) set to the same tokens, so a page-CSS change to a DataGrid hook does not reach TreeGrid.
+- TreeGrid: the guide-line offset formula names 'expandButtonSize / 2' but not whether the line's own width is centred on that point; chose to centre it ((expandButtonSize − guideLineWidth) / 2).

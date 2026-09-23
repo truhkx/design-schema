@@ -97,8 +97,9 @@
   cursor: default;
 }
 
+/* rowHover: a selected (or checked) row keeps rowSelected, and the lazy placeholder is not a target. */
 @media (hover: hover) {
-  .ds-tree__row:hover {
+  .ds-tree__row:not(.ds-tree__row--selected, .ds-tree__row--placeholder):hover {
     background-color: var(--ds-tree-row-hover);
   }
 }
@@ -115,10 +116,6 @@
 
 .ds-tree__row--disabled {
   opacity: var(--ds-tree-disabled-opacity);
-}
-
-.ds-tree__row--placeholder:hover {
-  background-color: transparent;
 }
 
 .ds-tree__indent {

@@ -136,9 +136,9 @@ const MENU_FORWARD: Partial<Record<ActionSheetOverridableBinding, MenuOverridabl
 const COPY = { cancelLabel: 'Cancel', defaultLabel: 'Actions' } as const;
 
 /** constants.dismissDistance — fraction of the sheet height a downward drag must pass to dismiss on release. */
-const DISMISS_DISTANCE = 0.25;
+const DISMISS_DISTANCE = 0.25; // literal-ok: no token expresses a ratio; same value as BottomSheet
 /** constants.dismissVelocity — downward px/ms at release that dismisses whatever the distance travelled. */
-const DISMISS_VELOCITY = 1.5;
+const DISMISS_VELOCITY = 1.5; // literal-ok: no token expresses px/ms; same value as BottomSheet
 /** constants.dragSlop — `space.1`, read from the resolved custom property at gesture time, as BottomSheet. */
 const DRAG_SLOP_TOKEN = '--space-1';
 

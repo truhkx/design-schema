@@ -95,3 +95,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-23 15:20 — round 2
 
 - Dialog: the task's Rules and web platform notes draw the heading focus ring straight from `--color-border-focus` / `--border-width-focus` and the surface from the `color.overlay.surface` token, and never say that locked bindings (surface, focusRing, focusRingWidth) need their own `--ds-dialog-*` hook. That rule is only in the conventions digest ('locked closes the override API, not the styling hook'), and the first round missed it. I added `--ds-dialog-surface`, `--ds-dialog-focus-ring` and `--ds-dialog-focus-ring-width` on the root, defaulting to the tokens, with the rules reading the hooks. The component doc's style section could say this for locked bindings directly.
+
+## 2026-09-23 19:10 — round 1
+
+- Dialog: the Behavior section says focus restore runs at the start of the exit transition, but a modal <dialog> keeps the page inert until close(), so focus can only go back to the opener after the exit transition and close(). I left FocusScope's restore on unmount, i.e. at the end of the exit. The doc should say 'when the exit finishes', or allow it.
+- Dialog: the Default story says `footer` is absent in reading-dialog, but Storybook merges meta.args, so I restated `footer: null` in that story. The docs could name null as the way to say 'absent'.

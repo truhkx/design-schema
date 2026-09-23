@@ -71,3 +71,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Popover: the doc does not say which `breakpoint` hook web should declare. Declared `--ds-popover-breakpoint` (locked, unused on web) so every binding has its hook, as the overrides contract requires.
 - Popover: the web platform attributes list aria-expanded and aria-controls, which go on the cloned trigger, not the `div` element. The doc does not say whether aria-controls is present while closed. Chose to set aria-controls only while the panel is in the DOM (open or closing, after hydration), so it never points at an id that does not exist.
 - Popover: PopoverProps now extends the div's attributes (minus children/role/id/popover), per the package convention, forwarded to the panel with className/style dropped. The doc never says whether ...rest belongs on the panel (the root) or the trigger; chose the panel, since it carries data-ds and the ref.
+
+## 2026-09-23 19:13 — round 1
+
+- Popover: the spec says `PopoverCloseReason` is not renamed to `PopoverOpenChangeReason`, but the package still exports a deprecated `PopoverOpenChangeReason` alias. I kept it, since removing it would also change the index export and nothing in the spec forbids an alias.
+- Popover: the Lifecycle contract asks a deprecated item to warn once in development, but a type alias has no runtime to warn from. I added only the `@deprecated` JSDoc tag.

@@ -125,3 +125,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Dialog: the Guidance says 'a platform adds none of its own' stories, but the React package exports HideHeading, WithDescription and NotDismissible, which are not in the doc's list (Default, one per size and initialFocus value, the examples, Closed, Keyboard). Kept them in Lit for parity with React. The doc should list them or React should drop them.
 - Dialog: the Parts section gives `heading`, `description`, `body` and `footer` as components (Heading, Text, Box, Stack), but platforms.lit makes every part a Dialog-owned wrapper element carrying the data-part. Followed platforms.lit: the wrappers carry data-part, and the composed children sit inside them.
 - Dialog: onOpened says it 'does not fire when `open` becomes false before the enter transition finishes', including by cancelling the pending frame on the reduced-motion path. Lit waits for the frame and then checks `open` instead of calling cancelAnimationFrame. The result is the same, but the doc names a specific mechanism.
+
+## 2026-09-23 19:15 — round 1
+
+- Dialog: the doc says the Default story is 'the rename-project example's args', but meta.args also has hideHeading/size/dismissible/initialFocus set to their defaults; I kept them, since example stories restate defaults anyway.
+- Dialog: the doc says the footer is present when a light-DOM child has slot="footer" but does not say whether a nested (non-direct) slot="footer" child counts; the existing code checks direct children only, though the observer watches the subtree.
+- Dialog: the doc does not name a story for description alone, or for hideHeading or dismissible; the existing HideHeading, WithDescription and NotDismissible stories are extras that may not exist in React, so parity for them is unverified.

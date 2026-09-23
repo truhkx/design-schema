@@ -71,3 +71,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - ActionSheet: titleColor is 'realized by the composed heading Text's tone="muted"; Text owns its color', yet the gate requires a sheet hook for it. Chose to declare `--ds-action-sheet-title-color` and pass it to Text through its documented `--ds-text-color` hook from the outer-tree rule `.heading ds-text` (the same path titleSize uses), with tone="muted" still set. By default the rendered color does not change. The doc should say whether a sheet-level hook may override the color Text owns.
 - ActionSheet: minTarget, focusRing and focusRingWidth have no `part` in the doc. Chose the item rows (min-block-size and :focus-visible outline). The Cancel row's target size and focus ring come from the composed ds-button's own hooks, so the sheet's hooks do not reach it.
 - ActionSheet: the spec gives the surface no foreground binding. The surface text color reuses `--ds-action-sheet-item-color` (color.foreground) instead of a separate token.
+
+## 2026-09-23 19:20 — round 1
+
+- ActionSheet: the spec says the Keyboard story accepts `given` args from the story URL, but no keyboard rule declares any `given` args, so I added no URL-arg handling.
+- ActionSheet: the photo-actions example uses `icon: danger` on the delete action, which is a status-shape glyph, not a destructive-action icon. I kept it verbatim, but the example may be a typo for `close` or `trash`.

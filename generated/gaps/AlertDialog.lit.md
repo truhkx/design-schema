@@ -80,3 +80,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - AlertDialog: `focusRing` / `focusRingWidth` are locked bindings on a component with no focusable element of its own (the only focusables are the composed Cancel and Confirm Buttons, which draw their own ring), and the doc names no part for them. To give the required hooks a rule that reads them, the AlertDialog stylesheet sets each Button's documented `--ds-button-focus-ring` / `--ds-button-focus-ring-width` hooks to `--ds-alert-dialog-focus-ring` / `--ds-alert-dialog-focus-ring-width`, the same route footerGap takes. The doc should say whether that forward is intended, or whether the two bindings should be dropped from AlertDialog.
 - AlertDialog: the `surface` binding is locked with `part: surface`, but no Lit note says the hook `--ds-alert-dialog-surface` must exist (the earlier file had a comment saying locked meant 'no hook'). Added the hook on :host, and the surface background reads it; the doc could state explicitly that locked bindings keep their `:host` hook.
+
+## 2026-09-23 19:16 — round 1
+
+- AlertDialog: the spec says example stories render through a wrapper that owns `open` (starting true) and writes events back. The Lit meta render must be one inline template, so I put `@confirm`/`@cancel` handlers that set `open = false` on the element, plus a trigger button before it that reopens it. The doc does not say how the wrapper should look in the docs-site snippet.
+- AlertDialog: `Keyboard` is the same as Default (`open: true`). The doc says Keyboard renders the open dialog with its trigger, but the trigger sits in the meta render for every story, so I added no separate render.
+- AlertDialog: `Closed` is described as 'for parity with Dialog', but the doc does not say what it should demonstrate beyond `open: false`. The trigger reopens it.
+- AlertDialog: `role="alertdialog"` and `aria-label` sit on the inner shadow `<dialog>`, not on the host. The 'names tests can read' convention says plain host attributes, but the Lit notes say the shadow dialog is named with aria-label. I followed the notes; the doc should say which element the accessible-name scenario targets in Lit.
+- AlertDialog: `layer` (`layer.dialog`) is written as z-index on the `<dialog>` although the doc says it has no effect in the top layer. It is kept only as a hook, as the doc requires.
+- AlertDialog: `AlertDialogConfirmDetail` is typed `void` because `confirm` has no detail. The doc says 'no detail' but gives no type convention for an event without a payload.

@@ -109,3 +109,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - SidePanel: the development warning for a non-single `trigger` can only fire for two elements with `slot="trigger"` on Lit, because a text node can't be assigned to a named slot.
 - SidePanel: the web `closeButton` wrapper `<span>` exists because React's Button writes its own `data-part`. The Lit Button doesn't, so `data-part="closeButton"` sits on the `ds-button` directly. The doc should say whether the wrapper is web-only.
 - SidePanel: controlled `open` has no default and a boolean attribute can't express false, so controlled-closed is property-only on Lit. The doc doesn't mention this.
+
+## 2026-09-23 19:21 — round 1
+
+- SidePanel: `swipeable` is documented as accepted for parity with no gesture on Lit, but the Lit reflect list gives it a `no-swipeable` attribute while the platform note lists only `modal`, `hide-heading`, `no-scrim` and `landmark` as non-reflected attributes. I kept the reflected negated attribute per the reflect list.
+- SidePanel: `aria-controls` cannot reach the shadow panel, so only `aria-expanded` is set on the trigger. The prop text says aria-controls is set whenever the target is in the DOM, and does not say this is web-only.
+- SidePanel: the keyboard Tab and Shift+Tab rules are `expect: manual` with `from: trigger`/`first`. On Lit they rely on document order, and the spec does not say how a keyboard gate should treat them.
+- SidePanel: the `outside` press is a capture-phase pointerdown on `document`, and anything inside the host, panel or slotted trigger is treated as inside. The spec says 'outside the panel and trigger' without saying whether slotted children of the host count as inside; I counted them as inside.
+- SidePanel: the `persistent` sidebar with no `matchMedia`, or a token that measures 0px, falls back to overlay. The spec only names jsdom for this; I applied it to both cases.

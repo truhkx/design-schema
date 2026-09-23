@@ -95,3 +95,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Menu: `phoneBreakpoint` is locked and marked 'rn only', with no `part` and no web/Lit use, yet the hooks gate requires every locked binding to declare a `:host` hook. I declared `--ds-menu-phone-breakpoint: var(--layout-max-width-prose)` on `:host` and nothing reads it. The doc should say whether an rn-only binding needs a web/Lit hook (the gate says yes) or should be exempt.
 - Menu: the gate requires hooks for locked bindings, but the Lit conventions digest was ambiguous about whether rules read the hook or the token ('locked bindings are excluded from the type but keep their :host hook'). The first generation read the tokens directly. I now route every locked rule (surface, itemColor, itemDangerColor, itemHover, groupLabelColor, shortcutColor, minTarget, focusRing, focusRingWidth) through its `--ds-menu-*` hook. The generation prompt's 'read ONLY token custom properties' rule should say that locked bindings go through their hooks too.
+
+## 2026-09-23 19:17 — round 1
+
+- Menu: `label` is required but the doc gives Lit no behaviour for an empty label; the element renders an empty aria-label (no dev warning, as the doc says iconOnly is the only warning).
+- Menu: the doc says groups render a 'non-interactive heading row' but names no ARIA role for it; I used role="presentation" on the groupLabel div, named by the group's aria-labelledby.
+- Menu: itemHover has `state: hover` but the doc also says keyboard focus shares it; I apply it to both :hover and :focus, and suppress it for aria-disabled items on hover only.
+- Menu: the doc says the focus-out close covers 'focus leaving the host' on Lit, but does not say whether a focusout whose relatedTarget is null (click on non-focusable ground) is a focus-out or an outside press; I report only the pointerdown as `outside` and rely on focusLossReported/focusin to avoid a second close.

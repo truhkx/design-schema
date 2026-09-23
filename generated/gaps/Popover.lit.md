@@ -91,3 +91,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Popover: the 'no accessible name' development warning is stated in the web notes ('as on React Native') but not in the lit notes; implemented it on Lit too (heading unset and the trigger's aria-label/accessibleName/label/textContent chain empty).
 - Popover: `breakpoint` is locked and React Native only, yet the overrides contract says locked bindings keep their :host hook; declared --ds-popover-breakpoint on Lit with no rule reading it — the doc should say whether a binding with no effect on a platform declares its hook there.
 - Popover: the controlled-close focus rule says focus returns only when it is 'inside the panel'; interpreted that as the panel in the composed tree (slotted body content counts) and, for modal, document.body or no active element counts as inside, per Behavior.
+
+## 2026-09-23 19:18 — round 1
+
+- Popover: `layer` is a hook that only matters in the position:fixed fallback; the doc doesn't say whether the fallback panel should also stack above a modal Popover's top layer, so I applied z-index only.
+- Popover: the doc says the arrow is a plain 50% of the facing edge for all placements, but says nothing about arrow z-order relative to the panel's content border in the fallback path; I kept it as the panel's first child so it paints above the border.
+- Popover: the `date-picker-panel` and `contextual-help` examples describe their children in prose (`Three quick-pick date Buttons`, `One sentence of help ending in a Link`); the exact sentence for contextual-help is not specified, so the story wording is my own.
+- Popover: `copy` has only `closeLabel`; the demo Form/Switch labels in stories are story-local text the spec doesn't supply.

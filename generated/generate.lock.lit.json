@@ -376,19 +376,19 @@
     }
   },
   "DatePicker.lit": {
-    "hash": "684b6ab28c575d5a",
-    "lastAttemptHash": "684b6ab28c575d5a",
-    "generatedAt": "2026-09-23T19:28:53+00:00",
-    "model": "opus",
+    "hash": "f876fcbcabd9ce96",
+    "lastAttemptHash": "f876fcbcabd9ce96",
+    "generatedAt": "2026-09-23T23:36:04+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 3.9692,
+    "rounds": 1,
+    "costUsd": 0.4467,
     "files": [
       "packages/lit/src/DatePicker.stories.ts",
       "packages/lit/src/DatePicker.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 16,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -791,20 +791,17 @@
     }
   },
   "NumberInput.lit": {
-    "hash": "7b1c008579972b58",
-    "lastAttemptHash": "7b1c008579972b58",
-    "generatedAt": "2026-09-23T19:15:50+00:00",
-    "model": "opus",
+    "hash": "873be4058f5571f7",
+    "lastAttemptHash": "873be4058f5571f7",
+    "generatedAt": "2026-09-23T23:31:47+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.0548,
+    "rounds": 1,
+    "costUsd": 0.3319,
     "files": [
-      "packages/lit/src/NumberInput.stories.ts",
-      "packages/lit/src/NumberInput.test.ts",
-      "packages/lit/src/NumberInput.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/NumberInput.ts"
     ],
-    "gaps": 11,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -871,18 +868,20 @@
     }
   },
   "ProgressBar.lit": {
-    "hash": "6e4189f3a64bbb5e",
-    "lastAttemptHash": "6e4189f3a64bbb5e",
-    "generatedAt": "2026-09-23T19:18:25+00:00",
-    "model": "opus",
+    "hash": "1583b73858799104",
+    "lastAttemptHash": "1583b73858799104",
+    "generatedAt": "2026-09-23T23:32:47+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.7701,
+    "rounds": 1,
+    "costUsd": 0.2753,
     "files": [
+      "packages/lit/src/ProgressBar.stories.ts",
       "packages/lit/src/ProgressBar.test.ts",
-      "packages/lit/src/ProgressBar.ts"
+      "packages/lit/src/ProgressBar.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 12,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -921,18 +920,15 @@
     }
   },
   "Search.lit": {
-    "hash": "0e32abd73d29665b",
-    "lastAttemptHash": "0e32abd73d29665b",
-    "generatedAt": "2026-09-23T19:24:14+00:00",
-    "model": "opus",
+    "hash": "48c7b691292cee75",
+    "lastAttemptHash": "48c7b691292cee75",
+    "generatedAt": "2026-09-23T23:34:52+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.5188,
-    "files": [
-      "packages/lit/src/Search.stories.ts",
-      "packages/lit/src/Search.ts"
-    ],
-    "gaps": 8,
+    "rounds": 1,
+    "costUsd": 0.3001,
+    "files": [],
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1027,20 +1023,20 @@
     }
   },
   "Slider.lit": {
-    "hash": "2c2663cec71acaee",
-    "lastAttemptHash": "2c2663cec71acaee",
-    "generatedAt": "2026-09-23T19:12:49+00:00",
-    "model": "opus",
+    "hash": "f10852c140eef404",
+    "lastAttemptHash": "f10852c140eef404",
+    "generatedAt": "2026-09-23T23:30:40+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.5322,
+    "rounds": 1,
+    "costUsd": 0.3535,
     "files": [
       "packages/lit/src/Slider.stories.ts",
       "packages/lit/src/Slider.test.ts",
       "packages/lit/src/Slider.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 11,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1109,17 +1105,17 @@
     }
   },
   "Stepper.lit": {
-    "hash": "e4a6f90d705a54b5",
-    "lastAttemptHash": "e4a6f90d705a54b5",
-    "generatedAt": "2026-09-23T19:20:52+00:00",
-    "model": "opus",
+    "hash": "355fb3d0ba40680b",
+    "lastAttemptHash": "355fb3d0ba40680b",
+    "generatedAt": "2026-09-23T23:33:57+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.7994,
+    "rounds": 1,
+    "costUsd": 0.3211,
     "files": [
       "packages/lit/src/Stepper.ts"
     ],
-    "gaps": 11,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,

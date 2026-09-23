@@ -125,3 +125,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Slider: the error region shows 'the message a Form (or validate) has reported', but ds-form only sets `invalid = true` on the field and never passes a message. So when `invalid` is true, Lit shows the field's own validation message in validation order: copy.required when the value is still the default and `required` is set, otherwise copy.invalid. A consumer who sets `invalid` on a required slider still at its default therefore sees copy.required, not copy.invalid. The doc should say which one wins in that case.
 - Slider: the prompt digest types DsFormField.currentValue as `string | boolean | null`, but a range submits two strings. Form.ts already widens it to `string[]`, so the digest's interface is out of date.
 - Slider: `validate: blur` on Lit validates on focusout (per the Lit note), while the Behavior section says every platform validates on interaction end. The two contradict each other for Lit; I followed the Lit note.
+
+## 2026-09-23 19:30 — round 1
+
+- Slider: the spec says a Form-reported message shows in the error region, but the Lit form contract does not say how ds-form hands one to a field. I assumed ds-form sets the field's `error` property and left it at that.
+- Slider: the `Keyboard` story only has the two range thumbs, so the usual three-focusable rule does not apply. The Guidance section says so, but the Keyboard section and the generator rules still ask for three stops.
+- Slider: the spec does not say whether a `<ds-slider>` outside a `<ds-form>` should call `checkValidity()` when it is created. I sync validity to ElementInternals on every update and leave it at that.

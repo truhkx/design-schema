@@ -71,3 +71,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-23 15:23 — round 2
 
 - Search: the foreground binding (color.foreground) has no `part`, so the doc doesn't say whether it also colors the suggestions popup. Lit uses --ds-search-foreground for both the input text and the popup wrapper, so restyling the foreground hook also restyles the popup text around the embedded ds-listbox.
+
+## 2026-09-23 19:34 — round 1
+
+- Search: the spec's Lit notes say the input carries no aria-activedescendant and the highlighted label goes to a polite live span linked by aria-describedby, but the anatomy lists no part for that span. I kept an unnamed visually-hidden span (id=active-option) with no data-part, so it is not covered by the anatomy.
+- Search: statusDebounce says to update at once when the token can't be read, but does not say whether a computed value of 0 (a zeroed theme token) counts as unreadable. I treat a delay of 0 or less as unreadable and announce immediately.

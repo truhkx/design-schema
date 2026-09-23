@@ -95,3 +95,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - DatePicker: focus-return on close is split between DatePicker and ds-popover — on Lit, ds-popover returns focus to its trigger only when focus was inside its panel, which is what the Escape rule asks for. Chose to rely on Popover for that instead of forcing focus from DatePicker; the doc should say focus-restore is realised by the composed Popover on web and Lit.
 - DatePicker: aria-invalid is tied only to `error` (like Input); the doc doesn't say whether internal validation failures (invalid, tooEarly, required) also set aria-invalid before a Form reports them. Chose: only `error` sets it.
 - DatePicker: React's stories (WithValue, RangeWithValue, WithError, LocaleDe) overlap the doc's examples (WithAValue, RangeWithDates, WithAnError, GermanLocale) under different names and args; Lit ships both sets for parity. React should gain the example names, and the old names could be dropped everywhere.
+
+## 2026-09-23 19:35 — round 1
+
+- DatePicker: the doc gives no rule for what `hideLabel` reflects. `platforms.lit.reflect` omits it, so I left it unreflected as `hide-label`.
+- DatePicker: `isDateDisabled` is documented as skipping days on Arrow keys but not on Enter or click of an already-focused day. I chose that a disabled day can take focus but `selectDay` ignores it.
+- DatePicker: the doc says Today is disabled while today cannot be picked, but not whether it is also disabled when the whole field is disabled. I chose disabled in both cases.
+- DatePicker: the doc does not say what a typed date that is out of `min`/`max` does to the calendar view when the popover is open. I moved the view to it, like any parsed date.
+- DatePicker: `open` is a property without a default, and the doc does not say whether `.open=${undefined}` in a story template counts as controlled. I treated `undefined` as uncontrolled.
+- DatePicker: the Escape rule says focus returns to the calendar button when it was inside the calendar. The doc does not say whether that is DatePicker's job or ds-popover's; I relied on ds-popover's own Escape handling and only handle Escape from the field on the root.

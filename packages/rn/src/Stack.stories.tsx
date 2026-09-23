@@ -58,10 +58,10 @@ export const JustifyCenter: Story = { args: { direction: 'horizontal', align: 's
 export const JustifyEnd: Story = { args: { direction: 'horizontal', align: 'start', justify: 'end' } };
 export const JustifyBetween: Story = { args: { direction: 'horizontal', align: 'start', justify: 'between' } };
 
-/** Bounds the story's width to the prose measure so a wrapping row visibly reflows. */
+/** Caps the story's width at `layout.maxWidth.prose × 0.5`, narrow enough that the eight filters wrap in every theme. */
 function BoundedWidth({ children }: { children: React.ReactNode }): React.JSX.Element {
   const { tokens: t } = useTheme();
-  return <View style={{ maxWidth: t.layoutMaxWidthProse }}>{children}</View>;
+  return <View style={{ maxWidth: t.layoutMaxWidthProse / 2 }}>{children}</View>;
 }
 
 const boundedWidth: Decorator = (Story) => (

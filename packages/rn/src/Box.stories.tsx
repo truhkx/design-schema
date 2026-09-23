@@ -11,8 +11,6 @@ const meta: Meta<typeof Box> = {
   args: {
     children: 'Box content',
     inset: 'none',
-    insetBlock: undefined,
-    insetInline: undefined,
     surface: 'none',
     border: false,
     radius: 'none',

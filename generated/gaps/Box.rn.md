@@ -85,3 +85,18 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Box: carried over — the `navigation-region` example and both element-semantics scenarios are web/Lit only, and RN has no stated counterpart; the doc could point to Landmark explicitly.
 - Box: carried over — 'meta args may still list the schema defaults (`element: div`)' should exclude props not declared for the platform; the RN meta leaves `element` out.
 - Box: carried over — it is unclear whether the extra `Border` and `WithOverrides` stories are wanted; I kept them.
+
+## 2026-09-23 13:42 — round 1
+
+- Box: the doc says meta args may list only schema defaults, but `children` is required and has no default, while CSF needs a meta-level `children` for the enum stories (which have no example text). Kept `children: 'Box content'` in meta args; the example stories override it with their own `given`. The doc should say what placeholder children the non-example stories use.
+- Box: 'one story per enum value' doesn't say whether those stories may add args to make the value visible (InsetSm at the defaults draws nothing because surface is none). The existing stories add `surface: 'subtle'` (and the other axis's inset for insetBlock/insetInline); only the example stories keep exactly their `given`. The doc should say whether that is allowed.
+- Box: the `WithOverrides` story has no given args in the doc, so which bindings and tokens it shows (`paddingBlock: layout.inset.xl`, `radius: radius.lg`, `border: color.border.strong`, with `border: true` and `radius: sm` so the presence-gated overrides take effect) is the generator's choice. An example block for it would pin that down.
+- Box: behavior scenarios render the Default args (surface subtle, radius md) with `given` on top, so `renders-surface-none` and `renders-radius-none` never show a Box at its schema defaults; the doc says this is intended, noted only because the derived names suggest otherwise.
+- Box: the overrides are cast by binding type (`as number` for padding, width and radius, `as string` for the border colour), as the rn note says, but `TokenRef` isn't narrowed per binding: a colour token passed as `overrides.paddingBlock` typechecks and yields a string padding at runtime. The doc (or the tokens package) could narrow the ref type per binding.
+
+## 2026-09-23 13:42 — round 1
+
+- Box: `children` is required with no default, but the enum stories (InsetSm, SurfaceStrong, …) need a child. The doc gives none for them, so the meta args keep an illustrative `children: 'Box content'`. The doc should say what text non-example stories render.
+- Box: the doc asks for one story per enum value but doesn't say whether that story's args are exactly the enum value. At the defaults (surface none, inset none) a Box draws nothing, so the existing stories add `surface: 'subtle'` / `inset: 'md'` (and the other padding axis `md` for the insetBlock/insetInline stories) to make the value visible. The doc should confirm or forbid these companion args.
+- Box: the WithOverrides story's content isn't specified. The existing one overrides paddingBlock (layout.inset.xl), radius (radius.lg) and border (color.border.strong) on a bordered `radius: sm` box. The doc could name the override example it wants.
+- Box: overrides are resolved with `resolveToken` and cast to the binding's type (number for padding/width/radius, string for border) as the rn note says. Nothing stops a caller passing a colour token to `paddingBlock`; the TokenRef type isn't narrowed per binding.

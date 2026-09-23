@@ -67,3 +67,20 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-19 07:22 — round 3
 
 - Stack: the axe gate failed again with the same list as round 2. logs/playwright.json (07:22) lists only failing stories, and no Stack/React Native story is in it, in either mode, so Stack passes axe. All the failures come from 27 other components and the Demo/Preferences and Patterns/SettingsPage pages. Stack has no role or ARIA attributes, so it cannot cause them, and changing Stack cannot make this gate pass. I changed no code. The gate should run on the job's own stories, or compare against a baseline, or this job will be rejected every round.
+
+## 2026-09-23 13:41 — round 1
+
+- Stack: the `justify` description says its enum stories 'may add the args that make its value visible (direction: horizontal, align: start)', but a horizontal Stack with no bounded width only shows justify if its parent is wider than the content; I kept the stories unbounded and relied on the Storybook canvas width, without adding a decorator the doc does not name.
+- Stack: `wrapping-filters` says 'layout.maxWidth.prose × 0.5' but not how to write the 0.5 under the literal gate; I wrote `t.layoutMaxWidthProse / 2`, since 2 is an allowed literal.
+- Stack: the `Wrap` story is described as 'horizontal, align: start' in the same decorator, while its example twin `WrappingFilters` uses `align: center` and `gap: tight`; I kept `Wrap` at the default `gap: normal` with `align: start`, as the doc says for `Wrap`.
+- Stack: the `list-element-is-a-list` and `nav-element-is-a-navigation-landmark` behaviors are web/lit only and `element` is not an RN prop, so this platform has no test for them; nothing in the doc says whether RN should get a test proving `element` is absent from the props.
+- Stack: `resolveToken` returns a general token value, and the doc does not say how RN should narrow it for a numeric binding like `gap`; the component casts it to `number`.
+
+## 2026-09-23 13:41 — round 1
+
+- Stack: the rn notes say `element` does not apply and the prop is web/lit-only, and the two behavior scenarios (nav landmark, list with three listitems) are also web/lit-only, so RN has no test for either. The doc could say outright that RN drops `element` from its props.
+- Stack: the `item` part is in the anatomy but has no home on RN (children are not wrapped), so no `Stack.item` testID exists. The anatomy could mark `item` as web/lit only.
+- Stack: `justify` says an enum-value story 'may add' `direction: horizontal, align: start`, but doesn't say whether that is required. The Justify* stories add both, and the Align* stories stay vertical with no extra args.
+- Stack: the button-row example says 'a primary submit Button', and the children text says the submit Button is labelled "Submit". I took that to mean `type="submit"` with the default primary variant. The doc doesn't say whether `type: submit` is part of the scaffolding.
+- Stack: `resolveToken(t, overrides.gap)` returns a general token value, so it is cast to `number` for the `gap` style. The overrides contract doesn't say how to narrow a TokenRef to a dimension; a gap override that points at a color token would type-check but break layout.
+- Stack: the spec lists no stories beyond the enum values, `Wrap` and the examples. The existing `WithOverrides` story (`overrides.gap: 'space.lg'`) was kept as a 'notable state', but the doc names no overrides story.

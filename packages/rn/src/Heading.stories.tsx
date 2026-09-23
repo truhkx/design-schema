@@ -8,7 +8,6 @@ const meta: Meta<typeof Heading> = {
   decorators: [withTheme()],
   args: {
     level: '2',
-    align: 'start',
     children: 'Account settings',
   },
 };

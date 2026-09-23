@@ -106,3 +106,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Icon: the unknown-name rule ('renders an empty glyph and warns') doesn't cover names that are built-in object properties (`toString`, `constructor`). A plain table lookup finds those and would render a function as text. I treat them as unknown, via an own-property check, and added a test; the doc could say that any name not in icon-paths.json is unknown.
 - Icon: the web note lists `fill none, stroke currentColor` on the root svg and the Guidance adds round caps and joins as attributes, but the lit note only says 'the same <svg>'. I added all of them as attributes (so the empty glyph keeps `fill="none"` as the doc requires) and kept the matching CSS. The lit note could list the attributes itself instead of pointing at web.
 - Icon: `name` is required with no default, but Lit has no way to require an attribute, so it is declared `accessor name!: IconName`. An absent name renders the empty glyph and warns `Icon: unknown name "undefined"`, as the web note says. The lit note doesn't say this, so the doc could spell out that required-with-no-default on Lit means 'warn when absent'.
+
+## 2026-09-23 18:49 — round 1
+
+- Icon: the spec says the empty glyph for an unknown name keeps 'size, viewBox and fill=none'; on Lit the fill/stroke live on both the svg attributes and the CSS, so I kept both. Not contradictory, but it is stated per platform for web only.
+- Icon: the spec does not say whether `name` gets an initial value on the element. It is required with no default, so I left the accessor unset (`name!`) and the Default story supplies `check`.

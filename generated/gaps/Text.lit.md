@@ -76,3 +76,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Text: the truncate description says the host's `title` attribute is 'observed' but doesn't say how narrowly. The MutationObserver runs over the host subtree with `attributeFilter: ['title']`, so a `title` change on a slotted descendant also triggers a harmless resync. The doc could say to observe only the host's own `title`.
 - Text: the `Truncate` story is named nowhere in the doc (only TruncateInline and TruncatedCell are). Lit keeps it for parity with React, with args inferred from the behavior scenario.
 - Text: the doc allows the 24ch truncate-width literal as story scaffolding but doesn't say whether Lit stories need a `/* literal-ok */` marker. It is left unmarked, matching React.
+
+## 2026-09-23 18:50 — round 1
+
+- Text: the conventions say a locked binding keeps its `:host` hook, but the `color` styles description says a locked color has no `--ds-text-color` hook on Lit. I followed the component doc (no hook) and dropped the hook the existing element declared; the package conventions text should carve out this case.
+- Text: the truncate scenario only checks the title on `part="text"`. Nothing tests that a consumer `title` attribute on the host wins or that the title follows live text edits, and both are specified, so I added no tests for them.
+- Text: `TruncateInline` and `Truncate` decorators use a literal `max-inline-size: 24ch`. The doc sanctions this as story scaffolding, but the literal linter is not told, so it may need a `literal-ok` exemption.
+
+## 2026-09-23 18:51 — round 2
+
+- Text: gate `hooks` (tools check_hooks) requires a `--ds-text-color` hook for the locked `color` binding, but the Text doc's `styles.color` description says a locked color has no `--ds-text-color` hook on web or Lit and that the tone rule reads `var(--color-foreground)` / `var(--color-foreground-on-action)` directly. Code follows the doc, so the gate still fails. Either check_hooks needs a per-binding exemption (for example a `hook: none` field on a locked style) or the Text doc must be changed to declare the hook. The prompts/templates lit.md text ('a locked binding keeps its :host hook') has the same conflict with this doc.
+
+## 2026-09-23 18:52 — round 3
+
+- Text: gate `hooks` (check_hooks) still requires a `--ds-text-color` hook for the locked `color` binding, but the Text doc's `styles.color` description says a locked color has no `--ds-text-color` hook on web or Lit and the tone rule reads the token custom property directly. Code follows the doc; the gate will keep failing until check_hooks exempts locked bindings whose doc declares no hook (for example a `hook: none` field), or the doc is changed to declare the hook. prompts/templates/lit.md ('a locked binding keeps its :host hook') conflicts with the Text doc in the same way and needs the same decision.

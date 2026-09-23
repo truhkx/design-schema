@@ -85,3 +85,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Heading: platforms.web.notes says 'on web and Lit one element takes both hooks' (data-ds and data-part="text"), but on Lit data-ds must be on the host while platforms.lit.notes puts part/data-part="text" on the inner <hN>; I followed the lit notes (data-ds on the host, data-part on the inner heading).
 - Heading: `level` reflects with `type: String`, so a numeric property value (`.level = 4`) reflects as the attribute `"4"` while the property keeps the number 4; the doc does not say whether the property should be normalised to the canonical string, so I left it as set.
 - Heading: the doc says the Default story has level 2, 'Account settings' and 'no other args', while `align` has a doc default of `start`; the Default args omit align (the element's own default applies and reflects `align="start"`).
+
+## 2026-09-23 18:53 — round 1
+
+- Heading: the `color` style binding's description says the locked colour has no `--ds-heading-color` hook and the rule reads `var(--color-foreground-strong)` directly, but the Overrides section and the Lit conventions say a locked binding keeps its `:host` hook. I kept `--ds-heading-color` because the existing element and the naming codemod rely on it. The doc should drop one of the two statements.
+- Heading: the doc says `level` is required, but Lit has no required-attribute concept and holds `undefined` until set. The stories and tests type `level` as required and the element falls back to h2, which matches the doc's prose. Nothing else was ambiguous.

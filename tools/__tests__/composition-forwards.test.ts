@@ -259,7 +259,9 @@ describe('the prose-forward rule over the real docs', () => {
       parse.validate(fm, f);
     }
     expect(parse.takeWarnings().filter((w) => /forwarded to .* as overrides\./.test(w.message))).toEqual([]);
-  });
+    // Parsing and validating every component doc grew past the default 5s budget as the corpus grew, which made
+    // this flake; the work is linear in the corpus, so the budget is raised rather than the assertions trimmed.
+  }, 30_000);
 });
 
 describe('compositionTarget', () => {
@@ -305,6 +307,9 @@ describe('compositionTarget', () => {
     }
     // The regeneration's folds turned most bare-string entries into the object form and declared what each
     // composite passes and forwards, so these counts are several times the job 639 migration's.
-    expect({ objects, forwards, passed }).toEqual({ objects: 92, forwards: 141, passed: 176 });
+    // The doc-fold passes after the regeneration added three more object entries (BottomSheet's heading on Heading
+    // and DataGrid's two select cells on Checkbox), the two minTarget → controlSize forwards those select cells
+    // declare, and three more passed props (AlertDialog focusScope.active, BottomSheet heading.level, footer.wrap).
+    expect({ objects, forwards, passed }).toEqual({ objects: 95, forwards: 143, passed: 179 });
   });
 });

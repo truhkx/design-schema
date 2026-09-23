@@ -295,15 +295,19 @@ describe('generated/components.json after the migration', () => {
   test('the fields the migration added, counted', () => {
     const count = (field: string): number => bindings.filter(([, , s]) => s[field] !== undefined).length;
     expect({ part: count('part'), state: count('state'), by: count('by'), values: count('values'), computed: count('computed') })
-      .toEqual({ part: 623, state: 18, by: 10, values: 10, computed: 6 });
+      .toEqual({ part: 632, state: 19, by: 11, values: 11, computed: 6 });
     expect(bindings.filter(([, , s]) => s.state !== undefined).map(([, name]) => name)).toEqual([
       'ActionSheet.itemHover', 'Button.backgroundHover', 'Button.inverseBackgroundHover', 'Button.inverseHoverOpacity',
       'Card.hoverBackground', 'Checkbox.pressedOverlay', 'DataGrid.rowHover', 'DatePicker.dayHover',
-      'Disclosure.triggerBackgroundHover', 'Link.colorHover', 'Listbox.optionActiveBackground', 'Menu.itemHover',
+      'Disclosure.triggerBackgroundHover', 'Link.colorHover', 'Listbox.optionActiveBackground', 'Listbox.optionSelectedWeight', 'Menu.itemHover',
       'Splitter.separatorHover', 'Splitter.separatorActive', 'Stepper.stepHover', 'Table.rowHover', 'Tabs.tabHoverBackground', 'Tree.rowHover',
     ]);
     expect(bindings.filter(([, , s]) => s.by !== undefined).map(([, name]) => name)).toEqual([
-      'DatePicker.paddingInline', 'DatePicker.paddingBlock', 'Input.paddingInline', 'Input.paddingBlock',
+      // Card.hoverBackground folded its two surface-specific hover tokens into by/values, which is also the
+      // eleventh `values` binding; the nine new `part` bindings are ActionSheet.itemIconSize, Combobox.minTarget
+      // and inputMinTarget, DatePicker's three weekday bindings, Feed.articleRadius,
+      // Form.errorSummaryLineHeight and ProgressBar.indeterminateReducedOpacity.
+      'Card.hoverBackground', 'DatePicker.paddingInline', 'DatePicker.paddingBlock', 'Input.paddingInline', 'Input.paddingBlock',
       'NumberInput.paddingInline', 'NumberInput.paddingBlock', 'Search.paddingBlock', 'Select.triggerPaddingBlock',
       'Table.cellPaddingInline', 'Toolbar.itemGap',
     ]);

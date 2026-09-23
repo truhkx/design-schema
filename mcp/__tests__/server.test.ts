@@ -501,7 +501,11 @@ describe.skipIf(!existsSync(DB_FILE))('search_guidance (needs the vector index: 
 
   test('a section and its paragraphs are not both returned', async () => {
     const out = await s.searchGuidance({ query: 'how do I announce a validation error', limit: 8 });
-    const parents = out.map((r) => `${r.source as string}${r.section as string}`);
+    // A section and its paragraphs share source, section and platform (the paragraph chunks hang off the section's
+    // own id), so a collision on that key is the duplication this guards. The platform belongs in the key because
+    // the per-platform chunks — the `Platform mapping` row and the split `Platform notes` — are separate chunks
+    // with separate ids that all carry one doc's section name: two of them ranking together is not a duplicate.
+    const parents = out.map((r) => `${r.source as string}${r.section as string}${r.platform as string}`);
     expect(new Set(parents).size).toBe(parents.length);
   });
 });

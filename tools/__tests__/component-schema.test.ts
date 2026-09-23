@@ -1688,6 +1688,8 @@ describe('constants', () => {
         'ActionSheet.dismissDistance': 0.25,
         'ActionSheet.dismissVelocity': 1.5,
         'ActionSheet.dragSlop': 'space.1 × 1',
+        // The cap a `height: content` sheet may grow to, folded out of BottomSheet's prose ("max-block-size: 90dvh").
+        'BottomSheet.contentCap': 0.9,
         'BottomSheet.dismissDistance': 0.25,
         'BottomSheet.dismissVelocity': 1.5,
         'BottomSheet.dragSlop': 'space.1 × 1',

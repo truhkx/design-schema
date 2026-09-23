@@ -391,8 +391,9 @@ component:
         composed Icon's own `color` override as this token, on every platform — React
         Native included, where it goes to the Icon's `overrides.color` rather than
         its `color` prop, so the combobox never resolves a token on the Icon's behalf.
-        It has no --ds-combobox-* hook, since the hook could not reach the child without
-        restyling it.
+        Locked, it keeps its `--ds-combobox-icon-color` hook on web and Lit, as every
+        locked binding does; the hook reaches each Icon by setting that Icon's own
+        documented `--ds-icon-color` hook on its host, never its internals.
       locked: true
     partGap:
       token: space.1

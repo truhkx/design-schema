@@ -31,6 +31,7 @@ export type ExpanderOverridableBinding =
   | 'triggerFontFamily'
   | 'triggerFontSize'
   | 'triggerFontWeight'
+  | 'triggerLineHeight'
   | 'triggerRadius'
   | 'panelPaddingBlock'
   | 'panelPaddingInline'
@@ -44,6 +45,7 @@ const OVERRIDE_HOOK: Record<ExpanderOverridableBinding, string> = {
   triggerFontFamily: '--demo-disclosure-trigger-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   triggerFontSize: '--demo-disclosure-trigger-font-size',
   triggerFontWeight: '--demo-disclosure-trigger-font-weight',
+  triggerLineHeight: '--demo-disclosure-trigger-line-height',
   triggerRadius: '--demo-disclosure-trigger-radius',
   panelPaddingBlock: '--demo-disclosure-panel-padding-block',
   panelPaddingInline: '--demo-disclosure-panel-padding-inline',

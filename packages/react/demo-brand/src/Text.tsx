@@ -1,4 +1,4 @@
-import { type ComponentPropsWithoutRef, type CSSProperties, type ElementType, type ReactNode, type Ref, type ReactElement } from 'react';
+import type { ComponentPropsWithoutRef, CSSProperties, ElementType, ReactNode, Ref, ReactElement } from 'react';
 import { cssVar, type TokenRef } from '@demo/tokens';
 import './Text.css';
 
@@ -50,7 +50,8 @@ export interface TextProps extends Omit<ComponentPropsWithoutRef<'p'>, 'children
   align?: TextAlign | undefined;
   /**
    * Clip to one line with an ellipsis. The full text is exposed via `title` when children is a plain
-   * string; otherwise the consumer passes `title`. With `element: span` the clipped box is
+   * string; otherwise the consumer passes `title`. A consumer `title` always wins and is forwarded
+   * unchanged, with or without `truncate`; `title={undefined}` counts as not passed. With `element: span` the clipped box is
    * `display: inline-block; max-inline-size: 100%`, so the width comes from the parent.
    */
   truncate?: boolean | undefined;

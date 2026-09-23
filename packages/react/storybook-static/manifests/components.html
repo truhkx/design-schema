@@ -620,13 +620,13 @@
 <header>
   <div class="wrap">
     <h1>Manifest Debugger</h1>
-    <div class="summary"><a class="filter-pill all" data-k="all" href="#filter-all">All</a><a class="filter-pill err" data-k="errors" href="#filter-errors">2/54 API errors</a><a class="filter-pill info" data-k="infos" href="#filter-infos">2/54 infos</a><a class="filter-pill" data-k="no-api" href="#filter-no-api">1/54 without API description</a><span class="filter-pill ok" aria-disabled="true">864 stories ok</span><a class="filter-pill info" data-k="story-warnings" href="#filter-story-warnings">33/864 incomplete snippets</a></div>
+    <div class="summary"><a class="filter-pill all" data-k="all" href="#filter-all">All</a><a class="filter-pill err" data-k="errors" href="#filter-errors">2/54 API errors</a><a class="filter-pill info" data-k="infos" href="#filter-infos">2/54 infos</a><a class="filter-pill" data-k="no-api" href="#filter-no-api">1/54 without API description</a><span class="filter-pill ok" aria-disabled="true">867 stories ok</span><a class="filter-pill info" data-k="story-warnings" href="#filter-story-warnings">33/867 incomplete snippets</a></div>
   </div>
 </header>
 <main>
   <div class="wrap">
     <div class="note info" style="margin-bottom: 16px;">
-            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>2.5s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
+            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>2.6s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
             <pre><code>typescript: {
   reactDocgen: 'react-docgen-typescript',
 }</code></pre>
@@ -1183,9 +1183,9 @@ container?: HTMLElement | undefined
 /**
  * Escape, the scrim, the cancel row and the drag all request close. When false, as in Dialog: the
  * Cancel row and the divider above it are not rendered, the drag handle is not rendered, the scrim
- * and the drag do nothing, and Escape still reports through onClose. It gates the sheet
- * presentation only — the wide Menu presentation has no scrim, drag or cancel row, and clicking
- * outside always closes it.
+ * and the drag do nothing, and Escape still reports through onClose; with no `heading` either, the
+ * header has nothing to show and is not rendered at all. It gates the sheet presentation only —
+ * the wide Menu presentation has no scrim, drag or cancel row, and clicking outside always closes it.
  */
 dismissible?: boolean | undefined = true
 
@@ -1229,7 +1229,7 @@ ref?: Ref&lt;HTMLDialogElement&gt; | undefined</code></pre>
                 <div class="row">
                   <span class="ex-name">Imports</span>
                 </div>
-                <pre><code>import { ActionSheet, Button, Icon } from '@design-schema/react';</code></pre>
+                <pre><code>import { ActionSheet } from '@design-schema/react';</code></pre>
               </div>
           
           
@@ -1239,7 +1239,7 @@ ref?: Ref&lt;HTMLDialogElement&gt; | undefined</code></pre>
                 <span class="badge ok">story ok</span>
               </div>
               
-              
+              <div class="hint">Open, with the photo-actions example&#39;s args.</div>
               <pre><code>const Default = () =&gt; &lt;Consumer
     open
     heading=&quot;Photo.jpg&quot;
@@ -1257,7 +1257,7 @@ ref?: Ref&lt;HTMLDialogElement&gt; | undefined</code></pre>
                 <span class="badge ok">story ok</span>
               </div>
               
-              
+              <div class="hint">Contextual actions on an item, with the destructive one last.</div>
               <pre><code>const PhotoActions = () =&gt; &lt;Consumer
     open
     heading=&quot;Photo.jpg&quot;
@@ -1275,7 +1275,7 @@ ref?: Ref&lt;HTMLDialogElement&gt; | undefined</code></pre>
                 <span class="badge ok">story ok</span>
               </div>
               
-              
+              <div class="hint">A sheet with no heading, named by copy.defaultLabel for assistive technology.</div>
               <pre><code>const UnnamedSheet = () =&gt; &lt;Consumer
     open
     heading={undefined}
@@ -1291,7 +1291,7 @@ ref?: Ref&lt;HTMLDialogElement&gt; | undefined</code></pre>
                 <span class="badge ok">story ok</span>
               </div>
               
-              
+              <div class="hint">An action that is shown but cannot be used here, announced as disabled rather than hidden.</div>
               <pre><code>const WithAnUnavailableAction = () =&gt; &lt;Consumer
     open
     heading=&quot;Invoice 4821&quot;
@@ -1327,7 +1327,7 @@ ref?: Ref&lt;HTMLDialogElement&gt; | undefined</code></pre>
                 <span class="badge ok">story ok</span>
               </div>
               
-              
+              <div class="hint">The controlled sheet with `open` false renders nothing.</div>
               <pre><code>const Closed = () =&gt; &lt;Consumer
     open={false}
     heading=&quot;Photo.jpg&quot;
@@ -1345,7 +1345,7 @@ ref?: Ref&lt;HTMLDialogElement&gt; | undefined</code></pre>
                 <span class="badge ok">story ok</span>
               </div>
               
-              <div class="hint">Open with its trigger and four focusable actions, for the keyboard gate.</div>
+              <div class="hint">Open with four focusable actions and the Cancel row, for the keyboard gate.</div>
               <pre><code>const Keyboard = () =&gt; &lt;Consumer
     open
     heading=&quot;Photo.jpg&quot;
@@ -1430,8 +1430,9 @@ children: ReactNode
 dismissible?: boolean | undefined = false
 
 /**
- * A short bold first line for the message. Optional for one-line messages. Named `heading`, not
- * `title`, because `title` is a native attribute (tooltip) on every platform element.
+ * A short bold first line for the message. Optional for one-line messages. An empty string is the
+ * same as no heading: no heading element is rendered and the name falls back to the body. Named
+ * `heading`, not `title`, because `title` is a native attribute (tooltip) on every platform element.
  */
 heading?: string | undefined
 
@@ -1685,9 +1686,9 @@ No suitable component definition found.
 You can debug your component file in this playground: https://react-docgen.dev/playground
 Code:
 import {
+  useCallback,
   useEffect,
   useId,
-  useImperativeHandle,
   useLayoutEffect,
   useRef,
   useState,
@@ -1727,11 +1728,11 @@ export type AlertDialogOverridableBinding =
   | &#39;width&#39;
   | &#39;gutter&#39;
   | &#39;layer&#39;
+  | &#39;rise&#39;
   | &#39;enter&#39;
   | &#39;exit&#39;;
 
-/** Hooks on the root. `footerGap` and `iconSize` are forwarded to the Stack and Icon `overrides` instead. */
-const OVERRIDE_HOOK: Partial&lt;Record&lt;AlertDialogOverridableBinding, string&gt;&gt; = {
+const OVERRIDE_HOOK: Record&lt;AlertDialogOverridableBinding, string&gt; = {
   scrim: &#39;--ds-alert-dialog-scrim&#39;,
   border: &#39;--ds-alert-dialog-border&#39;,
   borderWidth: &#39;--ds-alert-dialog-border-width&#39;,
@@ -1741,19 +1742,24 @@ const OVERRIDE_HOOK: Partial&lt;Record&lt;AlertDialogOverridableBinding, string&
   partGap: &#39;--ds-alert-dialog-part-gap&#39;,
   textGap: &#39;--ds-alert-dialog-text-gap&#39;,
   iconGap: &#39;--ds-alert-dialog-icon-gap&#39;,
+  footerGap: &#39;--ds-alert-dialog-footer-gap&#39;,
+  iconSize: &#39;--ds-alert-dialog-icon-size&#39;,
   width: &#39;--ds-alert-dialog-width&#39;,
   gutter: &#39;--ds-alert-dialog-gutter&#39;,
   layer: &#39;--ds-alert-dialog-layer&#39;,
+  rise: &#39;--ds-alert-dialog-rise&#39;,
   enter: &#39;--ds-alert-dialog-enter&#39;,
   exit: &#39;--ds-alert-dialog-exit&#39;,
 };
 
-function overridesToStyle(overrides: Partial&lt;Record&lt;AlertDialogOverridableBinding, TokenRef | undefined&gt;&gt;): CSSProperties {
+function overridesToStyle(
+  overrides: Partial&lt;Record&lt;AlertDialogOverridableBinding, TokenRef | undefined&gt;&gt;,
+): CSSProperties {
   const style: Record&lt;string, string&gt; = {};
   for (const binding of Object.keys(overrides) as AlertDialogOverridableBinding[]) {
     const ref = overrides[binding];
     const hook = OVERRIDE_HOOK[binding];
-    // Locked and forwarded bindings have no hook here; anything passed for them is ignored.
+    // Locked bindings are not in the type; anything passed anyway has no hook and is ignored.
     if (ref &amp;&amp; hook) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
@@ -1761,9 +1767,6 @@ function overridesToStyle(overrides: Partial&lt;Record&lt;AlertDialogOverridable
 
 /** copy.* — used verbatim. */
 const COPY = { cancelLabel: &#39;Cancel&#39; };
-
-/** iconSize default (font.size.lg), forwarded to the Icon as `overrides.size`. */
-const ICON_SIZE_TOKEN = &#39;font.size.lg&#39; as TokenRef;
 
 /** tone → confirm Button variant: danger → danger; warning and info → primary. */
 const CONFIRM_VARIANT: Record&lt;AlertDialogTone, ButtonVariant&gt; = {
@@ -1793,12 +1796,15 @@ function lockScroll(): () =&gt; void {
 }
 
 export interface AlertDialogProps
-  extends Omit&lt;ComponentPropsWithoutRef&lt;&#39;dialog&#39;&gt;, &#39;children&#39; | &#39;title&#39; | &#39;onCancel&#39; | &#39;onClose&#39; | &#39;open&#39; | &#39;role&#39;&gt; {
+  extends Omit&lt;
+    ComponentPropsWithoutRef&lt;&#39;dialog&#39;&gt;,
+    &#39;children&#39; | &#39;title&#39; | &#39;onCancel&#39; | &#39;onClose&#39; | &#39;open&#39; | &#39;role&#39;
+  &gt; {
   /** Controlled only — there is no uncontrolled mode; the consumer owns `open` and sets it false after handling `onConfirm` or `onCancel`, as in Dialog. */
   open: boolean;
   /** The question or statement, as a level-2 Heading at the size Heading reads from level 2 (no explicit `size`), and the accessible name (&quot;Delete 3 files?&quot;). */
   heading: string;
-  /** What will happen and whether it can be undone, in one or two sentences, rendered as Text `tone=&quot;muted&quot;` at Text&#39;s default size. Required: a decision without consequences stated is not a decision. */
+  /** What will happen and whether it can be undone, in one or two sentences, rendered as Text `tone=&quot;muted&quot;` at Text&#39;s default size (the color.foreground.muted contrast pair). Required: a decision without consequences stated is not a decision. */
   description: string;
   /** The nature of the decision. Sets the status icon (Icon `name` equal to the tone) and the confirm button&#39;s variant (danger → danger Button; warning and info → primary). Both buttons are Button size md. */
   tone?: AlertDialogTone | undefined;
@@ -1806,7 +1812,7 @@ export interface AlertDialogProps
   confirmLabel: string;
   /** The declining action. Defaults to `copy.cancelLabel`. */
   cancelLabel?: string | undefined;
-  /** Blocks confirm while a precondition is unmet (a typed confirmation, a loading state). Cancel always works. Forwarded to the confirm Button&#39;s own `disabled`, which keeps it focusable-but-inert. */
+  /** Blocks confirm while a precondition is unmet (a typed confirmation, a loading state). Cancel always works. Forwarded to the confirm Button&#39;s own `disabled` — it stays focusable-but-inert, so Confirm is still the last Tab stop; AlertDialog neither restyles it nor sets aria-disabled itself. */
   confirmDisabled?: boolean | undefined;
   /** The user chose the confirming action. The consumer performs it and closes. */
   onConfirm?: (() =&gt; void) | undefined;
@@ -1814,7 +1820,7 @@ export interface AlertDialogProps
   onCancel?: ((reason: AlertDialogCancelReason) =&gt; void) | undefined;
   /** Portal target. Defaults to `document.body`. A platform prop, not part of the schema. */
   container?: HTMLElement | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline (`footerGap` and `iconSize` reach the Stack and Icon `overrides`). */
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial&lt;Record&lt;AlertDialogOverridableBinding, TokenRef | undefined&gt;&gt; | undefined;
 }
 
@@ -1829,8 +1835,9 @@ export interface AlertDialogProps
  * is `warning`).
  *
  * The alert dialog never closes itself: Cancel and Escape fire `onCancel`, Confirm fires
- * `onConfirm`, a scrim click does nothing, and the consumer flips `open`. The ref resolves to the
- * `&lt;dialog&gt;`, null while closed.
+ * `onConfirm`, a scrim click does nothing, and the consumer flips `open`. Focus starts on Cancel so
+ * Enter pressed reflexively cancels rather than destroys. The ref resolves to the `&lt;dialog&gt;`, null
+ * while closed.
  */
 export function AlertDialog({
   ref,
@@ -1855,11 +1862,20 @@ export function AlertDialog({
   const descriptionId = `ds-alert-dialog${generatedId}-description`;
 
   const dialogRef = useRef&lt;HTMLDialogElement | null&gt;(null);
-  useImperativeHandle(ref, () =&gt; dialogRef.current as HTMLDialogElement, []);
+  const setDialogNode = useCallback(
+    (node: HTMLDialogElement | null): void =&gt; {
+      dialogRef.current = node;
+      if (typeof ref === &#39;function&#39;) ref(node);
+      else if (ref) ref.current = node;
+    },
+    [ref],
+  );
 
   const surfaceRef = useRef&lt;HTMLDivElement | null&gt;(null);
   const cancelButtonRef = useRef&lt;HTMLButtonElement | null&gt;(null);
-  const escapeHandledRef = useRef(false);
+  /** True from the moment Escape is reported until the end of the task, so the browser&#39;s `cancel`
+   * for that same key is not reported a second time. */
+  const escapeReportedRef = useRef(false);
   const selfClosingRef = useRef(false);
 
   // Mounted while open, and while the exit transition finishes after `open` goes false.
@@ -1880,18 +1896,21 @@ export function AlertDialog({
 
   if (open &amp;&amp; !present) setPresent(true);
 
-  /** Cancel, so Enter never confirms by momentum. FocusScope&#39;s autoFocus `first` targets the same button. */
+  /** Focus lands on Cancel, so Enter pressed reflexively cancels rather than destroys (WCAG 3.3.4). */
   const focusCancel = (): void =&gt; {
     const cancelButton = cancelButtonRef.current;
     if (cancelButton &amp;&amp; document.activeElement !== cancelButton) cancelButton.focus();
   };
 
-  // Open: showModal(), then reveal on the next frame. FocusScope&#39;s layout effect runs first (a child&#39;s
-  // fires before its parent&#39;s) while the &lt;dialog&gt; is still closed, so focus is confirmed on Cancel after.
+  // Open: showModal(), move focus to Cancel, then reveal on the next frame. FocusScope takes
+  // autoFocus `none` because its layout effect runs first (a child&#39;s fires before its parent&#39;s),
+  // while the &lt;dialog&gt; is still closed and cannot take focus; it keeps the trap and the restore.
+  // This also runs when `open` returns true while the exit transition is still running.
   useLayoutEffect(() =&gt; {
-    if (!present) return undefined;
+    if (!present || !open) return undefined;
     const dialog = dialogRef.current;
-    if (!dialog) return undefined;
+    const surface = surfaceRef.current;
+    if (!dialog || !surface) return undefined;
     selfClosingRef.current = false;
     if (!dialog.open) {
       // showModal() gives the top layer, Escape and background inertness. jsdom implements the
@@ -1902,7 +1921,7 @@ export function AlertDialog({
     focusCancel();
     const frame = requestAnimationFrame(() =&gt; setVisible(true));
     return () =&gt; cancelAnimationFrame(frame);
-  }, [present]);
+  }, [present, open]);
 
   // Close: run the exit transition, then close() and unmount (FocusScope restores the opener).
   useEffect(() =&gt; {
@@ -1936,32 +1955,41 @@ export function AlertDialog({
     return lockScroll();
   }, [present]);
 
+  /** Each Escape is reported exactly once, whichever of keydown or `cancel` reaches us first. */
+  const reportEscape = (): void =&gt; {
+    escapeReportedRef.current = true;
+    // The browser&#39;s `cancel` for this same key follows the keydown&#39;s listeners; skip it once.
+    setTimeout(() =&gt; {
+      escapeReportedRef.current = false;
+    }, 0);
+    onCancel?.(&#39;escape&#39;);
+  };
+
   // Escape arrives as keydown; the native `cancel` covers any other close request the browser raises.
   const handleKeyDown = (event: ReactKeyboardEvent&lt;HTMLDialogElement&gt;): void =&gt; {
     rest.onKeyDown?.(event);
     if (event.key !== &#39;Escape&#39; || event.defaultPrevented || !open) return;
     event.preventDefault();
-    escapeHandledRef.current = true;
-    // The browser&#39;s `cancel` for this same key follows the keydown&#39;s listeners; skip it once.
-    setTimeout(() =&gt; {
-      escapeHandledRef.current = false;
-    }, 0);
-    onCancel?.(&#39;escape&#39;);
+    if (!escapeReportedRef.current) reportEscape();
   };
 
   const handleNativeCancel = (event: SyntheticEvent&lt;HTMLDialogElement&gt;): void =&gt; {
     // The consumer owns `open`: never let the browser close the dialog.
     event.preventDefault();
-    if (escapeHandledRef.current || !open) return;
-    onCancel?.(&#39;escape&#39;);
+    if (escapeReportedRef.current || !open) return;
+    reportEscape();
   };
 
-  // A non-cancelable `cancel` closes the native dialog anyway; reopen unless the consumer set `open` false.
+  // A non-cancelable `cancel` closes the native dialog anyway, and a close watcher can close it with
+  // no `cancel` at all (repeated Escape): report `escape` if nothing else did, then reopen and put
+  // focus back on Cancel unless the consumer set `open` false.
   const handleNativeClose = (): void =&gt; {
     if (selfClosingRef.current) {
       selfClosingRef.current = false;
       return;
     }
+    if (!open) return;
+    if (!escapeReportedRef.current) reportEscape();
     requestAnimationFrame(() =&gt; {
       const dialog = dialogRef.current;
       if (!dialog || dialog.open || !latestOpen.current) return;
@@ -1973,12 +2001,21 @@ export function AlertDialog({
 
   if (!present) return null;
 
-  const classes = [&#39;ds-alert-dialog&#39;, visible &amp;&amp; open ? &#39;ds-alert-dialog--visible&#39; : null].filter(Boolean).join(&#39; &#39;);
+  const classes = [
+    &#39;ds-alert-dialog&#39;,
+    `ds-alert-dialog--${tone}`,
+    visible &amp;&amp; open ? &#39;ds-alert-dialog--visible&#39; : null,
+  ]
+    .filter(Boolean)
+    .join(&#39; &#39;);
+
+  const iconSizeOverride = overrides?.iconSize;
+  const footerGapOverride = overrides?.footerGap;
 
   const node = (
     &lt;dialog
       {...rest}
-      ref={dialogRef}
+      ref={setDialogNode}
       data-ds=&quot;AlertDialog&quot;
       className={classes}
       style={overrides ? overridesToStyle(overrides) : undefined}
@@ -1990,60 +2027,65 @@ export function AlertDialog({
       onCancel={handleNativeCancel}
       onClose={handleNativeClose}
     &gt;
-      {/* The scrim is ::backdrop. No click handler: a click on it targets the &lt;dialog&gt; and answers nothing. */}
-      &lt;FocusScope trapped autoFocus=&quot;first&quot; restoreFocus data-part=&quot;focusScope&quot;&gt;
-        &lt;div className=&quot;ds-alert-dialog__surface&quot; ref={surfaceRef} data-part=&quot;surface&quot;&gt;
-          &lt;div className=&quot;ds-alert-dialog__row&quot;&gt;
-            {/* Decorative: the heading and description already carry the tone. */}
-            &lt;span className=&quot;ds-alert-dialog__icon&quot; data-part=&quot;icon&quot; aria-hidden=&quot;true&quot;&gt;
-              &lt;Icon
-                name={tone}
-                overrides={{
-                  color: `color.status.${tone}.icon` as TokenRef,
-                  size: overrides?.iconSize ?? ICON_SIZE_TOKEN,
-                }}
-              /&gt;
-            &lt;/span&gt;
-            &lt;div className=&quot;ds-alert-dialog__text&quot;&gt;
-              &lt;div className=&quot;ds-alert-dialog__heading&quot; data-part=&quot;heading&quot;&gt;
-                &lt;Heading level=&quot;2&quot; id={headingId}&gt;
-                  {heading}
-                &lt;/Heading&gt;
-              &lt;/div&gt;
-              &lt;div className=&quot;ds-alert-dialog__description&quot; data-part=&quot;description&quot;&gt;
-                &lt;Text id={descriptionId} tone=&quot;muted&quot;&gt;
-                  {description}
-                &lt;/Text&gt;
+      {/* A real element inside the full-viewport &lt;dialog&gt;, as in Dialog, with no click listener:
+          a scrim click answers nothing. */}
+      &lt;div className=&quot;ds-alert-dialog__scrim&quot; data-part=&quot;scrim&quot; /&gt;
+      {/* FocusScope writes its own data-part=&quot;scope&quot;, so the focusScope part is this wrapper inside it. */}
+      &lt;FocusScope trapped autoFocus=&quot;none&quot; restoreFocus&gt;
+        &lt;div className=&quot;ds-alert-dialog__scope&quot; data-part=&quot;focusScope&quot;&gt;
+          &lt;div className=&quot;ds-alert-dialog__surface&quot; ref={surfaceRef} data-part=&quot;surface&quot;&gt;
+            {/* The icon-and-text row is AlertDialog-owned and carries no data-part: it only holds iconGap. */}
+            &lt;div className=&quot;ds-alert-dialog__row&quot;&gt;
+              {/* Decorative: the heading and description already carry the tone. */}
+              &lt;span className=&quot;ds-alert-dialog__icon&quot; data-part=&quot;icon&quot; aria-hidden=&quot;true&quot;&gt;
+                {/* icon (locked) and iconSize reach the Icon&#39;s own hooks from the stylesheet; the
+                    size override is passed only when the caller set it. */}
+                &lt;Icon name={tone} overrides={iconSizeOverride ? { size: iconSizeOverride } : undefined} /&gt;
+              &lt;/span&gt;
+              &lt;div className=&quot;ds-alert-dialog__text&quot;&gt;
+                &lt;div className=&quot;ds-alert-dialog__heading&quot; data-part=&quot;heading&quot;&gt;
+                  &lt;Heading level=&quot;2&quot; id={headingId}&gt;
+                    {heading}
+                  &lt;/Heading&gt;
+                &lt;/div&gt;
+                &lt;div className=&quot;ds-alert-dialog__description&quot; data-part=&quot;description&quot;&gt;
+                  &lt;Text id={descriptionId} tone=&quot;muted&quot;&gt;
+                    {description}
+                  &lt;/Text&gt;
+                &lt;/div&gt;
               &lt;/div&gt;
             &lt;/div&gt;
-          &lt;/div&gt;
-          &lt;div className=&quot;ds-alert-dialog__footer&quot; data-part=&quot;footer&quot;&gt;
-            &lt;Stack
-              direction=&quot;horizontal&quot;
-              gap=&quot;tight&quot;
-              justify=&quot;end&quot;
-              overrides={overrides?.footerGap ? { gap: overrides.footerGap } : undefined}
-            &gt;
-              {/* Cancel first in DOM order: the first focusable, focused on open; Confirm sits at the end. */}
-              &lt;span className=&quot;ds-alert-dialog__action&quot; data-part=&quot;cancelButton&quot;&gt;
-                &lt;Button
-                  ref={cancelButtonRef}
-                  variant=&quot;secondary&quot;
-                  size=&quot;md&quot;
-                  label={cancelLabel ?? COPY.cancelLabel}
-                  onClick={() =&gt; onCancel?.(&#39;cancel&#39;)}
-                /&gt;
-              &lt;/span&gt;
-              &lt;span className=&quot;ds-alert-dialog__action&quot; data-part=&quot;confirmButton&quot;&gt;
-                &lt;Button
-                  variant={CONFIRM_VARIANT[tone]}
-                  size=&quot;md&quot;
-                  label={confirmLabel}
-                  disabled={confirmDisabled}
-                  onClick={() =&gt; onConfirm?.()}
-                /&gt;
-              &lt;/span&gt;
-            &lt;/Stack&gt;
+            &lt;div className=&quot;ds-alert-dialog__footer&quot; data-part=&quot;footer&quot;&gt;
+              {/* footerGap reaches the Stack through the stylesheet; the override is passed only
+                  when the caller sets it, so consumer CSS on the AlertDialog hook still works. */}
+              &lt;Stack
+                direction=&quot;horizontal&quot;
+                gap=&quot;tight&quot;
+                justify=&quot;end&quot;
+                overrides={footerGapOverride ? { gap: footerGapOverride } : undefined}
+              &gt;
+                {/* Cancel first in DOM order: the first focusable, focused on open; `justify: end`
+                    puts the confirming action at the visual end of the row. */}
+                &lt;span className=&quot;ds-alert-dialog__action&quot; data-part=&quot;cancelButton&quot;&gt;
+                  &lt;Button
+                    ref={cancelButtonRef}
+                    variant=&quot;secondary&quot;
+                    size=&quot;md&quot;
+                    label={cancelLabel ?? COPY.cancelLabel}
+                    onClick={() =&gt; onCancel?.(&#39;cancel&#39;)}
+                  /&gt;
+                &lt;/span&gt;
+                &lt;span className=&quot;ds-alert-dialog__action&quot; data-part=&quot;confirmButton&quot;&gt;
+                  &lt;Button
+                    variant={CONFIRM_VARIANT[tone]}
+                    size=&quot;md&quot;
+                    label={confirmLabel}
+                    disabled={confirmDisabled}
+                    onClick={() =&gt; onConfirm?.()}
+                  /&gt;
+                &lt;/span&gt;
+              &lt;/Stack&gt;
+            &lt;/div&gt;
           &lt;/div&gt;
         &lt;/div&gt;
       &lt;/FocusScope&gt;
@@ -2179,7 +2221,8 @@ export function AlertDialog({
                 <span class="badge ok">story ok</span>
               </div>
               
-              <div class="hint">Open with its trigger; the focusable children are Cancel and Confirm, the trigger sits behind the inert page.</div>
+              <div class="hint">Open with its trigger. The dialog has exactly two focusable children, Cancel and Confirm — there
+is no slot for more — so Tab wraps across those two and the trigger sits behind the inert page.</div>
               <pre><code>const Keyboard = () =&gt; &lt;AlertDialogHarness
     open
     heading=&quot;Delete 3 files?&quot;
@@ -2276,7 +2319,7 @@ export function AlertDialog({
       <div class="badges">
         <label for="c-4-bottomsheet-react-props" class="badge ok as-toggle">13 prop types</label>
         
-        <label for="c-4-bottomsheet-react-stories" class="badge ok as-toggle">12 stories</label>
+        <label for="c-4-bottomsheet-react-stories" class="badge ok as-toggle">13 stories</label>
         
         
       </div>
@@ -2293,8 +2336,9 @@ for a browsable list where seeing the page behind matters (a map with results). 
 actions, ActionSheet is the lighter component.
 
 Above the `layout.maxWidth.prose` breakpoint the same props render `Dialog` of size md directly, so
-the root and `ref` are Dialog&#39;s `&lt;dialog&gt;`. Below it `ref` resolves to the sheet&#39;s `&lt;dialog&gt;`, null
-while closed. The sheet never closes itself: every close path calls `onClose` with a reason.</div>
+the root and `ref` are Dialog&#39;s `&lt;dialog&gt;` and `drag` never fires. Below it `ref` resolves to the
+sheet&#39;s `&lt;dialog&gt;`, null while closed. The sheet never closes itself: Escape, the close button, a
+scrim tap and the drag gesture all call `onClose` with a reason and the consumer flips `open`.</div>
     
   </div>
 
@@ -2337,11 +2381,13 @@ container?: HTMLElement | undefined
 dismissible?: boolean | undefined = true
 
 /**
- * Drag the handle (or the header) downward to dismiss: release past 25% of the sheet height, or faster
- * than 1.5 px/ms, dismisses; otherwise the sheet springs back. The body does not start the gesture;
- * only the handle and header do, once the pointer has moved `dragSlop` downward. Purely additive: the
- * handle is rendered only when `dragToDismiss` and `dismissible` are both true. A gesture is never the
- * only way to dismiss (WCAG 2.5.1); the handle is not a focus stop.
+ * Drag the handle (or the header) downward to dismiss: release past 25% of the sheet height, or
+ * faster than 1.5 px/ms, dismisses; otherwise the sheet springs back. The body does not start the
+ * gesture whatever its scroll position; only the handle and header do, and only once the pointer has
+ * moved `dragSlop` downward, so a tap on the close button still activates it. Purely additive: the
+ * handle is rendered only when `dragToDismiss` and `dismissible` are both true, so there is no drag
+ * affordance where dragging does nothing. A gesture is never the only way to dismiss (WCAG 2.5.1);
+ * the handle is not a focus stop.
  */
 dragToDismiss?: boolean | undefined = true
 
@@ -2367,12 +2413,12 @@ height?: BottomSheetHeight | undefined = &#39;content&#39;
 hideHeading?: boolean | undefined = false
 
 /**
- * Requested close with reason: `escape`, `close-button`, `scrim`, `drag`, or `action`.
+ * Requested close with reason: `escape`, `close-button`, `scrim`, `drag`, or `action`. The sheet never raises `action` itself; it exists for a consumer&#39;s footer action reusing the same handler.
  */
 onClose?: ((reason: BottomSheetCloseReason) =&gt; void) | undefined
 
 /**
- * The user dragged the sheet past the dismiss threshold. Fired before `onClose` with reason drag; provided so analytics can distinguish gestures. It carries no payload.
+ * The user dragged the sheet past the dismiss threshold. Fired before `onClose` with reason drag, so analytics can distinguish gestures. It carries no payload — the distance and velocity that triggered it are not part of the contract.
  */
 onDragDismiss?: (() =&gt; void) | undefined
 
@@ -2382,7 +2428,7 @@ onDragDismiss?: (() =&gt; void) | undefined
 open: boolean
 
 /**
- * Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. Bindings Dialog shares are forwarded to it above the breakpoint.
+ * Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. Bindings Dialog shares by name are forwarded to it above the breakpoint.
  */
 overrides?: Partial&lt;Record&lt;BottomSheetOverridableBinding, TokenRef | undefined&gt;&gt; | undefined
 
@@ -2532,6 +2578,26 @@ import { Button } from './Button';</code></pre>
     height=&quot;content&quot;
     dismissible
     dragToDismiss={false}&gt;&lt;Stack gap=&quot;normal&quot;&gt;
+        &lt;Text size=&quot;sm&quot;&gt;Show items updated in the last:&lt;/Text&gt;
+        &lt;Input label=&quot;Days&quot; name=&quot;days&quot; defaultValue=&quot;30&quot; /&gt;
+    &lt;/Stack&gt;&lt;/BottomSheetHarness&gt;;</code></pre>
+              
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Hidden Heading Not Dismissible</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              <div class="hint">Nothing left for the header to hold — no visible heading, no handle, no close button — so it is not rendered.</div>
+              <pre><code>const HiddenHeadingNotDismissible = () =&gt; &lt;BottomSheetHarness
+    open
+    heading=&quot;Filters&quot;
+    hideHeading
+    height=&quot;content&quot;
+    dismissible={false}
+    dragToDismiss
+    footer={&lt;Button label=&quot;Done&quot; variant=&quot;primary&quot; size=&quot;sm&quot; /&gt;}&gt;&lt;Stack gap=&quot;normal&quot;&gt;
         &lt;Text size=&quot;sm&quot;&gt;Show items updated in the last:&lt;/Text&gt;
         &lt;Input label=&quot;Days&quot; name=&quot;days&quot; defaultValue=&quot;30&quot; /&gt;
     &lt;/Stack&gt;&lt;/BottomSheetHarness&gt;;</code></pre>
@@ -4052,7 +4118,7 @@ import { Icon } from './Icon';</code></pre>
       <div class="badges">
         <label for="c-8-card-react-props" class="badge ok as-toggle">11 prop types</label>
         
-        <label for="c-8-card-react-stories" class="badge ok as-toggle">20 stories</label>
+        <label for="c-8-card-react-stories" class="badge ok as-toggle">22 stories</label>
         
         
       </div>
@@ -4087,8 +4153,11 @@ Use Cards for collections of like items where each needs its own boundary, and f
             <pre><code>Component: src\Card.tsx::Card</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>/**
- * The body. Usually a Stack of Text and controls; a plain string is rendered inside the system
- * Text (a bare string cannot sit in a native View).
+ * The body. Usually a Stack of Text and controls; a plain string or number is rendered inside the
+ * system Text with its defaults (a bare string cannot sit in a native View), including each
+ * top-level string or number in an array body. Fragments and arrays are flattened before the
+ * wrap, exactly as they are when the interactive target is looked for, so a string directly
+ * inside a top-level Fragment is wrapped too.
  */
 children: ReactNode
 
@@ -4096,7 +4165,10 @@ children: ReactNode
  * The card root takes tabindex=-1 so a container (Feed) can move focus to it by script, and
  * draws its own focus ring when focused that way. Not a tab stop; not for making cards
  * clickable (`interactive`). With `interactive` also set, `interactive` wins and this is a
- * no-op — the card already has a target — and a development warning says so.
+ * no-op — the card already has a target — and a development warning says so. It stays a no-op
+ * whenever `interactive` is set, even when that card fell back to non-interactive for want of a
+ * single target. The ring is an outline drawn outside the box, so a focusable card reserves no
+ * border.
  */
 focusable?: boolean | undefined = false
 
@@ -4114,7 +4186,8 @@ headerActions?: ReactNode | undefined
 /**
  * The card&#39;s title, rendered as the system Heading at the card&#39;s level and at `size: lg` on every
  * platform, so a card heading reads smaller than a page heading. Omit for cards that are a single
- * piece of content; an empty string counts as omitted (no article, no label).
+ * piece of content; an empty string counts as omitted (no article, no label) — but the header row
+ * still renders when `headerActions` is set, holding the actions alone.
  */
 heading?: string | undefined
 
@@ -4132,10 +4205,15 @@ inset?: CardInset | undefined = &#39;md&#39;
  * The whole card is one link or button target. Requires exactly one interactive child (a Link or
  * Button) whose action the card extends to its full area; the card itself is not focusable. The
  * child is looked for among the top-level children of the body only (a native a[href] or button
- * is accepted too); controls nested inside a wrapper such as a Stack are not searched. With zero
- * or several such children the card stays non-interactive and warns once in development. If the
- * child is disabled the card is disabled with it. Controls in `headerActions` and `footer` are
- * never the target; they sit above the hit area and keep their own targets.
+ * is accepted too); controls nested inside a wrapper such as a Stack are not searched, so place
+ * the link at the top level beside any Text. A top-level Fragment is flattened, so its children
+ * count as top-level. With zero or several such children the card stays non-interactive (no hit
+ * area, no hover background, no press) and warns once per mounted card in development — latched
+ * for the life of the mount, so a card that goes valid and then invalid again does not warn a
+ * second time. If the child is disabled the card is disabled with it: no hover background and
+ * pressing does nothing. The card itself never dims; the child renders its own disabled state.
+ * Controls in `headerActions` and `footer` are never the target; they sit above the hit area and
+ * keep their own targets.
  */
 interactive?: boolean | undefined = false
 
@@ -4460,12 +4538,37 @@ import { Link } from './Link';</code></pre>
             </div>
             <div class="note ok">
               <div class="row">
+                <span class="ex-name">Interactive In Fragment</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              
+              <pre><code>const InteractiveInFragment = () =&gt; &lt;Card heading=&quot;September invoice&quot; interactive&gt;(&lt;&gt;
+      &lt;Text element=&quot;p&quot; tone=&quot;muted&quot;&gt;
+        Due 30 September.
+      &lt;/Text&gt;
+      &lt;Link href=&quot;#&quot; label=&quot;View the September invoice&quot; /&gt;
+    &lt;/&gt;)&lt;/Card&gt;;</code></pre>
+              
+            </div>
+            <div class="note ok">
+              <div class="row">
                 <span class="ex-name">Interactive Disabled Button</span>
                 <span class="badge ok">story ok</span>
               </div>
               
               
               <pre><code>const InteractiveDisabledButton = () =&gt; &lt;Card heading=&quot;Archived plan&quot; interactive&gt;&lt;Button label=&quot;Choose plan&quot; variant=&quot;secondary&quot; disabled /&gt;&lt;/Card&gt;;</code></pre>
+              
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Interactive Without Target</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              
+              <pre><code>const InteractiveWithoutTarget = () =&gt; &lt;Card heading=&quot;September invoice&quot; interactive&gt;Nothing here is a link, so the card is not a target.&lt;/Card&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -4485,7 +4588,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const DenseGridCard = () =&gt; &lt;Card inset=&quot;sm&quot; surface=&quot;subtle&quot;&gt;A search result&lt;/Card&gt;;</code></pre>
+              <pre><code>const DenseGridCard = () =&gt; &lt;Card heading=&quot;&quot; inset=&quot;sm&quot; surface=&quot;subtle&quot;&gt;A search result&lt;/Card&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -4852,12 +4955,14 @@ description?: string | undefined
 disabled?: boolean | undefined = false
 
 /**
- * The error message. Setting it marks the control invalid. Say what to do (&quot;Accept the terms to continue&quot;).
+ * The error message. Setting it marks the control invalid. Say what to do (&quot;Accept the terms to
+ * continue&quot;).
  */
 error?: string | undefined
 
 /**
- * Visually hide the label (it remains the accessible name): a selection column in a Table, where the row name is the label.
+ * Visually hide the label (it remains the accessible name): a selection column in a Table, where
+ * the row name is the label.
  */
 hideLabel?: boolean | undefined = false
 
@@ -4868,7 +4973,9 @@ hideLabel?: boolean | undefined = false
 indeterminate?: boolean | undefined = false
 
 /**
- * Marks the control as failing validation. Usually set by the Form; can be set directly.
+ * Marks the control as failing validation. Usually set by the Form; can be set directly. While true
+ * with no `error` (and no Form message), the error slot renders copy.required (required and
+ * unchecked) or copy.invalid, with role=alert, so a bare `invalid` always shows a message.
  */
 invalid?: boolean | undefined = false
 
@@ -5193,7 +5300,12 @@ Use a Combobox for long lists (fifty-plus: people, cities, products), for values
  * commits it; the list shows `copy.addCustom` as a synthetic first row, suppressed when the
  * trimmed text already matches an existing option by either its `value` or its `label`.
  * Committing text that matches an option that way (Enter or a comma, same case- and
- * diacritic-insensitive match) commits that option&#39;s `value`, never a custom string.
+ * diacritic-insensitive match) commits that option&#39;s `value`, never a custom string. If the
+ * matching option is disabled, the row stays suppressed and the commit does nothing (neither the
+ * disabled value nor a custom string). With `multiple`, text matching an already-selected option
+ * leaves it selected (no `onChange`, unlike Enter on its row, which toggles) and clears the text.
+ * A comma typed when there is nothing to commit (empty text, or only a disabled match) is dropped
+ * and the text before it kept.
  */
 allowCustom?: boolean | undefined = false
 
@@ -5274,8 +5386,9 @@ onChange?: ((value: string | string[]) =&gt; void) | undefined
 
 /**
  * Fired on every text change the user causes — each keystroke, and the text a commit, Escape-to-clear
- * or the clear button leaves behind — with the input text. Not fired when a controlled `value` change
- * rewrites the label. The hook for `async` filtering.
+ * or the clear button leaves behind (so `async` consumers can reset) — with the input text. Not fired
+ * when a controlled `value` change rewrites the label, nor when a commit, Escape or the clear button
+ * leaves the text unchanged. The hook for `async` filtering.
  */
 onInputChange?: ((value: string) =&gt; void) | undefined
 
@@ -5624,7 +5737,8 @@ value?: ComboboxValue | undefined</code></pre>
               </div>
               
               <div class="hint">Open with its input, for the keyboard gate: the options are the focusable children, reached
-through aria-activedescendant while DOM focus stays in the input. Args come from the story URL;
+through aria-activedescendant while DOM focus stays in the input. `defaultValue` is set so the
+clear button renders and the story has enough focusable children. Args come from the story URL;
 the story owns `open` so Escape and Tab really close it.</div>
               <pre><code>const Keyboard = args =&gt; {
     const [open, setOpen] = useState(args.open ?? true);
@@ -5638,6 +5752,7 @@ the story owns `open` so Escape and Tab really close it.</div>
               { value: &#39;apricot&#39;, label: &#39;Apricot&#39; },
               { value: &#39;banana&#39;, label: &#39;Banana&#39; },
             ]}
+            defaultValue=&quot;apple&quot;
             open={open}
             onOpenChange={(next) =&gt; {
               setOpen(next);
@@ -5737,6 +5852,12 @@ gutter?: ContainerGutter | undefined = &#39;default&#39;
 
 /**
  * Per-instance style overrides: each entry sets the matching CSS hook to that token, inline.
+ * Overrides change values, never presence: `maxWidth` is a no-op at `width: full` and
+ * `paddingInline` is a no-op at `gutter: none`, because neither renders a hook at that value.
+ * Neither warns. A `paddingInline` override replaces the value at every viewport width, including
+ * the whole responsive `default` gutter rather than just its middle band. Consumers may also set
+ * `--ds-container-max-width` / `--ds-container-padding-inline` from their own CSS; that is the
+ * sanctioned escape hatch.
  */
 overrides?: Partial&lt;Record&lt;ContainerOverridableBinding, TokenRef | undefined&gt;&gt; | undefined
 
@@ -7672,7 +7793,7 @@ roving tab stop), Today and Clear. `open` follows onOpenChange, so Escape closes
       <div class="badges">
         <label for="c-15-dialog-react-err" class="badge err as-toggle">API error</label>
         <label for="c-15-dialog-react-info" class="badge info as-toggle">1 info</label>
-        <label for="c-15-dialog-react-stories" class="badge ok as-toggle">15 stories</label>
+        <label for="c-15-dialog-react-stories" class="badge ok as-toggle">16 stories</label>
         
         
       </div>
@@ -7741,6 +7862,7 @@ export type DialogOverridableBinding =
   | &#39;radius&#39;
   | &#39;inset&#39;
   | &#39;partGap&#39;
+  | &#39;gutter&#39;
   | &#39;headerGap&#39;
   | &#39;footerGap&#39;
   | &#39;descriptionGap&#39;
@@ -7759,6 +7881,7 @@ const OVERRIDE_HOOK: Record&lt;DialogOverridableBinding, string&gt; = {
   radius: &#39;--ds-dialog-radius&#39;,
   inset: &#39;--ds-dialog-inset&#39;,
   partGap: &#39;--ds-dialog-part-gap&#39;,
+  gutter: &#39;--ds-dialog-gutter&#39;,
   headerGap: &#39;--ds-dialog-header-gap&#39;,
   footerGap: &#39;--ds-dialog-footer-gap&#39;,
   descriptionGap: &#39;--ds-dialog-description-gap&#39;,
@@ -7899,11 +8022,13 @@ export function Dialog({
   );
 
   const surfaceRef = useRef&lt;HTMLDivElement | null&gt;(null);
-  const bodyRef = useRef&lt;HTMLElement | null&gt;(null);
+  const bodyRef = useRef&lt;HTMLDivElement | null&gt;(null);
   const footerRef = useRef&lt;HTMLDivElement | null&gt;(null);
   const headingRef = useRef&lt;HTMLHeadingElement | null&gt;(null);
   const closeButtonRef = useRef&lt;HTMLButtonElement | null&gt;(null);
-  const escapeHandledRef = useRef(false);
+  /** True from the moment Escape is reported until the end of the task, so the browser&#39;s `cancel` and
+   * `close` for that same key are not reported a second time. */
+  const escapeReportedRef = useRef(false);
   const selfClosingRef = useRef(false);
 
   // Mounted while open, and while the exit transition finishes after `open` goes false.
@@ -7941,9 +8066,10 @@ export function Dialog({
     headingElement.focus();
   };
 
-  // Open: showModal(), move focus in per `initialFocus`, then reveal on the next frame.
+  // Open: showModal(), move focus in per `initialFocus`, then reveal on the next frame. It also runs
+  // when `open` returns true while the exit transition is still running, which reveals the surface again.
   useLayoutEffect(() =&gt; {
-    if (!present) return undefined;
+    if (!present || !open) return undefined;
     const dialog = dialogRef.current;
     const surface = surfaceRef.current;
     if (!dialog || !surface) return undefined;
@@ -7958,7 +8084,8 @@ export function Dialog({
 
     let fired = false;
     const fireOpened = (): void =&gt; {
-      if (fired) return;
+      // Never fired when `open` became false again before the enter transition finished.
+      if (fired || !latest.current.open) return;
       fired = true;
       latest.current.onOpened?.();
     };
@@ -7974,7 +8101,7 @@ export function Dialog({
       cancelAnimationFrame(frame);
       surface.removeEventListener(&#39;transitionend&#39;, handleEntered);
     };
-  }, [present]);
+  }, [present, open]);
 
   // Close: run the exit transition, then close() and unmount (FocusScope restores the opener).
   useEffect(() =&gt; {
@@ -8008,33 +8135,19 @@ export function Dialog({
     return lockScroll();
   }, [present]);
 
-  // Escape arrives as keydown; the native `cancel` covers any other close request the browser raises.
-  const handleKeyDown = (event: ReactKeyboardEvent&lt;HTMLDialogElement&gt;): void =&gt; {
-    rest.onKeyDown?.(event);
-    if (event.key !== &#39;Escape&#39; || event.defaultPrevented || !open) return;
-    event.preventDefault();
-    escapeHandledRef.current = true;
-    // The browser&#39;s `cancel` for this same key follows the keydown&#39;s listeners; skip it once.
+  /** Each Escape is reported exactly once, whichever of keydown, `cancel` or `close` reaches us first. */
+  const reportEscape = (): void =&gt; {
+    escapeReportedRef.current = true;
+    // The browser&#39;s `cancel` and `close` for this same key follow the keydown&#39;s listeners; skip them once.
     setTimeout(() =&gt; {
-      escapeHandledRef.current = false;
+      escapeReportedRef.current = false;
     }, 0);
     // Reported even when not dismissible: Escape is the keyboard user&#39;s exit.
     onClose?.(&#39;escape&#39;);
   };
 
-  const handleCancel = (event: SyntheticEvent&lt;HTMLDialogElement&gt;): void =&gt; {
-    // The consumer owns `open`: never let the browser close the dialog, dismissible or not.
-    event.preventDefault();
-    if (escapeHandledRef.current || !open) return;
-    onClose?.(&#39;escape&#39;);
-  };
-
-  // A non-cancelable `cancel` closes the native dialog anyway; reopen unless the consumer set `open` false.
-  const handleNativeClose = (): void =&gt; {
-    if (selfClosingRef.current) {
-      selfClosingRef.current = false;
-      return;
-    }
+  /** Reopen after a close the component did not ask for, and put focus back in per `initialFocus`. */
+  const reopenAfterNativeClose = (): void =&gt; {
     requestAnimationFrame(() =&gt; {
       const dialog = dialogRef.current;
       if (!dialog || dialog.open || !latest.current.open) return;
@@ -8042,6 +8155,34 @@ export function Dialog({
       else dialog.open = true;
       placeInitialFocus();
     });
+  };
+
+  // Escape arrives as keydown; the native `cancel` covers any other close request the browser raises.
+  const handleKeyDown = (event: ReactKeyboardEvent&lt;HTMLDialogElement&gt;): void =&gt; {
+    rest.onKeyDown?.(event);
+    if (event.key !== &#39;Escape&#39; || event.defaultPrevented || !open) return;
+    event.preventDefault();
+    if (!escapeReportedRef.current) reportEscape();
+  };
+
+  const handleCancel = (event: SyntheticEvent&lt;HTMLDialogElement&gt;): void =&gt; {
+    // The consumer owns `open`: never let the browser close the dialog, dismissible or not.
+    event.preventDefault();
+    if (escapeReportedRef.current || !open) return;
+    reportEscape();
+  };
+
+  // A non-cancelable `cancel` closes the native dialog anyway, and a close watcher can close it with no
+  // `cancel` at all (repeated Escape): report `escape` if nothing else did, then reopen unless the
+  // consumer set `open` false.
+  const handleNativeClose = (): void =&gt; {
+    if (selfClosingRef.current) {
+      selfClosingRef.current = false;
+      return;
+    }
+    if (!open) return;
+    if (!escapeReportedRef.current) reportEscape();
+    reopenAfterNativeClose();
   };
 
   const handleScrimClick = (): void =&gt; {
@@ -8074,63 +8215,59 @@ export function Dialog({
       onClose={handleNativeClose}
     &gt;
       &lt;div className=&quot;ds-dialog__scrim&quot; data-part=&quot;scrim&quot; onClick={handleScrimClick} /&gt;
+      {/* FocusScope writes its own data-part=&quot;scope&quot;, so the focusScope part is this wrapper inside it. */}
       &lt;FocusScope trapped autoFocus=&quot;none&quot; restoreFocus&gt;
-        &lt;div className=&quot;ds-dialog__surface&quot; ref={surfaceRef} data-part=&quot;surface&quot;&gt;
-          &lt;div className=&quot;ds-dialog__header&quot; data-part=&quot;header&quot;&gt;
-            &lt;div className=&quot;ds-dialog__titles&quot;&gt;
-              &lt;div
-                className={hideHeading ? &#39;ds-dialog__heading ds-dialog__visually-hidden&#39; : &#39;ds-dialog__heading&#39;}
-                data-part=&quot;heading&quot;
-              &gt;
-                &lt;Heading
-                  level=&quot;2&quot;
-                  id={headingId}
-                  ref={headingRef}
-                  tabIndex={initialFocus === &#39;title&#39; ? -1 : undefined}
+        &lt;div className=&quot;ds-dialog__scope&quot; data-part=&quot;focusScope&quot;&gt;
+          &lt;div className=&quot;ds-dialog__surface&quot; ref={surfaceRef} data-part=&quot;surface&quot;&gt;
+            &lt;div className=&quot;ds-dialog__header&quot; data-part=&quot;header&quot;&gt;
+              {/* The titles group is Dialog-owned and carries no data-part: it only holds descriptionGap. */}
+              &lt;div className=&quot;ds-dialog__titles&quot;&gt;
+                &lt;div
+                  className={hideHeading ? &#39;ds-dialog__heading ds-dialog__visually-hidden&#39; : &#39;ds-dialog__heading&#39;}
+                  data-part=&quot;heading&quot;
                 &gt;
-                  {heading}
-                &lt;/Heading&gt;
+                  &lt;Heading level=&quot;2&quot; id={headingId} ref={headingRef} tabIndex={initialFocus === &#39;title&#39; ? -1 : undefined}&gt;
+                    {heading}
+                  &lt;/Heading&gt;
+                &lt;/div&gt;
+                {description ? (
+                  &lt;Text id={descriptionId} data-part=&quot;description&quot; tone=&quot;muted&quot;&gt;
+                    {description}
+                  &lt;/Text&gt;
+                ) : null}
               &lt;/div&gt;
-              {description ? (
-                &lt;Text id={descriptionId} data-part=&quot;description&quot;&gt;
-                  {description}
-                &lt;/Text&gt;
+              {dismissible ? (
+                &lt;span className=&quot;ds-dialog__close&quot; data-part=&quot;closeButton&quot;&gt;
+                  &lt;Button
+                    ref={closeButtonRef}
+                    variant=&quot;ghost&quot;
+                    size=&quot;sm&quot;
+                    iconOnly
+                    label={COPY.closeLabel}
+                    leadingIcon={&lt;Icon name=&quot;close&quot; inline /&gt;}
+                    onClick={() =&gt; onClose?.(&#39;close-button&#39;)}
+                  /&gt;
+                &lt;/span&gt;
               ) : null}
             &lt;/div&gt;
-            {dismissible ? (
-              &lt;span className=&quot;ds-dialog__close&quot; data-part=&quot;closeButton&quot;&gt;
-                &lt;Button
-                  ref={closeButtonRef}
-                  variant=&quot;ghost&quot;
-                  size=&quot;sm&quot;
-                  iconOnly
-                  label={COPY.closeLabel}
-                  leadingIcon={&lt;Icon name=&quot;close&quot; inline /&gt;}
-                  onClick={() =&gt; onClose?.(&#39;close-button&#39;)}
-                /&gt;
-              &lt;/span&gt;
+            {/* body: the Dialog-owned scroll container, since Box never scrolls. */}
+            &lt;div className=&quot;ds-dialog__body&quot; data-part=&quot;body&quot; ref={bodyRef}&gt;
+              {/* inset reaches the Box through the stylesheet; the override is passed only when the caller sets it. */}
+              &lt;Box overrides={insetOverride ? { paddingInline: insetOverride } : undefined}&gt;{children}&lt;/Box&gt;
+            &lt;/div&gt;
+            {hasFooter ? (
+              &lt;div className=&quot;ds-dialog__footer&quot; data-part=&quot;footer&quot; ref={footerRef}&gt;
+                &lt;Stack
+                  direction=&quot;horizontal&quot;
+                  justify=&quot;end&quot;
+                  wrap
+                  overrides={footerGapOverride ? { gap: footerGapOverride } : undefined}
+                &gt;
+                  {footer}
+                &lt;/Stack&gt;
+              &lt;/div&gt;
             ) : null}
           &lt;/div&gt;
-          &lt;div className=&quot;ds-dialog__scroll&quot;&gt;
-            &lt;Box
-              data-part=&quot;body&quot;
-              ref={bodyRef}
-              overrides={insetOverride ? { paddingBlock: insetOverride, paddingInline: insetOverride } : undefined}
-            &gt;
-              {children}
-            &lt;/Box&gt;
-          &lt;/div&gt;
-          {hasFooter ? (
-            &lt;div className=&quot;ds-dialog__footer&quot; data-part=&quot;footer&quot; ref={footerRef}&gt;
-              &lt;Stack
-                direction=&quot;horizontal&quot;
-                justify=&quot;end&quot;
-                overrides={footerGapOverride ? { gap: footerGapOverride } : undefined}
-              &gt;
-                {footer}
-              &lt;/Stack&gt;
-            &lt;/div&gt;
-          ) : null}
         &lt;/div&gt;
       &lt;/FocusScope&gt;
     &lt;/dialog&gt;
@@ -8327,6 +8464,27 @@ import { Text } from './Text';</code></pre>
     size=&quot;md&quot;
     dismissible
     initialFocus=&quot;first&quot;&gt;&lt;Input label=&quot;Project name&quot; name=&quot;projectName&quot; defaultValue=&quot;Q3 roadmap&quot; /&gt;&lt;/DialogHarness&gt;;</code></pre>
+              
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">With Description</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              <div class="hint">The description is one sentence of consequence under the title, and the accessible description.</div>
+              <pre><code>const WithDescription = () =&gt; &lt;DialogHarness
+    open
+    heading=&quot;Rename project&quot;
+    footer={(&lt;&gt;
+      &lt;Button label=&quot;Rename&quot; variant=&quot;primary&quot; /&gt;
+      &lt;Button label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;
+    &lt;/&gt;)}
+    hideHeading={false}
+    size=&quot;md&quot;
+    dismissible
+    initialFocus=&quot;first&quot;
+    description=&quot;Everyone with access will see the new name.&quot;&gt;&lt;Input label=&quot;Project name&quot; name=&quot;projectName&quot; defaultValue=&quot;Q3 roadmap&quot; /&gt;&lt;/DialogHarness&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -8917,12 +9075,23 @@ heading in a feed. Use `spacing` when the divider stands outside a Stack.</div>
  * Optional text in the middle of a horizontal divider (&quot;or&quot;, &quot;Earlier today&quot;). Turns the divider
  * from decorative into a labelled separator (`semantic` is implied). Ignored on a vertical
  * divider, with a development warning: a vertical line has no room for centered text. An ignored
- * label implies nothing either — a vertical divider is semantic only when `semantic` says so.
+ * label implies nothing either — a vertical divider is semantic only when `semantic` says so. An
+ * empty string is no label: the divider stays decorative and nothing warns. The development
+ * warning fires when the ignored combination appears or changes, not on every render. A vertical
+ * divider with an ignored label and `semantic: true` is a separator with no accessible name:
+ * naming it from text that is not rendered would contradict the label being ignored. When in
+ * effect, the label is the separator&#39;s accessible name (through `aria-labelledby`, since
+ * separator children are presentational), and the two line pieces on either side are hidden from
+ * assistive technology.
  */
 label?: string | undefined
 
 /**
- * Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height.
+ * Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height:
+ * `inline-block` with `block-size: auto; align-self: stretch; min-block-size: 100%` (flex stretch
+ * applies only to an auto cross size, and the min fills a parent with a set height). They need a
+ * flex or grid row (a horizontal Stack with align stretch) or a parent with a definite height; in
+ * plain block flow a vertical divider has no height and draws nothing.
  */
 orientation?: DividerOrientation | undefined = &#39;horizontal&#39;
 
@@ -8941,7 +9110,11 @@ ref?: Ref&lt;HTMLElement&gt; | undefined
 semantic?: boolean | undefined = false
 
 /**
- * Space on both sides, from the layout rhythm, for dividers used outside a Stack that already spaces them.
+ * Space on both sides along the cross axis (above and below a horizontal divider, left and right
+ * of a vertical one), from the layout rhythm, for dividers used outside a Stack that already
+ * spaces them. The space is transparent: `margin-block` horizontally, `margin-inline` vertically.
+ * It applies to a labelled divider too, where the root is the row: the space is around the whole
+ * divider, label included, not around each line piece.
  */
 spacing?: DividerSpacing | undefined = &#39;none&#39;</code></pre>
           </div>
@@ -9152,7 +9325,7 @@ endMessage?: string | undefined
 
 /**
  * More items exist beyond the last; the feed asks for them with `onLoadMore` as the end approaches,
- * and once on mount when `items` is empty and not `loading`.
+ * and whenever `items` is empty and not `loading` — on mount and again if the caller clears `items`.
  */
 hasMore?: boolean | undefined = false
 
@@ -9506,7 +9679,10 @@ import { Link } from './Link';</code></pre>
                 <span class="badge ok">story ok</span>
               </div>
               
-              <div class="hint">Present with the new-items button and three focusable children inside the articles.</div>
+              <div class="hint">Present with three focusable children inside the feed&#39;s own articles (a Reply button, a Link and a
+Download button). The new-items row is a sibling of the `role=&quot;feed&quot;` element rather than one of
+its children, so its button is deliberately absent here: it would be the first Tab stop on the
+page while sitting outside the feed the keyboard gate walks.</div>
               <pre><code>const Keyboard = () =&gt; &lt;Feed
     label=&quot;Activity&quot;
     items={[
@@ -9534,8 +9710,7 @@ import { Link } from './Link';</code></pre>
     ]}
     hasMore={false}
     loading={false}
-    headingLevel=&quot;3&quot;
-    newItemsCount={2} /&gt;;</code></pre>
+    headingLevel=&quot;3&quot; /&gt;;</code></pre>
               
             </div>
         </div>
@@ -9603,7 +9778,7 @@ than on one field.</div>
 children: ReactNode
 
 /**
- * Persistent helper text under the legend.
+ * Persistent helper text under the legend. An empty string counts as unset (no part rendered, no link).
  */
 description?: string | undefined
 
@@ -9613,7 +9788,8 @@ description?: string | undefined
 disabled?: boolean | undefined = false
 
 /**
- * A group-level error (cross-field validation such as &quot;End date must be after start date&quot;). Field-level errors stay on the fields.
+ * A group-level error (cross-field validation such as &quot;End date must be after start date&quot;). Field-level
+ * errors stay on the fields. An empty string counts as unset (no part, no aria-invalid, no announcement).
  */
 error?: string | undefined
 
@@ -10120,7 +10296,7 @@ text and renders the controls it names beside it.</div>
       <div class="badges">
         <label for="c-21-form-react-props" class="badge ok as-toggle">12 prop types</label>
         
-        <label for="c-21-form-react-stories" class="badge ok as-toggle">10 stories</label>
+        <label for="c-21-form-react-stories" class="badge ok as-toggle">11 stories</label>
         
         
       </div>
@@ -10157,7 +10333,7 @@ at the end in a Stack. Give the form a `label` when the page contains more than 
             <pre><code>Component: src\Form.tsx::Form</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>/**
- * The action row: at least one Button with `type: submit`, primary first (Form&#39;s action-order rule). Rendered after the fields with the form gap.
+ * The action row: at least one Button with `type: submit`, primary first (Form&#39;s action-order rule). Rendered after the fields with the form gap. A single action renders bare; two or more go in a horizontal Stack the consumer supplies.
  */
 actions: ReactNode
 
@@ -10167,12 +10343,12 @@ actions: ReactNode
 children: ReactNode
 
 /**
- * Disables every field and action inside. Use while submitting. Each field and action dims itself; the Form applies no opacity of its own and only exposes the disabled state.
+ * Disables every field and action inside. Use while submitting. Each field and action dims itself with its own disabled style; the Form container applies no opacity of its own and puts no disabled attribute on the form element.
  */
 disabled?: boolean | undefined = false
 
 /**
- * When submission fails validation, render a summary of errors above the fields that links to each field. Each item&#39;s text is the field&#39;s own message verbatim; a field invalid with an empty message shows its `label` instead.
+ * When submission fails validation, render a summary of errors above the fields that links to each field. Each item&#39;s text is the field&#39;s own message verbatim; a field invalid with an empty message shows its `label` instead, and its `name` when the label is empty too.
  */
 errorSummary?: boolean | undefined = true
 
@@ -10187,7 +10363,7 @@ label?: string | undefined
 labelledBy?: string | undefined
 
 /**
- * Identifier for the form, used for analytics and as the base of generated ids.
+ * Identifier for the form, used for analytics and as the base of generated ids. An unnamed form bases its ids on a generated unique id; two forms given the same `name` on one page is an authoring error Form does not detect.
  */
 name?: string | undefined
 
@@ -10209,7 +10385,7 @@ overrides?: Partial&lt;Record&lt;FormOverridableBinding, TokenRef | undefined&gt
 ref?: Ref&lt;HTMLFormElement&gt; | undefined
 
 /**
- * When field-level validation runs. `submit` is the least noisy; `blur` is the usual choice for longer forms.
+ * When field-level validation runs. `submit` is the least noisy; `blur` is the usual choice for longer forms. `change` validates on change only; after a failed submission every mode re-validates on blur and change, until a successful submission resets that state.
  */
 validate?: FormValidateMode | undefined = &#39;submit&#39;</code></pre>
           </div>
@@ -10294,6 +10470,23 @@ import { Button } from './Button';</code></pre>
     validate=&quot;change&quot;&gt;(&lt;Stack gap=&quot;normal&quot;&gt;
       &lt;Input label=&quot;Email&quot; name=&quot;email&quot; type=&quot;email&quot; required /&gt;
       &lt;Input label=&quot;Password&quot; name=&quot;password&quot; type=&quot;password&quot; required /&gt;
+    &lt;/Stack&gt;)&lt;/Form&gt;;</code></pre>
+              
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Keyboard</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              
+              <pre><code>const Keyboard = () =&gt; &lt;Form
+    name=&quot;sign-in&quot;
+    label=&quot;Sign in&quot;
+    actions={&lt;Button label=&quot;Sign in&quot; type=&quot;submit&quot; /&gt;}&gt;(&lt;Stack gap=&quot;normal&quot;&gt;
+      &lt;Input label=&quot;Email&quot; name=&quot;email&quot; type=&quot;email&quot; required /&gt;
+      &lt;Input label=&quot;Password&quot; name=&quot;password&quot; type=&quot;password&quot; required /&gt;
+      &lt;Input label=&quot;Workspace&quot; name=&quot;workspace&quot; required /&gt;
     &lt;/Stack&gt;)&lt;/Form&gt;;</code></pre>
               
             </div>
@@ -11660,8 +11853,7 @@ role: | &#39;banner&#39;
                   <span class="ex-name">Imports</span>
                 </div>
                 <pre><code>import { Heading, Landmark, Stack, Text } from '@design-schema/react';
-import { Text } from './Text';
-import { Heading } from './Heading';</code></pre>
+import { Text } from './Text';</code></pre>
               </div>
           
           
@@ -11682,7 +11874,7 @@ import { Heading } from './Heading';</code></pre>
               </div>
               
               
-              <pre><code>const RoleBanner = () =&gt; &lt;Landmark role=&quot;banner&quot; label={undefined}&gt;&lt;Text weight=&quot;semibold&quot;&gt;Site header&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
+              <pre><code>const RoleBanner = () =&gt; &lt;Landmark role=&quot;banner&quot; label={undefined}&gt;&lt;Text&gt;Site header&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -11702,7 +11894,7 @@ import { Heading } from './Heading';</code></pre>
               </div>
               
               
-              <pre><code>const RoleMain = () =&gt; &lt;Landmark role=&quot;main&quot; label={undefined}&gt;&lt;Heading level=&quot;1&quot;&gt;Page title&lt;/Heading&gt;&lt;/Landmark&gt;;</code></pre>
+              <pre><code>const RoleMain = () =&gt; &lt;Landmark role=&quot;main&quot; label={undefined}&gt;&lt;Text&gt;Page content&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -11712,7 +11904,7 @@ import { Heading } from './Heading';</code></pre>
               </div>
               
               
-              <pre><code>const RoleComplementary = () =&gt; &lt;Landmark role=&quot;complementary&quot; label=&quot;Help&quot;&gt;&lt;Text&gt;Sidebar content&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
+              <pre><code>const RoleComplementary = () =&gt; &lt;Landmark role=&quot;complementary&quot; label={undefined}&gt;&lt;Text&gt;Sidebar content&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -11722,7 +11914,7 @@ import { Heading } from './Heading';</code></pre>
               </div>
               
               
-              <pre><code>const RoleContentinfo = () =&gt; &lt;Landmark role=&quot;contentinfo&quot; label={undefined}&gt;&lt;Text size=&quot;sm&quot;&gt;Site footer&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
+              <pre><code>const RoleContentinfo = () =&gt; &lt;Landmark role=&quot;contentinfo&quot; label={undefined}&gt;&lt;Text&gt;Site footer&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -11732,7 +11924,7 @@ import { Heading } from './Heading';</code></pre>
               </div>
               
               
-              <pre><code>const RoleRegion = () =&gt; &lt;Landmark role=&quot;region&quot; label=&quot;Related articles&quot;&gt;&lt;Text&gt;Related articles&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
+              <pre><code>const RoleRegion = () =&gt; &lt;Landmark role=&quot;region&quot; label=&quot;Related articles&quot;&gt;&lt;Text&gt;Section content&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -11742,7 +11934,7 @@ import { Heading } from './Heading';</code></pre>
               </div>
               
               
-              <pre><code>const RoleSearch = () =&gt; &lt;Landmark role=&quot;search&quot; label=&quot;Site&quot;&gt;&lt;Text&gt;Search form&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
+              <pre><code>const RoleSearch = () =&gt; &lt;Landmark role=&quot;search&quot; label={undefined}&gt;&lt;Text&gt;Search form&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -11752,7 +11944,7 @@ import { Heading } from './Heading';</code></pre>
               </div>
               
               
-              <pre><code>const RoleForm = () =&gt; &lt;Landmark role=&quot;form&quot; label=&quot;Feedback&quot;&gt;&lt;Text&gt;Form fields&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
+              <pre><code>const RoleForm = () =&gt; &lt;Landmark role=&quot;form&quot; label=&quot;Sign in&quot;&gt;&lt;Text&gt;Form fields&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -11792,7 +11984,7 @@ import { Heading } from './Heading';</code></pre>
               </div>
               
               
-              <pre><code>const AsAside = () =&gt; &lt;Landmark role=&quot;complementary&quot; label=&quot;Help&quot; as=&quot;aside&quot;&gt;&lt;Text&gt;Primary links.&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
+              <pre><code>const AsAside = () =&gt; &lt;Landmark role=&quot;complementary&quot; label={undefined} as=&quot;aside&quot;&gt;&lt;Text&gt;Primary links.&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -11822,7 +12014,7 @@ import { Heading } from './Heading';</code></pre>
               </div>
               
               
-              <pre><code>const AsForm = () =&gt; &lt;Landmark role=&quot;search&quot; label=&quot;Site&quot; as=&quot;form&quot;&gt;&lt;Text&gt;Primary links.&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
+              <pre><code>const AsForm = () =&gt; &lt;Landmark role=&quot;search&quot; label={undefined} as=&quot;form&quot;&gt;&lt;Text&gt;Primary links.&lt;/Text&gt;&lt;/Landmark&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -11897,7 +12089,7 @@ import { Heading } from './Heading';</code></pre>
     &lt;/Landmark&gt;
     &lt;Landmark role=&quot;contentinfo&quot;&gt;
       &lt;Landmark role=&quot;navigation&quot; label=&quot;Footer&quot;&gt;
-        &lt;Text size=&quot;sm&quot;&gt;Footer navigation&lt;/Text&gt;
+        &lt;Text&gt;Footer navigation&lt;/Text&gt;
       &lt;/Landmark&gt;
     &lt;/Landmark&gt;
   &lt;/Stack&gt;
@@ -12200,7 +12392,8 @@ disabled?: boolean | undefined = false
 /**
  * The list lives inside a popup (Select, Combobox) that owns the border, surface and radius; the
  * list draws none of its own. It keeps its own `listPadding`, and an override of `border`,
- * `borderWidth`, `surface` or `radius` is a no-op while it is set.
+ * `borderWidth`, `surface` or `radius` is a no-op while it is set. An embedded list is not a tab
+ * stop (`tabindex=&quot;-1&quot;`): its host keeps focus on the trigger or input and forwards keys.
  */
 embedded?: boolean | undefined = false
 
@@ -12810,7 +13003,10 @@ The forwarded `ref` resolves to the popup (`role=&quot;menu&quot;`) and is null 
             <pre><code>Props:</code></pre>
             <pre><code>/**
  * Position the popup relative to this element instead of rendering a trigger; the trigger part is
- * omitted and `open` must be controlled. Used by ActionSheet above its breakpoint and by context menus.
+ * omitted and `open` must be controlled. Used by ActionSheet above its breakpoint and by context
+ * menus. The anchor stands in for the trigger: a pointerdown on it is not `outside` and focus moving
+ * onto it is not `focus-out`, and focus that would return to the trigger returns to the element that
+ * had focus when the menu opened.
  */
 anchor?: RefObject&lt;HTMLElement | null&gt; | undefined
 
@@ -12821,7 +13017,9 @@ container?: HTMLElement | undefined
 
 /**
  * Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required. With
- * `triggerIcon: none` there would be nothing visible to press, so that pairing warns in development (once).
+ * `triggerIcon: none` there would be nothing visible to press, so that pairing warns in development
+ * (once), unless `anchor` is set (there is no trigger then). It is the only development warning Menu
+ * issues — no warning for empty items, a missing label or an uncontrolled anchor.
  */
 iconOnly?: boolean | undefined = false
 
@@ -12851,8 +13049,9 @@ onOpenChange?: ((open: boolean, reason: MenuOpenChangeReason) =&gt; void) | unde
 
 /**
  * Controlled open state (the parent flips it from onOpenChange). Omit for an uncontrolled menu, which
- * starts closed; there is no defaultOpen. A controlled menu hides, and returns focus to the trigger,
- * only when `open` becomes false.
+ * starts closed; there is no defaultOpen. A controlled menu hides only when `open` becomes false — a
+ * parent that never flips it keeps the menu open. Focus on close follows the reason; a close the menu
+ * did not request moves focus to the trigger only when focus is inside the popup at that moment.
  */
 open?: boolean | undefined
 
@@ -12862,7 +13061,10 @@ open?: boolean | undefined
 overrides?: Partial&lt;Record&lt;MenuOverridableBinding, TokenRef | undefined&gt;&gt; | undefined
 
 /**
- * Preferred position of the popup relative to the trigger; flips automatically when it would overflow the viewport.
+ * Preferred position of the popup relative to the trigger (or `anchor`). Only the block side flips
+ * (bottom and top swap) when the popup would overflow the viewport; `start` and `end` never flip.
+ * They resolve against the layout direction (in right-to-left `start` is the right edge), and the
+ * popup is shifted inline instead so it stays `gutter` away from the side edges.
  */
 placement?: MenuPlacement | undefined = &#39;bottom-start&#39;
 
@@ -13438,12 +13640,12 @@ hideValue?: boolean | undefined = false
 label: string
 
 /**
- * Upper bound of the range. Must be greater than `min`.
+ * Upper bound of the range. Must be greater than `min`. A non-finite `max` (NaN, Infinity) is treated as 100.
  */
 max?: number | undefined = 100
 
 /**
- * Lower bound of the range.
+ * Lower bound of the range. A non-finite `min` (NaN, Infinity) is treated as 0.
  */
 min?: number | undefined = 0
 
@@ -13461,13 +13663,16 @@ ref?: Ref&lt;HTMLDivElement&gt; | undefined
 tone?: MeterTone | undefined = &#39;info&#39;
 
 /**
- * The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too.
+ * The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number
+ * too, exact and unrounded (`aria-valuenow=&quot;3.14159&quot;`) — only the percentage text is rounded.
  */
 value: number
 
 /**
  * Human-readable value shown at the end of the label row and announced instead of the raw number
  * (&quot;3.2 GB of 10 GB&quot;, &quot;Strong&quot;). Omit to show and announce the percentage, rounded to a whole number (&quot;32%&quot;).
+ * Meter has no locale prop: the percentage uses the runtime&#39;s default locale, and the same formatter
+ * produces the &quot;0%&quot; of an invalid range. Rounding is for the text only; the fill uses the exact fraction.
  */
 valueText?: string | undefined</code></pre>
           </div>
@@ -14202,7 +14407,7 @@ value?: number | null | undefined</code></pre>
     invalid={false}
     defaultValue={5}
     min={0}
-    max={10} /&gt;;</code></pre>
+    max={20} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14317,7 +14522,7 @@ value?: number | null | undefined</code></pre>
       <div class="badges">
         <label for="c-31-popover-react-props" class="badge ok as-toggle">13 prop types</label>
         
-        <label for="c-31-popover-react-stories" class="badge ok as-toggle">21 stories</label>
+        <label for="c-31-popover-react-stories" class="badge ok as-toggle">20 stories</label>
         
         
       </div>
@@ -14454,7 +14659,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               <div class="hint">Open, with the filter-panel example&#39;s args.</div>
-              <pre><code>const Default = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const Default = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14464,7 +14669,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const HeadingLevel2 = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const HeadingLevel2 = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14474,7 +14679,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const HeadingLevel3 = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const HeadingLevel3 = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14484,7 +14689,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const HeadingLevel4 = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const HeadingLevel4 = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14494,7 +14699,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const PlacementBottomStart = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const PlacementBottomStart = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14504,7 +14709,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const PlacementBottom = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const PlacementBottom = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14514,7 +14719,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const PlacementBottomEnd = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const PlacementBottomEnd = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14524,7 +14729,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const PlacementTopStart = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const PlacementTopStart = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14534,7 +14739,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const PlacementTop = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const PlacementTop = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14544,7 +14749,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const PlacementTopEnd = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const PlacementTopEnd = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14554,7 +14759,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const PlacementStart = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const PlacementStart = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14564,7 +14769,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const PlacementEnd = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const PlacementEnd = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14574,7 +14779,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const NotDismissible = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const NotDismissible = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14584,7 +14789,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const WithArrow = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const WithArrow = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14594,17 +14799,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const Modal = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
-              
-            </div>
-            <div class="note ok">
-              <div class="row">
-                <span class="ex-name">Uncontrolled</span>
-                <span class="badge ok">story ok</span>
-              </div>
-              
-              <div class="hint">Uncontrolled: starts closed; the trigger toggles it.</div>
-              <pre><code>const Uncontrolled = (args) =&gt; &lt;Popover {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const Modal = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14614,7 +14809,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const FilterPanel = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const FilterPanel = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;Popover {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14624,7 +14819,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const DatePickerPanel = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const DatePickerPanel = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;Popover {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14634,7 +14829,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const RequiredStep = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const RequiredStep = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;Popover {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14644,7 +14839,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               
-              <pre><code>const ContextualHelp = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const ContextualHelp = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;Popover {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -14654,7 +14849,7 @@ import { Link } from './Link';</code></pre>
               </div>
               
               <div class="hint">Open with its trigger and three focusable body children, for the keyboard gate.</div>
-              <pre><code>const Keyboard = (args) =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
+              <pre><code>const Keyboard = (args: Partial&lt;PopoverProps&gt;): ReactElement =&gt; &lt;OpenHarness {...(args as PopoverProps)} /&gt;;</code></pre>
               
             </div>
         </div>
@@ -14851,16 +15046,20 @@ announce?: ProgressBarAnnounce | undefined = &#39;complete&#39;
 
 /**
  * Renders the value text (&quot;42%&quot;, &quot;3 of 12 files&quot;). Defaults to a percentage over the whole range —
- * `(value − min) / (max − min)` — rounded to a whole number. Called with the clamped value. A `max` at or
- * below `min` is not a range: the bar renders empty, exposes `min` as its value, shows &quot;0%&quot; unless a custom
- * formatter says otherwise, makes no progress or completion announcements, and warns in development.
+ * `(value − min) / (max − min)`, the same arithmetic the fill uses, so a non-zero `min` reads correctly
+ * without a custom formatter — rounded to a whole number in the runtime&#39;s default locale (there is no locale
+ * prop), so 99.5% of the way shows &quot;100%&quot; before completion; completion is only the clamped value reaching
+ * `max`. Called with the clamped value. Rounding is for the text only; the fill uses the exact fraction.
+ * A `max` at or below `min` is not a range: the bar renders empty, exposes `min` as its value with the given
+ * bounds, shows and exposes &quot;0%&quot; unless a custom formatter says otherwise, makes no progress or completion
+ * announcements, and warns in development.
  */
 formatValue?: ((value: number, min: number, max: number) =&gt; string) | undefined
 
 /**
  * Visually hide the label (it remains the accessible name). For bars inside a Card whose heading already
- * says what is happening. The value text, when shown, stays at the end of the row; when there is no visible
- * value text either, the label row takes no space and `partGap` is not applied.
+ * says what is happening. The value text, when shown, stays at the inline end of the row; when there is no
+ * visible value text either, the label row takes no space and `partGap` is not applied.
  */
 hideLabel?: boolean | undefined = false
 
@@ -14870,12 +15069,12 @@ hideLabel?: boolean | undefined = false
 label: string
 
 /**
- * End of the range.
+ * End of the range. A non-finite number is treated as the default, 100.
  */
 max?: number | undefined = 100
 
 /**
- * Start of the range.
+ * Start of the range. A non-finite number is treated as the default, 0.
  */
 min?: number | undefined = 0
 
@@ -15679,10 +15878,11 @@ so no form nests in a form, and Search handles Enter and its submit Button itsel
             <pre><code>Component: src\Search.tsx::Search</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>/**
- * URL to submit to with GET (web and Lit); when omitted, `onSubmit` handles it and nothing
- * navigates. The URL carries the same trimmed query `onSubmit` receives (the field value is
- * trimmed before the native submit). Ignored, with a development warning, when Search sits inside
- * a Form component: the enclosing Form owns submission.
+ * URL to submit to with GET; when omitted, `onSubmit` handles it and nothing navigates. The URL
+ * carries the same trimmed query `onSubmit` receives: the visible input carries no `name`, and a
+ * hidden input named `name` is set to the trimmed query (the controlled value or chosen label,
+ * never stale DOM text) in the submit handler. Ignored, with a development warning, when Search
+ * sits inside a Form component: the enclosing Form owns submission.
  */
 action?: string | undefined
 
@@ -15698,9 +15898,10 @@ defaultValue?: string | undefined
 
 /**
  * Not editable, still readable and focusable: the input is read-only with aria-disabled, both
- * Buttons are disabled, every key in the keyboard table is inert, suggestions never open, no event
- * fires, the whole component dims to `disabledOpacity`, and a disabled Search is not registered
- * with (or submitted by) a Form.
+ * Buttons are disabled (the clear Button still renders when there is text), every key in the
+ * keyboard table is inert, suggestions never open and an open list closes, no event fires, the
+ * label, glyph and input dim to `disabledOpacity` (the Buttons dim through their own style and the
+ * field frame is not dimmed), and a disabled Search is not registered with (or submitted by) a Form.
  */
 disabled?: boolean | undefined = false
 
@@ -15771,8 +15972,11 @@ size?: SearchSize | undefined = &#39;md&#39;
  * `onChange` (debounced by the caller). Setting the prop at all is what turns the field into a
  * combobox, including an explicitly empty array after a fetch that found nothing, which shows
  * `copy.noSuggestions`; leaving it undefined keeps a plain search field. The list opens on typing
- * and on ArrowDown — never on focus alone — and closes on Escape, Tab or blur, a pointer press
- * outside the field and list, a chosen suggestion, clear, and submit.
+ * and on ArrowDown — never on focus alone, and an array arriving while the field is focused but
+ * untouched does not open it — and closes on Escape, Tab, blur to an element outside Search (a
+ * blur with no new focus target, such as a window switch, does not close it), a pointer press
+ * outside the field and list, a chosen suggestion, clear, and submit. ArrowDown on the last
+ * suggestion stays there, as ArrowUp never wraps.
  */
 suggestions?: SearchSuggestion[] | undefined
 
@@ -15942,7 +16146,9 @@ value?: string | undefined</code></pre>
                 <span class="badge ok">story ok</span>
               </div>
               
-              <div class="hint">For the keyboard gate: the input, the clear button (there is text) and the submit button are three focus stops.</div>
+              <div class="hint">For the keyboard gate: the closed field with a query and suggestions, so the input, the clear
+button (there is text) and the submit button are the three focus stops the Tab rule walks, and the
+first ArrowDown opens the list. There is no `open` prop — focus alone never opens it.</div>
               <pre><code>const Keyboard = () =&gt; &lt;Search
     label=&quot;Search products&quot;
     defaultValue=&quot;invoices&quot;
@@ -16010,7 +16216,12 @@ Use it for two to five short, parallel options that change what a region shows o
             <pre><code>Component: src\SegmentedControl.tsx::SegmentedControl</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>/**
- * Initially selected value. Defaults to the first enabled option — a segmented control always has a selection. A value naming a disabled option keeps it checked; one matching no option checks nothing.
+ * Initially selected value. Defaults to the first enabled option — a segmented control always has
+ * a selection. A `value` or `defaultValue` is taken as given, never corrected: one naming a
+ * disabled option keeps that segment checked with the pill under it (arrows still skip it); one
+ * matching no option checks nothing and draws no pill (the pill is unmounted, and the next
+ * selection places it instantly rather than sliding it in). In both cases the tab stop is the
+ * first enabled segment, and arrows move from there when no segment has focus.
  */
 defaultValue?: string | undefined
 
@@ -16020,7 +16231,10 @@ defaultValue?: string | undefined
 fill?: boolean | undefined = false
 
 /**
- * Show icons only (every option must have one); labels become accessible names and Tooltips. An option without `icon` warns in development (once) and shows its label as text.
+ * Show icons only (every option must have one); labels become accessible names and Tooltips. An
+ * option without `icon` warns in development once per instance (one message listing every option
+ * without an icon) and that segment shows its label as text instead, so it never renders empty;
+ * that segment gets no Tooltip and no `aria-label`, since its visible text is its name.
  */
 iconOnly?: boolean | undefined = false
 
@@ -16035,7 +16249,9 @@ label: string
 onChange?: ((value: string) =&gt; void) | undefined
 
 /**
- * Two to five options (guidance, not enforced: any count renders, with no warning). Labels are one word; with `iconOnly` the label becomes the accessible name.
+ * Two to five options (guidance, not enforced: any count renders, with no warning). Labels are
+ * one word; with `iconOnly` the label becomes the accessible name. The icon is an Icon whose
+ * `size` is the control&#39;s `size` (`sm` or `md`).
  */
 options: SegmentedControlOption[]
 
@@ -16930,8 +17146,8 @@ the permanent sidebar on desktop; leave it `never` for panels that are always a 
 
 The panel renders into one stable host node that moves between the portal target (overlay) and
 the component&#39;s place in the page (persistent sidebar), so crossing the breakpoint keeps a
-non-modal panel&#39;s children state. The ref resolves to the positioned surface element — the fixed
-panel, the &lt;dialog&gt; when modal, the in-page sidebar when persistent — and is null while closed.</div>
+non-modal panel&#39;s children state. The ref resolves to the root element — the fixed panel, the
+full-viewport &lt;dialog&gt; when modal, the in-page sidebar when persistent — and is null while closed.</div>
     
   </div>
 
@@ -16969,9 +17185,10 @@ container?: HTMLElement | undefined
 
 /**
  * Escape, the close button, a scrim tap / outside click, and the swipe gesture all request close.
- * When false, the close button is not rendered and a scrim tap or an outside press do nothing;
+ * When false, the close button is not rendered and a scrim tap and an outside press do nothing;
  * Escape still reports through onOpenChange with reason escape (the consumer decides), as in
- * Dialog. The trigger toggle, a followed Link and a consumer&#39;s `action` always close.
+ * Dialog. Only those are gated: the trigger toggle, a followed Link (`navigation`) and a consumer&#39;s
+ * `action` always close.
  */
 dismissible?: boolean | undefined = true
 
@@ -16987,9 +17204,11 @@ heading: string
 
 /**
  * Keep the title for assistive technology but hide it visually (a navigation panel whose Links are
- * self-explanatory). When the header would then be empty (no close button because `dismissible` is
- * false or the panel is persistent), the header part is not rendered. The accessible name is
- * required regardless.
+ * self-explanatory): it stays rendered with the visually-hidden clip pattern so aria-labelledby
+ * still resolves. When the header would then be empty (no close button because `dismissible` is
+ * false or the panel is persistent), the header part is not rendered: no padding, no gap, no
+ * height, and the hidden title moves to the top of the surface. The accessible name is required
+ * regardless.
  */
 hideHeading?: boolean | undefined = false
 
@@ -16997,13 +17216,15 @@ hideHeading?: boolean | undefined = false
  * False (the default, the disclosure pattern): the panel is a disclosed region — the page stays
  * live and in the tab order after the panel, focus stays on the trigger when it opens, and Escape
  * from inside or a click outside closes it. True: the panel is a modal Dialog at the edge — scrim,
- * focus moved in and trapped, page inert and scroll-locked.
+ * focus moved in and trapped, page inert and scroll-locked — for a panel that must be finished or
+ * dismissed (a cart checkout, a required filter).
  */
 modal?: boolean | undefined = false
 
 /**
  * Fired when the panel opens or closes, with the new state and a reason: `trigger`, `escape`,
  * `close-button`, `scrim`, `outside`, `swipe`, `action`, `navigation` (a Link inside was followed).
+ * `swipe` never comes from the web; `action` is a consumer&#39;s own footer handler reusing this.
  */
 onOpenChange?: ((open: boolean, reason: SidePanelOpenChangeReason) =&gt; void) | undefined
 
@@ -17015,7 +17236,8 @@ open?: boolean | undefined
 
 /**
  * Per-instance style overrides: each entry sets the matching CSS hook to that token, inline.
- * `inset` is forwarded to the body Box&#39;s `paddingBlock`, `footerGap` to the footer Stack&#39;s `gap`.
+ * `inset` is also forwarded to the body Box&#39;s `paddingInline` and `footerGap` to the footer Stack&#39;s
+ * `gap`, so the composed children follow.
  */
 overrides?: Partial&lt;Record&lt;SidePanelOverridableBinding, TokenRef | undefined&gt;&gt; | undefined
 
@@ -17023,7 +17245,8 @@ overrides?: Partial&lt;Record&lt;SidePanelOverridableBinding, TokenRef | undefin
  * Above this layout width the panel stops being an overlay and becomes a fixed sidebar beside the
  * content: always visible, no scrim, no trap, part of the page&#39;s tab order, and the trigger is
  * hidden. `content` switches at layout.maxWidth.content, `page` at layout.maxWidth.page; the
- * comparison is `(width &gt; token)`. Below it, the overlay behavior applies.
+ * comparison is `(width &gt; token)`, read from the theme token on &lt;html&gt; when the component mounts.
+ * Below it, the overlay behavior applies.
  */
 persistent?: SidePanelPersistent | undefined = &#39;never&#39;
 
@@ -17031,14 +17254,15 @@ ref?: Ref&lt;HTMLElement&gt; | undefined
 
 /**
  * The landmark the panel exposes (in persistent mode and as the region&#39;s role when open):
- * `navigation` for a menu of Links, `complementary` for filters, a cart, a detail. On web this is
- * the composed Landmark&#39;s own role, so `navigation` renders a real &lt;nav&gt;; a modal panel is a
- * dialog, not a landmark, and takes none of this.
+ * `navigation` for a menu of Links, `complementary` for filters, a cart, a detail. This is the
+ * composed Landmark&#39;s own role, so `navigation` renders a real &lt;nav&gt;; a modal panel is a dialog,
+ * not a landmark, and takes none of this.
  */
 role?: SidePanelRole | undefined = &#39;complementary&#39;
 
 /**
- * Show the scrim in non-modal mode too (modal always has one). Turn it off for a panel that should feel like part of the page.
+ * Show the scrim in non-modal mode too (modal always has one). It defaults to true, so turn it off
+ * for a panel that should feel like part of the page.
  */
 scrim?: boolean | undefined = true
 
@@ -17050,8 +17274,9 @@ scrim?: boolean | undefined = true
 side?: SidePanelSide | undefined = &#39;start&#39;
 
 /**
- * On touch, a swipe toward the edge dismisses (native only). Accepted on web for parity; no
- * gesture is wired, since dragging a panel with a mouse is not a web idiom.
+ * On touch, a swipe toward the edge dismisses (native only). Purely additive, and accepted here for
+ * parity: the web wires no gesture, since dragging a panel with a mouse is not a web idiom. The
+ * trigger and close button are always there (WCAG 2.5.1).
  */
 swipeable?: boolean | undefined = true
 
@@ -17433,7 +17658,7 @@ import { Text } from './Text';</code></pre>
               
               
               <pre><code>const Cart = () =&gt; &lt;StatefulSidePanel
-    trigger={&lt;Button variant=&quot;ghost&quot; iconOnly label=&quot;Menu&quot; leadingIcon={&lt;Icon name=&quot;menu&quot; inline /&gt;} /&gt;}
+    trigger={undefined}
     heading=&quot;Your cart&quot;
     open
     footer={&lt;Button variant=&quot;primary&quot; label=&quot;Checkout&quot; /&gt;}
@@ -17456,7 +17681,7 @@ import { Text } from './Text';</code></pre>
               
               
               <pre><code>const DetailPanel = () =&gt; &lt;StatefulSidePanel
-    trigger={&lt;Button variant=&quot;ghost&quot; iconOnly label=&quot;Menu&quot; leadingIcon={&lt;Icon name=&quot;menu&quot; inline /&gt;} /&gt;}
+    trigger={undefined}
     heading=&quot;Order details&quot;
     open
     side=&quot;end&quot;
@@ -18112,7 +18337,7 @@ import { Button } from './Button';</code></pre>
               <pre><code>const Default = () =&gt; &lt;Splitter
     label=&quot;Sidebar width&quot;
     orientation=&quot;horizontal&quot;
-    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;tight&quot;&gt;
+    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;normal&quot; align=&quot;start&quot;&gt;
       &lt;Text element=&quot;p&quot; weight=&quot;medium&quot;&gt;
         Sections
       &lt;/Text&gt;
@@ -18144,7 +18369,7 @@ import { Button } from './Button';</code></pre>
               <pre><code>const OrientationHorizontal = () =&gt; &lt;Splitter
     label=&quot;Sidebar width&quot;
     orientation=&quot;horizontal&quot;
-    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;tight&quot;&gt;
+    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;normal&quot; align=&quot;start&quot;&gt;
       &lt;Text element=&quot;p&quot; weight=&quot;medium&quot;&gt;
         Sections
       &lt;/Text&gt;
@@ -18196,7 +18421,7 @@ import { Button } from './Button';</code></pre>
               <pre><code>const StackBelowProse = () =&gt; &lt;Splitter
     label=&quot;Sidebar width&quot;
     orientation=&quot;horizontal&quot;
-    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;tight&quot;&gt;
+    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;normal&quot; align=&quot;start&quot;&gt;
       &lt;Text element=&quot;p&quot; weight=&quot;medium&quot;&gt;
         Sections
       &lt;/Text&gt;
@@ -18228,7 +18453,7 @@ import { Button } from './Button';</code></pre>
               <pre><code>const StackBelowContent = () =&gt; &lt;Splitter
     label=&quot;Sidebar width&quot;
     orientation=&quot;horizontal&quot;
-    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;tight&quot;&gt;
+    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;normal&quot; align=&quot;start&quot;&gt;
       &lt;Text element=&quot;p&quot; weight=&quot;medium&quot;&gt;
         Sections
       &lt;/Text&gt;
@@ -18260,7 +18485,7 @@ import { Button } from './Button';</code></pre>
               <pre><code>const StackBelowNever = () =&gt; &lt;Splitter
     label=&quot;Sidebar width&quot;
     orientation=&quot;horizontal&quot;
-    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;tight&quot;&gt;
+    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;normal&quot; align=&quot;start&quot;&gt;
       &lt;Text element=&quot;p&quot; weight=&quot;medium&quot;&gt;
         Sections
       &lt;/Text&gt;
@@ -18292,7 +18517,7 @@ import { Button } from './Button';</code></pre>
               <pre><code>const Collapsible = () =&gt; &lt;Splitter
     label=&quot;Sidebar width&quot;
     orientation=&quot;horizontal&quot;
-    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;tight&quot;&gt;
+    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;normal&quot; align=&quot;start&quot;&gt;
       &lt;Text element=&quot;p&quot; weight=&quot;medium&quot;&gt;
         Sections
       &lt;/Text&gt;
@@ -18324,7 +18549,7 @@ import { Button } from './Button';</code></pre>
               <pre><code>const Collapsed = () =&gt; &lt;Splitter
     label=&quot;Sidebar width&quot;
     orientation=&quot;horizontal&quot;
-    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;tight&quot;&gt;
+    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;normal&quot; align=&quot;start&quot;&gt;
       &lt;Text element=&quot;p&quot; weight=&quot;medium&quot;&gt;
         Sections
       &lt;/Text&gt;
@@ -18357,7 +18582,7 @@ import { Button } from './Button';</code></pre>
               <pre><code>const Keyboard = () =&gt; &lt;Splitter
     label=&quot;Sidebar width&quot;
     orientation=&quot;horizontal&quot;
-    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;tight&quot;&gt;
+    primary={(&lt;Stack element=&quot;nav&quot; gap=&quot;normal&quot; align=&quot;start&quot;&gt;
       &lt;Link href=&quot;#&quot; label=&quot;Overview&quot; /&gt;
       &lt;Link href=&quot;#&quot; label=&quot;Reports&quot; /&gt;
     &lt;/Stack&gt;)}
@@ -18387,7 +18612,7 @@ import { Button } from './Button';</code></pre>
     maxSize={90}
     step={2}
     collapsible={false}
-    stackBelow=&quot;prose&quot;
+    stackBelow=&quot;never&quot;
     persistKey=&quot;app-sidebar&quot; /&gt;;</code></pre>
               
             </div>
@@ -19170,7 +19395,8 @@ compact?: boolean | undefined = false
  * The id of the current step. The step whose id matches is the selected one (`aria-current=&quot;step&quot;`) and
  * the one compact reveals, whatever its `status`. When no id matches, nothing is selected, every step
  * without an explicit status is upcoming, no step is navigable under `completed` (all still are under
- * `all`), the count reads &quot;Step 1 of m&quot;, and development builds log a warning.
+ * `all`), the count reads &quot;Step 1 of m&quot;, and development builds log a warning. The warning needs a
+ * non-empty `current`: an empty one is treated as not yet set and does not warn.
  */
 current: string
 
@@ -19539,7 +19765,8 @@ Use a Switch for a binary setting that applies as soon as it changes and can be 
             <pre><code>Component: src\Switch.tsx::Switch</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>/**
- * Controlled state: a controlled switch shows a new state only once this prop changes. Omit for an uncontrolled control.
+ * Controlled state: a controlled switch shows a new state only once this prop changes. Omit for an
+ * uncontrolled control.
  */
 checked?: boolean | undefined
 
@@ -19554,7 +19781,8 @@ defaultChecked?: boolean | undefined = false
 description?: string | undefined
 
 /**
- * Cannot be toggled. Stays visible, readable and focusable. Still registered with the Form.
+ * Cannot be toggled. Stays visible, readable and focusable. A disabled switch contributes no key
+ * to the Form&#39;s values: it unregisters while disabled and registers again when re-enabled.
  */
 disabled?: boolean | undefined = false
 
@@ -19571,12 +19799,15 @@ labelPosition?: SwitchLabelPosition | undefined = &#39;start&#39;
 
 /**
  * Optional field name. When inside a Form the state is collected as a boolean on every platform;
- * most switches are not in forms. A Switch never validates and never appears in an error summary.
+ * most switches are not in forms. Without `name` a Switch inside a Form does not register (it
+ * contributes no key) and its id comes from `useId()`, not the Form&#39;s idBase. A Switch never
+ * validates and never appears in an error summary.
  */
 name?: string | undefined
 
 /**
- * Fired when the user changes the state, with the new boolean. The change is already in effect; there is nothing to submit.
+ * Fired when the user changes the state, with the new boolean. The change is already in effect;
+ * there is nothing to submit. A controlled prop change fires nothing, and nothing fires on mount.
  */
 onChange?: ((checked: boolean) =&gt; void) | undefined
 
@@ -20659,7 +20890,9 @@ ref?: Ref&lt;HTMLDivElement&gt; | undefined
 
 /**
  * The tabs in order. `badge` is a short count or status shown after the label (&quot;3&quot;, &quot;New&quot;). The
- * icon is an Icon at `size: md` (the label&#39;s size) in the tab&#39;s current foreground color.
+ * icon is an Icon at `size: md` (the label&#39;s size) in the tab&#39;s current foreground color. An `id`
+ * must be a valid IDREF token (no whitespace), since tab and panel element ids are built from it;
+ * the component does not sanitize it.
  */
 tabs: TabsItem[]
 
@@ -21761,12 +21994,7 @@ tone?: ToastTone | undefined = &#39;neutral&#39;</code></pre>
               </div>
               
               
-              <pre><code>const BackgroundResult = () =&gt; &lt;Toast
-    message=&quot;Export ready&quot;
-    tone=&quot;neutral&quot;
-    dismissible
-    actionLabel=&quot;View&quot;
-    duration=&quot;long&quot; /&gt;;</code></pre>
+              <pre><code>const BackgroundResult = () =&gt; &lt;Toast message=&quot;Export ready&quot; tone=&quot;neutral&quot; dismissible actionLabel=&quot;View&quot; /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -21945,20 +22173,10 @@ import { Select } from './Select';</code></pre>
         &lt;Button variant=&quot;ghost&quot; label=&quot;Italic&quot; overflowLabel=&quot;Italic&quot; /&gt;
         &lt;Button variant=&quot;ghost&quot; label=&quot;Underline&quot; overflowLabel=&quot;Underline&quot; /&gt;
       &lt;/ToolbarGroup&gt;
-      &lt;ToolbarGroup label=&quot;Alignment&quot;&gt;
-        &lt;SegmentedControl
-          label=&quot;Alignment&quot;
-          iconOnly
-          options={[
-            { value: &#39;left&#39;, label: &#39;Align left&#39;, icon: &#39;chevron-left&#39; },
-            { value: &#39;center&#39;, label: &#39;Align center&#39;, icon: &#39;dash&#39; },
-            { value: &#39;right&#39;, label: &#39;Align right&#39;, icon: &#39;chevron-right&#39; },
-          ]}
-        /&gt;
-      &lt;/ToolbarGroup&gt;
       &lt;ToolbarGroup label=&quot;Insert&quot;&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert link&quot; overflowLabel=&quot;Insert link&quot; /&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert image&quot; overflowLabel=&quot;Insert image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Link&quot; overflowLabel=&quot;Link&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Image&quot; overflowLabel=&quot;Image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Table&quot; overflowLabel=&quot;Table&quot; /&gt;
       &lt;/ToolbarGroup&gt;
     &lt;/&gt;)&lt;/Toolbar&gt;;</code></pre>
               
@@ -21976,20 +22194,10 @@ import { Select } from './Select';</code></pre>
         &lt;Button variant=&quot;ghost&quot; label=&quot;Italic&quot; overflowLabel=&quot;Italic&quot; /&gt;
         &lt;Button variant=&quot;ghost&quot; label=&quot;Underline&quot; overflowLabel=&quot;Underline&quot; /&gt;
       &lt;/ToolbarGroup&gt;
-      &lt;ToolbarGroup label=&quot;Alignment&quot;&gt;
-        &lt;SegmentedControl
-          label=&quot;Alignment&quot;
-          iconOnly
-          options={[
-            { value: &#39;left&#39;, label: &#39;Align left&#39;, icon: &#39;chevron-left&#39; },
-            { value: &#39;center&#39;, label: &#39;Align center&#39;, icon: &#39;dash&#39; },
-            { value: &#39;right&#39;, label: &#39;Align right&#39;, icon: &#39;chevron-right&#39; },
-          ]}
-        /&gt;
-      &lt;/ToolbarGroup&gt;
       &lt;ToolbarGroup label=&quot;Insert&quot;&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert link&quot; overflowLabel=&quot;Insert link&quot; /&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert image&quot; overflowLabel=&quot;Insert image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Link&quot; overflowLabel=&quot;Link&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Image&quot; overflowLabel=&quot;Image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Table&quot; overflowLabel=&quot;Table&quot; /&gt;
       &lt;/ToolbarGroup&gt;
     &lt;/&gt;)&lt;/Toolbar&gt;;</code></pre>
               
@@ -22007,20 +22215,10 @@ import { Select } from './Select';</code></pre>
         &lt;Button variant=&quot;ghost&quot; label=&quot;Italic&quot; overflowLabel=&quot;Italic&quot; /&gt;
         &lt;Button variant=&quot;ghost&quot; label=&quot;Underline&quot; overflowLabel=&quot;Underline&quot; /&gt;
       &lt;/ToolbarGroup&gt;
-      &lt;ToolbarGroup label=&quot;Alignment&quot;&gt;
-        &lt;SegmentedControl
-          label=&quot;Alignment&quot;
-          iconOnly
-          options={[
-            { value: &#39;left&#39;, label: &#39;Align left&#39;, icon: &#39;chevron-left&#39; },
-            { value: &#39;center&#39;, label: &#39;Align center&#39;, icon: &#39;dash&#39; },
-            { value: &#39;right&#39;, label: &#39;Align right&#39;, icon: &#39;chevron-right&#39; },
-          ]}
-        /&gt;
-      &lt;/ToolbarGroup&gt;
       &lt;ToolbarGroup label=&quot;Insert&quot;&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert link&quot; overflowLabel=&quot;Insert link&quot; /&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert image&quot; overflowLabel=&quot;Insert image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Link&quot; overflowLabel=&quot;Link&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Image&quot; overflowLabel=&quot;Image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Table&quot; overflowLabel=&quot;Table&quot; /&gt;
       &lt;/ToolbarGroup&gt;
     &lt;/&gt;)&lt;/Toolbar&gt;;</code></pre>
               
@@ -22038,20 +22236,10 @@ import { Select } from './Select';</code></pre>
         &lt;Button variant=&quot;ghost&quot; label=&quot;Italic&quot; overflowLabel=&quot;Italic&quot; /&gt;
         &lt;Button variant=&quot;ghost&quot; label=&quot;Underline&quot; overflowLabel=&quot;Underline&quot; /&gt;
       &lt;/ToolbarGroup&gt;
-      &lt;ToolbarGroup label=&quot;Alignment&quot;&gt;
-        &lt;SegmentedControl
-          label=&quot;Alignment&quot;
-          iconOnly
-          options={[
-            { value: &#39;left&#39;, label: &#39;Align left&#39;, icon: &#39;chevron-left&#39; },
-            { value: &#39;center&#39;, label: &#39;Align center&#39;, icon: &#39;dash&#39; },
-            { value: &#39;right&#39;, label: &#39;Align right&#39;, icon: &#39;chevron-right&#39; },
-          ]}
-        /&gt;
-      &lt;/ToolbarGroup&gt;
       &lt;ToolbarGroup label=&quot;Insert&quot;&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert link&quot; overflowLabel=&quot;Insert link&quot; /&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert image&quot; overflowLabel=&quot;Insert image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Link&quot; overflowLabel=&quot;Link&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Image&quot; overflowLabel=&quot;Image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Table&quot; overflowLabel=&quot;Table&quot; /&gt;
       &lt;/ToolbarGroup&gt;
     &lt;/&gt;)&lt;/Toolbar&gt;;</code></pre>
               
@@ -22069,20 +22257,10 @@ import { Select } from './Select';</code></pre>
         &lt;Button variant=&quot;ghost&quot; label=&quot;Italic&quot; overflowLabel=&quot;Italic&quot; /&gt;
         &lt;Button variant=&quot;ghost&quot; label=&quot;Underline&quot; overflowLabel=&quot;Underline&quot; /&gt;
       &lt;/ToolbarGroup&gt;
-      &lt;ToolbarGroup label=&quot;Alignment&quot;&gt;
-        &lt;SegmentedControl
-          label=&quot;Alignment&quot;
-          iconOnly
-          options={[
-            { value: &#39;left&#39;, label: &#39;Align left&#39;, icon: &#39;chevron-left&#39; },
-            { value: &#39;center&#39;, label: &#39;Align center&#39;, icon: &#39;dash&#39; },
-            { value: &#39;right&#39;, label: &#39;Align right&#39;, icon: &#39;chevron-right&#39; },
-          ]}
-        /&gt;
-      &lt;/ToolbarGroup&gt;
       &lt;ToolbarGroup label=&quot;Insert&quot;&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert link&quot; overflowLabel=&quot;Insert link&quot; /&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert image&quot; overflowLabel=&quot;Insert image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Link&quot; overflowLabel=&quot;Link&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Image&quot; overflowLabel=&quot;Image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Table&quot; overflowLabel=&quot;Table&quot; /&gt;
       &lt;/ToolbarGroup&gt;
     &lt;/&gt;)&lt;/Toolbar&gt;;</code></pre>
               
@@ -22100,20 +22278,10 @@ import { Select } from './Select';</code></pre>
         &lt;Button variant=&quot;ghost&quot; label=&quot;Italic&quot; overflowLabel=&quot;Italic&quot; /&gt;
         &lt;Button variant=&quot;ghost&quot; label=&quot;Underline&quot; overflowLabel=&quot;Underline&quot; /&gt;
       &lt;/ToolbarGroup&gt;
-      &lt;ToolbarGroup label=&quot;Alignment&quot;&gt;
-        &lt;SegmentedControl
-          label=&quot;Alignment&quot;
-          iconOnly
-          options={[
-            { value: &#39;left&#39;, label: &#39;Align left&#39;, icon: &#39;chevron-left&#39; },
-            { value: &#39;center&#39;, label: &#39;Align center&#39;, icon: &#39;dash&#39; },
-            { value: &#39;right&#39;, label: &#39;Align right&#39;, icon: &#39;chevron-right&#39; },
-          ]}
-        /&gt;
-      &lt;/ToolbarGroup&gt;
       &lt;ToolbarGroup label=&quot;Insert&quot;&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert link&quot; overflowLabel=&quot;Insert link&quot; /&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert image&quot; overflowLabel=&quot;Insert image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Link&quot; overflowLabel=&quot;Link&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Image&quot; overflowLabel=&quot;Image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Table&quot; overflowLabel=&quot;Table&quot; /&gt;
       &lt;/ToolbarGroup&gt;
     &lt;/&gt;)&lt;/Toolbar&gt;;</code></pre>
               
@@ -22131,20 +22299,10 @@ import { Select } from './Select';</code></pre>
         &lt;Button variant=&quot;ghost&quot; label=&quot;Italic&quot; overflowLabel=&quot;Italic&quot; /&gt;
         &lt;Button variant=&quot;ghost&quot; label=&quot;Underline&quot; overflowLabel=&quot;Underline&quot; /&gt;
       &lt;/ToolbarGroup&gt;
-      &lt;ToolbarGroup label=&quot;Alignment&quot;&gt;
-        &lt;SegmentedControl
-          label=&quot;Alignment&quot;
-          iconOnly
-          options={[
-            { value: &#39;left&#39;, label: &#39;Align left&#39;, icon: &#39;chevron-left&#39; },
-            { value: &#39;center&#39;, label: &#39;Align center&#39;, icon: &#39;dash&#39; },
-            { value: &#39;right&#39;, label: &#39;Align right&#39;, icon: &#39;chevron-right&#39; },
-          ]}
-        /&gt;
-      &lt;/ToolbarGroup&gt;
       &lt;ToolbarGroup label=&quot;Insert&quot;&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert link&quot; overflowLabel=&quot;Insert link&quot; /&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert image&quot; overflowLabel=&quot;Insert image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Link&quot; overflowLabel=&quot;Link&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Image&quot; overflowLabel=&quot;Image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Table&quot; overflowLabel=&quot;Table&quot; /&gt;
       &lt;/ToolbarGroup&gt;
     &lt;/&gt;)&lt;/Toolbar&gt;;</code></pre>
               
@@ -22162,20 +22320,10 @@ import { Select } from './Select';</code></pre>
         &lt;Button variant=&quot;ghost&quot; label=&quot;Italic&quot; overflowLabel=&quot;Italic&quot; /&gt;
         &lt;Button variant=&quot;ghost&quot; label=&quot;Underline&quot; overflowLabel=&quot;Underline&quot; /&gt;
       &lt;/ToolbarGroup&gt;
-      &lt;ToolbarGroup label=&quot;Alignment&quot;&gt;
-        &lt;SegmentedControl
-          label=&quot;Alignment&quot;
-          iconOnly
-          options={[
-            { value: &#39;left&#39;, label: &#39;Align left&#39;, icon: &#39;chevron-left&#39; },
-            { value: &#39;center&#39;, label: &#39;Align center&#39;, icon: &#39;dash&#39; },
-            { value: &#39;right&#39;, label: &#39;Align right&#39;, icon: &#39;chevron-right&#39; },
-          ]}
-        /&gt;
-      &lt;/ToolbarGroup&gt;
       &lt;ToolbarGroup label=&quot;Insert&quot;&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert link&quot; overflowLabel=&quot;Insert link&quot; /&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert image&quot; overflowLabel=&quot;Insert image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Link&quot; overflowLabel=&quot;Link&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Image&quot; overflowLabel=&quot;Image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Table&quot; overflowLabel=&quot;Table&quot; /&gt;
       &lt;/ToolbarGroup&gt;
     &lt;/&gt;)&lt;/Toolbar&gt;;</code></pre>
               
@@ -22193,20 +22341,10 @@ import { Select } from './Select';</code></pre>
         &lt;Button variant=&quot;ghost&quot; label=&quot;Italic&quot; overflowLabel=&quot;Italic&quot; /&gt;
         &lt;Button variant=&quot;ghost&quot; label=&quot;Underline&quot; overflowLabel=&quot;Underline&quot; /&gt;
       &lt;/ToolbarGroup&gt;
-      &lt;ToolbarGroup label=&quot;Alignment&quot;&gt;
-        &lt;SegmentedControl
-          label=&quot;Alignment&quot;
-          iconOnly
-          options={[
-            { value: &#39;left&#39;, label: &#39;Align left&#39;, icon: &#39;chevron-left&#39; },
-            { value: &#39;center&#39;, label: &#39;Align center&#39;, icon: &#39;dash&#39; },
-            { value: &#39;right&#39;, label: &#39;Align right&#39;, icon: &#39;chevron-right&#39; },
-          ]}
-        /&gt;
-      &lt;/ToolbarGroup&gt;
       &lt;ToolbarGroup label=&quot;Insert&quot;&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert link&quot; overflowLabel=&quot;Insert link&quot; /&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert image&quot; overflowLabel=&quot;Insert image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Link&quot; overflowLabel=&quot;Link&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Image&quot; overflowLabel=&quot;Image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Table&quot; overflowLabel=&quot;Table&quot; /&gt;
       &lt;/ToolbarGroup&gt;
     &lt;/&gt;)&lt;/Toolbar&gt;;</code></pre>
               
@@ -22224,20 +22362,10 @@ import { Select } from './Select';</code></pre>
         &lt;Button variant=&quot;ghost&quot; label=&quot;Italic&quot; overflowLabel=&quot;Italic&quot; /&gt;
         &lt;Button variant=&quot;ghost&quot; label=&quot;Underline&quot; overflowLabel=&quot;Underline&quot; /&gt;
       &lt;/ToolbarGroup&gt;
-      &lt;ToolbarGroup label=&quot;Alignment&quot;&gt;
-        &lt;SegmentedControl
-          label=&quot;Alignment&quot;
-          iconOnly
-          options={[
-            { value: &#39;left&#39;, label: &#39;Align left&#39;, icon: &#39;chevron-left&#39; },
-            { value: &#39;center&#39;, label: &#39;Align center&#39;, icon: &#39;dash&#39; },
-            { value: &#39;right&#39;, label: &#39;Align right&#39;, icon: &#39;chevron-right&#39; },
-          ]}
-        /&gt;
-      &lt;/ToolbarGroup&gt;
       &lt;ToolbarGroup label=&quot;Insert&quot;&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert link&quot; overflowLabel=&quot;Insert link&quot; /&gt;
-        &lt;Button variant=&quot;ghost&quot; label=&quot;Insert image&quot; overflowLabel=&quot;Insert image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Link&quot; overflowLabel=&quot;Link&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Image&quot; overflowLabel=&quot;Image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Table&quot; overflowLabel=&quot;Table&quot; /&gt;
       &lt;/ToolbarGroup&gt;
     &lt;/&gt;)&lt;/Toolbar&gt;;</code></pre>
               
@@ -22248,12 +22376,19 @@ import { Select } from './Select';</code></pre>
                 <span class="badge ok">story ok</span>
               </div>
               
-              <div class="hint">Present with more than three focusable controls and nothing else focusable, for the keyboard gate.</div>
+              <div class="hint">Present with six focusable controls and nothing else focusable, for the keyboard gate.
+`wrap` keeps every control in the DOM at any viewport width, so the roving list never shrinks.</div>
               <pre><code>const Keyboard = () =&gt; &lt;Toolbar label=&quot;Formatting&quot; overflow=&quot;wrap&quot;&gt;(&lt;&gt;
-      &lt;Button variant=&quot;ghost&quot; label=&quot;Bold&quot; overflowLabel=&quot;Bold&quot; /&gt;
-      &lt;Button variant=&quot;ghost&quot; label=&quot;Italic&quot; overflowLabel=&quot;Italic&quot; /&gt;
-      &lt;Button variant=&quot;ghost&quot; label=&quot;Underline&quot; overflowLabel=&quot;Underline&quot; /&gt;
-      &lt;Button variant=&quot;ghost&quot; label=&quot;Strikethrough&quot; overflowLabel=&quot;Strikethrough&quot; /&gt;
+      &lt;ToolbarGroup label=&quot;Text style&quot;&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Bold&quot; overflowLabel=&quot;Bold&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Italic&quot; overflowLabel=&quot;Italic&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Underline&quot; overflowLabel=&quot;Underline&quot; /&gt;
+      &lt;/ToolbarGroup&gt;
+      &lt;ToolbarGroup label=&quot;Insert&quot;&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Link&quot; overflowLabel=&quot;Link&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Image&quot; overflowLabel=&quot;Image&quot; /&gt;
+        &lt;Button variant=&quot;ghost&quot; label=&quot;Table&quot; overflowLabel=&quot;Table&quot; /&gt;
+      &lt;/ToolbarGroup&gt;
     &lt;/&gt;)&lt;/Toolbar&gt;;</code></pre>
               
             </div>
@@ -22318,6 +22453,7 @@ import { Select } from './Select';</code></pre>
       &lt;Select
         label=&quot;Owner&quot;
         name=&quot;owner&quot;
+        hideLabel
         options={[
           { value: &#39;anyone&#39;, label: &#39;Anyone&#39; },
           { value: &#39;me&#39;, label: &#39;Me&#39; },
@@ -22326,6 +22462,7 @@ import { Select } from './Select';</code></pre>
       &lt;Select
         label=&quot;Sort&quot;
         name=&quot;sort&quot;
+        hideLabel
         options={[
           { value: &#39;newest&#39;, label: &#39;Newest&#39; },
           { value: &#39;oldest&#39;, label: &#39;Oldest&#39; },
@@ -22356,7 +22493,7 @@ import { Select } from './Select';</code></pre>
       <div class="badges">
         <label for="c-51-tooltip-react-props" class="badge ok as-toggle">8 prop types</label>
         
-        <label for="c-51-tooltip-react-stories" class="badge ok as-toggle">13 stories</label>
+        <label for="c-51-tooltip-react-stories" class="badge ok as-toggle">12 stories</label>
         
         
       </div>
@@ -22471,7 +22608,7 @@ import { Icon } from './Icon';</code></pre>
               </div>
               
               
-              <pre><code>const Default = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot;&gt;&lt;Button label=&quot;Items&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
+              <pre><code>const Default = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot;&gt;&lt;Button label=&quot;Items&quot; variant=&quot;secondary&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -22481,7 +22618,7 @@ import { Icon } from './Icon';</code></pre>
               </div>
               
               
-              <pre><code>const PlacementTop = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot; placement=&quot;top&quot;&gt;&lt;Button label=&quot;Items&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
+              <pre><code>const PlacementTop = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot; placement=&quot;top&quot; open&gt;&lt;Button label=&quot;Items&quot; variant=&quot;secondary&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -22491,7 +22628,7 @@ import { Icon } from './Icon';</code></pre>
               </div>
               
               
-              <pre><code>const PlacementBottom = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot; placement=&quot;bottom&quot;&gt;&lt;Button label=&quot;Items&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
+              <pre><code>const PlacementBottom = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot; placement=&quot;bottom&quot; open&gt;&lt;Button label=&quot;Items&quot; variant=&quot;secondary&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -22501,7 +22638,7 @@ import { Icon } from './Icon';</code></pre>
               </div>
               
               
-              <pre><code>const PlacementStart = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot; placement=&quot;start&quot;&gt;&lt;Button label=&quot;Items&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
+              <pre><code>const PlacementStart = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot; placement=&quot;start&quot; open&gt;&lt;Button label=&quot;Items&quot; variant=&quot;secondary&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -22511,7 +22648,7 @@ import { Icon } from './Icon';</code></pre>
               </div>
               
               
-              <pre><code>const PlacementEnd = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot; placement=&quot;end&quot;&gt;&lt;Button label=&quot;Items&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
+              <pre><code>const PlacementEnd = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot; placement=&quot;end&quot; open&gt;&lt;Button label=&quot;Items&quot; variant=&quot;secondary&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -22521,7 +22658,7 @@ import { Icon } from './Icon';</code></pre>
               </div>
               
               
-              <pre><code>const DelayDefault = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot; delay=&quot;default&quot;&gt;&lt;Button label=&quot;Items&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
+              <pre><code>const DelayDefault = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot; delay=&quot;default&quot;&gt;&lt;Button label=&quot;Items&quot; variant=&quot;secondary&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -22531,17 +22668,7 @@ import { Icon } from './Icon';</code></pre>
               </div>
               
               
-              <pre><code>const DelayNone = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot; delay=&quot;none&quot;&gt;&lt;Button label=&quot;Items&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
-              
-            </div>
-            <div class="note ok">
-              <div class="row">
-                <span class="ex-name">Open</span>
-                <span class="badge ok">story ok</span>
-              </div>
-              
-              
-              <pre><code>const Open = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot; open&gt;&lt;Button label=&quot;Items&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
+              <pre><code>const DelayNone = () =&gt; &lt;Tooltip content=&quot;Includes archived items&quot; delay=&quot;none&quot;&gt;&lt;Button label=&quot;Items&quot; variant=&quot;secondary&quot; /&gt;&lt;/Tooltip&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -22565,7 +22692,7 @@ import { Icon } from './Icon';</code></pre>
     &lt;thead&gt;
         &lt;tr&gt;
             &lt;th scope=&quot;col&quot;&gt;
-                &lt;Tooltip content=&quot;Includes archived items&quot;&gt;&lt;Button label=&quot;Items&quot; /&gt;&lt;/Tooltip&gt;
+                &lt;Tooltip content=&quot;Includes archived items&quot;&gt;&lt;Button label=&quot;Items&quot; variant=&quot;secondary&quot; /&gt;&lt;/Tooltip&gt;
             &lt;/th&gt;
         &lt;/tr&gt;
     &lt;/thead&gt;
@@ -22676,7 +22803,10 @@ when the tree drives a panel beside it and moving through nodes should preview t
             <pre><code>Component: src\Tree.tsx::Tree</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>/**
- * Initially expanded ids; `[&quot;*&quot;]` for all.
+ * Initially expanded ids. `[&quot;*&quot;]` opens every node whose `children` is a non-empty array and never a
+ * `&quot;lazy&quot;` node; `&quot;*&quot;` is reserved as that sentinel, so a node whose id is literally `&quot;*&quot;` is never matched
+ * by it. A lazy id listed explicitly stays closed until the user opens it (onExpand only fires for user
+ * acts), and the same rule covers the controlled `expanded`.
  */
 defaultExpanded?: string[] | undefined
 
@@ -22686,7 +22816,9 @@ defaultExpanded?: string[] | undefined
 defaultSelected?: string[] | undefined
 
 /**
- * Controlled expanded ids.
+ * Controlled expanded ids. A still-`&quot;lazy&quot;` id here is held closed until the user opens it, exactly as in
+ * `defaultExpanded` — the id stays in the array the caller passed and in what onExpandChange reports, but
+ * the node does not render open and fires no onExpand.
  */
 expanded?: string[] | undefined
 
@@ -23113,7 +23245,8 @@ showLabel?: boolean | undefined = false</code></pre>
                 <span class="badge ok">story ok</span>
               </div>
               
-              
+              <div class="hint">A `children: &quot;lazy&quot;` branch. `videos` is listed in `defaultExpanded` but stays closed — a lazy id only opens
+on a user act, which is what fires `onExpand`; open it to see the placeholder and the parent&#39;s `aria-busy`.</div>
               <pre><code>const LazyLoading = () =&gt; &lt;Tree
     label=&quot;Folders&quot;
     nodes={[
@@ -24721,9 +24854,9 @@ No suitable component definition found.
 You can debug your component file in this playground: https://react-docgen.dev/playground
 Code:
 import {
+  useCallback,
   useEffect,
   useId,
-  useImperativeHandle,
   useLayoutEffect,
   useRef,
   useState,
@@ -24763,11 +24896,11 @@ export type AlertDialogOverridableBinding =
   | &#39;width&#39;
   | &#39;gutter&#39;
   | &#39;layer&#39;
+  | &#39;rise&#39;
   | &#39;enter&#39;
   | &#39;exit&#39;;
 
-/** Hooks on the root. `footerGap` and `iconSize` are forwarded to the Stack and Icon `overrides` instead. */
-const OVERRIDE_HOOK: Partial&lt;Record&lt;AlertDialogOverridableBinding, string&gt;&gt; = {
+const OVERRIDE_HOOK: Record&lt;AlertDialogOverridableBinding, string&gt; = {
   scrim: &#39;--ds-alert-dialog-scrim&#39;,
   border: &#39;--ds-alert-dialog-border&#39;,
   borderWidth: &#39;--ds-alert-dialog-border-width&#39;,
@@ -24777,19 +24910,24 @@ const OVERRIDE_HOOK: Partial&lt;Record&lt;AlertDialogOverridableBinding, string&
   partGap: &#39;--ds-alert-dialog-part-gap&#39;,
   textGap: &#39;--ds-alert-dialog-text-gap&#39;,
   iconGap: &#39;--ds-alert-dialog-icon-gap&#39;,
+  footerGap: &#39;--ds-alert-dialog-footer-gap&#39;,
+  iconSize: &#39;--ds-alert-dialog-icon-size&#39;,
   width: &#39;--ds-alert-dialog-width&#39;,
   gutter: &#39;--ds-alert-dialog-gutter&#39;,
   layer: &#39;--ds-alert-dialog-layer&#39;,
+  rise: &#39;--ds-alert-dialog-rise&#39;,
   enter: &#39;--ds-alert-dialog-enter&#39;,
   exit: &#39;--ds-alert-dialog-exit&#39;,
 };
 
-function overridesToStyle(overrides: Partial&lt;Record&lt;AlertDialogOverridableBinding, TokenRef | undefined&gt;&gt;): CSSProperties {
+function overridesToStyle(
+  overrides: Partial&lt;Record&lt;AlertDialogOverridableBinding, TokenRef | undefined&gt;&gt;,
+): CSSProperties {
   const style: Record&lt;string, string&gt; = {};
   for (const binding of Object.keys(overrides) as AlertDialogOverridableBinding[]) {
     const ref = overrides[binding];
     const hook = OVERRIDE_HOOK[binding];
-    // Locked and forwarded bindings have no hook here; anything passed for them is ignored.
+    // Locked bindings are not in the type; anything passed anyway has no hook and is ignored.
     if (ref &amp;&amp; hook) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
@@ -24797,9 +24935,6 @@ function overridesToStyle(overrides: Partial&lt;Record&lt;AlertDialogOverridable
 
 /** copy.* — used verbatim. */
 const COPY = { cancelLabel: &#39;Cancel&#39; };
-
-/** iconSize default (font.size.lg), forwarded to the Icon as `overrides.size`. */
-const ICON_SIZE_TOKEN = &#39;font.size.lg&#39; as TokenRef;
 
 /** tone → confirm Button variant: danger → danger; warning and info → primary. */
 const CONFIRM_VARIANT: Record&lt;AlertDialogTone, ButtonVariant&gt; = {
@@ -24829,12 +24964,15 @@ function lockScroll(): () =&gt; void {
 }
 
 export interface AlertDialogProps
-  extends Omit&lt;ComponentPropsWithoutRef&lt;&#39;dialog&#39;&gt;, &#39;children&#39; | &#39;title&#39; | &#39;onCancel&#39; | &#39;onClose&#39; | &#39;open&#39; | &#39;role&#39;&gt; {
+  extends Omit&lt;
+    ComponentPropsWithoutRef&lt;&#39;dialog&#39;&gt;,
+    &#39;children&#39; | &#39;title&#39; | &#39;onCancel&#39; | &#39;onClose&#39; | &#39;open&#39; | &#39;role&#39;
+  &gt; {
   /** Controlled only — there is no uncontrolled mode; the consumer owns `open` and sets it false after handling `onConfirm` or `onCancel`, as in Dialog. */
   open: boolean;
   /** The question or statement, as a level-2 Heading at the size Heading reads from level 2 (no explicit `size`), and the accessible name (&quot;Delete 3 files?&quot;). */
   heading: string;
-  /** What will happen and whether it can be undone, in one or two sentences, rendered as Text `tone=&quot;muted&quot;` at Text&#39;s default size. Required: a decision without consequences stated is not a decision. */
+  /** What will happen and whether it can be undone, in one or two sentences, rendered as Text `tone=&quot;muted&quot;` at Text&#39;s default size (the color.foreground.muted contrast pair). Required: a decision without consequences stated is not a decision. */
   description: string;
   /** The nature of the decision. Sets the status icon (Icon `name` equal to the tone) and the confirm button&#39;s variant (danger → danger Button; warning and info → primary). Both buttons are Button size md. */
   tone?: AlertDialogTone | undefined;
@@ -24842,7 +24980,7 @@ export interface AlertDialogProps
   confirmLabel: string;
   /** The declining action. Defaults to `copy.cancelLabel`. */
   cancelLabel?: string | undefined;
-  /** Blocks confirm while a precondition is unmet (a typed confirmation, a loading state). Cancel always works. Forwarded to the confirm Button&#39;s own `disabled`, which keeps it focusable-but-inert. */
+  /** Blocks confirm while a precondition is unmet (a typed confirmation, a loading state). Cancel always works. Forwarded to the confirm Button&#39;s own `disabled` — it stays focusable-but-inert, so Confirm is still the last Tab stop; AlertDialog neither restyles it nor sets aria-disabled itself. */
   confirmDisabled?: boolean | undefined;
   /** The user chose the confirming action. The consumer performs it and closes. */
   onConfirm?: (() =&gt; void) | undefined;
@@ -24850,7 +24988,7 @@ export interface AlertDialogProps
   onCancel?: ((reason: AlertDialogCancelReason) =&gt; void) | undefined;
   /** Portal target. Defaults to `document.body`. A platform prop, not part of the schema. */
   container?: HTMLElement | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline (`footerGap` and `iconSize` reach the Stack and Icon `overrides`). */
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial&lt;Record&lt;AlertDialogOverridableBinding, TokenRef | undefined&gt;&gt; | undefined;
 }
 
@@ -24865,8 +25003,9 @@ export interface AlertDialogProps
  * is `warning`).
  *
  * The alert dialog never closes itself: Cancel and Escape fire `onCancel`, Confirm fires
- * `onConfirm`, a scrim click does nothing, and the consumer flips `open`. The ref resolves to the
- * `&lt;dialog&gt;`, null while closed.
+ * `onConfirm`, a scrim click does nothing, and the consumer flips `open`. Focus starts on Cancel so
+ * Enter pressed reflexively cancels rather than destroys. The ref resolves to the `&lt;dialog&gt;`, null
+ * while closed.
  */
 export function AlertDialog({
   ref,
@@ -24891,11 +25030,20 @@ export function AlertDialog({
   const descriptionId = `ds-alert-dialog${generatedId}-description`;
 
   const dialogRef = useRef&lt;HTMLDialogElement | null&gt;(null);
-  useImperativeHandle(ref, () =&gt; dialogRef.current as HTMLDialogElement, []);
+  const setDialogNode = useCallback(
+    (node: HTMLDialogElement | null): void =&gt; {
+      dialogRef.current = node;
+      if (typeof ref === &#39;function&#39;) ref(node);
+      else if (ref) ref.current = node;
+    },
+    [ref],
+  );
 
   const surfaceRef = useRef&lt;HTMLDivElement | null&gt;(null);
   const cancelButtonRef = useRef&lt;HTMLButtonElement | null&gt;(null);
-  const escapeHandledRef = useRef(false);
+  /** True from the moment Escape is reported until the end of the task, so the browser&#39;s `cancel`
+   * for that same key is not reported a second time. */
+  const escapeReportedRef = useRef(false);
   const selfClosingRef = useRef(false);
 
   // Mounted while open, and while the exit transition finishes after `open` goes false.
@@ -24916,18 +25064,21 @@ export function AlertDialog({
 
   if (open &amp;&amp; !present) setPresent(true);
 
-  /** Cancel, so Enter never confirms by momentum. FocusScope&#39;s autoFocus `first` targets the same button. */
+  /** Focus lands on Cancel, so Enter pressed reflexively cancels rather than destroys (WCAG 3.3.4). */
   const focusCancel = (): void =&gt; {
     const cancelButton = cancelButtonRef.current;
     if (cancelButton &amp;&amp; document.activeElement !== cancelButton) cancelButton.focus();
   };
 
-  // Open: showModal(), then reveal on the next frame. FocusScope&#39;s layout effect runs first (a child&#39;s
-  // fires before its parent&#39;s) while the &lt;dialog&gt; is still closed, so focus is confirmed on Cancel after.
+  // Open: showModal(), move focus to Cancel, then reveal on the next frame. FocusScope takes
+  // autoFocus `none` because its layout effect runs first (a child&#39;s fires before its parent&#39;s),
+  // while the &lt;dialog&gt; is still closed and cannot take focus; it keeps the trap and the restore.
+  // This also runs when `open` returns true while the exit transition is still running.
   useLayoutEffect(() =&gt; {
-    if (!present) return undefined;
+    if (!present || !open) return undefined;
     const dialog = dialogRef.current;
-    if (!dialog) return undefined;
+    const surface = surfaceRef.current;
+    if (!dialog || !surface) return undefined;
     selfClosingRef.current = false;
     if (!dialog.open) {
       // showModal() gives the top layer, Escape and background inertness. jsdom implements the
@@ -24938,7 +25089,7 @@ export function AlertDialog({
     focusCancel();
     const frame = requestAnimationFrame(() =&gt; setVisible(true));
     return () =&gt; cancelAnimationFrame(frame);
-  }, [present]);
+  }, [present, open]);
 
   // Close: run the exit transition, then close() and unmount (FocusScope restores the opener).
   useEffect(() =&gt; {
@@ -24972,32 +25123,41 @@ export function AlertDialog({
     return lockScroll();
   }, [present]);
 
+  /** Each Escape is reported exactly once, whichever of keydown or `cancel` reaches us first. */
+  const reportEscape = (): void =&gt; {
+    escapeReportedRef.current = true;
+    // The browser&#39;s `cancel` for this same key follows the keydown&#39;s listeners; skip it once.
+    setTimeout(() =&gt; {
+      escapeReportedRef.current = false;
+    }, 0);
+    onCancel?.(&#39;escape&#39;);
+  };
+
   // Escape arrives as keydown; the native `cancel` covers any other close request the browser raises.
   const handleKeyDown = (event: ReactKeyboardEvent&lt;HTMLDialogElement&gt;): void =&gt; {
     rest.onKeyDown?.(event);
     if (event.key !== &#39;Escape&#39; || event.defaultPrevented || !open) return;
     event.preventDefault();
-    escapeHandledRef.current = true;
-    // The browser&#39;s `cancel` for this same key follows the keydown&#39;s listeners; skip it once.
-    setTimeout(() =&gt; {
-      escapeHandledRef.current = false;
-    }, 0);
-    onCancel?.(&#39;escape&#39;);
+    if (!escapeReportedRef.current) reportEscape();
   };
 
   const handleNativeCancel = (event: SyntheticEvent&lt;HTMLDialogElement&gt;): void =&gt; {
     // The consumer owns `open`: never let the browser close the dialog.
     event.preventDefault();
-    if (escapeHandledRef.current || !open) return;
-    onCancel?.(&#39;escape&#39;);
+    if (escapeReportedRef.current || !open) return;
+    reportEscape();
   };
 
-  // A non-cancelable `cancel` closes the native dialog anyway; reopen unless the consumer set `open` false.
+  // A non-cancelable `cancel` closes the native dialog anyway, and a close watcher can close it with
+  // no `cancel` at all (repeated Escape): report `escape` if nothing else did, then reopen and put
+  // focus back on Cancel unless the consumer set `open` false.
   const handleNativeClose = (): void =&gt; {
     if (selfClosingRef.current) {
       selfClosingRef.current = false;
       return;
     }
+    if (!open) return;
+    if (!escapeReportedRef.current) reportEscape();
     requestAnimationFrame(() =&gt; {
       const dialog = dialogRef.current;
       if (!dialog || dialog.open || !latestOpen.current) return;
@@ -25009,12 +25169,21 @@ export function AlertDialog({
 
   if (!present) return null;
 
-  const classes = [&#39;ds-alert-dialog&#39;, visible &amp;&amp; open ? &#39;ds-alert-dialog--visible&#39; : null].filter(Boolean).join(&#39; &#39;);
+  const classes = [
+    &#39;ds-alert-dialog&#39;,
+    `ds-alert-dialog--${tone}`,
+    visible &amp;&amp; open ? &#39;ds-alert-dialog--visible&#39; : null,
+  ]
+    .filter(Boolean)
+    .join(&#39; &#39;);
+
+  const iconSizeOverride = overrides?.iconSize;
+  const footerGapOverride = overrides?.footerGap;
 
   const node = (
     &lt;dialog
       {...rest}
-      ref={dialogRef}
+      ref={setDialogNode}
       data-ds=&quot;AlertDialog&quot;
       className={classes}
       style={overrides ? overridesToStyle(overrides) : undefined}
@@ -25026,60 +25195,65 @@ export function AlertDialog({
       onCancel={handleNativeCancel}
       onClose={handleNativeClose}
     &gt;
-      {/* The scrim is ::backdrop. No click handler: a click on it targets the &lt;dialog&gt; and answers nothing. */}
-      &lt;FocusScope trapped autoFocus=&quot;first&quot; restoreFocus data-part=&quot;focusScope&quot;&gt;
-        &lt;div className=&quot;ds-alert-dialog__surface&quot; ref={surfaceRef} data-part=&quot;surface&quot;&gt;
-          &lt;div className=&quot;ds-alert-dialog__row&quot;&gt;
-            {/* Decorative: the heading and description already carry the tone. */}
-            &lt;span className=&quot;ds-alert-dialog__icon&quot; data-part=&quot;icon&quot; aria-hidden=&quot;true&quot;&gt;
-              &lt;Icon
-                name={tone}
-                overrides={{
-                  color: `color.status.${tone}.icon` as TokenRef,
-                  size: overrides?.iconSize ?? ICON_SIZE_TOKEN,
-                }}
-              /&gt;
-            &lt;/span&gt;
-            &lt;div className=&quot;ds-alert-dialog__text&quot;&gt;
-              &lt;div className=&quot;ds-alert-dialog__heading&quot; data-part=&quot;heading&quot;&gt;
-                &lt;Heading level=&quot;2&quot; id={headingId}&gt;
-                  {heading}
-                &lt;/Heading&gt;
-              &lt;/div&gt;
-              &lt;div className=&quot;ds-alert-dialog__description&quot; data-part=&quot;description&quot;&gt;
-                &lt;Text id={descriptionId} tone=&quot;muted&quot;&gt;
-                  {description}
-                &lt;/Text&gt;
+      {/* A real element inside the full-viewport &lt;dialog&gt;, as in Dialog, with no click listener:
+          a scrim click answers nothing. */}
+      &lt;div className=&quot;ds-alert-dialog__scrim&quot; data-part=&quot;scrim&quot; /&gt;
+      {/* FocusScope writes its own data-part=&quot;scope&quot;, so the focusScope part is this wrapper inside it. */}
+      &lt;FocusScope trapped autoFocus=&quot;none&quot; restoreFocus&gt;
+        &lt;div className=&quot;ds-alert-dialog__scope&quot; data-part=&quot;focusScope&quot;&gt;
+          &lt;div className=&quot;ds-alert-dialog__surface&quot; ref={surfaceRef} data-part=&quot;surface&quot;&gt;
+            {/* The icon-and-text row is AlertDialog-owned and carries no data-part: it only holds iconGap. */}
+            &lt;div className=&quot;ds-alert-dialog__row&quot;&gt;
+              {/* Decorative: the heading and description already carry the tone. */}
+              &lt;span className=&quot;ds-alert-dialog__icon&quot; data-part=&quot;icon&quot; aria-hidden=&quot;true&quot;&gt;
+                {/* icon (locked) and iconSize reach the Icon&#39;s own hooks from the stylesheet; the
+                    size override is passed only when the caller set it. */}
+                &lt;Icon name={tone} overrides={iconSizeOverride ? { size: iconSizeOverride } : undefined} /&gt;
+              &lt;/span&gt;
+              &lt;div className=&quot;ds-alert-dialog__text&quot;&gt;
+                &lt;div className=&quot;ds-alert-dialog__heading&quot; data-part=&quot;heading&quot;&gt;
+                  &lt;Heading level=&quot;2&quot; id={headingId}&gt;
+                    {heading}
+                  &lt;/Heading&gt;
+                &lt;/div&gt;
+                &lt;div className=&quot;ds-alert-dialog__description&quot; data-part=&quot;description&quot;&gt;
+                  &lt;Text id={descriptionId} tone=&quot;muted&quot;&gt;
+                    {description}
+                  &lt;/Text&gt;
+                &lt;/div&gt;
               &lt;/div&gt;
             &lt;/div&gt;
-          &lt;/div&gt;
-          &lt;div className=&quot;ds-alert-dialog__footer&quot; data-part=&quot;footer&quot;&gt;
-            &lt;Stack
-              direction=&quot;horizontal&quot;
-              gap=&quot;tight&quot;
-              justify=&quot;end&quot;
-              overrides={overrides?.footerGap ? { gap: overrides.footerGap } : undefined}
-            &gt;
-              {/* Cancel first in DOM order: the first focusable, focused on open; Confirm sits at the end. */}
-              &lt;span className=&quot;ds-alert-dialog__action&quot; data-part=&quot;cancelButton&quot;&gt;
-                &lt;Button
-                  ref={cancelButtonRef}
-                  variant=&quot;secondary&quot;
-                  size=&quot;md&quot;
-                  label={cancelLabel ?? COPY.cancelLabel}
-                  onClick={() =&gt; onCancel?.(&#39;cancel&#39;)}
-                /&gt;
-              &lt;/span&gt;
-              &lt;span className=&quot;ds-alert-dialog__action&quot; data-part=&quot;confirmButton&quot;&gt;
-                &lt;Button
-                  variant={CONFIRM_VARIANT[tone]}
-                  size=&quot;md&quot;
-                  label={confirmLabel}
-                  disabled={confirmDisabled}
-                  onClick={() =&gt; onConfirm?.()}
-                /&gt;
-              &lt;/span&gt;
-            &lt;/Stack&gt;
+            &lt;div className=&quot;ds-alert-dialog__footer&quot; data-part=&quot;footer&quot;&gt;
+              {/* footerGap reaches the Stack through the stylesheet; the override is passed only
+                  when the caller sets it, so consumer CSS on the AlertDialog hook still works. */}
+              &lt;Stack
+                direction=&quot;horizontal&quot;
+                gap=&quot;tight&quot;
+                justify=&quot;end&quot;
+                overrides={footerGapOverride ? { gap: footerGapOverride } : undefined}
+              &gt;
+                {/* Cancel first in DOM order: the first focusable, focused on open; `justify: end`
+                    puts the confirming action at the visual end of the row. */}
+                &lt;span className=&quot;ds-alert-dialog__action&quot; data-part=&quot;cancelButton&quot;&gt;
+                  &lt;Button
+                    ref={cancelButtonRef}
+                    variant=&quot;secondary&quot;
+                    size=&quot;md&quot;
+                    label={cancelLabel ?? COPY.cancelLabel}
+                    onClick={() =&gt; onCancel?.(&#39;cancel&#39;)}
+                  /&gt;
+                &lt;/span&gt;
+                &lt;span className=&quot;ds-alert-dialog__action&quot; data-part=&quot;confirmButton&quot;&gt;
+                  &lt;Button
+                    variant={CONFIRM_VARIANT[tone]}
+                    size=&quot;md&quot;
+                    label={confirmLabel}
+                    disabled={confirmDisabled}
+                    onClick={() =&gt; onConfirm?.()}
+                  /&gt;
+                &lt;/span&gt;
+              &lt;/Stack&gt;
+            &lt;/div&gt;
           &lt;/div&gt;
         &lt;/div&gt;
       &lt;/FocusScope&gt;
@@ -25215,7 +25389,8 @@ export function AlertDialog({
                 <span class="badge ok">story ok</span>
               </div>
               
-              <div class="hint">Open with its trigger; the focusable children are Cancel and Confirm, the trigger sits behind the inert page.</div>
+              <div class="hint">Open with its trigger. The dialog has exactly two focusable children, Cancel and Confirm — there
+is no slot for more — so Tab wraps across those two and the trigger sits behind the inert page.</div>
               <pre><code>const Keyboard = () =&gt; &lt;AlertDialogHarness
     open
     heading=&quot;Delete 3 files?&quot;
@@ -25312,7 +25487,7 @@ export function AlertDialog({
       <div class="badges">
         <label for="c-error-1-dialog-react-err" class="badge err as-toggle">API error</label>
         <label for="c-error-1-dialog-react-info" class="badge info as-toggle">1 info</label>
-        <label for="c-error-1-dialog-react-stories" class="badge ok as-toggle">15 stories</label>
+        <label for="c-error-1-dialog-react-stories" class="badge ok as-toggle">16 stories</label>
         
         
       </div>
@@ -25381,6 +25556,7 @@ export type DialogOverridableBinding =
   | &#39;radius&#39;
   | &#39;inset&#39;
   | &#39;partGap&#39;
+  | &#39;gutter&#39;
   | &#39;headerGap&#39;
   | &#39;footerGap&#39;
   | &#39;descriptionGap&#39;
@@ -25399,6 +25575,7 @@ const OVERRIDE_HOOK: Record&lt;DialogOverridableBinding, string&gt; = {
   radius: &#39;--ds-dialog-radius&#39;,
   inset: &#39;--ds-dialog-inset&#39;,
   partGap: &#39;--ds-dialog-part-gap&#39;,
+  gutter: &#39;--ds-dialog-gutter&#39;,
   headerGap: &#39;--ds-dialog-header-gap&#39;,
   footerGap: &#39;--ds-dialog-footer-gap&#39;,
   descriptionGap: &#39;--ds-dialog-description-gap&#39;,
@@ -25539,11 +25716,13 @@ export function Dialog({
   );
 
   const surfaceRef = useRef&lt;HTMLDivElement | null&gt;(null);
-  const bodyRef = useRef&lt;HTMLElement | null&gt;(null);
+  const bodyRef = useRef&lt;HTMLDivElement | null&gt;(null);
   const footerRef = useRef&lt;HTMLDivElement | null&gt;(null);
   const headingRef = useRef&lt;HTMLHeadingElement | null&gt;(null);
   const closeButtonRef = useRef&lt;HTMLButtonElement | null&gt;(null);
-  const escapeHandledRef = useRef(false);
+  /** True from the moment Escape is reported until the end of the task, so the browser&#39;s `cancel` and
+   * `close` for that same key are not reported a second time. */
+  const escapeReportedRef = useRef(false);
   const selfClosingRef = useRef(false);
 
   // Mounted while open, and while the exit transition finishes after `open` goes false.
@@ -25581,9 +25760,10 @@ export function Dialog({
     headingElement.focus();
   };
 
-  // Open: showModal(), move focus in per `initialFocus`, then reveal on the next frame.
+  // Open: showModal(), move focus in per `initialFocus`, then reveal on the next frame. It also runs
+  // when `open` returns true while the exit transition is still running, which reveals the surface again.
   useLayoutEffect(() =&gt; {
-    if (!present) return undefined;
+    if (!present || !open) return undefined;
     const dialog = dialogRef.current;
     const surface = surfaceRef.current;
     if (!dialog || !surface) return undefined;
@@ -25598,7 +25778,8 @@ export function Dialog({
 
     let fired = false;
     const fireOpened = (): void =&gt; {
-      if (fired) return;
+      // Never fired when `open` became false again before the enter transition finished.
+      if (fired || !latest.current.open) return;
       fired = true;
       latest.current.onOpened?.();
     };
@@ -25614,7 +25795,7 @@ export function Dialog({
       cancelAnimationFrame(frame);
       surface.removeEventListener(&#39;transitionend&#39;, handleEntered);
     };
-  }, [present]);
+  }, [present, open]);
 
   // Close: run the exit transition, then close() and unmount (FocusScope restores the opener).
   useEffect(() =&gt; {
@@ -25648,33 +25829,19 @@ export function Dialog({
     return lockScroll();
   }, [present]);
 
-  // Escape arrives as keydown; the native `cancel` covers any other close request the browser raises.
-  const handleKeyDown = (event: ReactKeyboardEvent&lt;HTMLDialogElement&gt;): void =&gt; {
-    rest.onKeyDown?.(event);
-    if (event.key !== &#39;Escape&#39; || event.defaultPrevented || !open) return;
-    event.preventDefault();
-    escapeHandledRef.current = true;
-    // The browser&#39;s `cancel` for this same key follows the keydown&#39;s listeners; skip it once.
+  /** Each Escape is reported exactly once, whichever of keydown, `cancel` or `close` reaches us first. */
+  const reportEscape = (): void =&gt; {
+    escapeReportedRef.current = true;
+    // The browser&#39;s `cancel` and `close` for this same key follow the keydown&#39;s listeners; skip them once.
     setTimeout(() =&gt; {
-      escapeHandledRef.current = false;
+      escapeReportedRef.current = false;
     }, 0);
     // Reported even when not dismissible: Escape is the keyboard user&#39;s exit.
     onClose?.(&#39;escape&#39;);
   };
 
-  const handleCancel = (event: SyntheticEvent&lt;HTMLDialogElement&gt;): void =&gt; {
-    // The consumer owns `open`: never let the browser close the dialog, dismissible or not.
-    event.preventDefault();
-    if (escapeHandledRef.current || !open) return;
-    onClose?.(&#39;escape&#39;);
-  };
-
-  // A non-cancelable `cancel` closes the native dialog anyway; reopen unless the consumer set `open` false.
-  const handleNativeClose = (): void =&gt; {
-    if (selfClosingRef.current) {
-      selfClosingRef.current = false;
-      return;
-    }
+  /** Reopen after a close the component did not ask for, and put focus back in per `initialFocus`. */
+  const reopenAfterNativeClose = (): void =&gt; {
     requestAnimationFrame(() =&gt; {
       const dialog = dialogRef.current;
       if (!dialog || dialog.open || !latest.current.open) return;
@@ -25682,6 +25849,34 @@ export function Dialog({
       else dialog.open = true;
       placeInitialFocus();
     });
+  };
+
+  // Escape arrives as keydown; the native `cancel` covers any other close request the browser raises.
+  const handleKeyDown = (event: ReactKeyboardEvent&lt;HTMLDialogElement&gt;): void =&gt; {
+    rest.onKeyDown?.(event);
+    if (event.key !== &#39;Escape&#39; || event.defaultPrevented || !open) return;
+    event.preventDefault();
+    if (!escapeReportedRef.current) reportEscape();
+  };
+
+  const handleCancel = (event: SyntheticEvent&lt;HTMLDialogElement&gt;): void =&gt; {
+    // The consumer owns `open`: never let the browser close the dialog, dismissible or not.
+    event.preventDefault();
+    if (escapeReportedRef.current || !open) return;
+    reportEscape();
+  };
+
+  // A non-cancelable `cancel` closes the native dialog anyway, and a close watcher can close it with no
+  // `cancel` at all (repeated Escape): report `escape` if nothing else did, then reopen unless the
+  // consumer set `open` false.
+  const handleNativeClose = (): void =&gt; {
+    if (selfClosingRef.current) {
+      selfClosingRef.current = false;
+      return;
+    }
+    if (!open) return;
+    if (!escapeReportedRef.current) reportEscape();
+    reopenAfterNativeClose();
   };
 
   const handleScrimClick = (): void =&gt; {
@@ -25714,63 +25909,59 @@ export function Dialog({
       onClose={handleNativeClose}
     &gt;
       &lt;div className=&quot;ds-dialog__scrim&quot; data-part=&quot;scrim&quot; onClick={handleScrimClick} /&gt;
+      {/* FocusScope writes its own data-part=&quot;scope&quot;, so the focusScope part is this wrapper inside it. */}
       &lt;FocusScope trapped autoFocus=&quot;none&quot; restoreFocus&gt;
-        &lt;div className=&quot;ds-dialog__surface&quot; ref={surfaceRef} data-part=&quot;surface&quot;&gt;
-          &lt;div className=&quot;ds-dialog__header&quot; data-part=&quot;header&quot;&gt;
-            &lt;div className=&quot;ds-dialog__titles&quot;&gt;
-              &lt;div
-                className={hideHeading ? &#39;ds-dialog__heading ds-dialog__visually-hidden&#39; : &#39;ds-dialog__heading&#39;}
-                data-part=&quot;heading&quot;
-              &gt;
-                &lt;Heading
-                  level=&quot;2&quot;
-                  id={headingId}
-                  ref={headingRef}
-                  tabIndex={initialFocus === &#39;title&#39; ? -1 : undefined}
+        &lt;div className=&quot;ds-dialog__scope&quot; data-part=&quot;focusScope&quot;&gt;
+          &lt;div className=&quot;ds-dialog__surface&quot; ref={surfaceRef} data-part=&quot;surface&quot;&gt;
+            &lt;div className=&quot;ds-dialog__header&quot; data-part=&quot;header&quot;&gt;
+              {/* The titles group is Dialog-owned and carries no data-part: it only holds descriptionGap. */}
+              &lt;div className=&quot;ds-dialog__titles&quot;&gt;
+                &lt;div
+                  className={hideHeading ? &#39;ds-dialog__heading ds-dialog__visually-hidden&#39; : &#39;ds-dialog__heading&#39;}
+                  data-part=&quot;heading&quot;
                 &gt;
-                  {heading}
-                &lt;/Heading&gt;
+                  &lt;Heading level=&quot;2&quot; id={headingId} ref={headingRef} tabIndex={initialFocus === &#39;title&#39; ? -1 : undefined}&gt;
+                    {heading}
+                  &lt;/Heading&gt;
+                &lt;/div&gt;
+                {description ? (
+                  &lt;Text id={descriptionId} data-part=&quot;description&quot; tone=&quot;muted&quot;&gt;
+                    {description}
+                  &lt;/Text&gt;
+                ) : null}
               &lt;/div&gt;
-              {description ? (
-                &lt;Text id={descriptionId} data-part=&quot;description&quot;&gt;
-                  {description}
-                &lt;/Text&gt;
+              {dismissible ? (
+                &lt;span className=&quot;ds-dialog__close&quot; data-part=&quot;closeButton&quot;&gt;
+                  &lt;Button
+                    ref={closeButtonRef}
+                    variant=&quot;ghost&quot;
+                    size=&quot;sm&quot;
+                    iconOnly
+                    label={COPY.closeLabel}
+                    leadingIcon={&lt;Icon name=&quot;close&quot; inline /&gt;}
+                    onClick={() =&gt; onClose?.(&#39;close-button&#39;)}
+                  /&gt;
+                &lt;/span&gt;
               ) : null}
             &lt;/div&gt;
-            {dismissible ? (
-              &lt;span className=&quot;ds-dialog__close&quot; data-part=&quot;closeButton&quot;&gt;
-                &lt;Button
-                  ref={closeButtonRef}
-                  variant=&quot;ghost&quot;
-                  size=&quot;sm&quot;
-                  iconOnly
-                  label={COPY.closeLabel}
-                  leadingIcon={&lt;Icon name=&quot;close&quot; inline /&gt;}
-                  onClick={() =&gt; onClose?.(&#39;close-button&#39;)}
-                /&gt;
-              &lt;/span&gt;
+            {/* body: the Dialog-owned scroll container, since Box never scrolls. */}
+            &lt;div className=&quot;ds-dialog__body&quot; data-part=&quot;body&quot; ref={bodyRef}&gt;
+              {/* inset reaches the Box through the stylesheet; the override is passed only when the caller sets it. */}
+              &lt;Box overrides={insetOverride ? { paddingInline: insetOverride } : undefined}&gt;{children}&lt;/Box&gt;
+            &lt;/div&gt;
+            {hasFooter ? (
+              &lt;div className=&quot;ds-dialog__footer&quot; data-part=&quot;footer&quot; ref={footerRef}&gt;
+                &lt;Stack
+                  direction=&quot;horizontal&quot;
+                  justify=&quot;end&quot;
+                  wrap
+                  overrides={footerGapOverride ? { gap: footerGapOverride } : undefined}
+                &gt;
+                  {footer}
+                &lt;/Stack&gt;
+              &lt;/div&gt;
             ) : null}
           &lt;/div&gt;
-          &lt;div className=&quot;ds-dialog__scroll&quot;&gt;
-            &lt;Box
-              data-part=&quot;body&quot;
-              ref={bodyRef}
-              overrides={insetOverride ? { paddingBlock: insetOverride, paddingInline: insetOverride } : undefined}
-            &gt;
-              {children}
-            &lt;/Box&gt;
-          &lt;/div&gt;
-          {hasFooter ? (
-            &lt;div className=&quot;ds-dialog__footer&quot; data-part=&quot;footer&quot; ref={footerRef}&gt;
-              &lt;Stack
-                direction=&quot;horizontal&quot;
-                justify=&quot;end&quot;
-                overrides={footerGapOverride ? { gap: footerGapOverride } : undefined}
-              &gt;
-                {footer}
-              &lt;/Stack&gt;
-            &lt;/div&gt;
-          ) : null}
         &lt;/div&gt;
       &lt;/FocusScope&gt;
     &lt;/dialog&gt;
@@ -25967,6 +26158,27 @@ import { Text } from './Text';</code></pre>
     size=&quot;md&quot;
     dismissible
     initialFocus=&quot;first&quot;&gt;&lt;Input label=&quot;Project name&quot; name=&quot;projectName&quot; defaultValue=&quot;Q3 roadmap&quot; /&gt;&lt;/DialogHarness&gt;;</code></pre>
+              
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">With Description</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              <div class="hint">The description is one sentence of consequence under the title, and the accessible description.</div>
+              <pre><code>const WithDescription = () =&gt; &lt;DialogHarness
+    open
+    heading=&quot;Rename project&quot;
+    footer={(&lt;&gt;
+      &lt;Button label=&quot;Rename&quot; variant=&quot;primary&quot; /&gt;
+      &lt;Button label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;
+    &lt;/&gt;)}
+    hideHeading={false}
+    size=&quot;md&quot;
+    dismissible
+    initialFocus=&quot;first&quot;
+    description=&quot;Everyone with access will see the new name.&quot;&gt;&lt;Input label=&quot;Project name&quot; name=&quot;projectName&quot; defaultValue=&quot;Q3 roadmap&quot; /&gt;&lt;/DialogHarness&gt;;</code></pre>
               
             </div>
             <div class="note ok">

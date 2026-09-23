@@ -18,8 +18,8 @@
       "dir": "src",
       "canonical": "Alert.css",
       "brand": "Callout.css",
-      "names": 300,
-      "differ": 69
+      "names": 331,
+      "differ": 67
     },
     {
       "dir": "src",
@@ -39,15 +39,15 @@
       "dir": "src",
       "canonical": "Alert.tsx",
       "brand": "Callout.tsx",
-      "names": 891,
+      "names": 999,
       "differ": 41
     },
     {
       "dir": "src",
       "canonical": "Button.css",
       "brand": "CtaButton.css",
-      "names": 487,
-      "differ": 98
+      "names": 602,
+      "differ": 71
     },
     {
       "dir": "src",
@@ -74,8 +74,8 @@
       "dir": "src",
       "canonical": "Disclosure.css",
       "brand": "Expander.css",
-      "names": 356,
-      "differ": 56
+      "names": 358,
+      "differ": 57
     },
     {
       "dir": "src",
@@ -88,21 +88,21 @@
       "dir": "src",
       "canonical": "Disclosure.test.tsx",
       "brand": "Expander.test.tsx",
-      "names": 366,
-      "differ": 10
+      "names": 405,
+      "differ": 11
     },
     {
       "dir": "src",
       "canonical": "Disclosure.tsx",
       "brand": "Expander.tsx",
-      "names": 954,
-      "differ": 38
+      "names": 957,
+      "differ": 39
     },
     {
       "dir": "src",
       "canonical": "FormContext.ts",
       "brand": "FormContext.ts",
-      "names": 307,
+      "names": 494,
       "differ": 0
     },
     {
@@ -116,15 +116,15 @@
       "dir": "src",
       "canonical": "Icon.tsx",
       "brand": "Icon.tsx",
-      "names": 1164,
+      "names": 1154,
       "differ": 18
     },
     {
       "dir": "src",
       "canonical": "Link.css",
       "brand": "Link.css",
-      "names": 234,
-      "differ": 30
+      "names": 240,
+      "differ": 17
     },
     {
       "dir": "src",
@@ -144,7 +144,7 @@
       "dir": "src",
       "canonical": "Stack.tsx",
       "brand": "Stack.tsx",
-      "names": 657,
+      "names": 679,
       "differ": 10
     },
     {
@@ -158,7 +158,7 @@
       "dir": "src",
       "canonical": "Text.tsx",
       "brand": "Text.tsx",
-      "names": 633,
+      "names": 647,
       "differ": 17
     },
     {
@@ -172,7 +172,7 @@
       "dir": "behavior",
       "canonical": "Alert.web.test.tsx",
       "brand": "Callout.web.test.tsx",
-      "names": 315,
+      "names": 337,
       "differ": 11
     },
     {
@@ -261,7 +261,7 @@
       "category": "component name",
       "from": "Disclosure",
       "to": "Expander",
-      "count": 33
+      "count": 34
     },
     {
       "category": "component name",
@@ -309,7 +309,7 @@
       "category": "class or custom-element name",
       "from": "ds-alert__content",
       "to": "demo-callout__content",
-      "count": 3
+      "count": 2
     },
     {
       "category": "class or custom-element name",
@@ -321,7 +321,7 @@
       "category": "class or custom-element name",
       "from": "ds-alert__heading",
       "to": "demo-callout__heading",
-      "count": 3
+      "count": 2
     },
     {
       "category": "class or custom-element name",
@@ -333,7 +333,7 @@
       "category": "class or custom-element name",
       "from": "ds-button",
       "to": "demo-cta-button",
-      "count": 24
+      "count": 29
     },
     {
       "category": "class or custom-element name",
@@ -357,7 +357,7 @@
       "category": "class or custom-element name",
       "from": "ds-button__spinner",
       "to": "demo-cta-button__spinner",
-      "count": 3
+      "count": 4
     },
     {
       "category": "class or custom-element name",
@@ -381,7 +381,7 @@
       "category": "class or custom-element name",
       "from": "ds-disclosure__icon",
       "to": "demo-expander__icon",
-      "count": 7
+      "count": 6
     },
     {
       "category": "class or custom-element name",
@@ -559,32 +559,8 @@
     },
     {
       "category": "CSS custom-property prefix",
-      "from": "--ds-button-background",
-      "to": "--demo-button-background",
-      "count": 6
-    },
-    {
-      "category": "CSS custom-property prefix",
-      "from": "--ds-button-background-hover",
-      "to": "--demo-button-background-hover",
-      "count": 7
-    },
-    {
-      "category": "CSS custom-property prefix",
       "from": "--ds-button-disabled-opacity",
       "to": "--demo-button-disabled-opacity",
-      "count": 3
-    },
-    {
-      "category": "CSS custom-property prefix",
-      "from": "--ds-button-focus-ring",
-      "to": "--demo-button-focus-ring",
-      "count": 3
-    },
-    {
-      "category": "CSS custom-property prefix",
-      "from": "--ds-button-focus-ring-width",
-      "to": "--demo-button-focus-ring-width",
       "count": 3
     },
     {
@@ -607,12 +583,6 @@
     },
     {
       "category": "CSS custom-property prefix",
-      "from": "--ds-button-foreground",
-      "to": "--demo-button-foreground",
-      "count": 7
-    },
-    {
-      "category": "CSS custom-property prefix",
       "from": "--ds-button-icon-gap",
       "to": "--demo-button-icon-gap",
       "count": 3
@@ -622,18 +592,6 @@
       "from": "--ds-button-inverse-background-hover",
       "to": "--demo-button-inverse-background-hover",
       "count": 3
-    },
-    {
-      "category": "CSS custom-property prefix",
-      "from": "--ds-button-inverse-focus-ring",
-      "to": "--demo-button-inverse-focus-ring",
-      "count": 2
-    },
-    {
-      "category": "CSS custom-property prefix",
-      "from": "--ds-button-inverse-foreground",
-      "to": "--demo-button-inverse-foreground",
-      "count": 2
     },
     {
       "category": "CSS custom-property prefix",
@@ -649,21 +607,15 @@
     },
     {
       "category": "CSS custom-property prefix",
-      "from": "--ds-button-min-target",
-      "to": "--demo-button-min-target",
-      "count": 3
-    },
-    {
-      "category": "CSS custom-property prefix",
       "from": "--ds-button-padding-block",
       "to": "--demo-button-padding-block",
-      "count": 3
+      "count": 4
     },
     {
       "category": "CSS custom-property prefix",
       "from": "--ds-button-padding-inline",
       "to": "--demo-button-padding-inline",
-      "count": 7
+      "count": 6
     },
     {
       "category": "CSS custom-property prefix",
@@ -781,6 +733,12 @@
     },
     {
       "category": "CSS custom-property prefix",
+      "from": "--ds-disclosure-trigger-line-height",
+      "to": "--demo-disclosure-trigger-line-height",
+      "count": 3
+    },
+    {
+      "category": "CSS custom-property prefix",
       "from": "--ds-disclosure-trigger-padding-block",
       "to": "--demo-disclosure-trigger-padding-block",
       "count": 3
@@ -817,51 +775,15 @@
     },
     {
       "category": "CSS custom-property prefix",
-      "from": "--ds-link-color",
-      "to": "--demo-link-color",
-      "count": 2
-    },
-    {
-      "category": "CSS custom-property prefix",
-      "from": "--ds-link-color-hover",
-      "to": "--demo-link-color-hover",
-      "count": 2
-    },
-    {
-      "category": "CSS custom-property prefix",
-      "from": "--ds-link-color-visited",
-      "to": "--demo-link-color-visited",
-      "count": 2
+      "from": "--ds-link",
+      "to": "--demo-link",
+      "count": 1
     },
     {
       "category": "CSS custom-property prefix",
       "from": "--ds-link-external-icon-gap",
       "to": "--demo-link-external-icon-gap",
       "count": 3
-    },
-    {
-      "category": "CSS custom-property prefix",
-      "from": "--ds-link-focus-ring",
-      "to": "--demo-link-focus-ring",
-      "count": 2
-    },
-    {
-      "category": "CSS custom-property prefix",
-      "from": "--ds-link-focus-ring-offset",
-      "to": "--demo-link-focus-ring-offset",
-      "count": 2
-    },
-    {
-      "category": "CSS custom-property prefix",
-      "from": "--ds-link-focus-ring-radius",
-      "to": "--demo-link-focus-ring-radius",
-      "count": 2
-    },
-    {
-      "category": "CSS custom-property prefix",
-      "from": "--ds-link-focus-ring-width",
-      "to": "--demo-link-focus-ring-width",
-      "count": 2
     },
     {
       "category": "CSS custom-property prefix",

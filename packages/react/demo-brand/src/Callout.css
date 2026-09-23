@@ -66,7 +66,8 @@
   block-size: max(var(--demo-alert-first-line), var(--demo-alert-icon-size));
   line-height: 0;
 }
-.demo-callout:has(> .demo-callout__content > .demo-callout__heading) > .demo-callout__icon {
+/* The component sets data-has-heading on the root; no `:has()` query is used. */
+.demo-callout[data-has-heading] > .demo-callout__icon {
   --demo-alert-first-line: calc(var(--demo-alert-heading-size) * var(--demo-alert-line-height));
 }
 
@@ -92,10 +93,14 @@
   font-size: var(--demo-alert-font-size);
 }
 
-/* dismissButton: the system CtaButton, unchanged; dismissMargin pulls it into the corner. */
+/*
+ * dismissButton: the system CtaButton, unchanged; dismissMargin pulls it into the corner. Only
+ * margin-block-start and margin-inline-end are negative — never block-end, which would let a tall
+ * message pull the button past the bottom padding.
+ */
 .demo-callout__dismiss {
   display: inline-flex;
   flex: 0 0 auto;
-  margin-block: calc(-1 * var(--demo-alert-dismiss-margin));
+  margin-block-start: calc(-1 * var(--demo-alert-dismiss-margin));
   margin-inline-end: calc(-1 * var(--demo-alert-dismiss-margin));
 }

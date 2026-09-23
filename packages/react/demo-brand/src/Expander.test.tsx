@@ -71,6 +71,16 @@ describe('Expander', () => {
     expect(s.trigger()).toHaveFocus();
   });
 
+  it('controlled-open-change-reports-controlled', () => {
+    const s = setup({ open: false });
+    expect(s.trigger()).toHaveAttribute('aria-expanded', 'false');
+    s.rerender(<Expander {...s.props} open />);
+    expect(s.onToggle).toHaveBeenCalledTimes(1);
+    expect(s.onToggle).toHaveBeenCalledWith(true, 'controlled');
+    expect(s.trigger()).toHaveAttribute('aria-expanded', 'true');
+    expect(s.panel()).toBeVisible();
+  });
+
   it('renders', () => {
     const s = setup();
     expect(s.root()).toBeInTheDocument();

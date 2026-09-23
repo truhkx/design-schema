@@ -1,0 +1,40 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{f as t}from"./iframe-BaAix2rE.js";import{t as n}from"./jsx-runtime-DeHZSEgm.js";import{n as r,t as i}from"./names-szlHjJ4U.js";function a(e){let t={};for(let n of Object.keys(e)){let r=c[n],a=e[n];r&&a&&(t[r]=i(a))}return t}function o({ref:e,name:t,size:n=`md`,inline:r=!1,label:i,overrides:o,...c}){let d=i!==void 0&&i!==``,f=Object.hasOwn(u,t)?u[t]:void 0;l&&!f&&console.warn(`Icon: unknown name "${String(t)}"`);let p=r?`ds-icon ds-icon--${n} ds-icon--inline`:`ds-icon ds-icon--${n}`;return(0,s.jsx)(`svg`,{...c,ref:e,"data-ds":`Icon`,"data-part":`glyph`,className:p,style:o?a(o):void 0,viewBox:`0 0 16 16`,width:`1em`,height:`1em`,fill:`none`,stroke:`currentColor`,strokeLinecap:`round`,strokeLinejoin:`round`,focusable:`false`,role:d?`img`:void 0,"aria-label":d?i:void 0,"aria-hidden":d?void 0:`true`,children:f})}var s,c,l,u;function d(){return(d=e((()=>{t(),r(),s=n(),c={size:`--ds-icon-size`,color:`--ds-icon-color`},l=typeof process<`u`&&!1,u={check:(0,s.jsx)(`path`,{d:`M3 8.5l3.5 3.5L13 5`}),dash:(0,s.jsx)(`path`,{d:`M4 8h8`}),"chevron-right":(0,s.jsx)(`path`,{d:`M6 3l5 5-5 5`}),"chevron-down":(0,s.jsx)(`path`,{d:`M3 6l5 5 5-5`}),"chevron-up":(0,s.jsx)(`path`,{d:`M3 10l5-5 5 5`}),"chevron-left":(0,s.jsx)(`path`,{d:`M10 3L5 8l5 5`}),close:(0,s.jsx)(`path`,{d:`M3 3l10 10M13 3L3 13`}),plus:(0,s.jsx)(`path`,{d:`M8 3v10M3 8h10`}),minus:(0,s.jsx)(`path`,{d:`M3 8h10`}),info:(0,s.jsx)(`path`,{fill:`currentColor`,stroke:`none`,fillRule:`evenodd`,d:`M8 1a7 7 0 1 0 0 14A7 7 0 1 0 8 1zm0 3a1 1 0 1 0 0 2 1 1 0 1 0 0-2zM7 7h2v4.5H7z`}),success:(0,s.jsx)(`path`,{fill:`currentColor`,stroke:`none`,fillRule:`evenodd`,d:`M8 1a7 7 0 1 0 0 14A7 7 0 1 0 8 1zM3.9 8.6 7 11.7l5.1-5.1-1.2-1.2L7 9.3 5.1 7.4z`}),warning:(0,s.jsx)(`path`,{fill:`currentColor`,stroke:`none`,fillRule:`evenodd`,d:`M8 1.5 15 14H1zM7 5.5h2V10H7zm1 5.5a1 1 0 1 0 0 2 1 1 0 1 0 0-2z`}),danger:(0,s.jsx)(`path`,{fill:`currentColor`,stroke:`none`,fillRule:`evenodd`,d:`M5 1h6l4 4v6l-4 4H5l-4-4V5zm-.6 4.6 1.2-1.2L8 6.8l2.4-2.4 1.2 1.2L9.2 8l2.4 2.4-1.2 1.2L8 9.2l-2.4 2.4-1.2-1.2L6.8 8z`}),external:(0,s.jsx)(`path`,{d:`M6 3H3v10h10v-3M9 3h4v4M13 3L7 9`}),ellipsis:(0,s.jsx)(`path`,{fill:`currentColor`,stroke:`none`,fillRule:`evenodd`,d:`M1.75,8a1.25,1.25 0 1,0 2.5,0a1.25,1.25 0 1,0 -2.5,0M6.75,8a1.25,1.25 0 1,0 2.5,0a1.25,1.25 0 1,0 -2.5,0M11.75,8a1.25,1.25 0 1,0 2.5,0a1.25,1.25 0 1,0 -2.5,0`}),search:(0,s.jsx)(`path`,{d:`M7 2.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 1 0 0-9zM10.3 10.3L14 14`}),"arrow-right":(0,s.jsx)(`path`,{d:`M3 8h10M9 4l4 4-4 4`}),"arrow-left":(0,s.jsx)(`path`,{d:`M13 8H3M7 4L3 8l4 4`}),calendar:(0,s.jsx)(`path`,{d:`M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 1.5v3M10.5 1.5v3`}),menu:(0,s.jsx)(`path`,{d:`M2 4h12M2 8h12M2 12h12`}),list:(0,s.jsx)(`path`,{d:`M5 4h9M5 8h9M5 12h9M2 4h.01M2 8h.01M2 12h.01`}),grid:(0,s.jsx)(`path`,{d:`M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z`}),play:(0,s.jsx)(`path`,{fill:`currentColor`,stroke:`none`,fillRule:`evenodd`,d:`M4 2l10 6-10 6z`}),pause:(0,s.jsx)(`path`,{fill:`currentColor`,stroke:`none`,fillRule:`evenodd`,d:`M3 2h3v12H3zM10 2h3v12H10z`}),folder:(0,s.jsx)(`path`,{d:`M2 13V2h5v2h7v9z`}),file:(0,s.jsx)(`path`,{d:`M4 2h5l3 3v9H4zM9 2v3h3`})},o.__docgenInfo={description:`Icon — Design Schema, category: primitive.
+
+When to use:
+Use an Icon wherever a component's anatomy names one: the leading icon in a Button, the chevron
+in a Disclosure, the status shape in an Alert, the check in a Checkbox, the external mark on a
+Link, the ellipsis in a collapsed Breadcrumb. Use \`inline\` when the icon is inside running text.
+Give it a \`label\` only when the icon is the whole message — a lone warning triangle in a table
+cell, say — and the label is what a screen reader should say instead.
+
+Glyphs are drawn in \`currentColor\`, so a Button, Link or Alert colors them for free; an icon with
+no colored ancestor falls back to what the document root resolves, \`color.foreground\`. Line
+glyphs use the focus-ring width as their stroke, at every size, so they stay legible at \`xs\`.`,methods:[],displayName:`Icon`,props:{name:{required:!0,tsType:{name:`union`,raw:`| 'check'
+| 'dash'
+| 'chevron-right'
+| 'chevron-down'
+| 'chevron-up'
+| 'chevron-left'
+| 'close'
+| 'plus'
+| 'minus'
+| 'info'
+| 'success'
+| 'warning'
+| 'danger'
+| 'external'
+| 'ellipsis'
+| 'search'
+| 'arrow-right'
+| 'arrow-left'
+| 'calendar'
+| 'menu'
+| 'list'
+| 'grid'
+| 'play'
+| 'pause'
+| 'folder'
+| 'file'`,elements:[{name:`literal`,value:`'check'`},{name:`literal`,value:`'dash'`},{name:`literal`,value:`'chevron-right'`},{name:`literal`,value:`'chevron-down'`},{name:`literal`,value:`'chevron-up'`},{name:`literal`,value:`'chevron-left'`},{name:`literal`,value:`'close'`},{name:`literal`,value:`'plus'`},{name:`literal`,value:`'minus'`},{name:`literal`,value:`'info'`},{name:`literal`,value:`'success'`},{name:`literal`,value:`'warning'`},{name:`literal`,value:`'danger'`},{name:`literal`,value:`'external'`},{name:`literal`,value:`'ellipsis'`},{name:`literal`,value:`'search'`},{name:`literal`,value:`'arrow-right'`},{name:`literal`,value:`'arrow-left'`},{name:`literal`,value:`'calendar'`},{name:`literal`,value:`'menu'`},{name:`literal`,value:`'list'`},{name:`literal`,value:`'grid'`},{name:`literal`,value:`'play'`},{name:`literal`,value:`'pause'`},{name:`literal`,value:`'folder'`},{name:`literal`,value:`'file'`}]},description:"Which glyph. The set is deliberately small and grows only when a component needs a shape;\n`info`, `success`, `warning` and `danger` are the four status shapes (circle-i, circle-check,\ntriangle-!, octagon-x) so tone is never carried by color alone. `name` has no default; the\nDefault story renders `check`."},size:{required:!1,tsType:{name:`union`,raw:`IconSize | undefined`,elements:[{name:`union`,raw:`'xs' | 'sm' | 'md' | 'lg' | 'xl'`,elements:[{name:`literal`,value:`'xs'`},{name:`literal`,value:`'sm'`},{name:`literal`,value:`'md'`},{name:`literal`,value:`'lg'`},{name:`literal`,value:`'xl'`}]},{name:`undefined`}]},description:`Rendered size, from the font-size scale so icons line up with text of the same size.`,defaultValue:{value:`'md'`,computed:!1}},inline:{required:!1,tsType:{name:`union`,raw:`boolean | undefined`,elements:[{name:`boolean`},{name:`undefined`}]},description:"Size the glyph at 1em of the surrounding text and align it to the text baseline, ignoring\n`size`. For icons inside Text, Link and Button labels. On web `font-size: inherit` always has a\nsurrounding size to read, so there is no fallback.",defaultValue:{value:`false`,computed:!1}},label:{required:!1,tsType:{name:`union`,raw:`string | undefined`,elements:[{name:`string`},{name:`undefined`}]},description:`Accessible name. When set (non-empty), the icon is meaningful and exposed as an image with
+this name; when omitted or empty, it is decorative and hidden from assistive technology — an
+empty string is the decorative case, not an authoring error. Most icons sit next to text and
+should have no label.`},overrides:{required:!1,tsType:{name:`union`,raw:`Partial<Record<IconOverridableBinding, TokenRef | undefined>> | undefined`,elements:[{name:`Partial`,elements:[{name:`Record`,elements:[{name:`union`,raw:`'size' | 'color'`,elements:[{name:`literal`,value:`'size'`},{name:`literal`,value:`'color'`}]},{name:`union`,raw:`TokenRef | undefined`,elements:[{name:`TokenRef`},{name:`undefined`}]}],raw:`Record<IconOverridableBinding, TokenRef | undefined>`}],raw:`Partial<Record<IconOverridableBinding, TokenRef | undefined>>`},{name:`undefined`}]},description:"Per-instance style overrides: each entry sets the matching CSS hook (`--ds-icon-size`,\n`--ds-icon-color`) to that token, inline. `size` is a no-op while `inline` is set."},ref:{required:!1,tsType:{name:`union`,raw:`Ref<SVGSVGElement> | undefined`,elements:[{name:`Ref`,elements:[{name:`SVGSVGElement`}],raw:`Ref<SVGSVGElement>`},{name:`undefined`}]},description:``}},composes:[`Omit`]}})))()}export{d as n,o as t};

@@ -1,4 +1,7 @@
-/* CtaButton — styled only through Design Schema token custom properties. */
+/* CtaButton — styled only through Design Schema token custom properties. Locked bindings (background,
+   backgroundHover, foreground, focusRing, focusRingWidth, inverseForeground, inverseFocusRing,
+   minTarget) get no hook and read their token directly; spinnerStroke is the one locked binding
+   that keeps a hook. */
 
 .demo-cta-button {
   --demo-button-icon-gap: var(--space-2);
@@ -8,16 +11,8 @@
   --demo-button-font-family: var(--font-family-body);
   --demo-button-font-weight: var(--font-weight-medium);
   --demo-button-font-size: var(--font-size-md);
-  --demo-button-background: var(--color-action-primary-background);
-  --demo-button-background-hover: var(--color-action-primary-background-hover);
-  --demo-button-foreground: var(--color-action-primary-foreground);
-  --demo-button-focus-ring: var(--color-border-focus);
-  --demo-button-focus-ring-width: var(--border-width-focus);
-  --demo-button-inverse-foreground: var(--color-inverse-link);
-  --demo-button-inverse-focus-ring: var(--color-inverse-focus);
   --demo-button-inverse-background-hover: var(--color-inverse-foreground);
   --demo-button-inverse-hover-opacity: var(--opacity-disabled);
-  --demo-button-min-target: var(--size-target-min);
   --demo-button-disabled-opacity: var(--opacity-disabled);
   --demo-button-transition: var(--motion-duration-fast);
   --demo-button-loading-spin: var(--motion-duration-loop);
@@ -28,8 +23,8 @@
   align-items: center;
   justify-content: center;
   gap: var(--demo-button-icon-gap);
-  min-inline-size: var(--demo-button-min-target);
-  min-block-size: var(--demo-button-min-target);
+  min-inline-size: var(--size-target-min);
+  min-block-size: var(--size-target-min);
   padding-inline: var(--demo-button-padding-inline);
   padding-block: var(--demo-button-padding-block);
   margin: 0;
@@ -38,8 +33,6 @@
   font-family: var(--demo-button-font-family);
   font-weight: var(--demo-button-font-weight);
   font-size: var(--demo-button-font-size);
-  background-color: var(--demo-button-background);
-  color: var(--demo-button-foreground);
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
@@ -47,26 +40,36 @@
   appearance: none;
 }
 
-/* variant → color.action.{variant}.* (all locked) */
+/* variant → color.action.{variant}.background / foreground (locked, read directly) */
 .demo-cta-button--primary {
-  --demo-button-background: var(--color-action-primary-background);
-  --demo-button-background-hover: var(--color-action-primary-background-hover);
-  --demo-button-foreground: var(--color-action-primary-foreground);
+  background-color: var(--color-action-primary-background);
+  color: var(--color-action-primary-foreground);
 }
 .demo-cta-button--secondary {
-  --demo-button-background: var(--color-action-secondary-background);
-  --demo-button-background-hover: var(--color-action-secondary-background-hover);
-  --demo-button-foreground: var(--color-action-secondary-foreground);
+  background-color: var(--color-action-secondary-background);
+  color: var(--color-action-secondary-foreground);
 }
 .demo-cta-button--ghost {
-  --demo-button-background: var(--color-action-ghost-background);
-  --demo-button-background-hover: var(--color-action-ghost-background-hover);
-  --demo-button-foreground: var(--color-action-ghost-foreground);
+  background-color: var(--color-action-ghost-background);
+  color: var(--color-action-ghost-foreground);
 }
 .demo-cta-button--danger {
-  --demo-button-background: var(--color-action-danger-background);
-  --demo-button-background-hover: var(--color-action-danger-background-hover);
-  --demo-button-foreground: var(--color-action-danger-foreground);
+  background-color: var(--color-action-danger-background);
+  color: var(--color-action-danger-foreground);
+}
+
+/* backgroundHover: pointer hover and pressed state, never while disabled or loading. */
+.demo-cta-button--primary:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
+  background-color: var(--color-action-primary-background-hover);
+}
+.demo-cta-button--secondary:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
+  background-color: var(--color-action-secondary-background-hover);
+}
+.demo-cta-button--ghost:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
+  background-color: var(--color-action-ghost-background-hover);
+}
+.demo-cta-button--danger:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
+  background-color: var(--color-action-danger-background-hover);
 }
 
 /* size → paddingInline: space.{size}; fontSize and spinnerSize: font.size.{size} */
@@ -86,42 +89,44 @@
   --demo-button-spinner-size: var(--font-size-lg);
 }
 
-/* iconOnly: equal padding on every side (space.sm), regardless of size. */
-.demo-cta-button--icon-only { --demo-button-padding-inline: var(--space-sm); }
-
-/* inverse: the focus ring always swaps; only ghost changes its text and fill. */
-.demo-cta-button--inverse {
-  --demo-button-focus-ring: var(--demo-button-inverse-focus-ring);
+/* iconOnly: paddingInline takes the resolved paddingBlock, so the sides stay equal under a
+   paddingBlock override and a paddingInline override has no effect. */
+.demo-cta-button--icon-only {
+  padding-inline: var(--demo-button-padding-block);
 }
+
+/* inverse: only ghost changes its text and fill. */
 .demo-cta-button--inverse.demo-cta-button--ghost {
-  --demo-button-foreground: var(--demo-button-inverse-foreground);
-  /* inverseBackgroundHover at inverseHoverOpacity (calc(opacity.disabled * 0.25)) over color.inverse.surface */
-  --demo-button-background-hover: color-mix(
+  color: var(--color-inverse-link);
+}
+/* inverseBackgroundHover at inverseHoverOpacity (its token × 0.25). The second colour of the mix is
+   `transparent`, never color.inverse.surface: ghost has no fill of its own, so whatever the Toast or
+   panel actually paints has to show through. */
+.demo-cta-button--inverse.demo-cta-button--ghost:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
+  background-color: color-mix(
     in srgb,
     var(--demo-button-inverse-background-hover) calc(var(--demo-button-inverse-hover-opacity) * 0.25 * 100%),
-    var(--color-inverse-surface)
+    transparent
   );
-}
-
-/* backgroundHover: pointer hover and pressed state, only while activatable. */
-.demo-cta-button:not([aria-disabled='true']):not([aria-busy='true']):hover,
-.demo-cta-button:not([aria-disabled='true']):not([aria-busy='true']):active {
-  background-color: var(--demo-button-background-hover);
 }
 
 /* focus-visible: never removed, only replaced by the token ring. */
 .demo-cta-button:focus-visible {
-  outline: var(--demo-button-focus-ring-width) solid var(--demo-button-focus-ring);
-  outline-offset: var(--demo-button-focus-ring-width);
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: var(--border-width-focus);
+}
+/* inverse: the ring uses color.inverse.focus for every variant. */
+.demo-cta-button--inverse:focus-visible {
+  outline-color: var(--color-inverse-focus);
 }
 
-/* disabled: stays focusable and announced; visually dimmed, colors unchanged. */
+/* disabled: stays focusable and announced; the whole button dims, colors unchanged. */
 .demo-cta-button[aria-disabled='true'] {
   cursor: not-allowed;
   opacity: var(--demo-button-disabled-opacity);
 }
 
-/* loading: announces busy, ignores activation, keeps its size. */
+/* loading: announces busy, ignores activation, keeps its height. */
 .demo-cta-button[aria-busy='true'] {
   cursor: progress;
 }
@@ -153,7 +158,7 @@
 }
 
 /* Ring spinner in the leadingIcon position: spinnerSize across, spinnerStroke thick, one quarter
-   transparent, in currentColor. */
+   transparent, in currentColor; round through radius.full, read directly. */
 .demo-cta-button__spinner {
   display: inline-block;
   box-sizing: border-box;
@@ -162,18 +167,28 @@
   flex: 0 0 auto;
   border-radius: var(--radius-full);
   border: var(--demo-button-spinner-stroke) solid currentColor;
-  border-inline-end-color: transparent;
+  border-block-start-color: transparent;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  /* loadingSpin: one rotation; disabled under prefers-reduced-motion. */
-  .demo-cta-button__spinner {
-    animation: demo-cta-button-spin var(--demo-button-loading-spin) linear infinite;
+/* transition: only the background animates, with motion.easing.standard. No variant changes its
+   foreground between states. */
+.demo-cta-button {
+  transition: background-color var(--demo-button-transition) var(--motion-easing-standard);
+}
+
+/* loadingSpin: one full rotation at linear easing (a continuous spin; motion.easing.standard is
+   for `transition` only). */
+.demo-cta-button__spinner {
+  animation: demo-cta-button-spin var(--demo-button-loading-spin) linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-cta-button {
+    transition: none;
   }
 
-  /* transition: only the background animates, with motion.easing.standard. */
-  .demo-cta-button {
-    transition: background-color var(--demo-button-transition) var(--motion-easing-standard);
+  .demo-cta-button__spinner {
+    animation: none;
   }
 }
 

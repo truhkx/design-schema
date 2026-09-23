@@ -447,7 +447,7 @@ export function Search({
       style={rootStyle}
     >
       {showLabel ? (
-        <View testID="Search.label" style={dimStyle} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <View testID="Search.label" style={dimStyle} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <Text
             overrides={{
               fontWeight: overrides?.labelWeight ?? 'font.weight.medium',
@@ -460,14 +460,15 @@ export function Search({
       ) : null}
       <View style={fieldGroupStyle}>
         <View testID="Search.field" style={fieldStyle}>
-          <View testID="Search.icon" style={dimStyle} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <View testID="Search.icon" style={dimStyle} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
             <Icon name="search" size={ICON_SIZE[size]} overrides={ICON_OVERRIDES} />
           </View>
           <TextInput
             ref={inputRef}
             testID="Search.input"
-            // `role` carries the schema's `searchbox`; the `search` landmark stays on the root View.
-            role="searchbox"
+            // `role` carries the schema's `searchbox`, or `combobox` once `suggestions` is set (it
+            // wins, and is the role `aria-expanded` is allowed on); the `search` landmark stays on the root View.
+            role={hasSuggestions ? 'combobox' : 'searchbox'}
             accessibilityLabel={label}
             aria-label={label}
             accessibilityState={{ disabled: isDisabled, expanded: hasSuggestions ? showList : undefined }}

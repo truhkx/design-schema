@@ -81,3 +81,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - DatePicker: the Escape rule's focus-trigger expectation cannot be shown from DatePicker's own code on rn (the notes admit it rests on BottomSheet's FocusScope), and no rn scenario or test covers Escape. It is left unverified here.
 - DatePicker: aria-describedby and aria-labelledby have no ids to point at on rn, so the input carries only aria-label and the description and error go through accessibilityHint. The doc does not say the describedby mirror is skipped on this platform.
 - DatePicker: inside a Fieldset the input's name is prefixed with the fieldset legend, which the existing file did. The spec does not mention this, and it would break the has-accessible-name test, which expects the name to equal `label`, if run inside a Fieldset.
+
+## 2026-09-23 19:24 — round 1
+
+- DatePicker: the `calendarInset` binding says it is forwarded to the BottomSheet as `overrides.inset`, but the parts section lists it only under the Popover's forwards. I followed the rn platform notes and forwarded it to the sheet.
+- DatePicker: `open` says every change focuses the selected day, but the rn notes say focus lands on the sheet's first focusable. The two contradict on rn, and I followed the notes.
+- DatePicker: the spec does not say which of `min`, `max` and `isDateDisabled` may block a typed value. The prose says typed text outside the bounds commits and surfaces tooEarly/tooLate, so `isDayDisabled` only guards picks.
+- DatePicker: it is unspecified whether Today's disabled state should also set `aria-disabled` on rn. I pass `disabled` to Button and assume Button conveys accessibilityState.
+- DatePicker: `hideLabel` on rn drops the label Text and leaves the name in `accessibilityLabel`, but `label` also feeds the sheet heading. The spec does not say whether a hidden label should still show as the sheet heading, and I kept it.
+- DatePicker: the spec does not say how a range input's accessible name is built when a Fieldset legend is present. I used `{legend}, {label}, {Start date|End date}`.
+- DatePicker: the spec does not say what a controlled `open` does with a pending range draft when the parent closes and reopens it. I discard the draft on every close.

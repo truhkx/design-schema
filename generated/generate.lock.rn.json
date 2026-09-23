@@ -331,20 +331,20 @@
     }
   },
   "DatePicker.rn": {
-    "hash": "d9aeba3922b5ea76",
-    "lastAttemptHash": "d9aeba3922b5ea76",
-    "generatedAt": "2026-09-23T18:48:05+00:00",
-    "model": "opus",
+    "hash": "bf2c948306b858d1",
+    "lastAttemptHash": "bf2c948306b858d1",
+    "generatedAt": "2026-09-23T23:24:24+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3482,
+    "costUsd": 0.4252,
     "files": [
       "packages/rn/src/DatePicker.stories.tsx",
       "packages/rn/src/DatePicker.test.tsx",
       "packages/rn/src/DatePicker.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -723,20 +723,20 @@
     }
   },
   "NumberInput.rn": {
-    "hash": "de392a71443ee877",
-    "lastAttemptHash": "de392a71443ee877",
-    "generatedAt": "2026-09-23T18:41:59+00:00",
-    "model": "opus",
+    "hash": "1ba23ee9db017d5c",
+    "lastAttemptHash": "1ba23ee9db017d5c",
+    "generatedAt": "2026-09-23T23:19:22+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.6555,
+    "costUsd": 0.3014,
     "files": [
       "packages/rn/src/NumberInput.stories.tsx",
       "packages/rn/src/NumberInput.test.tsx",
       "packages/rn/src/NumberInput.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -796,20 +796,20 @@
     }
   },
   "ProgressBar.rn": {
-    "hash": "ebf41ef6f0d43d71",
-    "lastAttemptHash": "ebf41ef6f0d43d71",
-    "generatedAt": "2026-09-23T18:42:57+00:00",
-    "model": "opus",
+    "hash": "06b758033673dcdb",
+    "lastAttemptHash": "06b758033673dcdb",
+    "generatedAt": "2026-09-23T23:20:11+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5583,
+    "costUsd": 0.2573,
     "files": [
       "packages/rn/src/ProgressBar.stories.tsx",
       "packages/rn/src/ProgressBar.test.tsx",
       "packages/rn/src/ProgressBar.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -843,15 +843,14 @@
     }
   },
   "Search.rn": {
-    "hash": "adeccfe53ee0cbee",
-    "lastAttemptHash": "adeccfe53ee0cbee",
-    "generatedAt": "2026-09-23T18:45:56+00:00",
-    "model": "opus",
+    "hash": "cd5ec65d0abaa1fc",
+    "lastAttemptHash": "cd5ec65d0abaa1fc",
+    "generatedAt": "2026-09-23T23:23:17+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.8021,
+    "rounds": 2,
+    "costUsd": 0.6823,
     "files": [
-      "packages/rn/src/Search.stories.tsx",
       "packages/rn/src/Search.tsx"
     ],
     "gaps": 7,
@@ -932,15 +931,20 @@
     }
   },
   "Slider.rn": {
-    "hash": "dfb793ca87069285",
-    "lastAttemptHash": "dfb793ca87069285",
-    "generatedAt": "2026-09-23T18:40:59+00:00",
-    "model": "opus",
+    "hash": "23324c05174d332f",
+    "lastAttemptHash": "23324c05174d332f",
+    "generatedAt": "2026-09-23T23:18:27+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.744,
-    "files": [],
-    "gaps": 6,
+    "costUsd": 0.353,
+    "files": [
+      "packages/rn/src/Slider.stories.tsx",
+      "packages/rn/src/Slider.test.tsx",
+      "packages/rn/src/Slider.tsx",
+      "packages/rn/src/index.ts"
+    ],
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -997,17 +1001,18 @@
     }
   },
   "Stepper.rn": {
-    "hash": "02f87f3f62a819b2",
-    "lastAttemptHash": "02f87f3f62a819b2",
-    "generatedAt": "2026-09-23T18:44:43+00:00",
-    "model": "opus",
+    "hash": "194a9290fe974397",
+    "lastAttemptHash": "194a9290fe974397",
+    "generatedAt": "2026-09-23T23:21:49+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.6269,
+    "rounds": 2,
+    "costUsd": 0.6429,
     "files": [
       "packages/rn/src/Stepper.stories.tsx",
       "packages/rn/src/Stepper.test.tsx",
-      "packages/rn/src/Stepper.tsx"
+      "packages/rn/src/Stepper.tsx",
+      "packages/rn/src/index.ts"
     ],
     "gaps": 6,
     "gates": {

@@ -231,6 +231,7 @@ export function Stepper({
         index={index}
         status={statusFor(step, index, currentIndex)}
         isCurrent={step.id === current}
+        isRevealed={currentIndex === -1 ? index === 0 : step.id === current}
         isNavigable={isNavigable}
         compact={isCompact}
         isHorizontal={isHorizontal}
@@ -281,6 +282,8 @@ interface StepControlProps {
   index: number;
   status: StepperStepStatus;
   isCurrent: boolean;
+  /** Compact shows this step's label: the id match, or the first step when nothing matches. */
+  isRevealed: boolean;
   isNavigable: boolean;
   compact: boolean;
   isHorizontal: boolean;
@@ -296,6 +299,7 @@ function StepControl({
   index,
   status,
   isCurrent,
+  isRevealed,
   isNavigable,
   compact,
   isHorizontal,
@@ -358,7 +362,7 @@ function StepControl({
   );
 
   // Compact keeps every indicator but renders only the current step's label; horizontal never renders descriptions.
-  const showLabel = !compact || isCurrent;
+  const showLabel = !compact || isRevealed;
   const showDescription = !isHorizontal && step.description !== undefined;
   const textBlock =
     showLabel || showDescription ? (
@@ -404,12 +408,14 @@ function StepControl({
 
   // The `step` part is the list item, as it is the <li> on web: a list role owns list items and nothing else, so
   // the control (Pressable or plain View) sits inside it rather than being the item itself.
+  // A display-only step with no rendered text (compact) has nothing but its label to name it, and a role-less View
+  // may not carry aria-label, so it is an image-role element; such a step is never the selected one.
   const control = !isNavigable ? (
     <View
       accessible
       accessibilityLabel={accessibleName}
       aria-label={accessibleName}
-      accessibilityState={{ selected: isCurrent }}
+      {...(textBlock === null ? { role: 'img' as const } : { accessibilityState: { selected: isCurrent } })}
       {...(isCurrent ? CURRENT_STEP_ATTRS : null)}
       style={containerStyle(false)}
     >

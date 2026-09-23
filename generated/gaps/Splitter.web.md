@@ -77,3 +77,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Splitter: separatorHover is not scoped away from the collapsed state or the focus-visible/dragging colour; chose hover < focus-visible/dragging by source order and left hover active while collapsed
 - Splitter: the Keyboard story needs 'at least three focusable children' but the schema does not say which pane holds them; chose two links in the primary pane and a Button in the secondary, plus the separator and collapse Button
 - Splitter: the React stories need a definite height for a vertical splitter, but only the Lit notes specify the frame (layout.maxWidth.prose); chose a non-focusable decorator with block-size var(--layout-max-width-prose)
+
+## 2026-09-23 19:36 — round 1
+
+- Splitter: a controlled `size` whose parent ignores onSizeChange — the spec says it re-renders only from its own prop, but not what the next key step is measured from. The code reuses its last clamped value until a re-render, so repeated arrow presses drift upward rather than repeating the same step from the prop. I left this as is.
+- Splitter: the spec says a pane wrapper takes tabindex=-1 for F6 but only says it is dropped on blur for Lit; on web I leave the attribute in place after the first F6 landing.
+- Splitter: the behavior scenario 'the-collapse-button-collapses-the-pane' has no platforms list, unlike the other click-free scenarios, so I ran it on web without knowing whether that was intended.
+- Splitter: the Keyboard story needs three stops; with the separator, the collapse Button and the pane links I chose two links in the primary pane and one Button in the secondary, which the spec does not specify.

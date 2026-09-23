@@ -664,6 +664,11 @@ component:
 
 ## Keyboard
 
+- `Tab` (Moves through the controls (play/pause, previous, next, picker), then the viewport — a scroll container is a tab stop of its own, with a focus ring but no role and no name, so the region's name is not read twice — and then into the current slide's focusable content; hidden slides are inert.): expect manual
+- `ArrowRight` (Next slide (one slide, not one page): focus and selection move together with reason `picker`, wrapping at the ends as Tabs does whatever `loop` says. Dots and tabs both use a roving tabindex, so the picker is one tab stop.): expect manual
+- `ArrowLeft` (Previous slide, wrapping the same way.): expect manual
+- `Home` (First slide.): expect manual
+- `End` (Last slide.): expect manual
 - `Enter`, ` ` (Activates the focused control: previous, next, a picker item, or play/pause.): expect manual; native: the rendered element already does this
 
 ## Copy

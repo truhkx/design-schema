@@ -17,6 +17,16 @@ function focusInto(el: Element | null): void {
   (target as HTMLElement).focus();
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<DialogProps> = {}) {
   const events = {
     onClose: vi.fn(),
@@ -41,7 +51,7 @@ function setup(given: Partial<DialogProps> = {}) {
 describe('Dialog', () => {
   test('close-button-fires-on-close', async () => {
     const s = setup({"open": true});
-    await s.user.click(s.closeButton());
+    await s.user.click(activatable(s.closeButton(), s.root()));
     expect(s.events.onClose).toHaveBeenCalled();
   });
   test('non-dismissible-still-reports-escape', async () => {
@@ -52,12 +62,12 @@ describe('Dialog', () => {
   });
   test('non-dismissible-scrim-click-does-nothing', async () => {
     const s = setup({"open": true, "dismissible": false});
-    await s.user.click(s.scrim());
+    await s.user.click(activatable(s.scrim(), s.root()));
     expect(s.events.onClose).not.toHaveBeenCalled();
   });
   test('initial-focus-lands-on-the-close-button', async () => {
     const s = setup({"open": true, "initialFocus": "close"});
-    expect(document.activeElement).toBe(s.closeButton());
+    expect(document.activeElement).toBe(focusedPart(s.closeButton(), s.root()));
   });
   test('hidden-heading-is-still-the-accessible-name', async () => {
     const s = setup({"open": true, "hideHeading": true});

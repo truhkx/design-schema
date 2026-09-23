@@ -21,6 +21,16 @@ function focusInto(el: Element | null): void {
   (target as HTMLElement).focus();
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<NumberInputProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -45,12 +55,12 @@ function setup(given: Partial<NumberInputProps> = {}) {
 describe('NumberInput', () => {
   test('the-increment-button-steps-up', async () => {
     const s = setup({"defaultValue": 5, "step": 1});
-    await s.user.click(s.incrementButton());
+    await s.user.click(activatable(s.incrementButton(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('the-decrement-button-steps-down', async () => {
     const s = setup({"defaultValue": 5, "step": 1});
-    await s.user.click(s.decrementButton());
+    await s.user.click(activatable(s.decrementButton(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('arrow-up-increases-by-one-step', async () => {
@@ -84,12 +94,12 @@ describe('NumberInput', () => {
   });
   test('decrement-does-nothing-at-the-minimum', async () => {
     const s = setup({"defaultValue": 0, "min": 0, "max": 10});
-    await s.user.click(s.decrementButton());
+    await s.user.click(activatable(s.decrementButton(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
   });
   test('a-disabled-field-does-not-step', async () => {
     const s = setup({"disabled": true, "defaultValue": 5});
-    await s.user.click(s.incrementButton());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.incrementButton(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
   });
   test('the-field-reports-its-value-and-bounds', async () => {

@@ -6,6 +6,21 @@ import type { SplitterProps } from '../../packages/rn/src/Splitter';
 import meta from '../../packages/rn/src/Splitter.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<SplitterProps> = {}) {
   const events = {
     onSizeChange: jest.fn(),
@@ -24,7 +39,7 @@ function setup(given: Partial<SplitterProps> = {}) {
     events,
     props,
     root: () => screen.queryByTestId('Splitter') ?? screen.UNSAFE_root,
-    container: () => screen.queryByRole('separator') ?? s.root(),
+    container: () => screen.queryByRole('adjustable') ?? s.root(),
     collapseButton: () => screen.queryByTestId('Splitter.collapseButton') ?? s.root(),
     rerender: (next: Partial<SplitterProps>) => utils.rerender(tree({ ...props, ...next })),
   };
@@ -34,7 +49,7 @@ function setup(given: Partial<SplitterProps> = {}) {
 describe('Splitter', () => {
   test('the-collapse-button-collapses-the-pane', () => {
     const s = setup({"collapsible": true, "defaultSize": 40, "stackBelow": "never"});
-    fireEvent.press(s.collapseButton());
+    fireEvent.press(activatable(s.collapseButton(), s.root()));
     expect(s.events.onCollapseChange).toHaveBeenCalled();
   });
   test('renders', () => {
@@ -63,6 +78,6 @@ describe('Splitter', () => {
   });
   test('has-accessible-name', () => {
     const s = setup({});
-    expect(screen.getByRole('separator', { name: s.props.label })).toBeOnTheScreen();
+    expect(screen.getByRole('adjustable', { name: s.props.label })).toBeOnTheScreen();
   });
 });

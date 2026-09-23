@@ -82,6 +82,12 @@ describe('rootLocator', () => {
     const props = { role: { type: 'enum', values: ['navigation', 'main'], default: 'navigation', description: 'Which landmark.' } };
     expect(kt.rootLocator({ ...DIALOG, props, a11y: { roleFrom: 'role', requires: [] } })).toBe("page.getByRole('navigation').first()");
   });
+
+  test("a platform's own role is queried on that platform", () => {
+    const c = { ...DIALOG, platforms: { ...(DIALOG.platforms as Dict), lit: { tag: 'ds-dialog', role: 'alertdialog' } } };
+    expect(kt.rootLocator(c, null, 'lit')).toBe("page.getByRole('alertdialog').first()");
+    expect(kt.rootLocator(c, null, 'web')).toBe("page.getByRole('dialog').first()");
+  });
 });
 
 describe('playwrightKey', () => {
@@ -119,7 +125,7 @@ describe('blocks', () => {
     ['focus-wraps-to-first', 'toBe(0)'],
     ['focus-wraps-to-last', 'focusableCount(page, root) - 1'],
     ['focus-trigger', 'trigger(page)).toBeFocused()'],
-    ['focus-unchanged', 'toBe(before)'],
+    ['focus-unchanged', 'expect(await focusHeld(page)).toBe(true)'],
     ['toggles', 'not.toBe(stateBefore)'],
     ['selects', 'toMatch(/true/)'],
   ])('every machine-checkable `expect` has an assertion: %s', (exp, fragment) => {
@@ -168,7 +174,39 @@ describe('specFor', () => {
     // compiled and rendered the story yet, which a full-suite run can push past 5s. The behavior
     // assertions below (`opens`, `closes`) keep the default timeout.
     expect(s).toContain("await expect(page.getByRole('dialog').first()).toBeVisible({ timeout: 15_000 });");
-    expect(s).toContain("const root = page.getByRole('dialog').first();");
+    expect(s).toContain("const root = await subject(page, page.getByRole('dialog').first());");
+  });
+
+  test('the subject is pinned once per test, not re-resolved by .first() after a dismissal', () => {
+    const s = spec();
+    expect(s).toContain("await root.evaluate((el) => el.setAttribute('data-ds-keyboard-subject', ''));");
+    expect(s).not.toMatch(/const root = page\./);
+  });
+
+  test('focus-unchanged pins the focused element before the press and fails when nothing holds focus', () => {
+    const c = dialog();
+    c.keyboard = [{ keys: ['Escape'], action: 'Hides without moving focus.', from: 'any', expect: ['closes', 'focus-unchanged'] }];
+    const s = kt.specFor(c, 'web');
+    const body = s.slice(s.indexOf("test('Escape"));
+    expect(body.indexOf('const held = await holdFocus(page);')).toBeGreaterThan(-1);
+    expect(body.indexOf('const held = await holdFocus(page);')).toBeLessThan(body.indexOf("press('Escape')"));
+    expect(body).toContain("expect(held, 'nothing to hold focus').toBe(true);");
+    expect(spec()).not.toContain('holdFocus(page);\n');
+  });
+
+  test('FOCUSABLE counts tab stops and composite items, not tabindex=-1, hidden or display:none controls', () => {
+    const s = spec();
+    for (const clause of [
+      "'input:not([disabled]):not([type=\"hidden\"])'",
+      "s + ':not([hidden])'",
+      "s + ':not([tabindex=\"-1\"])'",
+      '\'[role="treeitem"]:not([aria-disabled="true"])\'',
+      '\'[role="tab"]\'',
+      '\'[role="gridcell"][tabindex]\'',
+      '\'[role="row"][tabindex]\'',
+      'n.checkVisibility()',
+      "role === 'toolbar'",
+    ]) expect(s).toContain(clause);
   });
 
   test('lit uses its own story suffix', () => {

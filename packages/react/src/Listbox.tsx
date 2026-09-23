@@ -411,6 +411,13 @@ export function Listbox({
     });
   }, [form, name, id]);
 
+  // The Form's mode decides when the field re-validates; after a failed submission every mode
+  // re-validates on blur and on change, so a fixed field stops being flagged as the user picks.
+  const validateMode = form ? (form.validateMode ?? form.validate) : undefined;
+  const afterFailedSubmit = form?.submitFailed ?? false;
+  const validatesOnChange = validateMode === 'change' || afterFailedSubmit;
+  const validatesOnBlur = validateMode === 'blur' || validateMode === 'change' || afterFailedSubmit;
+
   const isSelected = (optionValue: string) => selectedValues.includes(optionValue);
 
   /** onChange receives the array in option order. */
@@ -427,7 +434,9 @@ export function Listbox({
       if (!isControlled) setInternalValue(single);
       onChange?.(single);
     }
-    if (form && name && form.validate === 'change') form.validateField(name);
+    // The Form validates now, before the re-render refreshes `latest`, so it reads the new selection.
+    latest.current = { ...latest.current, selectedValues: multiple ? next : next.slice(0, 1) };
+    if (form && name && validatesOnChange) form.validateField(name);
   };
 
   /**
@@ -588,7 +597,7 @@ export function Listbox({
     onBlur?.(event);
     if (event.target !== listRef.current) return;
     if (!isDisabled) reportActive(null);
-    if (form && name && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
+    if (form && name && validatesOnBlur) form.validateField(name);
   };
 
   const handleRowPointerMove = (row: ListboxOption) => {

@@ -21,6 +21,14 @@ function deep(root: ParentNode, selector: string): Element | null {
   return null;
 }
 
+function flatText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return (node as Text).data;
+  if (node instanceof HTMLStyleElement || node instanceof HTMLScriptElement) return '';
+  if (node instanceof HTMLSlotElement) return node.assignedNodes({ flatten: true }).map(flatText).join('');
+  const scope: Node = (node as HTMLElement).shadowRoot ?? node;
+  return Array.from(scope.childNodes).map(flatText).join('');
+}
+
 /** Every element that is "active" from the document down through shadow roots: the host, then the inner one.
  *  document.activeElement alone is a shadow host while focus sits inside its shadow tree. */
 function activeChain(): Element[] {
@@ -58,7 +66,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    surface: () => (deep(root, '[part="surface"]') ?? deep(root, '[data-part="surface"]') ?? root.firstElementChild) as HTMLElement,
+    surface: () => ((el.matches('[part~="surface"], [data-part="surface"]') ? el : null) ?? deep(root, '[part="surface"]') ?? deep(root, '[data-part="surface"]') ?? root.firstElementChild) as HTMLElement,
   };
   return s;
 }
@@ -70,11 +78,11 @@ beforeEach(() => {
 describe('ds-card', () => {
   test('heading-is-rendered-as-a-heading', async () => {
     const s = await setup({"heading": "Team plan"});
-    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Team\\ plan"));
+    expect(flatText(s.el)).toMatch(new RegExp("Team\\ plan"));
   });
   test('a-card-with-a-heading-is-an-article', async () => {
     const s = await setup({"heading": "Team plan"});
-    expect(s.el.shadowRoot!.querySelector('[role="article"]')).not.toBeNull();
+    expect(s.el.matches('[role="article"]') || deep(s.root, '[role="article"]') !== null || deep(s.el, '[role="article"]') !== null).toBe(true);
   });
   test('interactive-adds-no-focus-stop', async () => {
     const s = await setup({"heading": "September invoice", "children": "A Link to the invoice", "interactive": true});

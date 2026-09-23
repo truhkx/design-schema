@@ -54,7 +54,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    container: () => (deep(root, '[part="container"]') ?? deep(root, '[data-part="container"]') ?? root.firstElementChild) as HTMLElement,
+    container: () => ((el.matches('[part~="container"], [data-part="container"]') ? el : null) ?? deep(root, '[part="container"]') ?? deep(root, '[data-part="container"]') ?? root.firstElementChild) as HTMLElement,
   };
   return s;
 }
@@ -66,11 +66,11 @@ beforeEach(() => {
 describe('ds-stack', () => {
   test('nav-element-is-a-navigation-landmark', async () => {
     const s = await setup({"element": "nav"});
-    expect(s.el.shadowRoot!.querySelector('[role="navigation"]')).not.toBeNull();
+    expect(s.el.matches('[role="navigation"]') || deep(s.root, '[role="navigation"]') !== null || deep(s.el, '[role="navigation"]') !== null).toBe(true);
   });
   test('list-element-is-a-list', async () => {
     const s = await setup({"element": "ul"});
-    expect(s.el.shadowRoot!.querySelector('[role="list"]')).not.toBeNull();
+    expect(s.el.matches('[role="list"]') || deep(s.root, '[role="list"]') !== null || deep(s.el, '[role="list"]') !== null).toBe(true);
   });
   test('renders', async () => {
     const s = await setup({});

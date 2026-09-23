@@ -6,6 +6,8 @@ You are generating a production component for the **Design Schema** design syste
 
 Write `packages/lit/src/DatePicker.ts` defining the custom element tag declared under `platforms.lit.tag` (a `LitElement` subclass), exporting the class and registering it with `customElements.define`. Add a `DatePicker.stories.ts` covering every enum value of every enum prop.
 
+**When the files already exist.** Read the existing element, stories, tests and index export first. The doc is authoritative: change what contradicts it, add what it requires, and keep what it does not mention unless a convention forbids it. Do not restyle or rename for taste. In your reply, before the report block, say what you changed and why.
+
 ## Rules
 
 - Lit 3.3 with standard (TC39) decorators: each schema prop becomes a `@property()` auto-accessor — `@property({ type: String, reflect: true }) accessor variant: DatePickerVariant = 'primary'` — never a plain decorated field (`experimentalDecorators` is off). Props listed under `platforms.lit.reflect` use `reflect: true` so they can be styled from outside with attribute selectors. Boolean props are boolean attributes (`type: Boolean`). Internal state is `@state() private accessor open = false`.
@@ -20,7 +22,7 @@ Write `packages/lit/src/DatePicker.ts` defining the custom element tag declared 
 - Events named like native events (`focus`, `blur`) are the native retargeted events — do not dispatch a CustomEvent with the same name.
 - `disabled` uses `opacity.disabled`; transitions use `motion.duration.fast` + `motion.easing.standard`, removed under `prefers-reduced-motion`.
 - Use every `copy.*` string verbatim; do not write your own user-facing text.
-- Testability hooks for the gates: the host carries `data-ds="<Name>"`; a component with a `keyboard` block ships a story exported as `Keyboard` that renders it open/present with its trigger (if any) and at least three focusable children.
+- Testability hooks for the gates: the host carries `data-ds="<Name>"`; a component with a `keyboard` block ships a story exported as `Keyboard` that renders it open/present with its trigger (if any) and enough content to exercise every keyboard rule — at least as many distinct stops or items as the largest index any rule moves to (three for a list or group), counting items reachable by the element's own navigation (roving or activedescendant) whether or not they are tab stops; an overlay with a fixed set of controls renders that set.
 - `keyboard` rules are the keyboard model: implement every key → action exactly as listed and nothing else; `composition` parts must render the named system element. Overlays: a modal dialog uses a native `<dialog>` inside the shadow root opened with `showModal()` (native focus trap, `inert` background and top layer); non-modal popups use the Popover API (`popover="manual"`, `showPopover()`) when available and a `position: fixed` fallback, positioned from the trigger and flipped at the viewport edge; body scroll is locked while a modal is open; focus returns to the opener on close; stacking uses `z-index: var(--layer-<name>)` inside the top layer.
 - Props of type `array`, `object`, or `function` carry a `shape` string in TypeScript notation; use it verbatim as the type. Prop type `content` is `ReactNode` / a slot / `ReactNode` by platform.
 - Interpolated style bindings (`color.status.{tone}.background`) resolve per enum value at render time; never enumerate them by hand where a lookup will do. A resolved path ending in `.default` drops that segment (`color.background.{surface}` with `default` is `color.background`, i.e. `--color-background` / `colorBackground`); an enum value of `none` for a background/border/max-width binding renders nothing rather than a token.
@@ -40,8 +42,8 @@ Write `packages/lit/src/DatePicker.ts` defining the custom element tag declared 
 The sections between the schema and the overrides resolve what the schema declares for lit; a section is absent when the component declares none of it. Where one disagrees with prose or a rule above, the section wins.
 
 - **Events**: dispatch each as a `CustomEvent` under its emitted name whose `detail` has exactly the listed keys, and type `reason` as the union of its reasons. A `cancelable` event is dispatched with `cancelable: true`, and the element skips the default action when `dispatchEvent` returns `false`. Fire only for the listed `fires` sources, in the `timing` order given.
-- **Controlled state**: implement every pair: controlled when the property is set, uncontrolled from the default property otherwise (`@state`), the event fired in both modes; a controlled element shows the new state only once the property changes.
-- **Parts and slots**: render each slot only as `<slot>` under its resolved name (the default slot unnamed). A composed part receives exactly the listed `props`, and each forward reaches the child's `overrides` under the child binding named; add no other.
+- **Controlled state**: implement every pair: controlled when the property is set, uncontrolled from the default property otherwise (`@state`), unless the property has no `default` and the doc marks it controlled (overlays' `open`): then it is controlled only, and the event requests the change. The event fires in every mode; a controlled element shows the new state only once the property changes.
+- **Parts and slots**: render each slot only as `<slot>` under its resolved name (the default slot unnamed). A composed part receives exactly the listed `props`, and each forward reaches the child's `overrides` under the child binding named; add no other. Wiring is not a prop choice and is always allowed: ids and `aria-*` references, refs, `tabindex` for roving focus, event listeners, and copy strings the parent owns.
 - **Style bindings**: a binding styles its `part` (the `data-part` element in the shadow root), only in its `state` (`:hover`, `:focus-visible`, the reflected state attribute), with the token listed for each `by` value; write `computed` as the given `calc()`. Never introduce a literal: the literal gate still applies.
 - **Keyboard**: implement the listed rules as written and none the section excludes; `target` is the part that opens or closes, `repeat` the presses, and a `native` rule needs no code. A rule with `given` needs the `Keyboard` story to accept those args from the story URL shown.
 - **Form and overlay**: a field registers through the one form contract `discovery` names, submitting `value` as `valueType` under `name` and running `validation` in order with the `messages` copy. An overlay anchors to `anchor`, reads `placement`, handles overflow by `collision`, dismisses exactly by `dismiss` through `closeEvent`, and is modal only when `modal` is true; this replaces the overlay defaults above.
@@ -1061,7 +1063,18 @@ component:
 
 ## Keyboard
 
+- `ArrowDown`, `Alt+ArrowDown` (From the input, opens the calendar with focus on the selected day (or today); when the calendar is already open, moves focus to that day (the pending range start, else the value, else today) — from the end input it aims at the end date, so ArrowDown and reopening behave the same way from the same input.): expect manual
+- `Enter`, ` ` (On the calendar button, opens; on a day, selects it (and closes for a single date; for a range, selects the start then the end).): expect manual
 - `Escape` (Closes the calendar without changing the value. Focus returns to the calendar button when it was inside the calendar; when it is in an input or on the button itself it stays there, since Escape only takes back focus the calendar took. The handler is DatePicker's own, on its root: the non-modal Popover cannot hear a key pressed in the field, which is outside its panel.): expect closes, then focus-trigger; target part `popover`
+- `ArrowRight` (Next day.): expect manual
+- `ArrowLeft` (Previous day.): expect manual
+- `ArrowDown` (Same weekday, next week.): expect manual
+- `ArrowUp` (Same weekday, previous week.): expect manual
+- `Home` (First day of the week.): expect manual
+- `End` (Last day of the week.): expect manual
+- `PageUp` (Same day, previous month (Shift: previous year).): expect manual
+- `PageDown` (Same day, next month (Shift: next year).): expect manual
+- `Tab` (Cycles within the calendar: previous month, month Select, year Select, next month, the grid (one tab stop, roving over days), Today, Clear, and back (Shift+Tab reverses). DatePicker traps Tab itself, because the non-modal Popover would close on Tab-out; Tab inside an open Select popup belongs to the Select. In the grid, keys held with Alt, Ctrl or Meta are ignored.): expect manual
 
 ## Form and overlay
 

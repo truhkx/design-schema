@@ -21,6 +21,16 @@ function focusInto(el: Element | null): void {
   (target as HTMLElement).focus();
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<SelectProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -45,7 +55,7 @@ function setup(given: Partial<SelectProps> = {}) {
 describe('Select', () => {
   test('the-trigger-opens-the-popup', async () => {
     const s = setup({"open": false});
-    await s.user.click(s.trigger());
+    await s.user.click(activatable(s.trigger(), s.root()));
     expect(s.events.onOpenChange).toHaveBeenCalled();
   });
   test('a-closed-select-is-not-expanded', async () => {
@@ -80,7 +90,7 @@ describe('Select', () => {
   });
   test('a-disabled-select-does-not-open', async () => {
     const s = setup({"open": false, "disabled": true});
-    await s.user.click(s.trigger());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.trigger(), s.root()));
     expect(s.events.onOpenChange).not.toHaveBeenCalled();
     expect(s.label()).toHaveAttribute('aria-disabled', 'true');
   });

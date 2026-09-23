@@ -21,6 +21,16 @@ function focusInto(el: Element | null): void {
   (target as HTMLElement).focus();
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<AlertDialogProps> = {}) {
   const events = {
     onConfirm: vi.fn(),
@@ -46,32 +56,32 @@ function setup(given: Partial<AlertDialogProps> = {}) {
 describe('AlertDialog', () => {
   test('confirm-button-fires-on-confirm', async () => {
     const s = setup({"open": true});
-    await s.user.click(s.confirmButton());
+    await s.user.click(activatable(s.confirmButton(), s.root()));
     expect(s.events.onConfirm).toHaveBeenCalled();
   });
   test('cancel-button-fires-on-cancel', async () => {
     const s = setup({"open": true});
-    await s.user.click(s.cancelButton());
+    await s.user.click(activatable(s.cancelButton(), s.root()));
     expect(s.events.onCancel).toHaveBeenCalled();
   });
   test('focus-starts-on-the-cancel-button', async () => {
     const s = setup({"open": true});
-    expect(document.activeElement).toBe(s.cancelButton());
+    expect(document.activeElement).toBe(focusedPart(s.cancelButton(), s.root()));
   });
   test('a-scrim-click-does-nothing', async () => {
     const s = setup({"open": true});
-    await s.user.click(s.scrim());
+    await s.user.click(activatable(s.scrim(), s.root()));
     expect(s.events.onCancel).not.toHaveBeenCalled();
     expect(s.events.onConfirm).not.toHaveBeenCalled();
   });
   test('confirm-disabled-does-not-confirm', async () => {
     const s = setup({"open": true, "confirmDisabled": true});
-    await s.user.click(s.confirmButton());
+    await s.user.click(activatable(s.confirmButton(), s.root()));
     expect(s.events.onConfirm).not.toHaveBeenCalled();
   });
   test('cancel-works-while-confirm-is-disabled', async () => {
     const s = setup({"open": true, "confirmDisabled": true});
-    await s.user.click(s.cancelButton());
+    await s.user.click(activatable(s.cancelButton(), s.root()));
     expect(s.events.onCancel).toHaveBeenCalled();
   });
   test('escape-cancels-while-confirm-is-disabled', async () => {

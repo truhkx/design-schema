@@ -54,7 +54,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    column: () => (deep(root, '[part="column"]') ?? deep(root, '[data-part="column"]') ?? root.firstElementChild) as HTMLElement,
+    column: () => ((el.matches('[part~="column"], [data-part="column"]') ? el : null) ?? deep(root, '[part="column"]') ?? deep(root, '[data-part="column"]') ?? root.firstElementChild) as HTMLElement,
   };
   return s;
 }
@@ -66,7 +66,7 @@ beforeEach(() => {
 describe('ds-container', () => {
   test('main-element-is-the-page-landmark', async () => {
     const s = await setup({"element": "main"});
-    expect(s.el.shadowRoot!.querySelector('[role="main"]')).not.toBeNull();
+    expect(s.el.matches('[role="main"]') || deep(s.root, '[role="main"]') !== null || deep(s.el, '[role="main"]') !== null).toBe(true);
   });
   test('renders', async () => {
     const s = await setup({});

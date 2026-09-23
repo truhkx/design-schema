@@ -10,6 +10,21 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<TableProps> = {}) {
   const events = {
     onSortChange: jest.fn(),
@@ -28,7 +43,7 @@ function setup(given: Partial<TableProps> = {}) {
     events,
     props,
     root: () => screen.queryByTestId('Table') ?? screen.UNSAFE_root,
-    container: () => screen.queryByRole('table') ?? s.root(),
+    container: () => screen.queryByRole('list') ?? s.root(),
     sortButton: () => screen.queryByTestId('Table.sortButton') ?? s.root(),
     selectCell: () => screen.queryByTestId('Table.selectCell') ?? s.root(),
     selectAllCell: () => screen.queryByTestId('Table.selectAllCell') ?? s.root(),
@@ -40,17 +55,17 @@ function setup(given: Partial<TableProps> = {}) {
 describe('Table', () => {
   test('activating-a-sortable-header-reports-the-sort', () => {
     const s = setup({"columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}, {"key": "amount", "header": "Amount", "sortable": true, "align": "end"}], "data": [{"id": "a", "invoice": "INV-1", "amount": 100}, {"id": "b", "invoice": "INV-2", "amount": 200}]});
-    fireEvent.press(s.sortButton());
+    fireEvent.press(activatable(s.sortButton(), s.root()));
     expect(s.events.onSortChange).toHaveBeenCalled();
   });
   test('selecting-a-row-reports-every-selected-id', () => {
     const s = setup({"selectable": "multiple", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": [{"id": "a", "invoice": "INV-1"}, {"id": "b", "invoice": "INV-2"}]});
-    fireEvent.press(s.selectCell());
+    fireEvent.press(activatable(s.selectCell(), s.root()));
     expect(s.events.onSelectionChange).toHaveBeenCalled();
   });
   test('select-all-reports-the-whole-selection', () => {
     const s = setup({"selectable": "multiple", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": [{"id": "a", "invoice": "INV-1"}, {"id": "b", "invoice": "INV-2"}]});
-    fireEvent.press(s.selectAllCell());
+    fireEvent.press(activatable(s.selectAllCell(), s.root()));
     expect(s.events.onSelectionChange).toHaveBeenCalled();
   });
   test('the-empty-message-shows-when-there-are-no-rows', () => {
@@ -115,6 +130,6 @@ describe('Table', () => {
   });
   test('has-accessible-name', () => {
     const s = setup({});
-    expect(screen.getByRole('table', { name: s.props.caption })).toBeOnTheScreen();
+    expect(screen.getByRole('list', { name: s.props.caption })).toBeOnTheScreen();
   });
 });

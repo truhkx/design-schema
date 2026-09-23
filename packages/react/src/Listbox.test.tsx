@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentProps } from 'react';
+import { Form } from './Form';
 import { Listbox, type ListboxProps } from './Listbox';
 import meta from './Listbox.stories';
 
@@ -125,5 +126,23 @@ describe('Listbox', () => {
     const s = setup({ error: 'Fix this before continuing.' });
     expect(screen.getByText('Fix this before continuing.')).toBeInTheDocument();
     expect(s.list()).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  /*
+   * Platform test, not a scenario: under `validate: submit` a failed submission makes the field
+   * re-validate on change, so choosing an option clears the required error (the Form's `submitFailed`).
+   */
+  it('clears-its-error-once-corrected-after-a-failed-submit', async () => {
+    const user = userEvent.setup();
+    const { container } = render(
+      <Form validate="submit" errorSummary={false} actions={<button type="submit">Save</button>}>
+        <Listbox label="Fruit" name="fruit" required options={meta.args!.options!} />
+      </Form>,
+    );
+    const list = container.querySelector<HTMLElement>('[data-part="list"]')!;
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(list).toHaveAttribute('aria-invalid', 'true');
+    await user.click(container.querySelector<HTMLElement>('[data-part="option"]')!);
+    expect(list).not.toHaveAttribute('aria-invalid');
   });
 });

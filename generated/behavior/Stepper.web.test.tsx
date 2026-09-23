@@ -10,6 +10,16 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<StepperProps> = {}) {
   const events = {
     onStepSelect: vi.fn(),
@@ -33,17 +43,17 @@ function setup(given: Partial<StepperProps> = {}) {
 describe('Stepper', () => {
   test('click-on-a-completed-step-reports-it', async () => {
     const s = setup({"navigable": "completed", "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}, {"id": "confirm", "label": "Confirmation"}]});
-    await s.user.click(s.indicator());
-    expect(s.events.onStepSelect).toHaveBeenCalledWith("shipping", expect.anything());
+    await s.user.click(activatable(s.indicator(), s.root()));
+    expect(s.events.onStepSelect).toHaveBeenCalledWith("shipping");
   });
   test('the-current-step-is-not-navigable', async () => {
     const s = setup({"navigable": "completed", "current": "shipping", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}]});
-    await s.user.click(s.indicator());
+    await s.user.click(activatable(s.indicator(), s.root()));
     expect(s.events.onStepSelect).not.toHaveBeenCalled();
   });
   test('display-only-steps-report-nothing', async () => {
     const s = setup({"navigable": "none", "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}]});
-    await s.user.click(s.indicator());
+    await s.user.click(activatable(s.indicator(), s.root()));
     expect(s.events.onStepSelect).not.toHaveBeenCalled();
   });
   test('step-status-is-said-in-words', async () => {

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 
-import { A11Y_REQUIREMENTS, ARIA_ROLES, bindingTokens, componentDef, componentFrontmatter, componentWarnings, constantDef, copyPlaceholders, copyText, expectList, formDef, KEYBOARD_EXPECTS, LANDMARK_ROLES, lockRule, MODAL_REQUIRES, narrowForPlatform, NON_QUERYABLE_ROLES, overlayDef, reflectEntry, resolveRole, roleIn, WIDGET_ROLES } from '../../schema/component.ts';
+import { A11Y_REQUIREMENTS, ARIA_ROLES, bindingTokens, componentDef, componentFrontmatter, componentWarnings, constantDef, copyPlaceholders, copyText, expectList, formDef, KEYBOARD_EXPECTS, LANDMARK_ROLES, lockRule, MODAL_REQUIRES, narrowForPlatform, NON_QUERYABLE_ROLES, overlayDef, reflectEntry, resolveRole, RN_ROLES, roleIn, WIDGET_ROLES } from '../../schema/component.ts';
 import type { ComponentDef } from '../../schema/component.ts';
 import { extensionDef } from '../../schema/extension.ts';
 import { isToken, NO_TOKEN_VALUES } from '../../schema/tokens.ts';
@@ -545,6 +545,51 @@ describe('roles, APG slugs and key chords', () => {
     const noDefault = roleFromProp();
     delete noDefault.props.kind.default;
     expect(resolveRole(noDefault)).toBeNull();
+  });
+
+  test("resolveRole: a platform's own role wins on that platform only", () => {
+    const c = component();
+    c.a11y.role = 'slider';
+    c.platforms.rn.role = 'adjustable';
+    expect(resolveRole(c, undefined, 'rn')).toBe('adjustable');
+    expect(resolveRole(c, undefined, 'web')).toBe('slider');
+    expect(resolveRole(c)).toBe('slider');
+    const landmark = roleFromProp();
+    landmark.platforms.rn.role = 'group';
+    expect(resolveRole(landmark, { kind: 'navigation' }, 'rn')).toBe('group');
+    expect(resolveRole(landmark, { kind: 'navigation' }, 'web')).toBe('navigation');
+  });
+
+  test('a platform role differs from a11y.role and is a role that platform has', () => {
+    const c = component();
+    c.a11y.role = 'feed';
+    c.platforms.rn.role = 'list';
+    accepts(c);
+    c.platforms.rn.role = 'adjustable';
+    accepts(c);
+    c.platforms.rn.role = 'feed';
+    rejects(c, ['platforms', 'rn', 'role'], "platforms.rn.role 'feed' is the resolved a11y.role; set it only where the platform's role differs");
+    c.platforms.rn.role = 'textbox';
+    rejects(c, ['platforms', 'rn', 'role'], "platforms.rn.role 'textbox' is not a React Native 0.87 role (AccessibilityRole or Role)");
+    c.platforms.rn.role = 'list';
+    c.platforms.web.role = 'adjustable';
+    rejects(c, ['platforms', 'web', 'role'], "platforms.web.role 'adjustable' is not a WAI-ARIA role");
+    const landmark = roleFromProp();
+    landmark.platforms.rn.role = 'region';
+    rejects(landmark, ['platforms', 'rn', 'role'], "platforms.rn.role 'region' is the resolved a11y.role; set it only where the platform's role differs");
+  });
+
+  test('a platform role outside both enums is a shape error', () => {
+    const c = component();
+    c.platforms.rn.role = 'widget';
+    expect(issues(c).map((i) => i.path)).toEqual([['platforms', 'rn', 'role']]);
+  });
+
+  test("RN_ROLES is React Native 0.87's AccessibilityRole and Role, once each", () => {
+    const dts = readFileSync(join(REPO_ROOT, 'packages/rn/node_modules/react-native/Libraries/Components/View/ViewAccessibility.d.ts'), 'utf8');
+    const union = (name: string): string[] => [...(new RegExp(`export type ${name} =([^;]*);`).exec(dts)?.[1] ?? '').matchAll(/'([a-z]+)'/g)].map((m) => m[1] as string);
+    expect(new Set(RN_ROLES)).toEqual(new Set([...union('AccessibilityRole'), ...union('Role')]));
+    expect(new Set(RN_ROLES).size).toBe(RN_ROLES.length);
   });
 });
 

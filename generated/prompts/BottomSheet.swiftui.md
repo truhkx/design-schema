@@ -701,6 +701,12 @@ component:
 - `footerGap`: token `layout.gap.tight`; part `footer`
 - `minTarget`: token `size.target.comfortable`; part `closeButton`; locked
 
+## Keyboard
+
+- `Escape` (Requests close with reason escape.): expect closes
+- `Tab` (From the last element wraps to the first; the handle is never a stop.): expect focus-wraps-to-first
+- `Shift+Tab` (From the first element wraps to the last.): expect focus-wraps-to-last
+
 ## Form and overlay
 
 ```yaml

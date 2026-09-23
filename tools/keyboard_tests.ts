@@ -95,8 +95,8 @@ export function storyUrl(id: string, given?: Dict | null): string {
  *  already does. */
 const LEAF_CONTROL_ROLES = ['searchbox', 'slider'] as const;
 
-export function rootLocator(c: Dict, given?: Dict | null): string {
-  const role = resolveRole(c, given ?? undefined);
+export function rootLocator(c: Dict, given?: Dict | null, platform?: string): string {
+  const role = resolveRole(c, given ?? undefined, platform);
   if (role === null || roleIn(NON_QUERYABLE_ROLES, role) || roleIn(LEAF_CONTROL_ROLES, role))
     return `page.locator('[data-ds="${c.name as string}"]').first()`;
   return `page.getByRole('${role}').first()`;
@@ -117,7 +117,9 @@ const EXPECT_BLOCKS: Record<string, string> = {
   'focus-wraps-to-first': 'expect(await focusIndex(page, root)).toBe(0);',
   'focus-wraps-to-last': 'expect(await focusIndex(page, root)).toBe(await focusableCount(page, root) - 1);',
   'focus-trigger': 'await expect(trigger(page)).toBeFocused();',
-  'focus-unchanged': 'expect(await focusIndex(page, root)).toBe(before);',
+  // Not an index: a root with no focusables (Tooltip, whose focus stays on its trigger) reads -1 before and after,
+  // which passed whatever the key did. `held` is the focused element pinned before the press (holdFocus).
+  'focus-unchanged': "expect(held, 'nothing to hold focus').toBe(true); expect(await focusHeld(page)).toBe(true);",
   'toggles': 'expect(await ariaState(page)).not.toBe(stateBefore);',
   'selects': 'expect(await ariaState(page)).toMatch(/true/);',
 };
@@ -147,30 +149,50 @@ export function fromBlock(frm: string): string {
 }
 
 export const HELPERS = `
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]):not([data-focus-sentinel]), [role="menuitem"], [role="option"], [role="radio"]';
+/** What the keyboard reaches: native controls that are tab stops (not tabindex=-1, not hidden, not a hidden
+ *  input), explicit tab stops, and the items of a composite, which rove whatever their tabindex. A composite item
+ *  carries \`:not([aria-disabled="true"])\` only where its keyboard block says disabled items are skipped (Tree).
+ *  A grid's cells and rows rove with a tabindex; a table's rows carry the role too but are no stop at all. */
+const NATIVE = ['a[href]', 'button:not([disabled])', 'input:not([disabled]):not([type="hidden"])', 'select:not([disabled])', 'textarea:not([disabled])']
+  .map((s) => s + ':not([hidden])');
+const FOCUSABLE = NATIVE.map((s) => s + ':not([tabindex="-1"])').concat(
+  '[tabindex]:not([tabindex="-1"]):not([data-focus-sentinel])',
+  '[role="menuitem"]', '[role="option"]', '[role="radio"]', '[role="treeitem"]:not([aria-disabled="true"])', '[role="tab"]',
+  '[role="gridcell"][tabindex]', '[role="row"][tabindex]',
+).join(', ');
+/** A toolbar is the one roving composite whose items have no role of their own: its controls are plain buttons,
+ *  and every one but the current carries tabindex=-1. They count while the nearest composite around them is the
+ *  toolbar — a tabindex=-1 control inside a composite item (Tree's chevron, inside its treeitem) does not. */
+const TOOLBAR_ITEM = NATIVE.join(', ');
+const COMPOSITE = /^(tree|treegrid|grid|tablist|menu|menubar|listbox|radiogroup|treeitem|row|gridcell|tab|menuitem|option|radio)$/;
 
 /** Focusable elements inside the root, in flat-tree order: light DOM, open shadow roots, and the
  *  elements a <slot> renders. Following slots is what makes a component whose content is slotted
  *  report the order the browser actually tabs in — a walk that stops at the <slot> sees only the
  *  component's own shadow-side controls, so \`first\` and \`last\` collapse onto the same element and
  *  demand opposite behavior of it. React output has neither shadow roots nor slots: it walks as
- *  before, element for element. */
+ *  before, element for element. A match under a display:none ancestor is not rendered, which no
+ *  selector can see, so each match must also pass checkVisibility(). */
 async function focusables(page: Page, root: Locator): Promise<number> {
-  return root.evaluate((el, sel) => {
+  return root.evaluate((el, [sel, toolbarItem, composite]) => {
     const out: Element[] = [];
-    const walk = (n: Element) => {
-      if (n !== el && n.matches(sel)) out.push(n);
+    const isComposite = new RegExp(composite);
+    const walk = (n: Element, inToolbar: boolean) => {
+      const role = n.getAttribute('role') ?? '';
+      if (role === 'toolbar') inToolbar = true;
+      else if (isComposite.test(role)) inToolbar = false;
+      if (n !== el && (n.matches(sel) || (inToolbar && n.matches(toolbarItem))) && n.checkVisibility()) out.push(n);
       if (n instanceof HTMLSlotElement) {
-        for (const assigned of n.assignedElements({ flatten: true })) walk(assigned);
+        for (const assigned of n.assignedElements({ flatten: true })) walk(assigned, inToolbar);
         return;
       }
       const scope: Element | ShadowRoot = (n as HTMLElement).shadowRoot ?? n;
-      for (const c of Array.from(scope.children)) walk(c);
+      for (const c of Array.from(scope.children)) walk(c, inToolbar);
     };
-    walk(el);
+    walk(el, false);
     (window as any).__dsFocusables = out;
     return out.length;
-  }, FOCUSABLE);
+  }, [FOCUSABLE, TOOLBAR_ITEM, COMPOSITE.source] as const);
 }
 async function focusableCount(page: Page, root: Locator): Promise<number> { return focusables(page, root); }
 async function focusAt(page: Page, root: Locator, i: number): Promise<void> {
@@ -202,6 +224,38 @@ async function focusIndex(page: Page, root: Locator): Promise<number> {
       if (target) a = target;
     }
     return ((window as any).__dsFocusables as Element[]).indexOf(a as Element);
+  });
+}
+/** The test's subject, resolved once: the root locator ends in \`.first()\`, which re-resolves on every use, so
+ *  after a key dismisses one instance (a Toast) it would promote the next and assert against that. Stamping the
+ *  element pins it; once it leaves the DOM the stamped locator matches nothing, which reads as hidden. */
+async function subject(page: Page, root: Locator): Promise<Locator> {
+  await root.evaluate((el) => el.setAttribute('data-ds-keyboard-subject', ''));
+  return page.locator('[data-ds-keyboard-subject]');
+}
+/** Pins the element that holds focus — the deep active element, or the item its aria-activedescendant points at,
+ *  as focusIndex resolves it — and says whether anything does (the page body holding it is nothing).
+ *  focusHeld then says whether that same element still holds it. */
+async function holdFocus(page: Page): Promise<boolean> {
+  return page.evaluate(() => {
+    let a: Element | null = document.activeElement;
+    while (a && (a as HTMLElement).shadowRoot && (a as HTMLElement).shadowRoot!.activeElement) a = (a as HTMLElement).shadowRoot!.activeElement;
+    const desc = a?.getAttribute('aria-activedescendant');
+    const scope = a?.getRootNode() as Document | ShadowRoot | undefined;
+    const item = desc && scope?.getElementById ? scope.getElementById(desc) : null;
+    const held = item ?? a;
+    (window as any).__dsHeld = held;
+    return !!held && held !== document.body && held !== document.documentElement;
+  });
+}
+async function focusHeld(page: Page): Promise<boolean> {
+  return page.evaluate(() => {
+    let a: Element | null = document.activeElement;
+    while (a && (a as HTMLElement).shadowRoot && (a as HTMLElement).shadowRoot!.activeElement) a = (a as HTMLElement).shadowRoot!.activeElement;
+    const desc = a?.getAttribute('aria-activedescendant');
+    const scope = a?.getRootNode() as Document | ShadowRoot | undefined;
+    const item = desc && scope?.getElementById ? scope.getElementById(desc) : null;
+    return (item ?? a) === (window as any).__dsHeld;
   });
 }
 function trigger(page: Page): Locator {
@@ -246,7 +300,7 @@ export function specFor(c: Dict, platform: string): string {
     // component the job happens to be generating. The behavior assertions keep the default timeout.
     // 15s is above a cold compile and below Playwright's 30s test timeout, so a root that renders but
     // stays hidden still fails as a readable expect ("Received: hidden") rather than a hook timeout.
-    `    await expect(${rootLocator(c)}).toBeVisible({ timeout: 15_000 });`,
+    `    await expect(${rootLocator(c, null, platform)}).toBeVisible({ timeout: 15_000 });`,
     '  });',
   ];
   const rules = truthy(c.keyboard) ? (c.keyboard as Dict[]) : [];
@@ -267,14 +321,15 @@ export function specFor(c: Dict, platform: string): string {
       }
       lines.push(`  test('${title}${when}', async ({ page }) => {`);
       // Same precondition after a re-goto with the rule's `given` args.
-      if (given !== null) lines.push(`    await page.goto('${storyUrl(sid, given)}');`, `    await expect(${rootLocator(c, given)}).toBeVisible({ timeout: 15_000 });`);
+      if (given !== null) lines.push(`    await page.goto('${storyUrl(sid, given)}');`, `    await expect(${rootLocator(c, given, platform)}).toBeVisible({ timeout: 15_000 });`);
       const press = `await page.keyboard.press('${keyName}');`;
       lines.push(
-        `    const root = ${rootLocator(c, given)};`,
+        `    const root = await subject(page, ${rootLocator(c, given, platform)});`,
         `    ${fromBlock(frm)}`,
         '    const before = await focusIndex(page, root);',
         '    const stateBefore = await ariaState(page);',
         '    void before; void stateBefore;',
+        ...(outcomes.includes('focus-unchanged') ? ['    const held = await holdFocus(page);'] : []),
         repeat > 1 ? `    for (let i = 0; i < ${repeat}; i++) ${press}` : `    ${press}`,
         ...outcomes.map((exp) => `    ${expectBlock(exp, repeat, target)}`),
         '  });',
@@ -328,7 +383,7 @@ export function specData(c: Dict): KeyboardSpec {
       ...(rule.native !== undefined ? { native: rule.native as boolean } : {}),
     });
   }
-  return { name: c.name as string, role: resolveRole(c), identifier: c.name as string, rules };
+  return { name: c.name as string, role: resolveRole(c, undefined, 'swiftui'), identifier: c.name as string, rules };
 }
 
 export function main(): number {

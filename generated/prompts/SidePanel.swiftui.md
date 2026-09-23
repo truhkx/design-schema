@@ -856,7 +856,10 @@ component:
 
 ## Keyboard
 
+- `Enter`, ` ` (Toggles the panel from the trigger (aria-expanded flips). Non-modal: focus stays on the trigger. Modal: focus moves into the panel.): expect toggles
+- `Tab` (Non-modal: from the trigger, moves to the first tabbable in the open panel; from the last element in the panel, continues to the next tabbable element after the trigger. On web the panel is portaled, so both steps are explicit keydown handling (Popover's seam); on Lit the shadow panel follows the trigger slot and document order does it. Modal: from the last element wraps to the first.): expect manual
 - `Escape` (Closes and returns focus to the trigger (from focus anywhere inside the panel surface; Escape with focus on the trigger does nothing, and a persistent sidebar ignores it).): expect closes, then focus-trigger; target part `surface`
+- `Shift+Tab` (Non-modal: from the first element in the panel, returns to the trigger and leaves the panel open. Modal: wraps to the last element.): expect focus-trigger
 
 ## Form and overlay
 

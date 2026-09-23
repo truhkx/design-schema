@@ -690,6 +690,13 @@ component:
 - `focusRing`: token `color.border.focus`; part `heading`; locked
 - `focusRingWidth`: token `border.width.focus`; part `heading`; locked
 
+## Keyboard
+
+- `Escape` (Requests close with reason escape (even when not dismissible).): expect closes
+- `Tab` (Moves to the next focusable element inside the dialog.): expect focus-next
+- `Tab` (From the last element, wraps to the first.): expect focus-wraps-to-first
+- `Shift+Tab` (From the first element, wraps to the last.): expect focus-wraps-to-last
+
 ## Form and overlay
 
 ```yaml

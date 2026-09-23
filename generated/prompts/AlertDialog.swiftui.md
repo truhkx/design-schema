@@ -663,6 +663,13 @@ component:
 - `gutter`: token `layout.gutter`; part `surface`
 - `rise`: token `space.2`; part `surface`
 
+## Keyboard
+
+- `Escape` (Cancels (onCancel with reason escape).): expect closes
+- `Tab` (From Confirm (the last button) wraps to Cancel (the first).): expect focus-wraps-to-first
+- `Shift+Tab` (From Cancel wraps to Confirm.): expect focus-wraps-to-last
+- `Enter` (Activates the focused button as a native button activation, which on Cancel fires onCancel with reason cancel. Initial focus is on Cancel so Enter never confirms by momentum. `closes` here means the close request fires; the dialog itself stays open until the consumer sets `open` false.): expect closes
+
 ## Form and overlay
 
 ```yaml

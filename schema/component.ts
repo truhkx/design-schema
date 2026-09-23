@@ -327,11 +327,35 @@ export function roleIn(roles: readonly string[], role: string | null | undefined
   return role !== null && role !== undefined && roles.includes(role);
 }
 
-type RoleSource = { a11y?: { role?: string | undefined; roleFrom?: string | undefined }; props?: Record<string, { default?: unknown }> };
+/** React Native 0.87's roles: its `AccessibilityRole` (the `accessibilityRole` prop, with native-only names such as
+ *  `adjustable` and `header`) and its `Role` (the ARIA-named `role` prop). A test finds an element by either. */
+export const RN_ROLES = [
+  // in both
+  'alert', 'button', 'checkbox', 'combobox', 'grid', 'link', 'list', 'menu', 'menubar', 'menuitem', 'none', 'progressbar',
+  'radio', 'radiogroup', 'scrollbar', 'spinbutton', 'summary', 'switch', 'tab', 'tablist', 'timer', 'toolbar',
+  // AccessibilityRole only
+  'adjustable', 'drawerlayout', 'dropdownlist', 'header', 'horizontalscrollview', 'iconmenu', 'image', 'imagebutton',
+  'keyboardkey', 'pager', 'scrollview', 'search', 'slidingdrawer', 'tabbar', 'text', 'togglebutton', 'viewgroup', 'webview',
+  // Role only
+  'alertdialog', 'application', 'article', 'banner', 'cell', 'columnheader', 'complementary', 'contentinfo', 'definition',
+  'dialog', 'directory', 'document', 'feed', 'figure', 'form', 'group', 'heading', 'img', 'listitem', 'log', 'main',
+  'marquee', 'math', 'meter', 'navigation', 'note', 'option', 'presentation', 'region', 'row', 'rowgroup', 'rowheader',
+  'searchbox', 'separator', 'slider', 'status', 'table', 'tabpanel', 'term', 'tooltip', 'tree', 'treegrid', 'treeitem',
+] as const;
+export const rnRole = z.enum(RN_ROLES).meta({ id: 'rnRole' });
 
-/** The role the component renders: `a11y.role`, else the `roleFrom` prop's value in `given`, else that prop's
- *  `default`, else null (the role is only known once the prop is set). */
-export function resolveRole(component: RoleSource, given?: Record<string, unknown>): string | null {
+type RoleSource = {
+  a11y?: { role?: string | undefined; roleFrom?: string | undefined };
+  props?: Record<string, { default?: unknown }>;
+  platforms?: Partial<Record<string, { role?: string | undefined } | undefined>>;
+};
+
+/** The role the component renders: on `platform`, its `platforms.<platform>.role` when set; else `a11y.role`, else
+ *  the `roleFrom` prop's value in `given`, else that prop's `default`, else null (the role is only known once the
+ *  prop is set). */
+export function resolveRole(component: RoleSource, given?: Record<string, unknown>, platform?: string): string | null {
+  const own = platform === undefined ? undefined : component.platforms?.[platform]?.role;
+  if (own !== undefined) return own;
   const { role, roleFrom } = component.a11y ?? {};
   if (role !== undefined) return role;
   if (roleFrom === undefined) return null;
@@ -400,6 +424,7 @@ export const platformNotes = z
     attributes: z.array(z.string()).optional(),
     props: z.array(z.string()).optional(),
     reflect: z.array(reflectItem).optional().describe('The props the element reflects to host attributes, for styling by attribute selector: a prop name, its kebab-case, or { prop, attribute }.'),
+    role: z.union([ariaRole, rnRole]).optional().describe("The role the root renders on this platform, when it is not a11y.role: e.g. list on rn for a feed, since React Native's FlatList carries accessibilityRole list. Only set where it differs from the resolved a11y.role; on rn a React Native role, elsewhere an ARIA role."),
     supported: z.boolean().default(true),
     notes: z.string().optional(),
   })
@@ -1142,6 +1167,16 @@ export const componentDef = z
     const lit = c.platforms.lit;
     if (lit !== undefined && lit.supported !== false && lit.tag === undefined) {
       issue(['platforms', 'lit', 'tag'], "platforms.lit needs a 'tag' (the custom element name) unless it is supported: false");
+    }
+    // A platform role overrides the resolved a11y.role, so it must differ from it and be a role that platform has.
+    const baseRole = resolveRole({ a11y: c.a11y, props: c.props });
+    for (const [plat, notes] of Object.entries(c.platforms)) {
+      const own = notes?.role;
+      if (own === undefined) continue;
+      const at: PropertyKey[] = ['platforms', plat, 'role'];
+      if (own === baseRole) issue(at, `platforms.${plat}.role '${own}' is the resolved a11y.role; set it only where the platform's role differs`);
+      else if (plat === 'rn' && !roleIn(RN_ROLES, own)) issue(at, `platforms.rn.role '${own}' is not a React Native 0.87 role (AccessibilityRole or Role)`);
+      else if (plat !== 'rn' && !roleIn(ARIA_ROLES, own)) issue(at, `platforms.${plat}.role '${own}' is not a WAI-ARIA role`);
     }
 
     // Accessibility invariants: a requirement is only as real as the field that implements it.

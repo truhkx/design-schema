@@ -356,16 +356,23 @@ export function litRegistration(): string {
   return `import '${litManifest.name}';`;
 }
 
+const PLATFORM_NAMES: Record<PlatformId, string> = { web: 'React', lit: 'Lit', rn: 'React Native', swiftui: 'SwiftUI' };
+
 /** `status` and the like are roles; `none` and `presentation` are the absence of one. A `roleFrom` component's
- *  role is whichever value its prop takes. */
+ *  role is whichever value its prop takes. A platform that renders its own role (`platforms.<p>.role`) is named
+ *  after the ARIA one. */
 export function roleSentence(def: ComponentDef): string {
   const { roleFrom } = def.a11y;
+  const own = allPlatforms(def)
+    .filter((platform) => def.platforms[platform]?.role !== undefined)
+    .map((platform) => ` ${PLATFORM_NAMES[platform]} renders role ${resolveRole(def, undefined, platform)}.`)
+    .join('');
   if (roleFrom !== undefined) {
     const values = def.props[roleFrom]?.values ?? [];
-    return `ARIA role: set by the ${roleFrom} prop, one of ${values.join(', ')}.`;
+    return `ARIA role: set by the ${roleFrom} prop, one of ${values.join(', ')}.${own}`;
   }
   const role = resolveRole(def);
   return role === 'none' || role === 'presentation'
-    ? 'No implicit ARIA role — the component is styling and structure, and adds nothing to the accessibility tree.'
-    : `Implicit ARIA role: ${role}.`;
+    ? `No implicit ARIA role — the component is styling and structure, and adds nothing to the accessibility tree.${own}`
+    : `Implicit ARIA role: ${role}.${own}`;
 }

@@ -10,6 +10,21 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<DataGridProps> = {}) {
   const events = {
     onSortChange: jest.fn(),
@@ -42,12 +57,12 @@ function setup(given: Partial<DataGridProps> = {}) {
 describe('DataGrid', () => {
   test('activating-a-sortable-header-reports-the-sort', () => {
     const s = setup({"columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}, {"key": "price", "header": "Price", "align": "end", "sortable": true}], "data": [{"id": "a", "sku": "A-1", "price": 10}, {"id": "b", "sku": "B-2", "price": 20}]});
-    fireEvent.press(s.sortButton());
+    fireEvent.press(activatable(s.sortButton(), s.root()));
     expect(s.events.onSortChange).toHaveBeenCalled();
   });
   test('selecting-a-row-reports-the-selection', () => {
     const s = setup({"selectable": "row", "columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}], "data": [{"id": "a", "sku": "A-1"}, {"id": "b", "sku": "B-2"}]});
-    fireEvent.press(s.selectCell());
+    fireEvent.press(activatable(s.selectCell(), s.root()));
     expect(s.events.onSelectionChange).toHaveBeenCalled();
   });
   test('the-empty-message-shows-when-there-are-no-rows', () => {

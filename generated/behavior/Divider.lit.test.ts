@@ -21,6 +21,25 @@ function deep(root: ParentNode, selector: string): Element | null {
   return null;
 }
 
+function flatText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return (node as Text).data;
+  if (node instanceof HTMLStyleElement || node instanceof HTMLScriptElement) return '';
+  if (node instanceof HTMLSlotElement) return node.assignedNodes({ flatten: true }).map(flatText).join('');
+  const scope: Node = (node as HTMLElement).shadowRoot ?? node;
+  return Array.from(scope.childNodes).map(flatText).join('');
+}
+
+function hostName(el: Element): string | null {
+  const label = el.getAttribute('aria-label')?.trim();
+  if (label) return label;
+  const ids = el.getAttribute('aria-labelledby')?.trim();
+  if (!ids) return null;
+  const scope = el.getRootNode() as Document | ShadowRoot;
+  const named = ids.split(/\s+/).map((id) => scope.getElementById(id)).filter((n): n is HTMLElement => n !== null);
+  const text = named.map((n) => flatText(n).replace(/\s+/g, ' ').trim()).join(' ').trim();
+  return text || null;
+}
+
 /** Every element that is "active" from the document down through shadow roots: the host, then the inner one.
  *  document.activeElement alone is a shadow host while focus sits inside its shadow tree. */
 function activeChain(): Element[] {
@@ -58,7 +77,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    line: () => (deep(root, '[role="separator"]') ?? deep(root, '[part="line"]') ?? deep(root, '[data-part="line"]') ?? root.firstElementChild) as HTMLElement,
+    line: () => ((el.matches('[role="separator"]') ? el : null) ?? deep(root, '[role="separator"]') ?? (el.matches('[part~="line"], [data-part="line"]') ? el : null) ?? deep(root, '[part="line"]') ?? deep(root, '[data-part="line"]') ?? root.firstElementChild) as HTMLElement,
   };
   return s;
 }
@@ -74,14 +93,15 @@ describe('ds-divider', () => {
   });
   test('semantic-divider-is-a-separator', async () => {
     const s = await setup({"semantic": true});
-    expect(s.el.shadowRoot!.querySelector('[role="separator"]')).not.toBeNull();
+    expect(s.el.matches('[role="separator"]') || deep(s.root, '[role="separator"]') !== null || deep(s.el, '[role="separator"]') !== null).toBe(true);
     expect(s.line()).toHaveAttribute("aria-orientation", "horizontal");
   });
   test('label-is-read-and-makes-the-divider-semantic', async () => {
     const s = await setup({"label": "or"});
-    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("or"));
-    expect(s.el.shadowRoot!.querySelector('[role="separator"]')).not.toBeNull();
-    expect(s.line()).toHaveAccessibleName("or");
+    expect(flatText(s.el)).toMatch(new RegExp("or"));
+    expect(s.el.matches('[role="separator"]') || deep(s.root, '[role="separator"]') !== null || deep(s.el, '[role="separator"]') !== null).toBe(true);
+    if (hostName(s.el) !== null) expect(hostName(s.el)).toBe("or");
+    else expect(s.line()).toHaveAccessibleName("or");
   });
   test('renders', async () => {
     const s = await setup({});

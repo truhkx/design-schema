@@ -10,6 +10,21 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<TreeProps> = {}) {
   const events = {
     onSelectionChange: jest.fn(),
@@ -40,18 +55,18 @@ function setup(given: Partial<TreeProps> = {}) {
 describe('Tree', () => {
   test('the-expand-button-expands-a-node', () => {
     const s = setup({"defaultExpanded": [], "nodes": [{"id": "docs", "label": "Documents", "children": [{"id": "invoices", "label": "Invoices"}]}]});
-    fireEvent.press(s.expandButton());
+    fireEvent.press(activatable(s.expandButton(), s.root()));
     expect(s.events.onExpandChange).toHaveBeenCalled();
   });
   test('expanding-a-lazy-node-asks-for-its-children', () => {
     const s = setup({"defaultExpanded": [], "nodes": [{"id": "docs", "label": "Documents", "children": "lazy"}]});
-    fireEvent.press(s.expandButton());
+    fireEvent.press(activatable(s.expandButton(), s.root()));
     expect(s.events.onExpand).toHaveBeenCalled();
     expect(s.events.onExpandChange).toHaveBeenCalled();
   });
   test('clicking-a-node-selects-it', () => {
     const s = setup({"selectable": "single", "nodes": [{"id": "docs", "label": "Documents"}, {"id": "media", "label": "Media"}]});
-    fireEvent.press(s.nodeRow());
+    fireEvent.press(activatable(s.nodeRow(), s.root()));
     expect(s.events.onSelectionChange).toHaveBeenCalled();
   });
   test('the-empty-message-shows-when-there-are-no-nodes', () => {

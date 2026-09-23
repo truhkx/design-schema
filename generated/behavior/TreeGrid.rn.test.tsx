@@ -10,6 +10,21 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<TreeGridProps> = {}) {
   const events = {
     onExpandChange: jest.fn(),
@@ -44,23 +59,23 @@ function setup(given: Partial<TreeGridProps> = {}) {
 describe('TreeGrid', () => {
   test('the-expand-button-expands-a-row', () => {
     const s = setup({"defaultExpanded": [], "columns": [{"key": "account", "header": "Account", "isRowHeader": true}, {"key": "balance", "header": "Balance", "align": "end"}], "data": [{"id": "assets", "account": "Assets", "balance": 100, "children": [{"id": "cash", "account": "Cash", "balance": 40}]}]});
-    fireEvent.press(s.expandButton());
+    fireEvent.press(activatable(s.expandButton(), s.root()));
     expect(s.events.onExpandChange).toHaveBeenCalled();
   });
   test('expanding-a-lazy-row-asks-for-its-children', () => {
     const s = setup({"defaultExpanded": [], "columns": [{"key": "account", "header": "Account", "isRowHeader": true}], "data": [{"id": "assets", "account": "Assets", "children": "lazy"}]});
-    fireEvent.press(s.expandButton());
+    fireEvent.press(activatable(s.expandButton(), s.root()));
     expect(s.events.onExpand).toHaveBeenCalled();
     expect(s.events.onExpandChange).toHaveBeenCalled();
   });
   test('activating-a-sortable-header-reports-the-sort', () => {
     const s = setup({"columns": [{"key": "account", "header": "Account", "isRowHeader": true}, {"key": "balance", "header": "Balance", "align": "end", "sortable": true}], "data": [{"id": "assets", "account": "Assets", "balance": 100}, {"id": "equity", "account": "Equity", "balance": 50}]});
-    fireEvent.press(s.sortButton());
+    fireEvent.press(activatable(s.sortButton(), s.root()));
     expect(s.events.onSortChange).toHaveBeenCalled();
   });
   test('selecting-a-row-reports-the-selection', () => {
     const s = setup({"selectable": "row", "columns": [{"key": "account", "header": "Account", "isRowHeader": true}], "data": [{"id": "assets", "account": "Assets"}, {"id": "equity", "account": "Equity"}]});
-    fireEvent.press(s.selectCell());
+    fireEvent.press(activatable(s.selectCell(), s.root()));
     expect(s.events.onSelectionChange).toHaveBeenCalled();
   });
   test('the-empty-message-shows-when-there-are-no-rows', () => {

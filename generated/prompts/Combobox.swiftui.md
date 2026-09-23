@@ -925,9 +925,15 @@ component:
 
 ## Keyboard
 
+- `ArrowDown` (Opens the list (if closed) with the selected option active, else the first; when already open, moves the active option down (from none: the first match); focus stays in the input.): expect manual
+- `ArrowUp` (Opens the list with the selected option active, else the last; when already open, moves the active option up.): expect manual
+- `Enter` (Commits the active option (single: closes; multiple: toggles and stays open); with allowCustom and no active option, commits the typed text.): expect manual
 - `Escape` (Closes the list if open; if closed and clearable, clears the input text only (the value is kept; the clear button is what empties the value).): expect closes; target part `popup`
 - `Tab` (Closes the list and moves focus on. A highlighted option is NOT committed by Tab, in single or multiple mode (typing intent is ambiguous).): expect closes; target part `popup`
+- `Backspace` (In an empty input with chips, removes the last chip.): expect manual
 - `Home`, `End` (Move the text caret (input semantics), never the list.): expect manual; native: the rendered element already does this
+- `,` (With allowCustom, commits the typed text exactly as Enter does: multiple clears the input and stays open; single shows the committed text and closes.): expect manual
+- `Alt+ArrowDown` (Opens the list with the selected option active, or no active option when nothing is selected; changes nothing while the list is already open, though the default action is still suppressed — ArrowDown and ArrowUp never move the text caret, open or closed.): expect manual
 
 ## Form and overlay
 

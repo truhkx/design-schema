@@ -747,6 +747,14 @@ component:
 - `suggestionsOffset`: token `space.1`; part `suggestions`
 - `labelWeight`: token `font.weight.medium`; part `label`
 
+## Keyboard
+
+- `Enter` (Submits the query (or the highlighted suggestion).): expect manual
+- `Escape` (Closes suggestions if open; otherwise clears the field. On an already-empty field with no list open it does nothing and fires no onClear.): expect manual
+- `ArrowDown` (Opens suggestions and highlights the first; then moves down.): expect manual
+- `ArrowUp` (Moves up; from the first suggestion, back to the input with no highlight. With no highlight to begin with it is a no-op: it neither opens the list nor changes one that is open.): expect manual
+- `Tab` (Leaves the field: to the clear button when the field has text, then the submit button.): expect focus-next
+
 ## Form and overlay
 
 ```yaml

@@ -21,6 +21,25 @@ function deep(root: ParentNode, selector: string): Element | null {
   return null;
 }
 
+function flatText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return (node as Text).data;
+  if (node instanceof HTMLStyleElement || node instanceof HTMLScriptElement) return '';
+  if (node instanceof HTMLSlotElement) return node.assignedNodes({ flatten: true }).map(flatText).join('');
+  const scope: Node = (node as HTMLElement).shadowRoot ?? node;
+  return Array.from(scope.childNodes).map(flatText).join('');
+}
+
+function hostName(el: Element): string | null {
+  const label = el.getAttribute('aria-label')?.trim();
+  if (label) return label;
+  const ids = el.getAttribute('aria-labelledby')?.trim();
+  if (!ids) return null;
+  const scope = el.getRootNode() as Document | ShadowRoot;
+  const named = ids.split(/\s+/).map((id) => scope.getElementById(id)).filter((n): n is HTMLElement => n !== null);
+  const text = named.map((n) => flatText(n).replace(/\s+/g, ' ').trim()).join(' ').trim();
+  return text || null;
+}
+
 /** Every element that is "active" from the document down through shadow roots: the host, then the inner one.
  *  document.activeElement alone is a shadow host while focus sits inside its shadow tree. */
 function activeChain(): Element[] {
@@ -62,7 +81,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    label: () => (deep(root, '[role="slider"]') ?? deep(root, '[part="label"]') ?? deep(root, '[data-part="label"]') ?? root.firstElementChild) as HTMLElement,
+    label: () => ((el.matches('[role="slider"]') ? el : null) ?? deep(root, '[role="slider"]') ?? (el.matches('[part~="label"], [data-part="label"]') ? el : null) ?? deep(root, '[part="label"]') ?? deep(root, '[data-part="label"]') ?? root.firstElementChild) as HTMLElement,
   };
   return s;
 }
@@ -122,11 +141,11 @@ describe('ds-slider', () => {
   });
   test('the-thumb-is-the-slider', async () => {
     const s = await setup({});
-    expect(s.el.shadowRoot!.querySelector('[role="slider"]')).not.toBeNull();
+    expect(s.el.matches('[role="slider"]') || deep(s.root, '[role="slider"]') !== null || deep(s.el, '[role="slider"]') !== null).toBe(true);
   });
   test('invalid-renders-the-invalid-copy', async () => {
     const s = await setup({"invalid": true});
-    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp(escapeRegExp(s.props.label) + "\\ is\\ not\\ valid\\."));
+    expect(flatText(s.el)).toMatch(new RegExp(escapeRegExp(s.props.label) + "\\ is\\ not\\ valid\\."));
   });
   test('renders', async () => {
     const s = await setup({});
@@ -146,7 +165,8 @@ describe('ds-slider', () => {
   });
   test('has-accessible-name', async () => {
     const s = await setup({});
-    expect(s.label()).toHaveAccessibleName(s.props.label);
+    if (hostName(s.el) !== null) expect(hostName(s.el)).toBe(s.props.label);
+    else expect(s.label()).toHaveAccessibleName(s.props.label);
   });
   test('control-is-focusable', async () => {
     const s = await setup({});
@@ -155,7 +175,7 @@ describe('ds-slider', () => {
   });
   test('error-is-identified', async () => {
     const s = await setup({"error": "Fix this before continuing."});
-    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Fix\\ this\\ before\\ continuing\\."));
+    expect(flatText(s.el)).toMatch(new RegExp("Fix\\ this\\ before\\ continuing\\."));
     expect(s.label()).toHaveAttribute('aria-invalid', 'true');
   });
 });

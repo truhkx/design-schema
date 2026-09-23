@@ -95,6 +95,13 @@ describe('get_keyboard_model', () => {
     expect(kb.note).toBeTruthy();
   });
 
+  test("platformRoles names a platform's own role, and is absent when every platform renders role", () => {
+    const kb = s.getKeyboardModel({ component: 'Splitter' });
+    expect(kb.role).toBe('separator');
+    expect(kb.platformRoles).toEqual({ rn: 'adjustable' });
+    expect(s.getKeyboardModel({ component: 'Dialog' })).not.toHaveProperty('platformRoles');
+  });
+
   test('defaults are applied without mutating the component data', () => {
     const generated = join(tmp(), 'generated');
     mkdirSync(generated, { recursive: true });

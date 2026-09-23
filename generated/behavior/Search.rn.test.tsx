@@ -6,6 +6,21 @@ import type { SearchProps } from '../../packages/rn/src/Search';
 import meta from '../../packages/rn/src/Search.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<SearchProps> = {}) {
   const events = {
     onChange: jest.fn(),
@@ -40,12 +55,12 @@ describe('Search', () => {
   });
   test('the-submit-button-submits-the-query', () => {
     const s = setup({"defaultValue": "invoices", "action": "/search"});
-    fireEvent.press(s.submitButton());
+    fireEvent.press(activatable(s.submitButton(), s.root()));
     expect(s.events.onSubmit).toHaveBeenCalled();
   });
   test('the-clear-button-empties-the-field', () => {
     const s = setup({"defaultValue": "invoices"});
-    fireEvent.press(s.clearButton());
+    fireEvent.press(activatable(s.clearButton(), s.root()));
     expect(s.events.onClear).toHaveBeenCalled();
   });
   test('the-field-is-inside-the-search-landmark', () => {

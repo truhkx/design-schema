@@ -6,6 +6,21 @@ import type { DisclosureProps } from '../../packages/rn/src/Disclosure';
 import meta from '../../packages/rn/src/Disclosure.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<DisclosureProps> = {}) {
   const events = {
     onToggle: jest.fn(),
@@ -31,19 +46,19 @@ function setup(given: Partial<DisclosureProps> = {}) {
 describe('Disclosure', () => {
   test('click-on-trigger-expands', () => {
     const s = setup({"open": true});
-    fireEvent.press(s.trigger());
+    fireEvent.press(activatable(s.trigger(), s.root()));
     expect(s.events.onToggle).toHaveBeenCalled();
     expect(s.trigger()).toBeExpanded();
   });
   test('open-disclosure-collapses-on-click', () => {
     const s = setup({"defaultOpen": true, "open": true});
-    fireEvent.press(s.trigger());
+    fireEvent.press(activatable(s.trigger(), s.root()));
     expect(s.events.onToggle).toHaveBeenCalled();
     expect(s.trigger()).not.toBeExpanded();
   });
   test('disabled-trigger-does-not-toggle', () => {
     const s = setup({"disabled": true, "open": true});
-    fireEvent.press(s.trigger());
+    fireEvent.press(activatable(s.trigger(), s.root()));
     expect(s.events.onToggle).not.toHaveBeenCalled();
     expect(s.trigger()).not.toBeExpanded();
     expect(s.trigger()).toBeDisabled();

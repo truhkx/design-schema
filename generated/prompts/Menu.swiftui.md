@@ -888,7 +888,17 @@ component:
 
 ## Keyboard
 
+- `Enter`, ` `, `ArrowDown` (Opens the menu and focuses the first item (ArrowDown on an already open menu just focuses the first item).): expect manual
+- `ArrowUp` (Opens the menu and focuses the last item (on an already open menu it just focuses the last item).): expect manual
+- `ArrowDown` (Moves to the next enabled item.): expect focus-next
+- `ArrowDown` (From the last item wraps to the first.): expect focus-wraps-to-first
+- `ArrowUp` (From the first item wraps to the last.): expect focus-wraps-to-last
+- `Home` (First enabled item.): expect focus-first
+- `End` (Last enabled item.): expect focus-last
+- `Enter`, ` ` (Activates the focused item and closes.): expect closes
 - `Escape` (Closes and returns focus to the trigger; pressed on the trigger while the menu is open it also closes (reason `escape`) and focus stays there. The key is prevented and its propagation stopped in both places, so a Menu inside a Dialog closes only the menu.): expect closes, then focus-trigger
+- `Tab`, `Shift+Tab` (Closes; Tab moves focus to the tabbable element after the trigger, Shift+Tab to the one before it, in document order (the anchor stands in for the trigger when there is none). The key is not prevented: the menu sets every item to tabindex -1 and moves focus to the trigger, so the browser's own Tab continues from there and a popup a controlled parent still shows holds no tab stop (web and Lit alike) — that is a suppression state of its own, not a roving 0 parked somewhere, and the next open starts from the first item again. The focusout this parking causes is part of the Tab: it reports `tab-out` only, never a second `focus-out`. With `anchor`, focus is parked on the anchor when it is focusable; otherwise the menu prevents the key and focuses the first tabbable after (Tab) or the last before (Shift+Tab) the anchor in document order, excluding its descendants.): expect closes
+- `a-z` (Typeahead — moves to the next enabled item whose label starts with the typed characters. Any single printable character counts (letters of any script and digits, not only a–z), compared case-insensitively; Space stays activation, and keys held with Ctrl, Meta or Alt are ignored.): expect manual
 
 ## Form and overlay
 

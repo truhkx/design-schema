@@ -54,7 +54,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    trigger: () => (deep(root, '[role="tooltip"]') ?? deep(root, '[part="trigger"]') ?? deep(root, '[data-part="trigger"]') ?? root.firstElementChild) as HTMLElement,
+    trigger: () => ((el.matches('[role="tooltip"]') ? el : null) ?? deep(root, '[role="tooltip"]') ?? (el.matches('[part~="trigger"], [data-part="trigger"]') ? el : null) ?? deep(root, '[part="trigger"]') ?? deep(root, '[data-part="trigger"]') ?? root.firstElementChild) as HTMLElement,
   };
   return s;
 }
@@ -66,12 +66,12 @@ beforeEach(() => {
 describe('ds-tooltip', () => {
   test('the-visible-tooltip-carries-the-tooltip-role', async () => {
     const s = await setup({"open": true});
-    expect(s.el.shadowRoot!.querySelector('[role="tooltip"]')).not.toBeNull();
+    expect(s.el.matches('[role="tooltip"]') || deep(s.root, '[role="tooltip"]') !== null || deep(s.el, '[role="tooltip"]') !== null).toBe(true);
   });
   test('the-text-stays-in-the-tree-while-hidden', async () => {
     const s = await setup({"open": false});
     await userEvent.hover(s.trigger());
-    expect(s.el.shadowRoot!.querySelector('[role="tooltip"]')).not.toBeNull();
+    expect(s.el.matches('[role="tooltip"]') || deep(s.root, '[role="tooltip"]') !== null || deep(s.el, '[role="tooltip"]') !== null).toBe(true);
   });
   test('renders', async () => {
     const s = await setup({"open": true});

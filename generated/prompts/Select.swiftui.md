@@ -903,8 +903,12 @@ component:
 
 ## Keyboard
 
+- `Enter`, ` `, `ArrowDown`, `ArrowUp` (Opens the popup with the selected (or first) option active.): expect manual
 - `Escape` (Closes the popup without changing the value and returns focus to the trigger.): expect closes, then focus-trigger; target part `popup`
+- `Enter` (Commits the active option and closes (single); with `multiple`, toggles it and stays open.): expect manual
 - `Tab` (Commits the active option (single) and closes; focus moves on.): expect closes; target part `popup`
+- ` ` (Commits the active option and closes (single); with `multiple`, toggles it and stays open. Listbox's own model, which Select forwards rather than suppresses.): expect manual
+- `ArrowDown`, `ArrowUp`, `Home`, `End`, `a-z` (As Listbox.): expect manual
 
 ## Form and overlay
 

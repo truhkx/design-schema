@@ -54,7 +54,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    text: () => (deep(root, '[role="heading"]') ?? deep(root, '[part="text"]') ?? deep(root, '[data-part="text"]') ?? root.firstElementChild) as HTMLElement,
+    text: () => ((el.matches('[role="heading"]') ? el : null) ?? deep(root, '[role="heading"]') ?? (el.matches('[part~="text"], [data-part="text"]') ? el : null) ?? deep(root, '[part="text"]') ?? deep(root, '[data-part="text"]') ?? root.firstElementChild) as HTMLElement,
   };
   return s;
 }
@@ -66,11 +66,11 @@ beforeEach(() => {
 describe('ds-heading', () => {
   test('level-puts-the-heading-in-the-outline', async () => {
     const s = await setup({"level": "3"});
-    expect(s.el.shadowRoot!.querySelector('[role="heading"]')).not.toBeNull();
+    expect(s.el.matches('[role="heading"]') || deep(s.root, '[role="heading"]') !== null || deep(s.el, '[role="heading"]') !== null).toBe(true);
   });
   test('size-does-not-change-the-outline', async () => {
     const s = await setup({"level": "2", "size": "md"});
-    expect(s.el.shadowRoot!.querySelector('[role="heading"]')).not.toBeNull();
+    expect(s.el.matches('[role="heading"]') || deep(s.root, '[role="heading"]') !== null || deep(s.el, '[role="heading"]') !== null).toBe(true);
   });
   test('renders', async () => {
     const s = await setup({});

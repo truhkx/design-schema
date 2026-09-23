@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
@@ -86,11 +86,15 @@ const GRID = 16; // literal-ok: the glyph grid's coordinate space, not a size va
  * `size` and `overrides.size` are ignored while `inline` is set: the size comes from
  * the enclosing Text, or `font.size.md` when there is none. An Svg inside a Text is
  * centred by the text renderer with no baseline control, so an inline glyph sits
- * slightly higher than on web — a platform limit. The root is react-native-svg's
+ * slightly higher than on web — a platform limit. The glyph is react-native-svg's
  * `Svg`, whose ref is a class instance, so Icon exposes no ref and no part hook
- * beyond `testID="Icon"`. Decorative (no `label`): `accessibilityElementsHidden`
- * and `importantForAccessibility="no"`. Labelled: `accessibilityRole="image"` and
- * `accessibilityLabel`. No interaction, no focus, no animation.
+ * beyond `testID="Icon"`. The accessibility props sit on a View sized to the glyph
+ * that wraps the `Svg`, never on the `Svg` itself: react-native-svg's web build
+ * spreads every prop onto the DOM `<svg>`, where `importantForAccessibility` is an
+ * invalid attribute and `accessibilityElementsHidden` produces no `aria-hidden`.
+ * Decorative (no `label`): `aria-hidden`, `accessibilityElementsHidden` and
+ * `importantForAccessibility="no"`. Labelled: `accessible`, `accessibilityRole="image"`
+ * and `accessibilityLabel`. No interaction, no focus, no animation.
  */
 export function Icon({ name, size = 'md', inline = false, label, color, overrides }: IconProps): React.JSX.Element {
   const { tokens: t } = useTheme();
@@ -121,12 +125,23 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
 
   const glyph = paths[name];
 
-  const a11y = {
-    accessibilityRole: decorative ? undefined : ('image' as const),
-    accessibilityLabel: decorative ? undefined : label,
-    accessibilityElementsHidden: decorative,
-    importantForAccessibility: decorative ? ('no' as const) : ('auto' as const),
-  };
+  // `aria-hidden` is what react-native-web turns into the DOM attribute; the native
+  // pair hides the view on iOS and Android. A labelled icon is `accessible`, so it is
+  // one element with its role and name rather than a container of them.
+  const wrap = (svg: React.JSX.Element): React.JSX.Element => (
+    <View
+      testID="Icon"
+      style={{ width: dimension, height: dimension }}
+      accessible={!decorative}
+      accessibilityRole={decorative ? undefined : 'image'}
+      accessibilityLabel={decorative ? undefined : label}
+      accessibilityElementsHidden={decorative}
+      importantForAccessibility={decorative ? 'no' : 'auto'}
+      aria-hidden={decorative ? true : undefined}
+    >
+      {svg}
+    </View>
+  );
 
   // Unreachable from TypeScript, possible from JavaScript: an empty glyph and a
   // warning on every render, with no dedupe.
@@ -134,19 +149,7 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
     if (__DEV__) {
       console.warn(`Icon: unknown name "${name}"`);
     }
-    return (
-      <Svg
-        testID="Icon"
-        width={dimension}
-        height={dimension}
-        viewBox="0 0 16 16"
-        fill="none"
-        accessibilityRole={a11y.accessibilityRole!}
-        accessibilityLabel={a11y.accessibilityLabel!}
-        accessibilityElementsHidden={a11y.accessibilityElementsHidden}
-        importantForAccessibility={a11y.importantForAccessibility}
-      />
-    );
+    return wrap(<Svg width={dimension} height={dimension} viewBox="0 0 16 16" fill="none" />);
   }
 
   // `border.width.focus` is a screen-pixel thickness. react-native-web honors
@@ -162,9 +165,8 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
       ? t.borderWidthFocus
       : t.borderWidthFocus * (GRID / dimension);
 
-  return (
+  return wrap(
     <Svg
-      testID="Icon"
       width={dimension}
       height={dimension}
       viewBox="0 0 16 16"
@@ -172,10 +174,6 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
       stroke={resolvedColor}
       strokeLinecap="round"
       strokeLinejoin="round"
-      accessibilityRole={a11y.accessibilityRole!}
-      accessibilityLabel={a11y.accessibilityLabel!}
-      accessibilityElementsHidden={a11y.accessibilityElementsHidden}
-      importantForAccessibility={a11y.importantForAccessibility}
     >
       {/* strokeWidth, fillRule and vectorEffect sit on the Path: fill-or-stroke is chosen per glyph. */}
       {glyph.filled ? (
@@ -185,6 +183,6 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
       ) : (
         <Path d={glyph.d} strokeWidth={strokeWidth!} />
       )}
-    </Svg>
+    </Svg>,
   );
 }

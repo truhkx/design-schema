@@ -911,6 +911,19 @@ component:
 - `emptyColor`: token `color.foreground.muted`; part `emptyState`; locked
 - `typeaheadReset`: token `motion.duration.loop`; part `list`
 
+## Keyboard
+
+- `ArrowDown` (Moves to the next enabled option (and selects it when selection follows focus).): expect focus-next
+- `ArrowUp` (Moves to the previous enabled option.): expect focus-prev
+- `Home` (First option.): expect focus-first
+- `End` (Last option.): expect focus-last
+- ` ` (Selects the focused option; with `multiple`, toggles it.): expect selects
+- `Enter` (Selects the focused option (single) — inside a Select or Combobox, also closes the popup.): expect selects
+- `Shift+ArrowDown`, `Shift+ArrowUp` (Multiple: moves and adds the next/previous option to the selection (add only; an already-selected option stays selected).): expect manual
+- `Control+a` (Multiple: selects all enabled options; pressed again when every enabled option is selected, deselects the enabled options. Selected disabled options stay selected either way.): expect manual
+- `a-z` (Typeahead to the next option whose label starts with the typed characters; typing the same character repeatedly cycles through the options starting with it (APG) — a buffer of one letter repeated collapses back to that single letter and searches from the option after the active one, while any other buffer is a prefix searched from the active one. The buffer clears after `typeaheadReset`.): expect manual
+- `PageDown`, `PageUp` (Moves by the `maxVisible` count of enabled options — not of drawn rows, so disabled rows and group labels do not consume the move — clamped to the last/first enabled option; with `maxVisible: all` jumps to the last/first enabled option. Follows `selectionFollowsFocus` like the arrows.): expect manual
+
 ## Form and overlay
 
 ```yaml

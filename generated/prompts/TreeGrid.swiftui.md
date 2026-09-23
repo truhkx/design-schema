@@ -1097,6 +1097,19 @@ component:
 - `indent`: token `space.5`; part `indent`
 - `expandButtonSize`: token `size.target.min`; part `expandButton`; locked
 
+## Keyboard
+
+- `Tab` (Enters and leaves the grid — one tab stop, as DataGrid.): expect manual
+- `ArrowDown`, `ArrowUp` (Next / previous visible row, same column. Collapsed descendants are skipped because they are not rendered.): expect manual
+- `ArrowRight` (On a collapsed row header: expands. On an expanded row header: moves to the next cell. On any other cell: next cell.): expect manual
+- `ArrowLeft` (On a row header of an expanded row: collapses. On a row header of a collapsed or leaf row: moves focus to the parent row's header; at level 1 (no parent) it moves to the previous cell. On any other cell: previous cell. On a loading placeholder row: moves to its parent.): expect manual
+- `Home`, `End` (First / last cell in the row (Ctrl: first / last cell of the grid, the header row included, as DataGrid).): expect manual
+- `Enter` (On a row header of a row with children: toggles expansion — always, never edits, even when that column is editable (F2 is the edit path for an editable parent row header). On a leaf row header: DataGrid's order (edit if editable, else activate a control inside it). Elsewhere as DataGrid: sort, edit, activate.): expect manual
+- `*` (Expands every row at the focused row's level under the same parent, the focused row included; a `"lazy"` sibling opens too and fires its onExpand, unlike `defaultExpanded: ["*"]`, because this is a user act.): expect manual
+- `F2`, `Escape`, ` `, `Control+a`, `Shift+Space` (As DataGrid. Escape cancels an open editor and returns focus from a control inside a cell to the grid; on the grid itself it does nothing (there is no range here to clear, and no collapse-all), which is also all `escape-dismiss` asks of a component with no overlay. Control+a selects every loaded row in `row` mode and is unhandled in `cell` and `none`. Shift+Space extends the row selection from the last plain-Space anchor through the focused row, over the visible rows only — a range does not cascade into descendants even with selectChildren, which is a per-row act; when that anchor row is no longer visible (its subtree was collapsed, or sorting moved it) Shift+Space is a plain, non-cascading toggle of the focused row. Shift with the arrows keeps their own meaning here (column navigation, expand and collapse) and never selects. Control means Control or Meta, as DataGrid.): expect manual
+- `PageDown`, `PageUp`, `Delete`, `Backspace` (As DataGrid: Page keys move one visible page of rows; Delete/Backspace clear editable cells in the selection — in `row` mode every editable cell of every selected row, in `cell` and `none` the active cell alone. Typing a printable character opens an editor, as DataGrid (the character seeds the text and number editors only; select, date and checkbox editors open unseeded).): expect manual
+- `Shift+ArrowRight`, `Shift+ArrowLeft` (Widens / narrows the column by DataGrid's resizeStep and fires onColumnResize on release of Shift, as DataGrid; in the body Shift+arrows keep their navigation meaning.): expect manual
+
 ## Copy
 
 - `expand`: "Expand {rowName}"; params `rowName` (string)

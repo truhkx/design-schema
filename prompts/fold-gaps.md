@@ -1,6 +1,6 @@
 You are folding generation gaps back into the Design Schema docs. The docs (site/src/content/docs/components/*.md, YAML frontmatter = schema, prose = guidance) are the single source of truth; generated code is a projection. A "gap" is a line in generated/gaps/<Name>.<platform>.md where the generator had to guess because a doc was silent or ambiguous. Your job is to remove the ambiguity from the doc so the next generation does not guess — never to edit generated code.
 
-Read generated/gaps/SUMMARY.md first (DOC lines are grouped per component with the doc path). Then, for each component with DOC gaps newer than the timestamp in generated/gaps/folded.json (create it if missing; it maps gap file name → last folded mtime):
+Read generated/gaps/SUMMARY.md first (DOC lines are grouped per component with the doc path). Then run `node --import tsx tools/gap_staleness.ts`: it lists every gap file with a round newer than its entry in generated/gaps/folded.json (which maps gap file name → last folded mtime), or with no entry, and the newest such round. It reads the round headings, not mtimes, so a checkout or merge that rewrote the files does not make them stale. Do not recompute this by hand from `ls`. For each component with a stale gap file, fold the DOC gaps in the rounds newer than its folded.json entry:
 
 1. Read the component doc and the gap lines. Decide the answer to each question the way the existing docs decide things. The rules that decide most of them:
    - Overrides change values, never presence; a composite forwards an override to the child's own `overrides` (Fieldset → Stack `gap`, Alert → Icon `color`), never styles the child.
@@ -12,10 +12,21 @@ Read generated/gaps/SUMMARY.md first (DOC lines are grouped per component with t
    - Native limits are stated plainly in `platforms.rn.notes` (no hover, no status role, no F6), with the accessibility alternative named.
    - Lit: ids do not cross shadow roots (use aria-label with the text); booleans defaulting to true are exposed as negated attributes; names tests read are plain attributes.
    - Contrast pairs are claims: add a pair only for text or a meaningful non-text element, and never one that fails.
-   - A gap that reports "the file predated the convention" or "no changes needed" is NOISE: skip it. A gap about a tool (lint false positive, denied command, missing report) is TOOLING: append it to generated/gaps/TOOLING.md under today's date and skip. A gap that says a sibling component's code is wrong is CODE: append to generated/gaps/CODE.md and skip.
+   - A gap that reports "the file predated the convention" or "no changes needed" is NOISE: skip it. A gap about a tool (lint false positive, denied command, missing report) is TOOLING: record it in generated/gaps/TOOLING.md and skip. A gap that says a sibling component's code is wrong is CODE: record it in generated/gaps/CODE.md and skip. Both ledgers use the entry shape under "Ledger entries" below.
 2. Edit the doc: the smallest change that answers the question — a clause in a prop description, a sentence in a platform note, a new binding, a sentence in Behavior. Quote YAML flow-mapping strings containing `: ` or `, `. Inside a single-quoted scalar double every apostrophe (`the host''s name`): one bare apostrophe closes the string, and everything after it is read as YAML until the next quote — the error is then reported on a later, innocent line. Do not rename or remove existing props, bindings, events or copy keys. Do not add `a11y.requires` entries. Do not touch any file outside site/src/content/docs/.
 3. After all edits run `pnpm parse` and `node --import tsx tools/check_contrast.ts`; both must report 0 errors/failures. If parse fails, fix the YAML you wrote. Run every command bare, exactly as written here: your working directory is already the repository root, so no `cd` prefix, no `&&` chaining and no PowerShell — those shapes are outside the allowed tools, are denied, and you never see the result. If a command is denied anyway, say so in your summary and revert the edits you could not verify; never finish with docs that do not parse, because the regeneration stops there.
-4. Append to generated/gaps/FOLDS.md one line per decision: `<date> <Component> <platform>: <gap in ten words> → <what the doc now says>`. Update generated/gaps/folded.json with each gap file's current mtime.
+4. Append to generated/gaps/FOLDS.md one line per decision: `<date> <Component> <platform>: <gap in ten words> → <what the doc now says>`. Update generated/gaps/folded.json with each gap file's current mtime: `node --import tsx tools/gap_staleness.ts --json` prints exactly the entries to merge in (create the file if missing).
 5. Commit with `pnpm commit -m "fold: <components>"`.
+
+Ledger entries. TOOLING.md and CODE.md hold one line per distinct issue, never one per sighting:
+
+    - <id> | <status> | hit-by: <hit>, <hit> | cost: <cost> | <what is wrong, and the file it lives in>
+
+- `id` is stable: `T<n>` in TOOLING.md, `C<n>` in CODE.md, the next unused number. Never renumber or reuse one.
+- `status` is `open`, `fixed <commit>` (a commit hash, or `job-<nnn>` until that job's batch commit lands) or `obsolete`. Something partly fixed stays `open` and its text says what is left.
+- `hit-by` lists every target and round that ran into it: `Switch.rn r1`, `Pattern.SettingsPage.web r2`; a fold session that hit it is `fold <Phase> <date>`.
+- `cost` is what it cost when known, from logs/regen.log — the rounds a gate forced and their dollars (`2 rounds, $7.33`); `-` when unknown. Add to it when you add a hit whose cost you know.
+
+Before recording anything, search both ledgers for the issue (its file, its component, its key words). If it is there, append your hit to that line's `hit-by` (and its cost), and if it was `fixed` or `obsolete` but you just hit it again, set it back to `open` and say so in the text. Only an issue that matches no line gets a new line with a new id. A gap the ledgers already record as fixed, which you did not hit again, needs no line. `node --import tsx tools/gap_digest.ts` ranks the open lines by cost, then by hits.
 
 Be decisive: a folded doc that is slightly wrong is fixed in review; an unfolded gap is re-guessed on every generation. End with a three-line summary: components touched, decisions made, items deferred to TOOLING/CODE.

@@ -492,11 +492,18 @@ export function DatePicker({
     setEndText((text) => (keep(text, committedEnd) ? text : formatField(committedEnd, locale)));
   }, [committedStart, committedEnd, locale]);
 
+  // The Form's mode decides when the field re-validates; after a failed submission every mode
+  // re-validates on blur and on change, so a fixed field stops being flagged as the user types.
+  const validateMode = form ? (form.validateMode ?? form.validate) : undefined;
+  const afterFailedSubmit = form?.submitFailed ?? false;
+  const validatesOnChange = validateMode === 'change' || afterFailedSubmit;
+  const validatesOnBlur = validateMode === 'blur' || validateMode === 'change' || afterFailedSubmit;
+
   function report(next: DatePickerValue | undefined): void {
     valueRef.current = next;
     if (!isValueControlled) setInternalValue(next);
     onChange?.(next);
-    if (form && form.validate === 'change') form.validateField(name);
+    if (form && validatesOnChange) form.validateField(name);
   }
 
   const dayDisabled = (iso: string): boolean =>
@@ -676,7 +683,7 @@ export function DatePicker({
       setStartText(formatField(startOf(current), locale));
       setEndText(formatField(endOf(current), locale));
     }
-    if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
+    if (form && validatesOnBlur) form.validateField(name);
   }
 
   /* --- Calendar keyboard ------------------------------------------------------------------------ */

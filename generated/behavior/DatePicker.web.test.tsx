@@ -21,6 +21,16 @@ function focusInto(el: Element | null): void {
   (target as HTMLElement).focus();
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<DatePickerProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -48,28 +58,28 @@ function setup(given: Partial<DatePickerProps> = {}) {
 describe('DatePicker', () => {
   test('the-calendar-button-opens-the-calendar', async () => {
     const s = setup({"open": false});
-    await s.user.click(s.calendarButton());
+    await s.user.click(activatable(s.calendarButton(), s.root()));
     expect(s.events.onOpenChange).toHaveBeenCalled();
   });
   test('a-disabled-field-does-not-open-the-calendar', async () => {
     const s = setup({"open": false, "disabled": true});
-    await s.user.click(s.calendarButton());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.calendarButton(), s.root()));
     expect(s.events.onOpenChange).not.toHaveBeenCalled();
   });
   test('choosing-a-day-reports-the-iso-date-and-closes', async () => {
     const s = setup({"open": true});
-    await s.user.click(s.day());
+    await s.user.click(activatable(s.day(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
     expect(s.events.onOpenChange).toHaveBeenCalled();
   });
   test('the-today-button-selects-today', async () => {
     const s = setup({"open": true});
-    await s.user.click(s.todayButton());
+    await s.user.click(activatable(s.todayButton(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('the-clear-button-clears-the-value', async () => {
     const s = setup({"open": true, "defaultValue": "2026-09-10"});
-    await s.user.click(s.clearButton());
+    await s.user.click(activatable(s.clearButton(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('arrow-down-in-the-input-opens-the-calendar', async () => {

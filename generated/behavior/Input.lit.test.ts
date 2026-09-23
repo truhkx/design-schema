@@ -21,6 +21,14 @@ function deep(root: ParentNode, selector: string): Element | null {
   return null;
 }
 
+function flatText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return (node as Text).data;
+  if (node instanceof HTMLStyleElement || node instanceof HTMLScriptElement) return '';
+  if (node instanceof HTMLSlotElement) return node.assignedNodes({ flatten: true }).map(flatText).join('');
+  const scope: Node = (node as HTMLElement).shadowRoot ?? node;
+  return Array.from(scope.childNodes).map(flatText).join('');
+}
+
 /** Every element that is "active" from the document down through shadow roots: the host, then the inner one.
  *  document.activeElement alone is a shadow host while focus sits inside its shadow tree. */
 function activeChain(): Element[] {
@@ -64,8 +72,8 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    label: () => (deep(root, '[role="textbox"]') ?? deep(root, '[part="label"]') ?? deep(root, '[data-part="label"]') ?? root.firstElementChild) as HTMLElement,
-    field: () => (deep(root, '[part="field"]') ?? deep(root, '[data-part="field"]')) as HTMLElement,
+    label: () => ((el.matches('[role="textbox"]') ? el : null) ?? deep(root, '[role="textbox"]') ?? (el.matches('[part~="label"], [data-part="label"]') ? el : null) ?? deep(root, '[part="label"]') ?? deep(root, '[data-part="label"]') ?? root.firstElementChild) as HTMLElement,
+    field: () => ((el.matches('[part~="field"], [data-part="field"]') ? el : null) ?? deep(root, '[part="field"]') ?? deep(root, '[data-part="field"]')) as HTMLElement,
   };
   return s;
 }
@@ -88,11 +96,11 @@ describe('ds-input', () => {
   });
   test('required-is-shown-in-the-label', async () => {
     const s = await setup({"required": true});
-    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("\\(required\\)"));
+    expect(flatText(s.el)).toMatch(new RegExp("\\(required\\)"));
   });
   test('error-is-announced-when-it-appears', async () => {
     const s = await setup({"error": "Enter an email address like name@example.com"});
-    expect(s.el.shadowRoot!.querySelector('[role="alert"]')).not.toBeNull();
+    expect(s.el.matches('[role="alert"]') || deep(s.root, '[role="alert"]') !== null || deep(s.el, '[role="alert"]') !== null).toBe(true);
   });
   test('disabled-stays-focusable-and-is-announced', async () => {
     const s = await setup({"disabled": true});
@@ -147,7 +155,7 @@ describe('ds-input', () => {
   });
   test('error-is-identified', async () => {
     const s = await setup({"error": "Fix this before continuing."});
-    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Fix\\ this\\ before\\ continuing\\."));
+    expect(flatText(s.el)).toMatch(new RegExp("Fix\\ this\\ before\\ continuing\\."));
     expect(s.label()).toHaveAttribute('aria-invalid', 'true');
   });
 });

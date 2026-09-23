@@ -6,6 +6,16 @@ import { Carousel } from '../../packages/react/src/Carousel';
 import type { CarouselProps } from '../../packages/react/src/Carousel';
 import meta from '../../packages/react/src/Carousel.stories';
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<CarouselProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -31,22 +41,22 @@ function setup(given: Partial<CarouselProps> = {}) {
 describe('Carousel', () => {
   test('next-advances-a-slide', async () => {
     const s = setup({});
-    await s.user.click(s.nextButton());
+    await s.user.click(activatable(s.nextButton(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('previous-at-the-first-slide-does-nothing', async () => {
     const s = setup({});
-    await s.user.click(s.prevButton());
+    await s.user.click(activatable(s.prevButton(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
   });
   test('loop-wraps-backwards-from-the-first-slide', async () => {
     const s = setup({"loop": true});
-    await s.user.click(s.prevButton());
+    await s.user.click(activatable(s.prevButton(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('the-picker-jumps-straight-to-a-slide', async () => {
     const s = setup({"activeIndex": 1, "picker": "dots"});
-    await s.user.click(s.pickerItem());
+    await s.user.click(activatable(s.pickerItem(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('the-region-is-announced-as-a-carousel', async () => {

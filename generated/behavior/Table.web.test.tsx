@@ -10,6 +10,16 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<TableProps> = {}) {
   const events = {
     onSortChange: vi.fn(),
@@ -37,17 +47,17 @@ function setup(given: Partial<TableProps> = {}) {
 describe('Table', () => {
   test('activating-a-sortable-header-reports-the-sort', async () => {
     const s = setup({"columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}, {"key": "amount", "header": "Amount", "sortable": true, "align": "end"}], "data": [{"id": "a", "invoice": "INV-1", "amount": 100}, {"id": "b", "invoice": "INV-2", "amount": 200}]});
-    await s.user.click(s.sortButton());
+    await s.user.click(activatable(s.sortButton(), s.root()));
     expect(s.events.onSortChange).toHaveBeenCalled();
   });
   test('selecting-a-row-reports-every-selected-id', async () => {
     const s = setup({"selectable": "multiple", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": [{"id": "a", "invoice": "INV-1"}, {"id": "b", "invoice": "INV-2"}]});
-    await s.user.click(s.selectCell());
+    await s.user.click(activatable(s.selectCell(), s.root()));
     expect(s.events.onSelectionChange).toHaveBeenCalled();
   });
   test('select-all-reports-the-whole-selection', async () => {
     const s = setup({"selectable": "multiple", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": [{"id": "a", "invoice": "INV-1"}, {"id": "b", "invoice": "INV-2"}]});
-    await s.user.click(s.selectAllCell());
+    await s.user.click(activatable(s.selectAllCell(), s.root()));
     expect(s.events.onSelectionChange).toHaveBeenCalled();
   });
   test('the-empty-message-shows-when-there-are-no-rows', async () => {

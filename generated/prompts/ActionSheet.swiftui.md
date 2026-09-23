@@ -770,6 +770,17 @@ component:
 - `enter`: token `motion.duration.base`; part `surface`
 - `exit`: token `motion.duration.fast`; part `surface`
 
+## Keyboard
+
+- `Escape` (Closes without choosing.): expect closes
+- `ArrowDown` (Moves focus to the next action.): expect focus-next
+- `ArrowDown` (From the last action wraps to the first.): expect focus-wraps-to-first
+- `ArrowUp` (From the first action wraps to the last.): expect focus-wraps-to-last
+- `Home` (First action.): expect focus-first
+- `End` (Last action.): expect focus-last
+- `Enter`, ` ` (Fires onAction for the focused action (nothing when it is disabled); the sheet does not close itself — the Keyboard story's consumer closes on onAction, which is the close `expect: closes` observes. Implement the key as activation only: no close handler of the sheet's own.): expect closes
+- `Tab` (Closes and moves focus on (a menu is not a tab stop container). No Tab handler is needed: the roving tabindex leaves one stop and the outside-close rule does the rest, which is why this rule is manual rather than asserted.): expect manual
+
 ## Form and overlay
 
 ```yaml

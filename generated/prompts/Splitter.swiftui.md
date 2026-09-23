@@ -514,6 +514,7 @@ component:
         width of layout.maxWidth.prose with a definite height — a vertical splitter
         has none of its own — so that scaffolding is part of the published Lit sample.'
     rn:
+      role: adjustable
       element: View
       props:
       - accessibilityRole=adjustable
@@ -810,6 +811,12 @@ component:
 
 ## Keyboard
 
+- `Tab` (The separator is a tab stop between the two panes' content.): expect manual
+- `ArrowRight`, `ArrowDown` (Grows the primary pane by `step` (ArrowDown when vertical; ArrowRight when horizontal). In RTL a horizontal splitter swaps ArrowLeft and ArrowRight, so the separator moves the way the arrow points, as dragging does.): expect manual
+- `ArrowLeft`, `ArrowUp` (Shrinks the primary pane by `step`.): expect manual
+- `Home` (Sets the primary pane to `minSize`.): expect manual
+- `End` (Sets the primary pane to `maxSize`.): expect manual
+- `Enter` (Collapses the primary pane, or restores it to its previous size. While collapsed, arrows, Home, End and pointer drag do nothing; only Enter or the collapse button restores. Those keys are still consumed (preventDefault) so a focused separator does not scroll the page instead — the exception is Shift+F6, which the splitter leaves to the browser entirely.): expect manual
 - 1 rule(s) in the schema do not apply on swiftui; implement none of them
 
 ## Copy

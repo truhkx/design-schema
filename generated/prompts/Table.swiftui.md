@@ -728,6 +728,7 @@ component:
         per theme, the prose and content widths are baked into the built element:
         a theme with other widths needs the Lit package rebuilt, not another stylesheet.'
     rn:
+      role: list
       element: FlatList
       props:
       - accessibilityRole=list
@@ -1040,7 +1041,9 @@ component:
 
 ## Keyboard
 
+- `Tab` (Moves through interactive content in reading order: select-all, then per row the checkbox, links, buttons and the actions cell. Cells themselves are not focusable — this is a table, not a grid.): expect focus-next
 - `Enter`, ` ` (On a sort button, sorts; on a row checkbox, toggles; on a row header button, activates the row.): expect manual; native: the rendered element already does this
+- `ArrowRight`, `ArrowLeft` (In `responsive: scroll` below the breakpoint, the scroll region is focusable and arrows scroll it horizontally.): expect manual
 
 ## Copy
 

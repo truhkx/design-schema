@@ -1528,7 +1528,24 @@ component:
 
 ## Keyboard
 
+- `Tab` (Enters the grid on the last-focused cell (initially the first header cell) and, from inside, leaves it — the grid is one tab stop. Inside a cell that contains a control, Tab still leaves the grid; use Enter to interact with the control. While an editor is open, Tab commits and opens the next editable cell in the row (Shift+Tab the previous); from the last editable cell it commits and leaves the grid — the editor is removed in the same task so the browser's own Tab lands outside, unless `validate` rejects that commit, in which case the editor stays open and the key does nothing.): expect manual
+- `ArrowRight` (Next cell in the row.): expect manual
+- `ArrowLeft` (Previous cell.): expect manual
+- `ArrowDown` (Same column, next row (into the body from the header).): expect manual
+- `ArrowUp` (Same column, previous row (into the header from the first body row).): expect manual
+- `Home` (First cell in the row (Ctrl: first cell in the grid, the header row included).): expect manual
+- `End` (Last cell in the row (Ctrl: last cell in the grid).): expect manual
+- `PageDown` (Down one visible page of rows, same column.): expect manual
+- `PageUp` (Up one visible page of rows.): expect manual
+- `Enter` (On a header cell: sorts (if sortable). On an editable cell: opens the editor; while editing, commits and moves focus down one row. On the selection cell: toggles its checkbox. On a cell whose `render` contains a control (Link, Button, Checkbox) and whose column is not `editable` — an editable column opens its editor instead, the editor always winning over the control: focuses the first focusable descendant and clicks it (on a custom element, its inner native control), and Escape hands focus back to the cell, which on web and Lit means the grid element with aria-activedescendant left on that cell, cells never being real focus targets. A control here is a link, button, input, select, textarea, any element carrying a tabindex, or a composed Link, Button or Checkbox; anything outside that set is neither reached by Enter nor demoted, so do not render one. Controls inside `render` are demoted to tabindex=-1 after every update so the grid stays one tab stop.): expect manual
+- `F2` (Opens the editor without moving; while editing, commits and returns focus to the cell without moving.): expect manual
+- `Escape` (While editing, cancels the edit and restores the value. Otherwise clears a range selection. With no editor open and no range, the key is left unhandled and bubbles, so an overlay the grid sits in still closes.): expect manual
+- ` ` (Row mode: toggles the focused row; Shift+Space adds the rows from the anchor (the last row toggled) through the focused row to the existing selection. Range mode: selects the focused row as a full-width range, Shift+Space extends that row range, Ctrl+Space selects the focused column as a range over the loaded rows.): expect manual
+- `Shift+ArrowRight`, `Shift+ArrowLeft`, `Shift+ArrowDown`, `Shift+ArrowUp` (Extends the range selection from the anchor; a plain navigation key (arrows, Home/End, Page keys) collapses the range to the newly focused cell and makes it the anchor. After Escape has cleared the range, plain keys only move the anchor.): expect manual
+- `Shift+ArrowRight`, `Shift+ArrowLeft` (Widens / narrows the column by resizeStep and fires onColumnResize on release of Shift.): expect manual
+- `Control+a` (Selects all loaded rows or cells (bound by key code KeyA, so it works on any layout). Control here and in every Ctrl chord of this table means Control or Meta (Cmd on macOS).): expect manual
 - `Control+c` (Copies the selection as tab-separated text; the header line is written when the range spans every loaded row, which is what "whole columns" means for a partly loaded set. Bound by key code KeyC, Control or Meta. copy.copied is announced once the clipboard write resolves; a refused or unavailable clipboard announces nothing.): expect manual
+- `Delete`, `Backspace` (Clears the value of editable cells in the selection — every editable cell of the selected rows (row), the range (range), the focused cell (cell); nothing in `none` mode: onCellChange fires once per cleared cell with `value: undefined`, the same shape the column model calls an omitted value, not an empty string, in row-major order (rows in display order, columns in `columns` order). `validate` does not run; the caller rejects a clear by not updating `data`. These two keys are the only path to `undefined` besides an emptied number editor, so on rn — where they have no equivalent — a cell cannot be cleared at all; clearing is web, lit and swiftui.): expect manual
 
 ## Copy
 

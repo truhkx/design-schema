@@ -17,6 +17,25 @@ function deep(root: ParentNode, selector: string): Element | null {
   return null;
 }
 
+function flatText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return (node as Text).data;
+  if (node instanceof HTMLStyleElement || node instanceof HTMLScriptElement) return '';
+  if (node instanceof HTMLSlotElement) return node.assignedNodes({ flatten: true }).map(flatText).join('');
+  const scope: Node = (node as HTMLElement).shadowRoot ?? node;
+  return Array.from(scope.childNodes).map(flatText).join('');
+}
+
+function hostName(el: Element): string | null {
+  const label = el.getAttribute('aria-label')?.trim();
+  if (label) return label;
+  const ids = el.getAttribute('aria-labelledby')?.trim();
+  if (!ids) return null;
+  const scope = el.getRootNode() as Document | ShadowRoot;
+  const named = ids.split(/\s+/).map((id) => scope.getElementById(id)).filter((n): n is HTMLElement => n !== null);
+  const text = named.map((n) => flatText(n).replace(/\s+/g, ' ').trim()).join(' ').trim();
+  return text || null;
+}
+
 /** Every element that is "active" from the document down through shadow roots: the host, then the inner one.
  *  document.activeElement alone is a shadow host while focus sits inside its shadow tree. */
 function activeChain(): Element[] {
@@ -54,7 +73,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    region: () => (deep(root, '[part="region"]') ?? deep(root, '[data-part="region"]') ?? root.firstElementChild) as HTMLElement,
+    region: () => ((el.matches('[part~="region"], [data-part="region"]') ? el : null) ?? deep(root, '[part="region"]') ?? deep(root, '[data-part="region"]') ?? root.firstElementChild) as HTMLElement,
   };
   return s;
 }
@@ -66,15 +85,15 @@ beforeEach(() => {
 describe('ds-landmark', () => {
   test('the-role-prop-chooses-the-landmark', async () => {
     const s = await setup({"role": "navigation"});
-    expect(s.el.shadowRoot!.querySelector('[role="navigation"]')).not.toBeNull();
+    expect(s.el.matches('[role="navigation"]') || deep(s.root, '[role="navigation"]') !== null || deep(s.el, '[role="navigation"]') !== null).toBe(true);
   });
   test('search-is-the-search-landmark', async () => {
     const s = await setup({"role": "search"});
-    expect(s.el.shadowRoot!.querySelector('[role="search"]')).not.toBeNull();
+    expect(s.el.matches('[role="search"]') || deep(s.root, '[role="search"]') !== null || deep(s.el, '[role="search"]') !== null).toBe(true);
   });
   test('main-is-the-primary-content-landmark', async () => {
     const s = await setup({"role": "main", "label": ""});
-    expect(s.el.shadowRoot!.querySelector('[role="main"]')).not.toBeNull();
+    expect(s.el.matches('[role="main"]') || deep(s.root, '[role="main"]') !== null || deep(s.el, '[role="main"]') !== null).toBe(true);
   });
   test('a-label-is-dropped-on-a-role-that-refuses-one', async () => {
     const s = await setup({"role": "banner", "label": "Site header"});
@@ -82,7 +101,7 @@ describe('ds-landmark', () => {
   });
   test('a-region-is-named-by-its-label', async () => {
     const s = await setup({"role": "region", "label": "Related articles"});
-    expect(s.el.shadowRoot!.querySelector('[role="region"]')).not.toBeNull();
+    expect(s.el.matches('[role="region"]') || deep(s.root, '[role="region"]') !== null || deep(s.el, '[role="region"]') !== null).toBe(true);
     expect(s.region()).toHaveAttribute("aria-label", "Related articles");
   });
   test('renders', async () => {

@@ -1249,17 +1249,22 @@ const ruleUsesContract = (rule: Dict): boolean => RULE_CONTRACT_FIELDS.some((k) 
 
 function keyboardContract(c: Dict, platform: string): string {
   const rules = (c.keyboard ?? []) as Dict[];
-  if (!rules.some(ruleUsesContract)) return '';
   const suffix = KEYBOARD_PLATFORMS[platform]?.suffix;
   const lines: string[] = [];
   let excluded = 0;
+  // Every rule is listed, because the template says the section is the whole contract; the
+  // contract fields only add detail to the line of a rule that carries them.
   for (const rule of rules) {
     if (!onPlatform(rule, platform)) {
       excluded += 1;
       continue;
     }
-    if (!ruleUsesContract(rule)) continue;
-    const bits = [`expect ${expectList(rule).join(', then ')}`];
+    const line = `- ${(rule.keys as string[]).map((k) => `\`${k}\``).join(', ')} (${pyStr(rule.action)}): expect ${expectList(rule).join(', then ')}`;
+    if (!ruleUsesContract(rule)) {
+      lines.push(line);
+      continue;
+    }
+    const bits: string[] = [];
     if (rule.target !== undefined) bits.push(`target part \`${rule.target}\``);
     if (rule.repeat !== undefined) bits.push(`repeat ${String(rule.repeat)}`);
     if (rule.given !== undefined) {
@@ -1267,7 +1272,7 @@ function keyboardContract(c: Dict, platform: string): string {
       if (suffix !== undefined) bits.push(`story URL \`${storyUrl(storyId(c.name, suffix), rule.given)}\``);
     }
     if (rule.native === true) bits.push('native: the rendered element already does this');
-    lines.push(`- ${(rule.keys as string[]).map((k) => `\`${k}\``).join(', ')} (${pyStr(rule.action)}): ${bits.join('; ')}`);
+    lines.push(bits.length ? `${line}; ${bits.join('; ')}` : line);
   }
   if (excluded) lines.push(`- ${excluded} rule(s) in the schema do not apply on ${platform}; implement none of them`);
   return contractSection('Keyboard', lines);

@@ -6,6 +6,21 @@ import type { TabsProps } from '../../packages/rn/src/Tabs';
 import meta from '../../packages/rn/src/Tabs.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<TabsProps> = {}) {
   const events = {
     onChange: jest.fn(),
@@ -32,17 +47,17 @@ function setup(given: Partial<TabsProps> = {}) {
 describe('Tabs', () => {
   test('click-selects-a-tab', () => {
     const s = setup({"defaultValue": "activity"});
-    fireEvent.press(s.tab());
+    fireEvent.press(activatable(s.tab(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('clicking-the-selected-tab-changes-nothing', () => {
     const s = setup({"defaultValue": "overview"});
-    fireEvent.press(s.tab());
+    fireEvent.press(activatable(s.tab(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
   });
   test('a-disabled-tab-cannot-be-selected', () => {
     const s = setup({"tabs": [{"id": "overview", "label": "Overview", "disabled": true}, {"id": "activity", "label": "Activity"}], "defaultValue": "activity"});
-    fireEvent.press(s.tab());
+    fireEvent.press(activatable(s.tab(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
   });
   test('renders', () => {

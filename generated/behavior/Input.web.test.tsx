@@ -36,7 +36,7 @@ describe('Input', () => {
   test('typing-reports-the-new-value', async () => {
     const s = setup({});
     await s.user.type(s.label(), "a");
-    expect(s.events.onChange).toHaveBeenCalledWith("a", expect.anything());
+    expect(s.events.onChange).toHaveBeenCalledWith("a");
   });
   test('focus-is-reported', async () => {
     const s = setup({});

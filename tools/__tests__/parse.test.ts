@@ -368,3 +368,43 @@ describe('parseThemes', () => {
     expect(errors.some((e) => e.includes('run tools/theme.ts first'))).toBe(true);
   });
 });
+
+describe('Declared contracts: Keyboard', () => {
+  /** The section's lines, or [] when it is absent. */
+  function keyboardLines(c: parse.Dict, platform: string): string[] {
+    const section = /## Keyboard\n\n([\s\S]*?)\n\n/.exec(parse.contractSections(componentDef.parse(c) as parse.Dict, platform));
+    return section?.[1]?.split('\n') ?? [];
+  }
+
+  test('a doc with only plain rules lists every rule', () => {
+    const c = component();
+    c.a11y.requires = [...c.a11y.requires, 'keyboard-operable', 'arrow-navigation'];
+    c.keyboard = [
+      { keys: ['ArrowLeft'], action: 'Moves to the previous item.', expect: 'focus-prev' },
+      { keys: ['ArrowRight'], action: 'Moves to the next item.', expect: 'focus-next' },
+      { keys: ['Home'], action: 'Moves to the first item.', expect: 'focus-first' },
+    ];
+    expect(keyboardLines(c, 'web')).toEqual([
+      '- `ArrowLeft` (Moves to the previous item.): expect focus-prev',
+      '- `ArrowRight` (Moves to the next item.): expect focus-next',
+      '- `Home` (Moves to the first item.): expect focus-first',
+    ]);
+  });
+
+  test('a mixed doc lists every rule in doc order, with contract detail only where declared', () => {
+    const c = component();
+    c.a11y.requires = [...c.a11y.requires, 'keyboard-operable'];
+    c.keyboard = [
+      { keys: ['Home'], action: 'Moves to the first item.', expect: 'focus-first' },
+      { keys: ['Enter', ' '], action: 'Presses the native button.', expect: 'toggles', native: true },
+      { keys: ['End'], action: 'Moves to the last item.', expect: 'focus-last' },
+      { keys: ['Tab'], action: 'Moves on.', expect: 'focus-next', repeat: 2 },
+    ];
+    expect(keyboardLines(c, 'web')).toEqual([
+      '- `Home` (Moves to the first item.): expect focus-first',
+      '- `Enter`, ` ` (Presses the native button.): expect toggles; native: the rendered element already does this',
+      '- `End` (Moves to the last item.): expect focus-last',
+      '- `Tab` (Moves on.): expect focus-next; repeat 2',
+    ]);
+  });
+});

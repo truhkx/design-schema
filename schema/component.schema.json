@@ -1979,6 +1979,17 @@
             "$ref": "#/$defs/reflectItem"
           }
         },
+        "role": {
+          "description": "The role the root renders on this platform, when it is not a11y.role: e.g. list on rn for a feed, since React Native's FlatList carries accessibilityRole list. Only set where it differs from the resolved a11y.role; on rn a React Native role, elsewhere an ARIA role.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ariaRole"
+            },
+            {
+              "$ref": "#/$defs/rnRole"
+            }
+          ]
+        },
         "supported": {
           "default": true,
           "type": "boolean"
@@ -2015,6 +2026,94 @@
         }
       ],
       "description": "A prop name or its kebab-case attribute name, or { prop, attribute } when the attribute is not the prop's kebab-case (the negated attribute of a boolean that defaults to true)."
+    },
+    "rnRole": {
+      "type": "string",
+      "enum": [
+        "alert",
+        "button",
+        "checkbox",
+        "combobox",
+        "grid",
+        "link",
+        "list",
+        "menu",
+        "menubar",
+        "menuitem",
+        "none",
+        "progressbar",
+        "radio",
+        "radiogroup",
+        "scrollbar",
+        "spinbutton",
+        "summary",
+        "switch",
+        "tab",
+        "tablist",
+        "timer",
+        "toolbar",
+        "adjustable",
+        "drawerlayout",
+        "dropdownlist",
+        "header",
+        "horizontalscrollview",
+        "iconmenu",
+        "image",
+        "imagebutton",
+        "keyboardkey",
+        "pager",
+        "scrollview",
+        "search",
+        "slidingdrawer",
+        "tabbar",
+        "text",
+        "togglebutton",
+        "viewgroup",
+        "webview",
+        "alertdialog",
+        "application",
+        "article",
+        "banner",
+        "cell",
+        "columnheader",
+        "complementary",
+        "contentinfo",
+        "definition",
+        "dialog",
+        "directory",
+        "document",
+        "feed",
+        "figure",
+        "form",
+        "group",
+        "heading",
+        "img",
+        "listitem",
+        "log",
+        "main",
+        "marquee",
+        "math",
+        "meter",
+        "navigation",
+        "note",
+        "option",
+        "presentation",
+        "region",
+        "row",
+        "rowgroup",
+        "rowheader",
+        "searchbox",
+        "separator",
+        "slider",
+        "status",
+        "table",
+        "tabpanel",
+        "term",
+        "tooltip",
+        "tree",
+        "treegrid",
+        "treeitem"
+      ]
     }
   }
 }

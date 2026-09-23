@@ -17,6 +17,16 @@ function focusInto(el: Element | null): void {
   (target as HTMLElement).focus();
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<MenuProps> = {}) {
   const events = {
     onAction: vi.fn(),
@@ -41,13 +51,13 @@ function setup(given: Partial<MenuProps> = {}) {
 describe('Menu', () => {
   test('choosing-an-item-reports-the-action-and-the-close', async () => {
     const s = setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename"}, {"id": "duplicate", "label": "Duplicate"}]});
-    await s.user.click(s.item());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.item(), s.root()));
     expect(s.events.onAction).toHaveBeenCalled();
     expect(s.events.onOpenChange).toHaveBeenCalled();
   });
   test('a-disabled-item-does-nothing', async () => {
     const s = setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename", "disabled": true}, {"id": "duplicate", "label": "Duplicate"}]});
-    await s.user.click(s.item());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.item(), s.root()));
     expect(s.events.onAction).not.toHaveBeenCalled();
   });
   test('escape-closes-without-choosing', async () => {

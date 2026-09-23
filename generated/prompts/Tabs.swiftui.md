@@ -717,8 +717,15 @@ component:
 
 ## Keyboard
 
+- `Tab` (Moves focus to the selected tab, then out of the tab list into the panel (the list is one tab stop).): expect manual
+- `ArrowRight` (Moves to the next tab, wrapping; selects it under automatic activation. In a right-to-left layout ArrowRight is "previous" and ArrowLeft "next" — the direction is read from the list's (on Lit the host's) computed `direction` at keydown, as in SegmentedControl.): expect focus-next
+- `ArrowLeft` (Moves to the previous tab, wrapping; selects it under automatic activation. Swapped with ArrowRight in a right-to-left layout.): expect focus-prev
 - `ArrowDown` (Moves to the next tab, wrapping; selects it under automatic activation.): expect focus-next; given `orientation: "vertical"`
 - `ArrowUp` (Moves to the previous tab, wrapping; selects it under automatic activation.): expect focus-prev; given `orientation: "vertical"`
+- `ArrowRight` (From the last tab wraps to the first.): expect focus-wraps-to-first
+- `Home` (First tab; selects it under automatic activation.): expect focus-first
+- `End` (Last tab; selects it under automatic activation.): expect focus-last
+- `Enter`, ` ` (Selects the focused tab (manual activation).): expect selects
 
 ## Copy
 

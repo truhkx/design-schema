@@ -627,6 +627,9 @@ component:
 
 - `ArrowRight`, `ArrowDown` (Moves to and selects the next enabled segment, wrapping.): expect focus-next, then selects
 - `ArrowLeft`, `ArrowUp` (Moves to and selects the previous enabled segment, wrapping.): expect focus-prev, then selects
+- `ArrowRight` (From the last segment wraps to the first.): expect focus-wraps-to-first
+- `Home` (Moves to and selects the first enabled segment — this control always has a selection, so Home and End select as the arrows do.): expect focus-first
+- `End` (Moves to and selects the last enabled segment.): expect focus-last
 - ` `, `Enter` (Selects the focused segment. Each segment is a native button (web and Lit), so this is its own activation — the component adds no handler and nothing else is bound to these keys.): expect manual; native: the rendered element already does this
 
 ## Constants and examples

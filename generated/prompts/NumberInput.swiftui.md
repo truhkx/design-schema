@@ -751,6 +751,14 @@ component:
 - `descriptionText`: token `color.foreground.muted`; part `description`; locked
 - `focusRingWidth`: token `border.width.focus`; part `field`; locked
 
+## Keyboard
+
+- `ArrowUp` (Increases by `step` (clamped to max).): expect manual
+- `ArrowDown` (Decreases by `step` (clamped to min).): expect manual
+- `PageUp`, `PageDown` (Changes by ten steps (10 × `step`, clamped); the 10 is a count, not a style value.): expect manual
+- `Home`, `End` (Sets min / max when they are defined (component code, not native: a text input cannot do this); otherwise the key is left to the input's native caret movement. A jump is a step: it clears a clamp message and fires onChange only when the value changes.): expect manual
+- `Enter` (Commits (rounds and clamps) the typed value; inside a Form, submits (on React Native too: returnKeyType done, no next-field chain, submitBehavior blurAndSubmit). Outside a Form it commits and nothing else — focus and the native keyboard stay (React Native submitBehavior submit).): expect manual
+
 ## Form and overlay
 
 ```yaml

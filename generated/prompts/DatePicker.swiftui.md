@@ -1059,7 +1059,18 @@ component:
 
 ## Keyboard
 
+- `ArrowDown`, `Alt+ArrowDown` (From the input, opens the calendar with focus on the selected day (or today); when the calendar is already open, moves focus to that day (the pending range start, else the value, else today) — from the end input it aims at the end date, so ArrowDown and reopening behave the same way from the same input.): expect manual
+- `Enter`, ` ` (On the calendar button, opens; on a day, selects it (and closes for a single date; for a range, selects the start then the end).): expect manual
 - `Escape` (Closes the calendar without changing the value. Focus returns to the calendar button when it was inside the calendar; when it is in an input or on the button itself it stays there, since Escape only takes back focus the calendar took. The handler is DatePicker's own, on its root: the non-modal Popover cannot hear a key pressed in the field, which is outside its panel.): expect closes, then focus-trigger; target part `popover`
+- `ArrowRight` (Next day.): expect manual
+- `ArrowLeft` (Previous day.): expect manual
+- `ArrowDown` (Same weekday, next week.): expect manual
+- `ArrowUp` (Same weekday, previous week.): expect manual
+- `Home` (First day of the week.): expect manual
+- `End` (Last day of the week.): expect manual
+- `PageUp` (Same day, previous month (Shift: previous year).): expect manual
+- `PageDown` (Same day, next month (Shift: next year).): expect manual
+- `Tab` (Cycles within the calendar: previous month, month Select, year Select, next month, the grid (one tab stop, roving over days), Today, Clear, and back (Shift+Tab reverses). DatePicker traps Tab itself, because the non-modal Popover would close on Tab-out; Tab inside an open Select popup belongs to the Select. In the grid, keys held with Alt, Ctrl or Meta are ignored.): expect manual
 
 ## Form and overlay
 

@@ -789,6 +789,7 @@ component:
 
 ## Keyboard
 
+- `Tab` (Moves between navigable steps in order; non-navigable steps are not focusable.): expect focus-next
 - `Enter`, ` ` (Selects the focused step.): expect manual; native: the rendered element already does this
 
 ## Copy

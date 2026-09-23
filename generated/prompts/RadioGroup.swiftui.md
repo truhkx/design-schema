@@ -731,6 +731,13 @@ component:
 - `focusRingWidth`: token `border.width.focus`; part `radio`; locked
 - `transition`: token `motion.duration.fast`; part `radio`
 
+## Keyboard
+
+- `Tab` (Moves into the group, to the selected radio (the first when none is selected); from inside, leaves the group — one tab stop.): expect manual
+- `ArrowDown`, `ArrowRight` (Moves to and selects the next enabled radio, wrapping.): expect focus-next
+- `ArrowUp`, `ArrowLeft` (Moves to and selects the previous enabled radio, wrapping.): expect focus-prev
+- ` ` (Selects the focused radio when the arrows did not already select it.): expect manual
+
 ## Form and overlay
 
 ```yaml

@@ -46,37 +46,37 @@ describe('Slider', () => {
     const s = setup({"defaultValue": 50, "step": 5});
     act(() => focusInto(s.label()));
     await s.user.keyboard('{ArrowRight}');
-    expect(s.events.onChange).toHaveBeenCalledWith(55, expect.anything());
+    expect(s.events.onChange).toHaveBeenCalledWith(55);
   });
   test('arrow-decreases-by-one-step', async () => {
     const s = setup({"defaultValue": 50, "step": 5});
     act(() => focusInto(s.label()));
     await s.user.keyboard('{ArrowLeft}');
-    expect(s.events.onChange).toHaveBeenCalledWith(45, expect.anything());
+    expect(s.events.onChange).toHaveBeenCalledWith(45);
   });
   test('page-up-changes-by-ten-steps', async () => {
     const s = setup({"defaultValue": 50});
     act(() => focusInto(s.label()));
     await s.user.keyboard('{PageUp}');
-    expect(s.events.onChange).toHaveBeenCalledWith(60, expect.anything());
+    expect(s.events.onChange).toHaveBeenCalledWith(60);
   });
   test('home-sets-the-minimum', async () => {
     const s = setup({"defaultValue": 50, "min": 0, "max": 100});
     act(() => focusInto(s.label()));
     await s.user.keyboard('{Home}');
-    expect(s.events.onChange).toHaveBeenCalledWith(0, expect.anything());
+    expect(s.events.onChange).toHaveBeenCalledWith(0);
   });
   test('end-sets-the-maximum', async () => {
     const s = setup({"defaultValue": 50, "min": 0, "max": 100});
     act(() => focusInto(s.label()));
     await s.user.keyboard('{End}');
-    expect(s.events.onChange).toHaveBeenCalledWith(100, expect.anything());
+    expect(s.events.onChange).toHaveBeenCalledWith(100);
   });
   test('a-key-press-is-a-complete-interaction', async () => {
     const s = setup({"defaultValue": 50});
     act(() => focusInto(s.label()));
     await s.user.keyboard('{ArrowRight}');
-    expect(s.events.onChangeEnd).toHaveBeenCalledWith(51, expect.anything());
+    expect(s.events.onChangeEnd).toHaveBeenCalledWith(51);
   });
   test('a-disabled-slider-does-not-move', async () => {
     const s = setup({"disabled": true, "defaultValue": 50});

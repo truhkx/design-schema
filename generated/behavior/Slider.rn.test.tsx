@@ -27,7 +27,7 @@ function setup(given: Partial<SliderProps> = {}) {
     events,
     props,
     root: () => screen.queryByTestId('Slider') ?? screen.UNSAFE_root,
-    label: () => screen.queryByRole('slider') ?? s.root(),
+    label: () => screen.queryByRole('adjustable') ?? s.root(),
     rerender: (next: Partial<SliderProps>) => utils.rerender(tree({ ...props, ...next })),
   };
   return s;
@@ -56,7 +56,7 @@ describe('Slider', () => {
   });
   test('has-accessible-name', () => {
     const s = setup({});
-    expect(screen.getByRole('slider', { name: s.props.label })).toBeOnTheScreen();
+    expect(screen.getByRole('adjustable', { name: s.props.label })).toBeOnTheScreen();
   });
   test('error-is-identified', () => {
     const s = setup({"error": "Fix this before continuing."});

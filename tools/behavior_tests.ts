@@ -58,7 +58,7 @@ import { freshOutDir, readComponents } from './lib/components.ts';
 import type { Dict } from './lib/components.ts';
 import { has, pyGet, pyJsonDumps, pyReEscape, pyRepr, pySorted, pySplitlines, pyStr, pyStrip, readText, truthy, writeText } from './lib/py.ts';
 import { REPO_ROOT } from './lib/root.ts';
-import { controlledPairs, copyText, NON_QUERYABLE_ROLES, normalizeKey, resolveRole, roleIn } from '../schema/component.ts';
+import { controlledPairs, copyText, NON_QUERYABLE_ROLES, normalizeKey, resolveRole, roleIn, WIDGET_ROLES } from '../schema/component.ts';
 import { PLATFORMS, SOURCE_EXT, sourceDir, TS_PLATFORMS } from '../schema/platforms.ts';
 import { accessibleNameProp, behaviorFor } from './parse.ts';
 
@@ -121,6 +121,172 @@ export const DEEP_QUERY_HELPER = `function deep(root: ParentNode, selector: stri
     }
   }
   return null;
+}
+`;
+/** The Lit probes' view of what a host renders, walked the way keyboard_tests.ts's HELPERS walk focusables: the
+ *  flat tree — a shadow host's shadow root instead of its light children, and a <slot>'s assigned nodes (or its
+ *  fallback) in its place. That reaches slotted text and the shadow text of a composed ds-* child (ds-button
+ *  renders its `label` property in its own shadow root), neither of which `shadowRoot.textContent` contains. */
+export const FLAT_TEXT_HELPER = `function flatText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return (node as Text).data;
+  if (node instanceof HTMLStyleElement || node instanceof HTMLScriptElement) return '';
+  if (node instanceof HTMLSlotElement) return node.assignedNodes({ flatten: true }).map(flatText).join('');
+  const scope: Node = (node as HTMLElement).shadowRoot ?? node;
+  return Array.from(scope.childNodes).map(flatText).join('');
+}
+`;
+/** The accessible name a Lit host carries itself — prompts/conventions/lit.md puts `aria-label` and
+ *  `aria-labelledby` on the host as plain attributes — or null when it carries none, so the probe falls back
+ *  to the element the part locator finds. `aria-labelledby` ids resolve in the host's own root node. */
+export const HOST_NAME_HELPER = `function hostName(el: Element): string | null {
+  const label = el.getAttribute('aria-label')?.trim();
+  if (label) return label;
+  const ids = el.getAttribute('aria-labelledby')?.trim();
+  if (!ids) return null;
+  const scope = el.getRootNode() as Document | ShadowRoot;
+  const named = ids.split(/\\s+/).map((id) => scope.getElementById(id)).filter((n): n is HTMLElement => n !== null);
+  const text = named.map((n) => flatText(n).replace(/\\s+/g, ' ').trim()).join(' ').trim();
+  return text || null;
+}
+`;
+/** The widget roles a click activates directly. `gridcell` is the exception: a cell's control is what it holds (the
+ *  APG grid puts the Checkbox or Button inside the cell), and a cell holding none is still the part it falls back to. */
+export const ACTIVATABLE_ROLES: string[] = WIDGET_ROLES.filter((r) => r !== 'gridcell');
+/** What a person can activate: a native control, or an element carrying one of those widget roles. */
+export const INTERACTIVE_SELECTOR = ['button', 'a[href]', 'input:not([type="hidden"])', 'select', 'textarea', ...ACTIVATABLE_ROLES.map((r) => `[role="${r}"]`)].join(', ');
+/** Roles that make an element a thing clicked as a whole rather than a wrapper: a window (dialog, alertdialog) or a
+ *  composite widget (radiogroup, tablist, listbox…). A live region (Feed's `status` around its show-new Button) or a
+ *  landmark still wraps the control it holds. */
+export const CONTAINER_ROLES = ['dialog', 'alertdialog', 'combobox', 'grid', 'listbox', 'menu', 'menubar', 'radiogroup', 'tablist', 'tree', 'treegrid'];
+export const OWN_ROLE_SELECTOR = ['dialog', ...CONTAINER_ROLES.map((r) => `[role="${r}"]`)].join(', ');
+/** A part is often a wrapper — a `closeButton` span around a composed Button, a row cell around a Checkbox — and a
+ *  click on the wrapper never reaches the control. `activatable` is the part when it is interactive itself, else
+ *  its first interactive descendant, else the part. It never descends from the component's root (a part locator
+ *  falls back to the root when the part is not rendered, and the root's first control is not the part), nor from
+ *  a window or composite (CONTAINER_ROLES: AlertDialog's primary part is located by role, so a click on its scrim
+ *  is a click on the alertdialog — not on the Cancel button inside it). A focused part is the part or that control: a
+ *  focusable surface (tabindex="-1") is not interactive, but focus landing on it is still focus on the part. */
+export const WEB_ACTIVATABLE_HELPER = `const INTERACTIVE = ${js(INTERACTIVE_SELECTOR)};
+const OWN_ROLE = ${js(OWN_ROLE_SELECTOR)};
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+`;
+/** Lit's `activatable` walks the flat tree, like FLAT_TEXT_HELPER: a composed ds-button's own shadow root and a
+ *  <slot>'s assigned nodes are where the control is. `isDisabled` is Playwright's "not enabled" — a disabled native
+ *  control, or aria-disabled on it or any ancestor across shadow hosts — so a control disabled by state (Carousel's
+ *  previous button on the first slide, NumberInput's decrement at the minimum) is clicked with force instead of
+ *  timing out on actionability. `clickOptions` also aims the click at a point where the element is on top: a
+ *  scrim's centre is under the panel it dims, so Playwright would wait on "intercepts pointer events" forever;
+ *  a corner or edge of the scrim is where a person taps it. The probe waits for running animations first (a
+ *  SidePanel's scrim centre is exposed until its surface finishes sliding over it), then polls, two seconds in
+ *  all; nowhere exposed by then (a panel still sliding in) leaves Playwright's own wait for a stable, visible
+ *  target in charge. A plain area (a scrim — no control to activate) is clicked at the probed point with force, so
+ *  the pointer lands where the probe saw the area on top instead of Playwright re-checking a layout still settling;
+ *  a control keeps Playwright's checks. `located` is a locator that can only mean `el`: vitest turns an Element into one
+ *  with Playwright's selector generator, which inside shadow roots can name another element (DatePicker's button
+ *  as `getByLabel('Choose date')`, which its closed dialog shares; SidePanel's scrim as `locator('div').first()`).
+ *  A test id stamped on the element cannot. `pointerAt` aims the pointer at the control's host in the part's own
+ *  tree (the composed ds-button, not the <button> in its shadow root; a host with no box of its own, like Table's
+ *  select-all ds-checkbox, is not visible to Playwright, so the pointer stays on the control) — hit testing carries a real click from the
+ *  host to the control, while Playwright's hit-target check can report the host as intercepting its own shadow
+ *  content — and forces when the control itself is disabled. */
+export const LIT_ACTIVATABLE_HELPER = `const INTERACTIVE = ${js(INTERACTIVE_SELECTOR)};
+const OWN_ROLE = ${js(OWN_ROLE_SELECTOR)};
+function flatChildren(node: Node): Node[] {
+  if (node instanceof HTMLSlotElement) return node.assignedNodes({ flatten: true });
+  return Array.from(((node as HTMLElement).shadowRoot ?? node).childNodes);
+}
+function firstInteractive(node: Node): Element | null {
+  for (const child of flatChildren(node)) {
+    if (!(child instanceof Element)) continue;
+    if (child.matches(INTERACTIVE)) return child;
+    const found = firstInteractive(child);
+    if (found) return found;
+  }
+  return null;
+}
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (firstInteractive(el) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || activeChain().includes(el) ? el : activatable(el, root);
+}
+function isDisabled(el: Element | null): boolean {
+  if (el?.matches(':disabled')) return true;
+  for (let n: Element | null = el; n; n = n.parentElement ?? ((n.getRootNode() as ShadowRoot).host ?? null)) {
+    if (n.getAttribute('aria-disabled') === 'true') return true;
+  }
+  return false;
+}
+function hits(el: Element, x: number, y: number): boolean {
+  let n: Element | null = document.elementFromPoint(x, y);
+  for (let inner = n?.shadowRoot?.elementFromPoint(x, y) ?? null; n && inner && inner !== n; inner = n.shadowRoot?.elementFromPoint(x, y) ?? null) n = inner;
+  for (let m: Element | null = n; m; m = m.parentElement ?? ((m.getRootNode() as ShadowRoot).host ?? null)) if (m === el) return true;
+  return false;
+}
+const PROBES = [[0.5, 0.5], [0.02, 0.02], [0.98, 0.02], [0.02, 0.98], [0.98, 0.98], [0.5, 0.02], [0.5, 0.98], [0.02, 0.5], [0.98, 0.5]];
+type ClickOptions = { force?: boolean; position?: { x: number; y: number } };
+async function clickOptions(el: Element | null, area: boolean): Promise<ClickOptions> {
+  if (el === null) return {};
+  const frame = (): Promise<number> => new Promise((f) => requestAnimationFrame(f));
+  const deadline = performance.now() + 2000;
+  while (performance.now() < deadline && document.getAnimations().some((a) => a.playState === 'running')) await frame();
+  do {
+    const r = el.getBoundingClientRect();
+    // An area's centre is what an overlay's surface covers; its edges are where a person taps it.
+    for (const [fx, fy] of area ? [...PROBES.slice(1), PROBES[0]!] : PROBES) {
+      const x = r.left + r.width * fx!;
+      const y = r.top + r.height * fy!;
+      if (!hits(el, x, y)) continue;
+      if (area) return { position: { x: x - r.left, y: y - r.top }, force: true };
+      return fx === 0.5 && fy === 0.5 ? {} : { position: { x: x - r.left, y: y - r.top } };
+    }
+    await frame();
+  } while (performance.now() < deadline);
+  return {};
+}
+let stamped = 0;
+function located(el: Element | null): Locator {
+  if (el === null) return el as unknown as Locator;
+  const id = \`ds-behavior-\${++stamped}\`;
+  el.setAttribute('data-testid', id);
+  return page.getByTestId(id);
+}
+async function pointerAt(control: Element | null, part: Element | null): Promise<[Locator, ClickOptions]> {
+  let el = control;
+  while (el && part && el.getRootNode() !== part.getRootNode() && el.getRootNode() instanceof ShadowRoot) {
+    const host = (el.getRootNode() as ShadowRoot).host;
+    const box = host.getBoundingClientRect();
+    if (box.width === 0 || box.height === 0) break; // display: contents or an empty inline box — Playwright's "not visible"
+    el = host;
+  }
+  if (isDisabled(control)) return [located(el), { force: true }];
+  return [located(el), await clickOptions(el, control !== null && !control.matches(INTERACTIVE))];
+}
+`;
+/** React Native's press bubbles up and never down, so a wrapper View's testID node never reaches its Pressable.
+ *  Press the node itself when it is a control, else the first node under it that is (never under the root or a
+ *  window/composite node, as on web): a widget role (the ARIA names plus React Native's own) or an onPress. A composite match (the Pressable) is pressed through its host
+ *  view, so Testing Library still sees the host's disabled state. Decorative roles (image, text) are not controls. */
+export const RN_ACTIVATABLE_HELPER = `type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(${js([...ACTIVATABLE_ROLES, 'adjustable', 'imagebutton', 'togglebutton'])});
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(${js(CONTAINER_ROLES)});
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
 }
 `;
 // The three JavaScript platforms share `scenarioBlock` and import the component from its package source, relative to
@@ -191,17 +357,27 @@ export function partLocator(_c: Dict, part: string, _platform: string): string {
   return `s.${part}()`;
 }
 
-/** The role a test can find the component by: its resolved role, or null when that is unresolved (a `roleFrom` prop
- *  with no default) or one of NON_QUERYABLE_ROLES. */
-export function concreteRole(c: Dict): string | null {
-  const role = resolveRole(c);
+/** The component's root as the generated test holds it: what `activatable` never descends from. */
+function rootExpr(platform: string): string {
+  return platform === 'lit' ? 's.el' : 's.root()';
+}
+
+/** The control `part` stands for (see WEB_ACTIVATABLE_HELPER), as the generated test finds it. */
+export function activatableExpr(c: Dict, part: string, platform: string): string {
+  return `activatable(${partLocator(c, part, platform)}, ${rootExpr(platform)})`;
+}
+
+/** The role a test can find the component by on `platform`: its resolved role, or null when that is unresolved (a
+ *  `roleFrom` prop with no default) or one of NON_QUERYABLE_ROLES. */
+export function concreteRole(c: Dict, platform?: string): string | null {
+  const role = resolveRole(c, undefined, platform);
   return role === null || roleIn(NON_QUERYABLE_ROLES, role) ? null : role;
 }
 
 /** The component's root: the `data-ds` hook first (piercing shadow roots on Lit), the rendered tree otherwise. */
 export function rootLocatorBody(c: Dict, platform: string): string {
   const name = c.name as string;
-  const role = concreteRole(c);
+  const role = concreteRole(c, platform);
   if (platform === 'web') {
     const byRole = role ? ` ?? screen.queryByRole('${role}')` : '';
     return `(document.querySelector('[data-ds="${name}"]')${byRole} ?? utils.container.firstElementChild) as HTMLElement`;
@@ -226,7 +402,7 @@ export function scalarType(prop: Dict): string {
 export function partLocatorBody(c: Dict, part: string, platform: string): string {
   const anatomy = (truthy(c.anatomy) ? c.anatomy : []) as string[];
   const props = (truthy(c.props) ? c.props : {}) as Dict;
-  const role = concreteRole(c);
+  const role = concreteRole(c, platform);
   const isPrimary = anatomy.length > 0 && part === anatomy[0];
   const prop = pyGet(props, part, undefined) as Dict | undefined;
   const isTextProp = prop !== undefined && prop !== null && scalarType(prop) === 'string';
@@ -245,9 +421,12 @@ export function partLocatorBody(c: Dict, part: string, platform: string): string
     return `screen.queryByTestId('${c.name as string}.${part}') ?? s.root()`;
   }
   if (platform === 'lit') {
-    const byPart = `deep(root, '[part="${part}"]') ?? deep(root, '[data-part="${part}"]')`;
+    // The host first: prompts/conventions/lit.md puts role and naming attributes on it, and a host that
+    // is the part says so with `part` / `data-part` (Carousel's region). Only then its shadow tree.
+    const onHost = (selector: string): string => `(el.matches('${selector}') ? el : null)`;
+    const byPart = `${onHost(`[part~="${part}"], [data-part="${part}"]`)} ?? deep(root, '[part="${part}"]') ?? deep(root, '[data-part="${part}"]')`;
     if (isPrimary) {
-      const byRole = role ? `deep(root, '[role="${role}"]') ?? ` : '';
+      const byRole = role ? `${onHost(`[role="${role}"]`)} ?? deep(root, '[role="${role}"]') ?? ` : '';
       return `(${byRole}${byPart} ?? root.firstElementChild) as HTMLElement`;
     }
     return `(${byPart}) as HTMLElement`;
@@ -289,6 +468,27 @@ export function keyStroke(chord: string, platform: string): string {
   return modifiers.map((m) => `{${m}>}`).join('') + stroke + [...modifiers].reverse().map((m) => `{/${m}}`).join('');
 }
 
+/** `given` keys that switch the whole component off for a pointer (Button's `loading` is aria-disabled). */
+const DISABLING_PROPS = ['disabled', 'loading'];
+
+/** A list prop whose entries can each be disabled — `items`, `options`, `tabs` shaped `{ …; disabled?: boolean }`. */
+function hasDisableableEntries(c: Dict): boolean {
+  const props = (truthy(c.props) ? c.props : {}) as Dict;
+  return Object.values(props).some((p) => (p as Dict).type === 'array' && /\bdisabled\??\s*:/u.test(pyStr(pyGet(p as Dict, 'shape', ''))));
+}
+
+/** Whether a click on `part` could land on a disabled target: the scenario's `given` disables the component, or
+ *  gives a list with a `disabled: true` entry, or `part` is an item part — any part but the primary one of a
+ *  component whose list entries can be disabled, since the entry the part locator finds may be one of those. */
+export function mayBeDisabled(c: Dict, sc: Dict, part: string): boolean {
+  const given = (truthy(pyGet(sc, 'given', null)) ? sc.given : {}) as Dict;
+  if (DISABLING_PROPS.some((k) => truthy(pyGet(given, k, null)))) return true;
+  const isDisabledEntry = (v: unknown): boolean => v !== null && typeof v === 'object' && (v as Dict).disabled === true;
+  if (Object.values(given).some((v) => Array.isArray(v) && v.some(isDisabledEntry))) return true;
+  const anatomy = (truthy(c.anatomy) ? c.anatomy : []) as string[];
+  return part !== anatomy[0] && hasDisableableEntries(c);
+}
+
 export function whenLines(c: Dict, sc: Dict, platform: string): string[] {
   const when = (pyGet(sc, 'when', null) ?? null) as Dict | null;
   if (!truthy(when)) return [];
@@ -297,14 +497,17 @@ export function whenLines(c: Dict, sc: Dict, platform: string): string[] {
   const [kind, value] = entries[0] as [string, unknown];
 
   if (kind === 'click') {
-    const locator = partLocator(c, value as string, platform);
-    if (platform === 'web') return [`await s.user.click(${locator});`];
-    if (platform === 'rn') return [`fireEvent.press(${locator});`];
+    const target = activatableExpr(c, value as string, platform);
+    // Neither Playwright nor user-event will click a control that looks disabled; a person can, and the doc says
+    // what happens. Forcing an enabled target changes nothing, so any chance of a disabled one forces.
+    const force = mayBeDisabled(c, sc, value as string);
+    if (platform === 'web') return [force ? `await userEvent.setup({ pointerEventsCheck: 0 }).click(${target});` : `await s.user.click(${target});`];
+    if (platform === 'rn') return [`fireEvent.press(${target});`];
     if (platform === 'lit') {
-      // Playwright will not click an aria-disabled control on its own; a person can, and the doc says what happens.
-      const given = (truthy(pyGet(sc, 'given', null)) ? sc.given : {}) as Dict;
-      const force = truthy(pyGet(given, 'disabled', null)) ? ', { force: true }' : '';
-      return [`await userEvent.click(${locator}${force});`];
+      // What the scenario cannot say — a control disabled by state — is checked when the click happens.
+      if (force) return [`await userEvent.click(located(${target}), { force: true });`];
+      const part = partLocator(c, value as string, platform);
+      return [`await userEvent.click(...(await pointerAt(activatable(${part}, s.el), ${part})));`];
     }
   }
 
@@ -356,17 +559,33 @@ export function whenLines(c: Dict, sc: Dict, platform: string): string[] {
 // `then` items → assertion lines
 // ---------------------------------------------------------------------------
 
+/** Web and rn handlers take the declared payload fields as positional arguments, exactly those and in order.
+ *  An object `with` on a payload of two or more fields is keyed by field name; anything else is one argument. */
+function positionalEventLines(mock: string, payload: Dict[] | undefined, value: unknown): string[] {
+  if (payload === undefined || payload.length < 2 || value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return [`expect(${mock}).toHaveBeenCalledWith(${js(value)});`];
+  }
+  const w = value as Dict;
+  const fields = payload.map((f) => f.name as string);
+  if (fields.every((f) => has(w, f))) return [`expect(${mock}).toHaveBeenCalledWith(${fields.map((f) => js(w[f])).join(', ')});`];
+  // A `with` naming only some fields: pin the arity, then each named position.
+  return [
+    `expect(${mock}).toHaveBeenCalledTimes(1);`,
+    `expect(${mock}.mock.calls[0]).toHaveLength(${fields.length});`,
+    ...fields.flatMap((f, i) => (has(w, f) ? [`expect(${mock}.mock.calls[0]?.[${i}]).toEqual(${js(w[f])});`] : [])),
+  ];
+}
+
 export function thenEventLines(c: Dict, item: Dict, platform: string): string[] {
   const name = item.event as string;
   const mock = `s.events.${name}`;
   if (pyGet(item, 'fired', null) === false) return [`expect(${mock}).not.toHaveBeenCalled();`];
   if (has(item, 'with')) {
     const value = item.with as unknown;
-    if (platform === 'web') return [`expect(${mock}).toHaveBeenCalledWith(${js(value)}, expect.anything());`];
-    if (platform === 'rn') return [`expect(${mock}).toHaveBeenCalledWith(${js(value)});`];
+    const payload = (c.events as Dict | undefined)?.[name]?.payload as Dict[] | undefined;
+    if (platform === 'web' || platform === 'rn') return positionalEventLines(mock, payload, value);
     if (platform === 'lit') {
       // A declared one-field payload names the detail key a scalar `with` is.
-      const payload = (c.events as Dict | undefined)?.[name]?.payload as Dict[] | undefined;
       const field = payload?.length === 1 ? (payload[0]?.name as string) : null;
       if (field !== null && (value === null || typeof value !== 'object')) {
         return [`expect(${mock}).toHaveBeenCalledTimes(1);`, `expect(${mock}.mock.calls[0]?.[0]?.detail?.${field}).toEqual(${js(value)});`];
@@ -425,13 +644,13 @@ export function thenFocusedLines(c: Dict, target: string, platform: string): str
   }
   if (platform === 'web') {
     if (target === 'none') return ['expect(document.activeElement === document.body).toBe(true);'];
-    return [`expect(document.activeElement).toBe(${partLocator(c, target, platform)});`];
+    return [`expect(document.activeElement).toBe(focusedPart(${partLocator(c, target, platform)}, ${rootExpr(platform)}));`];
   }
   if (platform === 'lit') {
     // Focus inside nested shadow roots (a composed ds-button inside a dialog) shows up as a chain of hosts;
-    // the part is focused when it, or the host that contains it, is in that chain.
+    // the part is focused when it, or the control it wraps, is in that chain.
     if (target === 'none') return ['expect(activeChain()).not.toContain(s.el);'];
-    return [`expect(activeChain()).toContain(${partLocator(c, target, platform)});`];
+    return [`expect(activeChain()).toContain(focusedPart(${partLocator(c, target, platform)}, ${rootExpr(platform)}));`];
   }
   throw new Unmappable(`then.focused: no mapping for ${platform}`);
 }
@@ -440,7 +659,8 @@ export function thenTextLines(_c: Dict, text: string, platform: string): string[
   const rx = regexExpr(text);
   if (platform === 'web') return [`expect(screen.getByText(${rx})).toBeInTheDocument();`];
   if (platform === 'rn') return [`expect(screen.getByText(${rx})).toBeOnTheScreen();`];
-  if (platform === 'lit') return [`expect(s.el.shadowRoot!.textContent).toMatch(${rx});`];
+  // The host's flat tree: its shadow text, the content slotted into it, and composed ds-* children's own shadow text.
+  if (platform === 'lit') return [`expect(flatText(s.el)).toMatch(${rx});`];
   throw new Unmappable(`then.text: no mapping for ${platform}`);
 }
 
@@ -454,15 +674,20 @@ export function thenCopyLines(c: Dict, key: string, platform: string): string[] 
 export function thenRoleLines(_c: Dict, role: string, platform: string): string[] {
   if (platform === 'web') return [`expect(screen.getByRole('${role}')).toBeInTheDocument();`];
   if (platform === 'rn') return [`expect(screen.getByRole('${role}')).toBeOnTheScreen();`];
-  if (platform === 'lit') return [`expect(s.el.shadowRoot!.querySelector('[role="${role}"]')).not.toBeNull();`];
+  if (platform === 'lit') {
+    // The host itself (where prompts/conventions/lit.md puts the role), else its shadow tree, else its light DOM
+    // children — slotted content, such as Tooltip's role="tooltip" bubble.
+    const sel = `'[role="${role}"]'`;
+    return [`expect(s.el.matches(${sel}) || deep(s.root, ${sel}) !== null || deep(s.el, ${sel}) !== null).toBe(true);`];
+  }
   throw new Unmappable(`then.role: no mapping for ${platform}`);
 }
 
 /** `name: true` asserts the name the naming prop gives (or any non-empty one); `name: '<text>'` that exact name. */
 export function thenNameLines(c: Dict, platform: string, name: true | string = true): string[] {
-  const role = concreteRole(c);
+  const role = concreteRole(c, platform);
   if (role === null) {
-    const shown = c.a11y.roleFrom !== undefined ? `from prop '${c.a11y.roleFrom as string}'` : `'${resolveRole(c) as string}'`;
+    const shown = c.a11y.roleFrom !== undefined ? `from prop '${c.a11y.roleFrom as string}'` : `'${resolveRole(c, undefined, platform) as string}'`;
     throw new Unmappable(`then.name: role ${shown} cannot be queried; name the landmark/text role in the doc`);
   }
   const nameProp = accessibleNameProp(c);
@@ -476,9 +701,11 @@ export function thenNameLines(c: Dict, platform: string, name: true | string = t
     return [`expect(screen.getByRole('${role}')).toBeOnTheScreen();`];
   }
   if (platform === 'lit') {
+    // The host's own aria-label / aria-labelledby first; only a host that names nothing defers to the part.
     const target = partLocator(c, primaryPart(c), platform);
-    if (expected) return [`expect(${target}).toHaveAccessibleName(${expected});`];
-    return [`expect(${target}).toHaveAccessibleName();`];
+    // hostName() is null or non-empty, so with no expected name a named host has already passed.
+    if (!expected) return [`if (hostName(s.el) === null) expect(${target}).toHaveAccessibleName();`];
+    return [`if (hostName(s.el) !== null) expect(hostName(s.el)).toBe(${expected});`, `else expect(${target}).toHaveAccessibleName(${expected});`];
   }
   throw new Unmappable(`then.name: no mapping for ${platform}`);
 }
@@ -561,7 +788,7 @@ export function scenarioBlock(c: Dict, sc: Dict, platform: string): string {
   let when: string[] = [];
   let then: string[] = [];
   try {
-    const role = resolveRole(c, effectiveGiven(c, sc));
+    const role = resolveRole(c, effectiveGiven(c, sc), platform);
     if (role !== null && HOVER_ROLES.has(role) && needsSurface(sc)) {
       if (platform === 'rn') throw new Unmappable(`role '${role}' needs its trigger hovered or focused; covered by the Keyboard story`);
       // The trigger is the first anatomy part; a scenario with its own interaction performs that instead, and one
@@ -872,7 +1099,7 @@ export function swiftScenarioBlock(c: Dict, sc: Dict, used: Set<string>): string
   let then: string[] = [];
   let args: string[] = [];
   try {
-    const role = resolveRole(c, given);
+    const role = resolveRole(c, given, 'swiftui');
     if (role !== null && HOVER_ROLES.has(role) && needsSurface(sc)) {
       throw new Unmappable(`role '${role}' needs its trigger hovered or focused; covered by the Keyboard story`);
     }
@@ -952,6 +1179,17 @@ function needsRegexHelper(scenarios: Dict[]): boolean {
   return scenarios.some((sc) => (sc.then as Dict[]).some((item) => has(item, 'text') || has(item, 'copy')));
 }
 
+/** A `then.name` needs Lit's `hostName`, and it or a text/copy assertion needs `flatText`. */
+function needsHostNameHelper(scenarios: Dict[]): boolean {
+  return scenarios.some((sc) => (sc.then as Dict[]).some((item) => has(item, 'name')));
+}
+
+/** A click, or a focused part, needs `activatable` (and `focusedPart`). */
+function needsActivatableHelper(scenarios: Dict[]): boolean {
+  return scenarios.some((sc) => has((truthy(pyGet(sc, 'when', null)) ? sc.when : {}) as Dict, 'click')
+    || (sc.then as Dict[]).some((item) => has(item, 'focused') && !['moved', 'unchanged', 'none'].includes(item.focused as string)));
+}
+
 /** A key press needs `focusInto`, which is emitted only where it is used. */
 function needsFocusHelper(scenarios: Dict[]): boolean {
   return scenarios.some((sc) => has((truthy(pyGet(sc, 'when', null)) ? sc.when : {}) as Dict, 'key'));
@@ -974,6 +1212,7 @@ export function webFile(c: Dict, scenarios: Dict[]): string {
   ];
   if (needsRegexHelper(scenarios)) lines.push(ESCAPE_REGEXP_HELPER);
   if (needsFocusHelper(scenarios)) lines.push(FOCUS_INTO_HELPER);
+  if (needsActivatableHelper(scenarios)) lines.push(WEB_ACTIVATABLE_HELPER);
   lines.push(`function setup(given: Partial<${name}Props> = {}) {`);
   if (truthy(events)) {
     lines.push('  const events = {');
@@ -1020,6 +1259,7 @@ export function rnFile(c: Dict, scenarios: Dict[]): string {
     '',
   ];
   if (needsRegexHelper(scenarios)) lines.push(ESCAPE_REGEXP_HELPER);
+  if (needsActivatableHelper(scenarios)) lines.push(RN_ACTIVATABLE_HELPER);
   lines.push(`function setup(given: Partial<${name}Props> = {}) {`);
   if (truthy(events)) {
     lines.push('  const events = {');
@@ -1062,14 +1302,18 @@ export function litFile(c: Dict, scenarios: Dict[]): string {
   const lines: string[] = [
     `// Generated by tools/behavior_tests.ts from the \`behavior\` block of the ${name} doc. Do not edit.`,
     "import { beforeEach, describe, expect, test, vi } from 'vitest';",
-    "import { userEvent } from 'vitest/browser';",
+    // `located` (LIT_ACTIVATABLE_HELPER) builds its locators from `page`.
+    needsActivatableHelper(scenarios) ? "import { page, userEvent } from 'vitest/browser';\nimport type { Locator } from 'vitest/browser';" : "import { userEvent } from 'vitest/browser';",
     `import '${src}/${name}.js';`,
     `import meta from '${src}/${name}.stories.js';`,
     '',
   ];
   if (needsRegexHelper(scenarios)) lines.push(ESCAPE_REGEXP_HELPER);
   lines.push(DEEP_QUERY_HELPER);
+  if (needsRegexHelper(scenarios) || needsHostNameHelper(scenarios)) lines.push(FLAT_TEXT_HELPER);
+  if (needsHostNameHelper(scenarios)) lines.push(HOST_NAME_HELPER);
   lines.push(ACTIVE_CHAIN_HELPER);
+  if (needsActivatableHelper(scenarios)) lines.push(LIT_ACTIVATABLE_HELPER);
   lines.push('async function setup(given: Record<string, unknown> = {}) {');
   lines.push(`  const el = document.createElement('${tag}');`);
   lines.push('  const props = { ...meta.args, ...given };');

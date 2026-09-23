@@ -188,7 +188,7 @@ describe('dry run', () => {
     const out = std.out();
     expect(out).toContain(
       `  $ node --import tsx tools/gap_digest.ts --phase Primitives\n` +
-        `  $ claude -p --model sonnet --permission-mode acceptEdits --allowedTools "${regen.FOLD_ALLOWED_TOOLS}" < prompts/fold-gaps.md\n` +
+        `  $ claude -p --model sonnet --permission-mode acceptEdits --allowedTools "${regen.FOLD_ALLOWED_TOOLS}" --disallowedTools "${regen.FOLD_DISALLOWED_TOOLS}" < prompts/fold-gaps.md\n` +
         '  $ pnpm parse\n',
     );
     expect(out).not.toContain('stops here');
@@ -332,7 +332,7 @@ describe('auto-fold with fakes', () => {
     });
     expect(await regen.main(['--from', 'Streams', '--auto-fold'])).toBe(0);
     const claude = calls.find((c) => c.cmd === '/fake/bin/claude');
-    expect(claude?.args).toEqual(['-p', '--model', 'sonnet', '--permission-mode', 'acceptEdits', '--allowedTools', regen.FOLD_ALLOWED_TOOLS]);
+    expect(claude?.args).toEqual(['-p', '--model', 'sonnet', '--permission-mode', 'acceptEdits', '--allowedTools', regen.FOLD_ALLOWED_TOOLS, '--disallowedTools', regen.FOLD_DISALLOWED_TOOLS]);
     expect(claude?.input).toBe(readFileSync(join(REPO_ROOT, 'prompts', 'fold-gaps.md'), 'utf8'));
     expect(lockedDuringFold).toBe(true);
     expect(existsSync(regen.paths.FOLD_LOCK)).toBe(false);
@@ -400,6 +400,19 @@ describe('parity with regen.ps1', () => {
   test('the auto-fold --allowedTools string is FOLD_ALLOWED_TOOLS', () => {
     const allowed = [...ps1.matchAll(/--allowedTools "([^"]+)"/g)].map((m) => m[1]);
     expect(allowed).toEqual([regen.FOLD_ALLOWED_TOOLS]);
+    const denied = [...ps1.matchAll(/--disallowedTools "([^"]+)"/g)].map((m) => m[1]);
+    expect(denied).toEqual([regen.FOLD_DISALLOWED_TOOLS]);
+  });
+
+  test('the fold allow list covers the fold prompt and nothing that deletes, pushes or installs', () => {
+    const entries = regen.FOLD_ALLOWED_TOOLS.split(',');
+    for (const need of ['Bash(node --import tsx tools/*)', 'Bash(node logs/*.mjs)', 'Bash(pnpm parse)', 'Bash(pnpm commit*)', 'Bash(grep:*)', 'Bash(ls:*)', 'Bash(awk:*)']) {
+      expect(entries).toContain(need);
+    }
+    for (const broad of ['Bash(pnpm *)', 'Bash(git *)', 'Bash(*)', 'Bash']) expect(entries).not.toContain(broad);
+    expect(entries.filter((e) => /\b(rm|push|install|add|dlx|npx|curl|wget)\b/.test(e))).toEqual([]);
+    const denied = regen.FOLD_DISALLOWED_TOOLS.split(',');
+    for (const deny of ['WebFetch', 'WebSearch', 'Bash(rm:*)', 'Bash(git push:*)']) expect(denied).toContain(deny);
   });
 });
 

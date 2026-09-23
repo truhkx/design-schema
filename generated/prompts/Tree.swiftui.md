@@ -1112,6 +1112,7 @@ component:
 - `ArrowLeft` (On an open parent: closes it. Otherwise: moves to the parent; when the parent is disabled, focus stays put.): expect manual
 - `Home` (First node.): expect focus-first
 - `End` (Last visible node.): expect focus-last
+- `Enter` (Activates the node (onActivate, or follows href); with `selectable: single`, also selects it first. An href node is followed by clicking its composed link (so the page's click routing sees it) and does not fire onActivate.): expect manual
 - ` ` (Selects (single) or toggles selection (multiple) of the focused node. On rn a tap on the row does this instead — Pressable has no key events.): expect manual
 - `*` (Opens every enabled sibling of the focused node, the focused node included; lazy siblings open and fire onExpand.): expect manual
 - `Shift+ArrowDown`, `Shift+ArrowUp` (Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range). Outside `multiple` they act as plain arrows.): expect manual

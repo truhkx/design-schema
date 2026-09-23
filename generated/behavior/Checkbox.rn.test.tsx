@@ -10,6 +10,21 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<CheckboxProps> = {}) {
   const events = {
     onChange: jest.fn(),
@@ -37,25 +52,25 @@ function setup(given: Partial<CheckboxProps> = {}) {
 describe('Checkbox', () => {
   test('click-on-control-toggles-on', () => {
     const s = setup({});
-    fireEvent.press(s.control());
+    fireEvent.press(activatable(s.control(), s.root()));
     expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.control()).toBeChecked();
   });
   test('click-on-label-toggles', () => {
     const s = setup({});
-    fireEvent.press(s.label());
+    fireEvent.press(activatable(s.label(), s.root()));
     expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.control()).toBeChecked();
   });
   test('click-on-description-toggles', () => {
     const s = setup({"description": "One email a month about new features."});
-    fireEvent.press(s.description());
+    fireEvent.press(activatable(s.description(), s.root()));
     expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.control()).toBeChecked();
   });
   test('toggles-back-off', () => {
     const s = setup({"defaultChecked": true});
-    fireEvent.press(s.control());
+    fireEvent.press(activatable(s.control(), s.root()));
     expect(s.events.onChange).toHaveBeenCalledWith(false);
     expect(s.control()).not.toBeChecked();
   });
@@ -65,7 +80,7 @@ describe('Checkbox', () => {
   });
   test('disabled-does-not-toggle', () => {
     const s = setup({"disabled": true});
-    fireEvent.press(s.control());
+    fireEvent.press(activatable(s.control(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
     expect(s.control()).not.toBeChecked();
     expect(s.control()).toBeDisabled();
@@ -80,7 +95,7 @@ describe('Checkbox', () => {
   });
   test('controlled-follows-prop', () => {
     const s = setup({"checked": false});
-    fireEvent.press(s.control());
+    fireEvent.press(activatable(s.control(), s.root()));
     expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.control()).not.toBeChecked();
   });

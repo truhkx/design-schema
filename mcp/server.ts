@@ -489,6 +489,7 @@ export const GET_KEYBOARD_MODEL_DOC =
   'requirements the rules imply. A rule may also carry given (props the story renders with for it),\n' +
   'target (the anatomy part closes/opens assert on), repeat (presses before asserting), platforms (where\n' +
   'it applies) and native (the rendered element\'s own behavior, which generators do not implement).\n' +
+  'platformRoles maps a platform to the role its root renders there when that is not role (e.g. rn: list).\n' +
   'autoTested, manual and native count keys: native is the manual rules marked native, not in manual.';
 
 export const getKeyboardModel = logged('get_keyboard_model', ['component'], (args: { component: string }): Dict => {
@@ -499,9 +500,12 @@ export const getKeyboardModel = logged('get_keyboard_model', ['component'], (arg
   const keys = (rule: Dict): number => (rule.keys as string[]).length;
   const count = (test: (rule: Dict) => boolean): number => rules.filter(test).reduce((n, r) => n + keys(r), 0);
   const isManual = (rule: Dict): boolean => expectList(rule).includes('manual');
+  const platforms = (pyGet(c, 'platforms', null) as Dict | null) ?? {};
+  const platformRoles = Object.keys(platforms).filter((p) => (platforms[p] as Dict | null)?.role !== undefined);
   return {
     component: c.name, apg: pyGet(c, 'apg', null), role: resolveRole(c),
     ...(has(c.a11y as Dict, 'roleFrom') ? { roleFrom: (c.a11y as Dict).roleFrom } : {}),
+    ...(platformRoles.length ? { platformRoles: Object.fromEntries(platformRoles.map((p) => [p, resolveRole(c, undefined, p)])) } : {}),
     requires: ((c.a11y as Dict).requires as string[]).filter((r) => wanted.includes(r)),
     rules,
     autoTested: count((r) => !isManual(r)),

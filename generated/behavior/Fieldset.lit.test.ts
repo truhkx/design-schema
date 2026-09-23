@@ -21,6 +21,25 @@ function deep(root: ParentNode, selector: string): Element | null {
   return null;
 }
 
+function flatText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return (node as Text).data;
+  if (node instanceof HTMLStyleElement || node instanceof HTMLScriptElement) return '';
+  if (node instanceof HTMLSlotElement) return node.assignedNodes({ flatten: true }).map(flatText).join('');
+  const scope: Node = (node as HTMLElement).shadowRoot ?? node;
+  return Array.from(scope.childNodes).map(flatText).join('');
+}
+
+function hostName(el: Element): string | null {
+  const label = el.getAttribute('aria-label')?.trim();
+  if (label) return label;
+  const ids = el.getAttribute('aria-labelledby')?.trim();
+  if (!ids) return null;
+  const scope = el.getRootNode() as Document | ShadowRoot;
+  const named = ids.split(/\s+/).map((id) => scope.getElementById(id)).filter((n): n is HTMLElement => n !== null);
+  const text = named.map((n) => flatText(n).replace(/\s+/g, ' ').trim()).join(' ').trim();
+  return text || null;
+}
+
 /** Every element that is "active" from the document down through shadow roots: the host, then the inner one.
  *  document.activeElement alone is a shadow host while focus sits inside its shadow tree. */
 function activeChain(): Element[] {
@@ -58,7 +77,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    group: () => (deep(root, '[role="group"]') ?? deep(root, '[part="group"]') ?? deep(root, '[data-part="group"]') ?? root.firstElementChild) as HTMLElement,
+    group: () => ((el.matches('[role="group"]') ? el : null) ?? deep(root, '[role="group"]') ?? (el.matches('[part~="group"], [data-part="group"]') ? el : null) ?? deep(root, '[part="group"]') ?? deep(root, '[data-part="group"]') ?? root.firstElementChild) as HTMLElement,
   };
   return s;
 }
@@ -70,16 +89,17 @@ beforeEach(() => {
 describe('ds-fieldset', () => {
   test('the-legend-names-the-group', async () => {
     const s = await setup({"legend": "Delivery window"});
-    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Delivery\\ window"));
-    expect(s.group()).toHaveAccessibleName("Delivery window");
+    expect(flatText(s.el)).toMatch(new RegExp("Delivery\\ window"));
+    if (hostName(s.el) !== null) expect(hostName(s.el)).toBe("Delivery window");
+    else expect(s.group()).toHaveAccessibleName("Delivery window");
   });
   test('the-description-is-rendered', async () => {
     const s = await setup({"description": "We only ship within the EU."});
-    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("We\\ only\\ ship\\ within\\ the\\ EU\\."));
+    expect(flatText(s.el)).toMatch(new RegExp("We\\ only\\ ship\\ within\\ the\\ EU\\."));
   });
   test('a-group-error-is-announced', async () => {
     const s = await setup({"error": "End date must be after start date."});
-    expect(s.el.shadowRoot!.querySelector('[role="alert"]')).not.toBeNull();
+    expect(s.el.matches('[role="alert"]') || deep(s.root, '[role="alert"]') !== null || deep(s.el, '[role="alert"]') !== null).toBe(true);
   });
   test('a-disabled-group-is-marked-disabled', async () => {
     const s = await setup({"disabled": true});
@@ -103,11 +123,12 @@ describe('ds-fieldset', () => {
   });
   test('has-accessible-name', async () => {
     const s = await setup({});
-    expect(s.group()).toHaveAccessibleName(s.props.legend);
+    if (hostName(s.el) !== null) expect(hostName(s.el)).toBe(s.props.legend);
+    else expect(s.group()).toHaveAccessibleName(s.props.legend);
   });
   test('error-is-identified', async () => {
     const s = await setup({"error": "Fix this before continuing."});
-    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Fix\\ this\\ before\\ continuing\\."));
+    expect(flatText(s.el)).toMatch(new RegExp("Fix\\ this\\ before\\ continuing\\."));
     expect(s.group()).toHaveAttribute('aria-invalid', 'true');
   });
 });

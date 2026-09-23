@@ -6,6 +6,21 @@ import type { MenuProps } from '../../packages/rn/src/Menu';
 import meta from '../../packages/rn/src/Menu.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<MenuProps> = {}) {
   const events = {
     onAction: jest.fn(),
@@ -33,13 +48,13 @@ function setup(given: Partial<MenuProps> = {}) {
 describe('Menu', () => {
   test('choosing-an-item-reports-the-action-and-the-close', () => {
     const s = setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename"}, {"id": "duplicate", "label": "Duplicate"}]});
-    fireEvent.press(s.item());
+    fireEvent.press(activatable(s.item(), s.root()));
     expect(s.events.onAction).toHaveBeenCalled();
     expect(s.events.onOpenChange).toHaveBeenCalled();
   });
   test('a-disabled-item-does-nothing', () => {
     const s = setup({"open": true, "label": "More actions", "items": [{"id": "rename", "label": "Rename", "disabled": true}, {"id": "duplicate", "label": "Duplicate"}]});
-    fireEvent.press(s.item());
+    fireEvent.press(activatable(s.item(), s.root()));
     expect(s.events.onAction).not.toHaveBeenCalled();
   });
   test('the-popup-is-a-menu', () => {

@@ -6,6 +6,21 @@ import type { CarouselProps } from '../../packages/rn/src/Carousel';
 import meta from '../../packages/rn/src/Carousel.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<CarouselProps> = {}) {
   const events = {
     onChange: jest.fn(),
@@ -34,22 +49,22 @@ function setup(given: Partial<CarouselProps> = {}) {
 describe('Carousel', () => {
   test('next-advances-a-slide', () => {
     const s = setup({});
-    fireEvent.press(s.nextButton());
+    fireEvent.press(activatable(s.nextButton(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('previous-at-the-first-slide-does-nothing', () => {
     const s = setup({});
-    fireEvent.press(s.prevButton());
+    fireEvent.press(activatable(s.prevButton(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
   });
   test('loop-wraps-backwards-from-the-first-slide', () => {
     const s = setup({"loop": true});
-    fireEvent.press(s.prevButton());
+    fireEvent.press(activatable(s.prevButton(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('the-picker-jumps-straight-to-a-slide', () => {
     const s = setup({"activeIndex": 1, "picker": "dots"});
-    fireEvent.press(s.pickerItem());
+    fireEvent.press(activatable(s.pickerItem(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('renders', () => {

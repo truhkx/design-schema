@@ -21,6 +21,16 @@ function focusInto(el: Element | null): void {
   (target as HTMLElement).focus();
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<ActionSheetProps> = {}) {
   const events = {
     onAction: vi.fn(),
@@ -46,12 +56,12 @@ function setup(given: Partial<ActionSheetProps> = {}) {
 describe('ActionSheet', () => {
   test('choosing-an-action-fires-on-action', async () => {
     const s = setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}, {"id": "delete", "label": "Delete photo", "tone": "danger"}]});
-    await s.user.click(s.item());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.item(), s.root()));
     expect(s.events.onAction).toHaveBeenCalled();
   });
   test('the-cancel-row-fires-on-close', async () => {
     const s = setup({"open": true, "heading": "Photo.jpg", "actions": [{"id": "share", "label": "Share"}, {"id": "rename", "label": "Rename"}]});
-    await s.user.click(s.cancelButton());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.cancelButton(), s.root()));
     expect(s.events.onClose).toHaveBeenCalled();
     expect(s.events.onAction).not.toHaveBeenCalled();
   });

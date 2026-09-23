@@ -7,6 +7,7 @@ import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentProps } from 'react';
 import { DatePicker, type DatePickerProps } from './DatePicker';
+import { Form } from './Form';
 import meta from './DatePicker.stories';
 
 /** The Default story's args plus the scenario's `given`, with a mock for every event prop. */
@@ -92,5 +93,30 @@ describe('DatePicker', () => {
     const s = setup({ error: 'Fix this before continuing.' });
     expect(screen.getByText('Fix this before continuing.')).toBeInTheDocument();
     expect(s.input()).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  /*
+   * Platform test, not a scenario: under `validate: submit` a failed submission makes the field
+   * re-validate on change and blur, so a picked date clears the required error (the Form's `submitFailed`).
+   */
+  it('clears-its-error-once-corrected-after-a-failed-submit', async () => {
+    const user = userEvent.setup();
+    render(
+      <Form validate="submit" errorSummary={false} actions={<button type="submit">Save</button>}>
+        <DatePicker label="Due date" name="due" required />
+      </Form>,
+    );
+    const input = screen.getByRole('textbox', { name: /Due date/ });
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    // Type a date in the input's own pattern (its placeholder: `MM/DD/YYYY`, `DD.MM.YYYY`, …).
+    const typed = input
+      .getAttribute('placeholder')!
+      .replace(/Y+/i, '2026')
+      .replace(/M+/, '09')
+      .replace(/D+/i, '15');
+    await user.type(input, typed);
+    await user.tab();
+    expect(input).not.toHaveAttribute('aria-invalid');
   });
 });

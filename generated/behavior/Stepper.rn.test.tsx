@@ -10,6 +10,21 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<StepperProps> = {}) {
   const events = {
     onStepSelect: jest.fn(),
@@ -36,17 +51,17 @@ function setup(given: Partial<StepperProps> = {}) {
 describe('Stepper', () => {
   test('click-on-a-completed-step-reports-it', () => {
     const s = setup({"navigable": "completed", "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}, {"id": "confirm", "label": "Confirmation"}]});
-    fireEvent.press(s.indicator());
+    fireEvent.press(activatable(s.indicator(), s.root()));
     expect(s.events.onStepSelect).toHaveBeenCalledWith("shipping");
   });
   test('the-current-step-is-not-navigable', () => {
     const s = setup({"navigable": "completed", "current": "shipping", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}]});
-    fireEvent.press(s.indicator());
+    fireEvent.press(activatable(s.indicator(), s.root()));
     expect(s.events.onStepSelect).not.toHaveBeenCalled();
   });
   test('display-only-steps-report-nothing', () => {
     const s = setup({"navigable": "none", "current": "payment", "steps": [{"id": "shipping", "label": "Shipping address"}, {"id": "payment", "label": "Payment"}, {"id": "review", "label": "Review order"}]});
-    fireEvent.press(s.indicator());
+    fireEvent.press(activatable(s.indicator(), s.root()));
     expect(s.events.onStepSelect).not.toHaveBeenCalled();
   });
   test('compact-shows-the-step-count', () => {

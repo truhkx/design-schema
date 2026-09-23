@@ -10,6 +10,21 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<SwitchProps> = {}) {
   const events = {
     onChange: jest.fn(),
@@ -37,38 +52,38 @@ function setup(given: Partial<SwitchProps> = {}) {
 describe('Switch', () => {
   test('click-on-track-toggles-on', () => {
     const s = setup({});
-    fireEvent.press(s.track());
+    fireEvent.press(activatable(s.track(), s.root()));
     expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.track()).toBeChecked();
   });
   test('click-on-label-toggles', () => {
     const s = setup({});
-    fireEvent.press(s.label());
+    fireEvent.press(activatable(s.label(), s.root()));
     expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.track()).toBeChecked();
   });
   test('click-on-description-toggles', () => {
     const s = setup({"description": "Sends a daily summary at 9:00."});
-    fireEvent.press(s.description());
+    fireEvent.press(activatable(s.description(), s.root()));
     expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.track()).toBeChecked();
   });
   test('toggles-back-off', () => {
     const s = setup({"defaultChecked": true});
-    fireEvent.press(s.track());
+    fireEvent.press(activatable(s.track(), s.root()));
     expect(s.events.onChange).toHaveBeenCalledWith(false);
     expect(s.track()).not.toBeChecked();
   });
   test('disabled-does-not-toggle', () => {
     const s = setup({"disabled": true});
-    fireEvent.press(s.track());
+    fireEvent.press(activatable(s.track(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
     expect(s.track()).not.toBeChecked();
     expect(s.track()).toBeDisabled();
   });
   test('controlled-follows-prop', () => {
     const s = setup({"checked": false});
-    fireEvent.press(s.track());
+    fireEvent.press(activatable(s.track(), s.root()));
     expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.track()).not.toBeChecked();
   });
@@ -83,7 +98,7 @@ describe('Switch', () => {
   });
   test('label-at-the-end-still-toggles-the-row', () => {
     const s = setup({"labelPosition": "end"});
-    fireEvent.press(s.label());
+    fireEvent.press(activatable(s.label(), s.root()));
     expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.track()).toBeChecked();
   });

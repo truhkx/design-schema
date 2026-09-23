@@ -519,6 +519,7 @@ component:
         under `prefers-reduced-motion`), which is the feed''s only motion on this
         platform. Composed `load-more`, `show-new`, `item-visible`.'
     rn:
+      role: list
       element: FlatList
       props:
       - accessibilityRole=list
@@ -735,6 +736,14 @@ component:
 - `emptyStateInset`: token `layout.inset.md`; part `emptyState`
 - `emptyStateColor`: token `color.foreground.muted`; part `emptyState`; locked
 - `emptyStateSize`: token `font.size.sm`; part `emptyState`
+
+## Keyboard
+
+- `Tab` (Moves through interactive content inside the current article and on to the next article's content in reading order; articles are focusable but never tab stops (Card `focusable` renders `tabindex="-1"`, so a hundred cards are not a hundred stops), and focus reaches one by pointer, by Ctrl+Home/End returning, or through a screen reader's browse mode — the feed commands below act from there.): expect focus-next
+- `PageDown` (Moves focus to the next article (the APG feed command).): expect manual
+- `PageUp` (Moves focus to the previous article.): expect manual
+- `Control+End` (Moves focus to the first focusable element after the feed in the document; with `hasMore`, instead triggers a load, or does nothing while `loading` (press again once it has loaded and `hasMore` is false). Feed commands act only from inside an article, not from the new-items button. The key is always consumed there, the `loading` case included, so a feed command never falls through to the browser's scroll to the end of the document.): expect manual
+- `Control+Home` (Moves focus to the new-items button when shown, else to the last focusable element before the feed in the document.): expect manual
 
 ## Copy
 

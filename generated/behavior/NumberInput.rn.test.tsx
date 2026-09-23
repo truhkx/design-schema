@@ -10,6 +10,21 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<NumberInputProps> = {}) {
   const events = {
     onChange: jest.fn(),
@@ -37,12 +52,12 @@ function setup(given: Partial<NumberInputProps> = {}) {
 describe('NumberInput', () => {
   test('the-increment-button-steps-up', () => {
     const s = setup({"defaultValue": 5, "step": 1});
-    fireEvent.press(s.incrementButton());
+    fireEvent.press(activatable(s.incrementButton(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('the-decrement-button-steps-down', () => {
     const s = setup({"defaultValue": 5, "step": 1});
-    fireEvent.press(s.decrementButton());
+    fireEvent.press(activatable(s.decrementButton(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('typing-a-number-reports-it', () => {
@@ -52,12 +67,12 @@ describe('NumberInput', () => {
   });
   test('decrement-does-nothing-at-the-minimum', () => {
     const s = setup({"defaultValue": 0, "min": 0, "max": 10});
-    fireEvent.press(s.decrementButton());
+    fireEvent.press(activatable(s.decrementButton(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
   });
   test('a-disabled-field-does-not-step', () => {
     const s = setup({"disabled": true, "defaultValue": 5});
-    fireEvent.press(s.incrementButton());
+    fireEvent.press(activatable(s.incrementButton(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
   });
   test('renders', () => {

@@ -54,7 +54,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    surface: () => (deep(root, '[part="surface"]') ?? deep(root, '[data-part="surface"]') ?? root.firstElementChild) as HTMLElement,
+    surface: () => ((el.matches('[part~="surface"], [data-part="surface"]') ? el : null) ?? deep(root, '[part="surface"]') ?? deep(root, '[data-part="surface"]') ?? root.firstElementChild) as HTMLElement,
   };
   return s;
 }
@@ -66,11 +66,11 @@ beforeEach(() => {
 describe('ds-box', () => {
   test('nav-element-carries-navigation-semantics', async () => {
     const s = await setup({"element": "nav"});
-    expect(s.el.shadowRoot!.querySelector('[role="navigation"]')).not.toBeNull();
+    expect(s.el.matches('[role="navigation"]') || deep(s.root, '[role="navigation"]') !== null || deep(s.el, '[role="navigation"]') !== null).toBe(true);
   });
   test('article-element-carries-article-semantics', async () => {
     const s = await setup({"element": "article"});
-    expect(s.el.shadowRoot!.querySelector('[role="article"]')).not.toBeNull();
+    expect(s.el.matches('[role="article"]') || deep(s.root, '[role="article"]') !== null || deep(s.el, '[role="article"]') !== null).toBe(true);
   });
   test('renders', async () => {
     const s = await setup({});

@@ -54,7 +54,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    text: () => (deep(root, '[part="text"]') ?? deep(root, '[data-part="text"]') ?? root.firstElementChild) as HTMLElement,
+    text: () => ((el.matches('[part~="text"], [data-part="text"]') ? el : null) ?? deep(root, '[part="text"]') ?? deep(root, '[data-part="text"]') ?? root.firstElementChild) as HTMLElement,
   };
   return s;
 }

@@ -664,6 +664,7 @@ component:
         has no interaction-end hook, so under `validate: blur` ds-slider is a plain
         `data-ds-field` and validates on focusout, not on pointer release.'
     rn:
+      role: adjustable
       element: View
       props:
       - accessibilityRole=adjustable
@@ -958,6 +959,15 @@ component:
 - `minTarget`: token `size.target.comfortable`; part `thumb`; locked
 - `focusRing`: token `color.border.focus`; part `thumb`; locked
 - `focusRingWidth`: token `border.width.focus`; part `thumb`; locked
+
+## Keyboard
+
+- `ArrowRight`, `ArrowUp` (Increases by `step`. ArrowRight is mirrored in a right-to-left layout (it decreases there), read from the thumb's — on Lit the host's — computed `direction` at keydown, as in Tabs and SegmentedControl; ArrowUp always increases.): expect manual
+- `ArrowLeft`, `ArrowDown` (Decreases by `step`. ArrowLeft is mirrored in a right-to-left layout (it increases there); ArrowDown always decreases.): expect manual
+- `PageUp`, `PageDown` (Changes by ten steps, clamped to the bounds (with `snapToMarks`, to the next mark, and to `max`/`min` past the last mark). Not mirrored in right-to-left.): expect manual
+- `Home` (Sets the minimum — for a range thumb the live constraint from the other thumb, not `min`, so the action can never cross the thumbs.): expect manual
+- `End` (Sets the maximum — for a range thumb the live constraint from the other thumb, not `max`.): expect manual
+- `Tab` (Moves between the two thumbs of a range slider; each thumb is a tab stop.): expect focus-next
 
 ## Form and overlay
 

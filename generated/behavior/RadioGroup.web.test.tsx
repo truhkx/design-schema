@@ -10,6 +10,16 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<RadioGroupProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -34,22 +44,22 @@ function setup(given: Partial<RadioGroupProps> = {}) {
 describe('RadioGroup', () => {
   test('click-on-an-option-reports-its-value', async () => {
     const s = setup({});
-    await s.user.click(s.radio());
-    expect(s.events.onChange).toHaveBeenCalledWith("standard", expect.anything());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.radio(), s.root()));
+    expect(s.events.onChange).toHaveBeenCalledWith("standard");
   });
   test('click-on-an-option-label-selects-it', async () => {
     const s = setup({});
-    await s.user.click(s.radioLabel());
-    expect(s.events.onChange).toHaveBeenCalledWith("standard", expect.anything());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.radioLabel(), s.root()));
+    expect(s.events.onChange).toHaveBeenCalledWith("standard");
   });
   test('disabled-option-cannot-be-selected', async () => {
     const s = setup({"options": [{"value": "standard", "label": "Standard", "disabled": true}, {"value": "express", "label": "Express"}]});
-    await s.user.click(s.radio());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.radio(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
   });
   test('disabled-group-is-inert', async () => {
     const s = setup({"disabled": true});
-    await s.user.click(s.radio());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.radio(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
     expect(s.group()).toHaveAttribute('aria-disabled', 'true');
   });

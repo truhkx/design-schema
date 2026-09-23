@@ -10,6 +10,21 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<ComboboxProps> = {}) {
   const events = {
     onChange: jest.fn(),
@@ -45,7 +60,7 @@ describe('Combobox', () => {
   });
   test('the-toggle-button-opens-the-list', () => {
     const s = setup({"open": false});
-    fireEvent.press(s.toggleButton());
+    fireEvent.press(activatable(s.toggleButton(), s.root()));
     expect(s.events.onOpenChange).toHaveBeenCalled();
   });
   test('a-closed-combobox-is-not-expanded', () => {
@@ -58,7 +73,7 @@ describe('Combobox', () => {
   });
   test('the-clear-button-clears-the-value', () => {
     const s = setup({"open": false, "defaultValue": "apple", "clearable": true});
-    fireEvent.press(s.clearButton());
+    fireEvent.press(activatable(s.clearButton(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('multiple-shows-the-selection-as-chips', () => {
@@ -67,12 +82,12 @@ describe('Combobox', () => {
   });
   test('removing-a-chip-reports-the-new-value', () => {
     const s = setup({"open": false, "multiple": true, "defaultValue": ["apple"]});
-    fireEvent.press(s.chipRemove());
+    fireEvent.press(activatable(s.chipRemove(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
   });
   test('a-disabled-combobox-does-not-open', () => {
     const s = setup({"open": false, "disabled": true});
-    fireEvent.press(s.toggleButton());
+    fireEvent.press(activatable(s.toggleButton(), s.root()));
     expect(s.events.onOpenChange).not.toHaveBeenCalled();
   });
   test('renders', () => {

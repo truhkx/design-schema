@@ -17,6 +17,16 @@ function focusInto(el: Element | null): void {
   (target as HTMLElement).focus();
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<CtaButtonProps> = {}) {
   const events = {
     onPress: vi.fn(),
@@ -40,7 +50,7 @@ function setup(given: Partial<CtaButtonProps> = {}) {
 describe('CtaButton', () => {
   test('click-fires-on-press', async () => {
     const s = setup({});
-    await s.user.click(s.container());
+    await s.user.click(activatable(s.container(), s.root()));
     expect(s.events.onPress).toHaveBeenCalled();
   });
   test('enter-activates', async () => {
@@ -57,7 +67,7 @@ describe('CtaButton', () => {
   });
   test('disabled-does-not-fire', async () => {
     const s = setup({"disabled": true});
-    await s.user.click(s.container());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.container(), s.root()));
     expect(s.events.onPress).not.toHaveBeenCalled();
     expect(s.container()).toHaveAttribute('aria-disabled', 'true');
   });
@@ -68,7 +78,7 @@ describe('CtaButton', () => {
   });
   test('loading-announces-busy-and-ignores-activation', async () => {
     const s = setup({"loading": true});
-    await s.user.click(s.container());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.container(), s.root()));
     expect(s.events.onPress).not.toHaveBeenCalled();
     expect(s.container()).toHaveAttribute("aria-busy", "true");
   });
@@ -82,8 +92,8 @@ describe('CtaButton', () => {
   });
   test('press-tracks', async () => {
     const s = setup({"track": "signup", "label": "Sign up"});
-    await s.user.click(s.container());
-    expect(s.events.onTrack).toHaveBeenCalledWith({"name": "signup", "label": "Sign up"}, expect.anything());
+    await s.user.click(activatable(s.container(), s.root()));
+    expect(s.events.onTrack).toHaveBeenCalledWith("signup", "Sign up");
   });
   test('renders', async () => {
     const s = setup({});

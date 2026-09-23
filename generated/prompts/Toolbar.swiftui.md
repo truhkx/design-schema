@@ -440,6 +440,11 @@ component:
 
 ## Keyboard
 
+- `Tab` (Moves focus into the toolbar (to the last-focused control, initially the first; when that control is gone — collapsed into the Menu or unmounted — the first control that is not disabled) and, from inside, out of it — the toolbar is one tab stop.): expect manual
+- `ArrowRight` (Next control (ArrowDown when vertical). Skips disabled controls; does not wrap.): expect focus-next
+- `ArrowLeft` (Previous control (ArrowUp when vertical).): expect focus-prev
+- `Home` (First control.): expect focus-first
+- `End` (Last control.): expect focus-last
 - `Enter`, ` ` (Activates the focused control (its own behavior).): expect manual; native: the rendered element already does this
 
 ## Constants and examples

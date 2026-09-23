@@ -10,6 +10,21 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<AlertDialogProps> = {}) {
   const events = {
     onConfirm: jest.fn(),
@@ -38,28 +53,28 @@ function setup(given: Partial<AlertDialogProps> = {}) {
 describe('AlertDialog', () => {
   test('confirm-button-fires-on-confirm', () => {
     const s = setup({"open": true});
-    fireEvent.press(s.confirmButton());
+    fireEvent.press(activatable(s.confirmButton(), s.root()));
     expect(s.events.onConfirm).toHaveBeenCalled();
   });
   test('cancel-button-fires-on-cancel', () => {
     const s = setup({"open": true});
-    fireEvent.press(s.cancelButton());
+    fireEvent.press(activatable(s.cancelButton(), s.root()));
     expect(s.events.onCancel).toHaveBeenCalled();
   });
   test('a-scrim-click-does-nothing', () => {
     const s = setup({"open": true});
-    fireEvent.press(s.scrim());
+    fireEvent.press(activatable(s.scrim(), s.root()));
     expect(s.events.onCancel).not.toHaveBeenCalled();
     expect(s.events.onConfirm).not.toHaveBeenCalled();
   });
   test('confirm-disabled-does-not-confirm', () => {
     const s = setup({"open": true, "confirmDisabled": true});
-    fireEvent.press(s.confirmButton());
+    fireEvent.press(activatable(s.confirmButton(), s.root()));
     expect(s.events.onConfirm).not.toHaveBeenCalled();
   });
   test('cancel-works-while-confirm-is-disabled', () => {
     const s = setup({"open": true, "confirmDisabled": true});
-    fireEvent.press(s.cancelButton());
+    fireEvent.press(activatable(s.cancelButton(), s.root()));
     expect(s.events.onCancel).toHaveBeenCalled();
   });
   test('the-cancel-button-is-named-from-copy', () => {

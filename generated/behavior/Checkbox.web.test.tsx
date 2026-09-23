@@ -21,6 +21,16 @@ function focusInto(el: Element | null): void {
   (target as HTMLElement).focus();
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<CheckboxProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -45,27 +55,27 @@ function setup(given: Partial<CheckboxProps> = {}) {
 describe('Checkbox', () => {
   test('click-on-control-toggles-on', async () => {
     const s = setup({});
-    await s.user.click(s.control());
-    expect(s.events.onChange).toHaveBeenCalledWith(true, expect.anything());
+    await s.user.click(activatable(s.control(), s.root()));
+    expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.control()).toBeChecked();
   });
   test('click-on-label-toggles', async () => {
     const s = setup({});
-    await s.user.click(s.label());
-    expect(s.events.onChange).toHaveBeenCalledWith(true, expect.anything());
+    await s.user.click(activatable(s.label(), s.root()));
+    expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.control()).toBeChecked();
   });
   test('click-on-description-toggles', async () => {
     const s = setup({"description": "One email a month about new features."});
-    await s.user.click(s.description());
-    expect(s.events.onChange).toHaveBeenCalledWith(true, expect.anything());
+    await s.user.click(activatable(s.description(), s.root()));
+    expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.control()).toBeChecked();
   });
   test('space-toggles', async () => {
     const s = setup({});
     act(() => focusInto(s.control()));
     await s.user.keyboard('[Space]');
-    expect(s.events.onChange).toHaveBeenCalledWith(true, expect.anything());
+    expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.control()).toBeChecked();
   });
   test('enter-is-ignored', async () => {
@@ -77,8 +87,8 @@ describe('Checkbox', () => {
   });
   test('toggles-back-off', async () => {
     const s = setup({"defaultChecked": true});
-    await s.user.click(s.control());
-    expect(s.events.onChange).toHaveBeenCalledWith(false, expect.anything());
+    await s.user.click(activatable(s.control(), s.root()));
+    expect(s.events.onChange).toHaveBeenCalledWith(false);
     expect(s.control()).not.toBeChecked();
   });
   test('indeterminate-is-announced-as-mixed', async () => {
@@ -87,7 +97,7 @@ describe('Checkbox', () => {
   });
   test('disabled-does-not-toggle', async () => {
     const s = setup({"disabled": true});
-    await s.user.click(s.control());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.control(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
     expect(s.control()).not.toBeChecked();
     expect(s.control()).toHaveAttribute('aria-disabled', 'true');
@@ -109,8 +119,8 @@ describe('Checkbox', () => {
   });
   test('controlled-follows-prop', async () => {
     const s = setup({"checked": false});
-    await s.user.click(s.control());
-    expect(s.events.onChange).toHaveBeenCalledWith(true, expect.anything());
+    await s.user.click(activatable(s.control(), s.root()));
+    expect(s.events.onChange).toHaveBeenCalledWith(true);
     expect(s.control()).not.toBeChecked();
   });
   test('hidden-label-is-still-the-accessible-name', async () => {

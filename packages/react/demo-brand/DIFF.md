@@ -55,9 +55,9 @@ hold for the mechanism to be what it claims to be:
 | src/Text.css                     | (same name)            | 230   | 42     | CSS custom-property prefix, class or custom-element name                                                      |
 | src/Text.tsx                     | (same name)            | 654   | 18     | CSS custom-property prefix, class or custom-element name, package scope                                       |
 | src/custom/analytics.ts          | (same name)            | 65    | 0      | —                                                                                                             |
-| behavior/Alert.web.test.tsx      | Callout.web.test.tsx   | 337   | 11     | component name, file name                                                                                     |
-| behavior/Button.web.test.tsx     | CtaButton.web.test.tsx | 641   | 15     | component name, file name, prop name                                                                          |
-| behavior/Disclosure.web.test.tsx | Expander.web.test.tsx  | 362   | 11     | component name, file name                                                                                     |
+| behavior/Alert.web.test.tsx      | Callout.web.test.tsx   | 461   | 11     | component name, file name                                                                                     |
+| behavior/Button.web.test.tsx     | CtaButton.web.test.tsx | 772   | 15     | component name, file name, prop name                                                                          |
+| behavior/Disclosure.web.test.tsx | Expander.web.test.tsx  | 493   | 11     | component name, file name                                                                                     |
 
 ## Every rename, spelled out
 

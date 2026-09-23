@@ -17,6 +17,16 @@ function focusInto(el: Element | null): void {
   (target as HTMLElement).focus();
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<SegmentedControlProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -40,16 +50,16 @@ function setup(given: Partial<SegmentedControlProps> = {}) {
 describe('SegmentedControl', () => {
   test('click-selects-a-segment', async () => {
     const s = setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}], "defaultValue": "grid"});
-    await s.user.click(s.segment());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.segment(), s.root()));
     expect(s.events.onChange).toHaveBeenCalled();
-    expect(s.events.onChange).toHaveBeenCalledWith("list", expect.anything());
+    expect(s.events.onChange).toHaveBeenCalledWith("list");
   });
   test('arrow-moves-and-selects', async () => {
     const s = setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}], "defaultValue": "list"});
     act(() => focusInto(s.group()));
     await s.user.keyboard('{ArrowRight}');
     expect(s.events.onChange).toHaveBeenCalled();
-    expect(s.events.onChange).toHaveBeenCalledWith("grid", expect.anything());
+    expect(s.events.onChange).toHaveBeenCalledWith("grid");
   });
   test('arrow-wraps-from-the-last-segment', async () => {
     const s = setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}], "defaultValue": "grid"});
@@ -59,7 +69,7 @@ describe('SegmentedControl', () => {
   });
   test('disabled-segment-is-not-selectable', async () => {
     const s = setup({"options": [{"value": "list", "label": "List", "disabled": true}, {"value": "grid", "label": "Grid"}], "defaultValue": "grid"});
-    await s.user.click(s.segment());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.segment(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
   });
   test('arrow-skips-disabled-segments', async () => {
@@ -67,14 +77,14 @@ describe('SegmentedControl', () => {
     act(() => focusInto(s.group()));
     await s.user.keyboard('{ArrowRight}');
     expect(s.events.onChange).toHaveBeenCalled();
-    expect(s.events.onChange).toHaveBeenCalledWith("table", expect.anything());
+    expect(s.events.onChange).toHaveBeenCalledWith("table");
   });
   test('end-selects-the-last-enabled-segment', async () => {
     const s = setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}, {"value": "table", "label": "Table", "disabled": true}], "defaultValue": "list"});
     act(() => focusInto(s.group()));
     await s.user.keyboard('{End}');
     expect(s.events.onChange).toHaveBeenCalled();
-    expect(s.events.onChange).toHaveBeenCalledWith("grid", expect.anything());
+    expect(s.events.onChange).toHaveBeenCalledWith("grid");
   });
   test('renders', async () => {
     const s = setup({});

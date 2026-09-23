@@ -1,6 +1,7 @@
 /** tools/behavior_tests.ts — tests derived from a component's `behavior` scenarios
  *  (port of tests/test_behavior_tests.py). */
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire, stripTypeScriptTypes } from 'node:module';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
@@ -8,6 +9,7 @@ import { PLATFORMS, TS_PLATFORMS } from '../../schema/platforms.ts';
 import * as bt from '../behavior_tests.ts';
 import type { Dict } from '../behavior_tests.ts';
 import { pyReEscape } from '../lib/py.ts';
+import { REPO_ROOT } from '../lib/root.ts';
 import { useStd, useTmp, write } from './fixtures.ts';
 
 const WIDGET: Dict = {
@@ -88,7 +90,8 @@ describe('generated files contain one test per scenario', () => {
   test('web event prop and call signature', () => {
     const content = bt.webFile(WIDGET, SCENARIOS);
     expect(content).toContain('onPress: events.onPress');
-    expect(content).toContain('toHaveBeenCalledWith(true, expect.anything());');
+    expect(content).toContain('toHaveBeenCalledWith(true);');
+    expect(content).not.toContain('expect.anything()');
   });
 
   test('rn event prop and call signature', () => {
@@ -109,6 +112,14 @@ describe('partLocator', () => {
   test('the primary part is located by role with the root as fallback', () => {
     expect(bt.partLocatorBody(WIDGET, 'control', 'web')).toBe("(screen.queryByRole('button') ?? s.root()) as HTMLElement");
     expect(bt.partLocatorBody(WIDGET, 'control', 'rn')).toBe("screen.queryByRole('button') ?? s.root()");
+  });
+
+  test("rn queries its own platforms.rn.role; web and Lit keep the ARIA role", () => {
+    const c = { ...WIDGET, a11y: { role: 'slider', requires: [] }, platforms: { ...WIDGET.platforms, rn: { element: 'View', role: 'adjustable' } } };
+    expect(bt.partLocatorBody(c, 'control', 'rn')).toBe("screen.queryByRole('adjustable') ?? s.root()");
+    expect(bt.partLocatorBody(c, 'control', 'web')).toBe("(screen.queryByRole('slider') ?? s.root()) as HTMLElement");
+    expect(bt.thenNameLines(c, 'rn').join('\n')).toContain("getByRole('adjustable', { name: s.props.label })");
+    expect(bt.thenNameLines(c, 'web').join('\n')).toContain("getByRole('slider', { name: s.props.label })");
   });
 
   const LANDMARK_PROPS = { role: { type: 'enum', values: ['navigation', 'main'], required: true, description: 'Which landmark.' } };
@@ -141,11 +152,16 @@ describe('partLocator', () => {
     expect(bt.rootLocatorBody(WIDGET, 'rn')).toBe("screen.queryByTestId('Widget') ?? screen.UNSAFE_root");
   });
 
-  test('lit primary tries role, then part, then first child through shadow roots', () => {
+  test('lit primary tries role, then part, then first child — each on the host before its shadow roots', () => {
     const body = bt.partLocatorBody(WIDGET, 'control', 'lit');
+    expect(body.startsWith('((el.matches(\'[role="button"]\') ? el : null) ?? deep(root, \'[role="button"]\')')).toBe(true);
     expect(body.indexOf('[role="button"]')).toBeLessThan(body.indexOf('[part="control"]'));
     expect(body.indexOf('[part="control"]')).toBeLessThan(body.indexOf('root.firstElementChild'));
-    expect(body.startsWith('(deep(root,')).toBe(true);
+  });
+
+  test('lit: a host carrying the part name is the part, before deep() is consulted', () => {
+    const body = bt.partLocatorBody(WIDGET, 'label', 'lit');
+    expect(body).toBe('((el.matches(\'[part~="label"], [data-part="label"]\') ? el : null) ?? deep(root, \'[part="label"]\') ?? deep(root, \'[data-part="label"]\')) as HTMLElement');
   });
 
   test('a part matching a string prop is located by its text', () => {
@@ -349,7 +365,7 @@ describe('lit focus', () => {
   });
 
   test('focused part and none use the chain', () => {
-    expect(bt.thenFocusedLines(WIDGET, 'label', 'lit')).toEqual(['expect(activeChain()).toContain(s.label());']);
+    expect(bt.thenFocusedLines(WIDGET, 'label', 'lit')).toEqual(['expect(activeChain()).toContain(focusedPart(s.label(), s.el));']);
     expect(bt.thenFocusedLines(WIDGET, 'none', 'lit')).toEqual(['expect(activeChain()).not.toContain(s.el);']);
   });
 
@@ -840,6 +856,34 @@ describe('then.event with a declared payload', () => {
       expect(bt.thenEventLines(ONE_FIELD, { event: 'onPress', with: true }, platform)).toEqual(bt.thenEventLines(WIDGET, { event: 'onPress', with: true }, platform));
     }
   });
+
+  test('web and rn assert exactly the declared arguments, with no trailing matcher', () => {
+    for (const platform of ['web', 'rn']) {
+      expect(bt.thenEventLines(ONE_FIELD, { event: 'onPress', with: true }, platform)).toEqual(['expect(s.events.onPress).toHaveBeenCalledWith(true);']);
+    }
+  });
+
+  test('a declared two-field payload emits two positional arguments on web and rn', () => {
+    const TWO_FIELD: Dict = {
+      ...WIDGET,
+      events: {
+        onTrack: { description: 'Tracked.', platforms: { web: 'onTrack', lit: 'track', rn: 'onTrack' }, payload: [{ name: 'name', type: 'string' }, { name: 'label', type: 'string' }] },
+      },
+    };
+    for (const platform of ['web', 'rn']) {
+      expect(bt.thenEventLines(TWO_FIELD, { event: 'onTrack', with: { label: 'Sign up', name: 'signup' } }, platform)).toEqual([
+        'expect(s.events.onTrack).toHaveBeenCalledWith("signup", "Sign up");',
+      ]);
+      expect(bt.thenEventLines(TWO_FIELD, { event: 'onTrack', with: { label: 'Sign up' } }, platform)).toEqual([
+        'expect(s.events.onTrack).toHaveBeenCalledTimes(1);',
+        'expect(s.events.onTrack.mock.calls[0]).toHaveLength(2);',
+        'expect(s.events.onTrack.mock.calls[0]?.[1]).toEqual("Sign up");',
+      ]);
+    }
+    expect(bt.thenEventLines(TWO_FIELD, { event: 'onTrack', with: { name: 'signup', label: 'Sign up' } }, 'lit')[1]).toBe(
+      'expect(s.events.onTrack.mock.calls[0]?.[0]?.detail).toMatchObject({"name": "signup", "label": "Sign up"});',
+    );
+  });
 });
 
 describe('negative and exact assertions', () => {
@@ -858,13 +902,231 @@ describe('negative and exact assertions', () => {
   test('a string name asserts that exact name', () => {
     expect(bt.thenItemLines(WIDGET, { name: 'Save draft' }, 'web')).toEqual(["expect(screen.getByRole('button', { name: \"Save draft\" })).toBeInTheDocument();"]);
     expect(bt.thenItemLines(WIDGET, { name: 'Save draft' }, 'rn')).toEqual(["expect(screen.getByRole('button', { name: \"Save draft\" })).toBeOnTheScreen();"]);
-    expect(bt.thenItemLines(WIDGET, { name: 'Save draft' }, 'lit')).toEqual(['expect(s.control()).toHaveAccessibleName("Save draft");']);
+    expect(bt.thenItemLines(WIDGET, { name: 'Save draft' }, 'lit')).toEqual([
+      'if (hostName(s.el) !== null) expect(hostName(s.el)).toBe("Save draft");',
+      'else expect(s.control()).toHaveAccessibleName("Save draft");',
+    ]);
     expect(bt.swiftThenItemLines(SWIDGET, { name: 'Save draft' }, { label: 'Go' })).toEqual(['#expect(try host.require("Widget").label == "Save draft", "\\(host.dump())")']);
   });
 
   test('rn reads an open state from expanded, which React Native sets', () => {
     expect(bt.thenItemLines(WIDGET, { state: 'open', is: true }, 'rn')).toEqual(['expect(s.control()).toBeExpanded();']);
     expect(bt.thenItemLines(WIDGET, { state: 'open', is: false }, 'rn')).toEqual(['expect(s.control()).not.toBeExpanded();']);
+  });
+});
+
+/** The Lit probes run against real shadow roots and slots: the emitted helpers and assertion lines, types
+ *  stripped, evaluated in a jsdom window (jsdom resolves through packages/react, which depends on it). */
+describe('lit probes look at the host and its flat tree', () => {
+  // tools/ has no DOM lib: just the surface these fixtures touch.
+  type Host = { shadowRoot: { textContent: string | null } | null };
+  type Win = { eval(code: string): unknown; document: { body: { innerHTML: string }; querySelector(selector: string): Host | null } };
+  const { JSDOM } = createRequire(join(REPO_ROOT, 'packages', 'react', 'package.json'))('jsdom') as {
+    JSDOM: new (html: string, opts: { runScripts: 'outside-only' }) => { window: Win };
+  };
+
+  /** A window with `<tag>` defined as a custom element whose open shadow root holds `shadow`. */
+  function windowWith(elements: Record<string, string>): Win {
+    const win = new JSDOM('<!doctype html><body></body>', { runScripts: 'outside-only' }).window;
+    for (const [tag, shadow] of Object.entries(elements)) {
+      win.eval(`customElements.define('${tag}', class extends HTMLElement {
+        constructor() { super(); this.attachShadow({ mode: 'open' }).innerHTML = ${JSON.stringify(shadow)}; }
+      });`);
+    }
+    return win;
+  }
+
+  /** Run `lines` against the first `<tag>` in the body, as the generated test's `s` sees it. */
+  function probe(win: Win, tag: string, lines: string[]): void {
+    const helpers = [bt.DEEP_QUERY_HELPER, bt.FLAT_TEXT_HELPER, bt.HOST_NAME_HELPER].join('\n');
+    const run = win.eval(stripTypeScriptTypes(`(() => {\n${helpers}\nreturn (s: unknown, expect: unknown) => {\n${lines.join('\n')}\n};\n})()`)) as
+      (s: unknown, x: typeof expect) => void;
+    const el = win.document.querySelector(tag) as Host;
+    run({ el, root: el.shadowRoot ?? el, props: {} }, expect);
+  }
+
+  test('then.role passes when the host itself carries the role', () => {
+    const win = windowWith({ 'ds-bar': '<div><slot></slot></div>' });
+    win.document.body.innerHTML = '<ds-bar role="toolbar"></ds-bar><ds-bar></ds-bar>';
+    probe(win, 'ds-bar', bt.thenRoleLines(WIDGET, 'toolbar', 'lit'));
+    // The same probe on a host without the role, and nothing inside it, still fails.
+    win.document.body.innerHTML = '<ds-bar></ds-bar>';
+    expect(() => probe(win, 'ds-bar', bt.thenRoleLines(WIDGET, 'toolbar', 'lit'))).toThrow();
+  });
+
+  test('then.role finds slotted light-DOM content (Tooltip\'s bubble)', () => {
+    const win = windowWith({ 'ds-tip': '<slot></slot>' });
+    win.document.body.innerHTML = '<ds-tip><div role="tooltip">Saves the draft</div></ds-tip>';
+    probe(win, 'ds-tip', bt.thenRoleLines(WIDGET, 'tooltip', 'lit'));
+  });
+
+  test('then.text passes on text in a slotted child', () => {
+    const win = windowWith({ 'ds-card': '<style>.x { color: red }</style><section><slot></slot></section>' });
+    win.document.body.innerHTML = '<ds-card><p>Quarterly report</p></ds-card>';
+    probe(win, 'ds-card', bt.thenTextLines(WIDGET, 'Quarterly report', 'lit'));
+    expect(() => probe(win, 'ds-card', bt.thenTextLines(WIDGET, 'color: red', 'lit'))).toThrow();
+  });
+
+  test('then.copy passes on text in a composed ds-button\'s shadow root (ActionSheet\'s cancel row)', () => {
+    const win = windowWith({ 'ds-button': '<button>Cancel</button>', 'ds-sheet': '<div role="dialog"><ds-button></ds-button></div>' });
+    win.document.body.innerHTML = '<ds-sheet></ds-sheet>';
+    const sheet: Dict = { ...WIDGET, copy: { cancel: 'Cancel' } };
+    expect(win.document.querySelector('ds-sheet')?.shadowRoot?.textContent).not.toMatch(/Cancel/);
+    probe(win, 'ds-sheet', bt.thenCopyLines(sheet, 'cancel', 'lit'));
+  });
+
+  test('then.name reads aria-label, then aria-labelledby in the host\'s root, on the host first', () => {
+    const win = windowWith({ 'ds-bar': '<div role="toolbar"></div>' });
+    win.document.body.innerHTML = '<ds-bar aria-label="Formatting"></ds-bar>';
+    probe(win, 'ds-bar', bt.thenNameLines(WIDGET, 'lit', 'Formatting'));
+    win.document.body.innerHTML = '<h2 id="t">Text  <b>tools</b></h2><ds-bar aria-labelledby="t"></ds-bar>';
+    probe(win, 'ds-bar', bt.thenNameLines(WIDGET, 'lit', 'Text tools'));
+    expect(() => probe(win, 'ds-bar', bt.thenNameLines(WIDGET, 'lit', 'Formatting'))).toThrow();
+  });
+});
+
+describe('clicks land on the control a part wraps (T12)', () => {
+  const CLOSE: Dict = { name: 'close', when: { click: 'label' }, then: [{ focused: 'label' }] };
+
+  test('every platform clicks through activatable, and web and lit compare focus through focusedPart', () => {
+    expect(bt.whenLines(WIDGET, CLOSE, 'web')).toEqual(['await s.user.click(activatable(s.label(), s.root()));']);
+    expect(bt.whenLines(WIDGET, CLOSE, 'lit')).toEqual(['await userEvent.click(...(await pointerAt(activatable(s.label(), s.el), s.label())));']);
+    expect(bt.whenLines(WIDGET, CLOSE, 'rn')).toEqual(['fireEvent.press(activatable(s.label(), s.root()));']);
+    expect(bt.thenFocusedLines(WIDGET, 'label', 'web')).toEqual(['expect(document.activeElement).toBe(focusedPart(s.label(), s.root()));']);
+  });
+
+  test('a file carries its platform\'s helper only when a click or a focused part needs it', () => {
+    expect(bt.webFile(WIDGET, [CLOSE])).toContain(bt.WEB_ACTIVATABLE_HELPER);
+    expect(bt.litFile(WIDGET, [CLOSE])).toContain(bt.LIT_ACTIVATABLE_HELPER);
+    // Lit clicks go through a stamped test id, so the file imports `page` beside `userEvent`.
+    expect(bt.litFile(WIDGET, [CLOSE])).toContain("import { page, userEvent } from 'vitest/browser';");
+    expect(bt.rnFile(WIDGET, [CLOSE])).toContain(bt.RN_ACTIVATABLE_HELPER);
+    const plain = [{ name: 'r', then: [{ renders: true }, { focused: 'none' }] }];
+    expect(bt.webFile(WIDGET, plain)).not.toContain('function activatable');
+    expect(bt.litFile(WIDGET, plain)).not.toContain('function activatable');
+    expect(bt.rnFile(WIDGET, plain)).not.toContain('function activatable');
+  });
+
+  test('the interactive set is the native controls plus schema/component.ts\'s widget roles', () => {
+    expect(bt.INTERACTIVE_SELECTOR).toContain('[role="option"]');
+    expect(bt.INTERACTIVE_SELECTOR).toContain('a[href]');
+    expect(bt.INTERACTIVE_SELECTOR).not.toContain('[role="dialog"]');
+    expect(bt.INTERACTIVE_SELECTOR).not.toContain('[role="gridcell"]');
+  });
+
+  // tools/ has no DOM lib: just the surface these fixtures touch.
+  type El = { tagName: string; id: string };
+  type Win = { eval(code: string): unknown; document: { body: { innerHTML: string }; querySelector(selector: string): El | null } };
+  const { JSDOM } = createRequire(join(REPO_ROOT, 'packages', 'react', 'package.json'))('jsdom') as {
+    JSDOM: new (html: string, opts: { runScripts: 'outside-only' }) => { window: Win };
+  };
+  type Fns = { activatable(el: El | null, root: El | null): El | null; focusedPart(el: El | null, root: El | null): El | null; isDisabled?(el: El | null): boolean };
+  function helpers(win: Win, source: string): Fns {
+    return win.eval(stripTypeScriptTypes(`(() => {\n${source}\nreturn { activatable, focusedPart, isDisabled: typeof isDisabled === 'function' ? isDisabled : undefined };\n})()`)) as Fns;
+  }
+
+  test('web: a wrapper yields the button inside, a control yields itself, a part with no control yields itself', () => {
+    const win = new JSDOM('<!doctype html><body></body>', { runScripts: 'outside-only' }).window;
+    win.document.body.innerHTML = '<span data-part="closeButton" id="w"><svg></svg><button id="b">Close</button></span>'
+      + '<button data-part="trigger" id="t"><span>Open</span></button><div data-part="surface" id="s" tabindex="-1"><button>Inner</button></div>'
+      + '<p data-part="note" id="n">Text</p><div data-ds="AlertDialog" id="root"><button id="cancel">Cancel</button></div>';
+    const fns = helpers(win, [bt.ACTIVE_CHAIN_HELPER, bt.WEB_ACTIVATABLE_HELPER].join('\n'));
+    const $ = (sel: string): El | null => win.document.querySelector(sel);
+    const root = $('#root');
+    expect(fns.activatable($('#w'), root)?.id).toBe('b');
+    expect(fns.activatable($('#t'), root)?.id).toBe('t');
+    expect(fns.activatable($('#n'), root)?.id).toBe('n');
+    // A part that fell back to the root (the part is not rendered) is the root, not the root's first button.
+    expect(fns.activatable(root, root)?.id).toBe('root');
+    // A window or composite is not a wrapper (AlertDialog's scrim, located by role, is the alertdialog); a live region is.
+    win.document.body.innerHTML += '<div role="alertdialog" id="ad"><button>Cancel</button></div><div role="status" id="pr"><button id="pb">Show 3 new</button></div>';
+    expect(fns.activatable($('#ad'), root)?.id).toBe('ad');
+    expect(fns.activatable($('#pr'), root)?.id).toBe('pb');
+    // A gridcell is a cell: DataGrid's selectCell yields the checkbox it holds, an empty cell yields itself.
+    win.document.body.innerHTML += '<div role="gridcell" id="gc"><input type="checkbox" id="gcb"></div><div role="gridcell" id="ge">A-1</div>';
+    expect(fns.activatable($('#gc'), root)?.id).toBe('gcb');
+    expect(fns.activatable($('#ge'), root)?.id).toBe('ge');
+    expect(fns.activatable(null, root)).toBeNull();
+    // A focused surface is the part even though its first control is not what has focus.
+    win.eval("document.getElementById('s').focus()");
+    expect(fns.focusedPart($('#s'), root)?.id).toBe('s');
+    expect(fns.focusedPart($('#w'), root)?.id).toBe('b');
+  });
+
+  test('lit: the walk crosses a composed ds-button\'s shadow root and a slot\'s assigned nodes', () => {
+    const win = new JSDOM('<!doctype html><body></body>', { runScripts: 'outside-only' }).window;
+    win.eval(`customElements.define('ds-button', class extends HTMLElement {
+      constructor() { super(); this.attachShadow({ mode: 'open' }).innerHTML = '<button id="inner">Close</button>'; }
+    });
+    customElements.define('ds-row', class extends HTMLElement {
+      constructor() { super(); this.attachShadow({ mode: 'open' }).innerHTML = '<div><slot></slot></div>'; }
+    });`);
+    win.document.body.innerHTML = '<span id="w"><ds-button></ds-button></span><ds-row id="r"><input type="checkbox" id="c"></ds-row>';
+    const fns = helpers(win, [bt.ACTIVE_CHAIN_HELPER, bt.LIT_ACTIVATABLE_HELPER].join('\n'));
+    expect(fns.activatable(win.document.querySelector('#w'), null)?.id).toBe('inner');
+    expect(fns.activatable(win.document.querySelector('#r'), null)?.id).toBe('c');
+    // Disabled the way Playwright reads it: natively, or aria-disabled on the control or an ancestor across a shadow host.
+    win.document.body.innerHTML = '<button id="d" disabled></button><div aria-disabled="true"><ds-button id="h"></ds-button></div><ds-button id="e"></ds-button>';
+    const inner = (id: string): El | null => fns.activatable(win.document.querySelector(`#${id}`), null);
+    expect(fns.isDisabled?.(win.document.querySelector('#d'))).toBe(true);
+    expect(fns.isDisabled?.(inner('h'))).toBe(true);
+    expect(fns.isDisabled?.(inner('e'))).toBe(false);
+  });
+
+  test('rn: a wrapper View yields the host view under its Pressable, never a decorative image first', () => {
+    type N = { type: string | (() => null); props: Dict; children: N[]; findAll(p: (n: N) => boolean): N[] };
+    const node = (type: N['type'], props: Dict, children: N[] = []): N => ({
+      type, props, children,
+      findAll(p) { return [...(p(this) ? [this] : []), ...this.children.flatMap((c) => c.findAll(p))]; },
+    });
+    const Pressable = (): null => null;
+    const text = node('Text', {});
+    const host = node('View', { role: 'button', testID: 'inner' });
+    const wrapper = node('View', { testID: 'Feed.newItemsButton' }, [node('Image', { role: 'image' }), node(Pressable, { onPress: () => {} }, [host])]);
+    const run = new Function(`${stripTypeScriptTypes(bt.RN_ACTIVATABLE_HELPER)}\nreturn activatable;`)() as (n: N, root: N) => N;
+    expect(run(wrapper, text)).toBe(host);
+    // The root fallback is pressed as it is, never its first control.
+    expect(run(wrapper, wrapper)).toBe(wrapper);
+    expect(run(host, host)).toBe(host);
+    expect(run(text, wrapper)).toBe(text);
+    const dialog = node('View', { role: 'alertdialog' }, [host]);
+    expect(run(dialog, wrapper)).toBe(dialog);
+  });
+});
+
+describe('clicks force past a disabled target (T16)', () => {
+  const MENU: Dict = {
+    ...WIDGET,
+    anatomy: ['trigger', 'item'],
+    props: { items: { type: 'array', shape: '{ id: string; label: string; disabled?: boolean }[]', description: 'Entries.' } },
+  };
+  const click = (part: string, given: Dict = {}): Dict => ({ name: 'c', given, when: { click: part }, then: [] });
+
+  test('a disabled or loading component forces', () => {
+    expect(bt.mayBeDisabled(WIDGET, click('control', { disabled: true }), 'control')).toBe(true);
+    expect(bt.mayBeDisabled(WIDGET, click('control', { loading: true }), 'control')).toBe(true);
+    expect(bt.mayBeDisabled(WIDGET, click('control'), 'control')).toBe(false);
+  });
+
+  test('a given list with a disabled entry forces, even on a component that declares no such shape', () => {
+    expect(bt.mayBeDisabled(WIDGET, click('label', { tabs: [{ id: 'a', disabled: true }, { id: 'b' }] }), 'label')).toBe(true);
+    expect(bt.mayBeDisabled(WIDGET, click('label', { tabs: [{ id: 'a' }] }), 'label')).toBe(false);
+  });
+
+  test('an item part of a component whose entries can be disabled forces; its primary part does not', () => {
+    expect(bt.mayBeDisabled(MENU, click('item'), 'item')).toBe(true);
+    expect(bt.mayBeDisabled(MENU, click('trigger'), 'trigger')).toBe(false);
+  });
+
+  test('otherwise lit decides at click time, from the control it actually clicks', () => {
+    expect(bt.whenLines(MENU, click('trigger'), 'lit')).toEqual(['await userEvent.click(...(await pointerAt(activatable(s.trigger(), s.el), s.trigger())));']);
+  });
+
+  test('lit adds { force: true } and web skips the pointer-events check; rn has no actionability wait', () => {
+    const sc = click('item', { items: [{ id: 'a', label: 'A', disabled: true }] });
+    expect(bt.whenLines(MENU, sc, 'lit')).toEqual(['await userEvent.click(located(activatable(s.item(), s.el)), { force: true });']);
+    expect(bt.whenLines(MENU, sc, 'web')).toEqual(['await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.item(), s.root()));']);
+    expect(bt.whenLines(MENU, sc, 'rn')).toEqual(['fireEvent.press(activatable(s.item(), s.root()));']);
   });
 });
 

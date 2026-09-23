@@ -17,6 +17,16 @@ function focusInto(el: Element | null): void {
   (target as HTMLElement).focus();
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<SearchProps> = {}) {
   const events = {
     onChange: vi.fn(),
@@ -60,12 +70,12 @@ describe('Search', () => {
   });
   test('the-submit-button-submits-the-query', async () => {
     const s = setup({"defaultValue": "invoices", "action": "/search"});
-    await s.user.click(s.submitButton());
+    await s.user.click(activatable(s.submitButton(), s.root()));
     expect(s.events.onSubmit).toHaveBeenCalled();
   });
   test('the-clear-button-empties-the-field', async () => {
     const s = setup({"defaultValue": "invoices"});
-    await s.user.click(s.clearButton());
+    await s.user.click(activatable(s.clearButton(), s.root()));
     expect(s.events.onClear).toHaveBeenCalled();
   });
   test('escape-clears-the-field-when-no-list-is-open', async () => {

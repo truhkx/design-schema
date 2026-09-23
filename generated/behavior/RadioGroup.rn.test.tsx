@@ -10,6 +10,21 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<RadioGroupProps> = {}) {
   const events = {
     onChange: jest.fn(),
@@ -37,22 +52,22 @@ function setup(given: Partial<RadioGroupProps> = {}) {
 describe('RadioGroup', () => {
   test('click-on-an-option-reports-its-value', () => {
     const s = setup({});
-    fireEvent.press(s.radio());
+    fireEvent.press(activatable(s.radio(), s.root()));
     expect(s.events.onChange).toHaveBeenCalledWith("standard");
   });
   test('click-on-an-option-label-selects-it', () => {
     const s = setup({});
-    fireEvent.press(s.radioLabel());
+    fireEvent.press(activatable(s.radioLabel(), s.root()));
     expect(s.events.onChange).toHaveBeenCalledWith("standard");
   });
   test('disabled-option-cannot-be-selected', () => {
     const s = setup({"options": [{"value": "standard", "label": "Standard", "disabled": true}, {"value": "express", "label": "Express"}]});
-    fireEvent.press(s.radio());
+    fireEvent.press(activatable(s.radio(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
   });
   test('disabled-group-is-inert', () => {
     const s = setup({"disabled": true});
-    fireEvent.press(s.radio());
+    fireEvent.press(activatable(s.radio(), s.root()));
     expect(s.events.onChange).not.toHaveBeenCalled();
   });
   test('required-is-shown-in-the-legend', () => {

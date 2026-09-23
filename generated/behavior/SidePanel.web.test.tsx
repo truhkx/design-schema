@@ -21,6 +21,16 @@ function focusInto(el: Element | null): void {
   (target as HTMLElement).focus();
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<SidePanelProps> = {}) {
   const events = {
     onOpenChange: vi.fn(),
@@ -45,12 +55,12 @@ function setup(given: Partial<SidePanelProps> = {}) {
 describe('SidePanel', () => {
   test('close-button-fires-on-open-change', async () => {
     const s = setup({"open": true});
-    await s.user.click(s.closeButton());
+    await s.user.click(activatable(s.closeButton(), s.root()));
     expect(s.events.onOpenChange).toHaveBeenCalled();
   });
   test('the-close-button-works-without-the-swipe', async () => {
     const s = setup({"open": true, "swipeable": false});
-    await s.user.click(s.closeButton());
+    await s.user.click(activatable(s.closeButton(), s.root()));
     expect(s.events.onOpenChange).toHaveBeenCalled();
   });
   test('non-dismissible-still-reports-escape', async () => {
@@ -61,7 +71,7 @@ describe('SidePanel', () => {
   });
   test('non-dismissible-scrim-tap-does-nothing', async () => {
     const s = setup({"open": true, "dismissible": false});
-    await s.user.click(s.scrim());
+    await s.user.click(activatable(s.scrim(), s.root()));
     expect(s.events.onOpenChange).not.toHaveBeenCalled();
   });
   test('the-heading-is-rendered', async () => {

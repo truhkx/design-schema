@@ -117,7 +117,7 @@ function AutoFold($phaseName) {
   try {
     Log "== auto-fold ($FoldModel) after $phaseName =="
     $prompt = Get-Content prompts\fold-gaps.md -Raw -Encoding utf8
-    $prompt | claude -p --model $FoldModel --permission-mode acceptEdits --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Bash(node tools/*),Bash(node --import tsx tools/*),Bash(pnpm *),Bash(git *)" 2>&1 | ForEach-Object { Log "$_" }
+    $prompt | claude -p --model $FoldModel --permission-mode acceptEdits --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,Bash(node tools/*),Bash(node --import tsx tools/*),Bash(node logs/*.mjs),Bash(pnpm parse),Bash(pnpm check),Bash(pnpm commit*),Bash(pnpm test:tools*),Bash(git diff *),Bash(git log *),Bash(git status*),Bash(grep:*),Bash(ls:*),Bash(awk:*)" --disallowedTools "WebFetch,WebSearch,Bash(rm:*),Bash(rmdir:*),Bash(git push:*),Bash(curl:*),Bash(wget:*)" 2>&1 | ForEach-Object { Log "$_" }
     pnpm parse 2>&1 | ForEach-Object { Log "$_" }
     if ($LASTEXITCODE -ne 0) {
       Log "auto-fold left the docs unparseable: stopping so a human can look (git diff site/src/content/docs)."

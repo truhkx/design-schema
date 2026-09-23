@@ -326,6 +326,17 @@ describe('ds-accordion with slotted disclosures', () => {
     expect(s.trigger(0)).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('End reaches the last section and Enter toggles it with reason keyboard', async () => {
+    const s = await setupSlotted(SECTIONS);
+    s.trigger(0).focus();
+    await userEvent.keyboard('{End}');
+    expect(deepActive()).toBe(s.trigger(2));
+    await userEvent.keyboard('{Enter}');
+    await s.settle();
+    expect(s.openChange.mock.calls[0]?.[0].detail).toEqual({ id: 'refunds', open: true, reason: 'keyboard' });
+    expect(s.trigger(2)).toHaveAttribute('aria-expanded', 'true');
+  });
+
   it('closes the others under exclusive, reporting each as `exclusive`', async () => {
     const s = await setupSlotted(SECTIONS, (el) => {
       el.exclusive = true;

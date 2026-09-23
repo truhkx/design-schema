@@ -671,6 +671,7 @@ component:
 
 ## Keyboard
 
+- `Enter`, ` ` (Toggles the popover from the trigger.): expect manual
 - `Escape` (Closes and returns focus to the trigger.): expect closes, then focus-trigger
 - `Tab` (Non-modal: after the last element in the panel, closes and moves focus to the element after the trigger. Modal: wraps within the panel.): expect closes; given `modal: false`
 - `Shift+Tab` (Non-modal: from the first element in the panel, returns focus to the trigger and closes (reason `tab-out`).): expect focus-trigger, then closes

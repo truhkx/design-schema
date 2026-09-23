@@ -10,6 +10,16 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<FeedProps> = {}) {
   const events = {
     onLoadMore: vi.fn(),
@@ -39,7 +49,7 @@ describe('Feed', () => {
   });
   test('pressing-show-new-asks-for-the-newer-items', async () => {
     const s = setup({"newItemsCount": 3, "items": [{"id": "a1", "heading": "Ana commented on Invoice 42", "timestamp": "2026-09-15T09:00:00Z", "content": "Looks right to me."}]});
-    await s.user.click(s.newItemsButton());
+    await s.user.click(activatable(s.newItemsButton(), s.root()));
     expect(s.events.onShowNew).toHaveBeenCalled();
   });
   test('the-end-message-shows-when-there-is-nothing-more', async () => {

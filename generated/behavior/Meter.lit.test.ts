@@ -21,6 +21,25 @@ function deep(root: ParentNode, selector: string): Element | null {
   return null;
 }
 
+function flatText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return (node as Text).data;
+  if (node instanceof HTMLStyleElement || node instanceof HTMLScriptElement) return '';
+  if (node instanceof HTMLSlotElement) return node.assignedNodes({ flatten: true }).map(flatText).join('');
+  const scope: Node = (node as HTMLElement).shadowRoot ?? node;
+  return Array.from(scope.childNodes).map(flatText).join('');
+}
+
+function hostName(el: Element): string | null {
+  const label = el.getAttribute('aria-label')?.trim();
+  if (label) return label;
+  const ids = el.getAttribute('aria-labelledby')?.trim();
+  if (!ids) return null;
+  const scope = el.getRootNode() as Document | ShadowRoot;
+  const named = ids.split(/\s+/).map((id) => scope.getElementById(id)).filter((n): n is HTMLElement => n !== null);
+  const text = named.map((n) => flatText(n).replace(/\s+/g, ' ').trim()).join(' ').trim();
+  return text || null;
+}
+
 /** Every element that is "active" from the document down through shadow roots: the host, then the inner one.
  *  document.activeElement alone is a shadow host while focus sits inside its shadow tree. */
 function activeChain(): Element[] {
@@ -58,7 +77,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    container: () => (deep(root, '[role="meter"]') ?? deep(root, '[part="container"]') ?? deep(root, '[data-part="container"]') ?? root.firstElementChild) as HTMLElement,
+    container: () => ((el.matches('[role="meter"]') ? el : null) ?? deep(root, '[role="meter"]') ?? (el.matches('[part~="container"], [data-part="container"]') ? el : null) ?? deep(root, '[part="container"]') ?? deep(root, '[data-part="container"]') ?? root.firstElementChild) as HTMLElement,
   };
   return s;
 }
@@ -70,7 +89,7 @@ beforeEach(() => {
 describe('ds-meter', () => {
   test('the-meter-reports-its-value-and-range', async () => {
     const s = await setup({"value": 25, "min": 0, "max": 50});
-    expect(s.el.shadowRoot!.querySelector('[role="meter"]')).not.toBeNull();
+    expect(s.el.matches('[role="meter"]') || deep(s.root, '[role="meter"]') !== null || deep(s.el, '[role="meter"]') !== null).toBe(true);
     expect(s.container()).toHaveAttribute("aria-valuenow", "25");
     expect(s.container()).toHaveAttribute("aria-valuemin", "0");
     expect(s.container()).toHaveAttribute("aria-valuemax", "50");
@@ -81,12 +100,12 @@ describe('ds-meter', () => {
   });
   test('value-text-is-shown-and-announced', async () => {
     const s = await setup({"valueText": "3.2 GB of 10 GB"});
-    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("3\\.2\\ GB\\ of\\ 10\\ GB"));
+    expect(flatText(s.el)).toMatch(new RegExp("3\\.2\\ GB\\ of\\ 10\\ GB"));
     expect(s.container()).toHaveAttribute("aria-valuetext", "3.2 GB of 10 GB");
   });
   test('the-label-names-the-measurement', async () => {
     const s = await setup({"label": "Password strength"});
-    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Password\\ strength"));
+    expect(flatText(s.el)).toMatch(new RegExp("Password\\ strength"));
   });
   test('renders', async () => {
     const s = await setup({});
@@ -110,6 +129,7 @@ describe('ds-meter', () => {
   });
   test('has-accessible-name', async () => {
     const s = await setup({});
-    expect(s.container()).toHaveAccessibleName(s.props.label);
+    if (hostName(s.el) !== null) expect(hostName(s.el)).toBe(s.props.label);
+    else expect(s.container()).toHaveAccessibleName(s.props.label);
   });
 });

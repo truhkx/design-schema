@@ -6,6 +6,16 @@ import { Expander } from '../src/Expander';
 import type { ExpanderProps } from '../src/Expander';
 import meta from '../src/Expander.stories';
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<ExpanderProps> = {}) {
   const events = {
     onToggle: vi.fn(),
@@ -28,19 +38,19 @@ function setup(given: Partial<ExpanderProps> = {}) {
 describe('Expander', () => {
   test('click-on-trigger-expands', async () => {
     const s = setup({"open": true});
-    await s.user.click(s.trigger());
+    await s.user.click(activatable(s.trigger(), s.root()));
     expect(s.events.onToggle).toHaveBeenCalled();
     expect(s.trigger()).toHaveAttribute('aria-expanded', 'true');
   });
   test('open-disclosure-collapses-on-click', async () => {
     const s = setup({"defaultOpen": true, "open": true});
-    await s.user.click(s.trigger());
+    await s.user.click(activatable(s.trigger(), s.root()));
     expect(s.events.onToggle).toHaveBeenCalled();
     expect(s.trigger()).toHaveAttribute('aria-expanded', 'false');
   });
   test('disabled-trigger-does-not-toggle', async () => {
     const s = setup({"disabled": true, "open": true});
-    await s.user.click(s.trigger());
+    await userEvent.setup({ pointerEventsCheck: 0 }).click(activatable(s.trigger(), s.root()));
     expect(s.events.onToggle).not.toHaveBeenCalled();
     expect(s.trigger()).toHaveAttribute('aria-expanded', 'false');
     expect(s.trigger()).toHaveAttribute('aria-disabled', 'true');

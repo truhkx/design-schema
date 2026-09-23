@@ -537,6 +537,16 @@ component:
 - `triggerFontSize`: token `font.size.md`; part `trigger`
 - `triggerFontWeight`: token `font.weight.medium`; part `trigger`
 
+## Keyboard
+
+- `Enter`, ` ` (Toggles the focused section.): expect toggles
+- `ArrowDown` (Moves focus to the next trigger; wraps.): expect focus-next
+- `ArrowUp` (Moves focus to the previous trigger; wraps.): expect focus-prev
+- `ArrowDown` (From the last trigger wraps to the first.): expect focus-wraps-to-first
+- `Home` (First trigger.): expect focus-first
+- `End` (Last trigger.): expect focus-last
+- `Tab` (Ordinary tab order — every trigger is a tab stop (the APG recommends this so panel content stays reachable).): expect focus-next
+
 ## Constants and examples
 
 - example `faq`, story `Faq`: given `items: [{"id":"cancel","summary":"What happens if I cancel?","content":"You keep access until the end of the billing period."},{"id":"refunds","summary":"Do you offer refunds?","content":"Within 14 days of a charge, in full."}]`; A list of questions, several of which can be open at once.

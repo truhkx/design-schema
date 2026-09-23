@@ -21,6 +21,16 @@ function focusInto(el: Element | null): void {
   (target as HTMLElement).focus();
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<DataGridProps> = {}) {
   const events = {
     onSortChange: vi.fn(),
@@ -51,7 +61,7 @@ function setup(given: Partial<DataGridProps> = {}) {
 describe('DataGrid', () => {
   test('activating-a-sortable-header-reports-the-sort', async () => {
     const s = setup({"columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}, {"key": "price", "header": "Price", "align": "end", "sortable": true}], "data": [{"id": "a", "sku": "A-1", "price": 10}, {"id": "b", "sku": "B-2", "price": 20}]});
-    await s.user.click(s.sortButton());
+    await s.user.click(activatable(s.sortButton(), s.root()));
     expect(s.events.onSortChange).toHaveBeenCalled();
   });
   test('enter-on-a-sortable-header-sorts', async () => {
@@ -62,7 +72,7 @@ describe('DataGrid', () => {
   });
   test('selecting-a-row-reports-the-selection', async () => {
     const s = setup({"selectable": "row", "columns": [{"key": "sku", "header": "SKU", "isRowHeader": true}], "data": [{"id": "a", "sku": "A-1"}, {"id": "b", "sku": "B-2"}]});
-    await s.user.click(s.selectCell());
+    await s.user.click(activatable(s.selectCell(), s.root()));
     expect(s.events.onSelectionChange).toHaveBeenCalled();
   });
   test('a-selected-row-is-marked-selected', async () => {

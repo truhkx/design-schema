@@ -12,8 +12,11 @@
  *   TOOLING  the environment got in the way (permission denied, missing node_modules, a gate that could not run)
  *   NOISE    a repeat of an earlier line in the same file, or "no changes were needed" — collapsed to a count
  *
- * DOC lines come first, with the doc path the fix belongs in. The digest ends with a checklist of every
- * target whose gates failed, and which gate, from the lockfiles.
+ * DOC lines come first, with the doc path the fix belongs in (components/<name>.md, or patterns/<kebab-name>.md
+ * for a `Pattern.<Name>` target). It then ranks the open entries of the two ledgers, generated/gaps/TOOLING.md and
+ * CODE.md, by summed cost and then by hit count (the entry shape is in prompts/fold-gaps.md), and ends with a
+ * checklist of every target whose gates failed, and which gate, from the lockfiles. Any other markdown in the
+ * directory (FOLDS.md, TEST-FAILURES.md, the dated ledger archives) is named as skipped, never read as a component.
  *
  * Usage:  node tools/gap_digest.ts [--phase Core] [--out generated/gaps/SUMMARY.md]
  *
@@ -30,7 +33,10 @@ import { REPO_ROOT } from './lib/root.ts';
 /** Every path the tool reads or writes. The tests point these at a sandbox. */
 export const paths = { ROOT: REPO_ROOT, GAPS: join(REPO_ROOT, 'generated', 'gaps'), LOCK_DIR: join(REPO_ROOT, 'generated') };
 
-const DOCS_REL = 'site/src/content/docs/components';
+const DOCS_REL = 'site/src/content/docs';
+const LEDGERS = ['TOOLING.md', 'CODE.md'];
+/** `<Name>.<platform>.md`; a `Pattern.<Name>` target keeps its dot in the name. */
+const GAP_FILE = /^(.+)\.([a-z]+)\.md$/;
 
 const ROUND = /^## (.+?) — round (\d+)\s*$/gm;
 const KEYWORDS: Record<string, string[]> = {
@@ -87,6 +93,103 @@ export function parseGapFile(file: string): GapFile {
   return { component, platform, rounds: byNewest(rounds, (r) => r) };
 }
 
+/** The doc a target's DOC gaps belong in: `Pattern.SettingsPage` → patterns/settings-page.md, `Button` → components/button.md. */
+export function docPath(component: string): string {
+  if (component.startsWith('Pattern.')) {
+    const kebab = component.slice('Pattern.'.length).replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+    return `${DOCS_REL}/patterns/${kebab}.md`;
+  }
+  return `${DOCS_REL}/components/${component.toLowerCase()}.md`;
+}
+
+export type LedgerEntry = {
+  id: string;
+  ledger: string;
+  status: string;
+  hits: string[];
+  hitCount: number;
+  rounds: number;
+  dollars: number;
+  text: string;
+};
+
+const ENTRY = /^- ([TC]\d+) \| ([^|]+?) \| hit-by: ([^|]*?) \| cost: ([^|]*?) \| (.+)$/;
+
+/** `ledger ×12` counts twelve hits (the seed's pre-format filings); any other hit counts one. */
+function hitWeight(hit: string): number {
+  const m = hit.match(/×(\d+)$/);
+  return m ? Number(m[1]) : 1;
+}
+
+/** One entry per `- <id> | <status> | hit-by: … | cost: … | <text>` line; anything else in the file is prose. */
+export function parseLedger(file: string): LedgerEntry[] {
+  const ledger = (file.split(/[\\/]/).pop() as string).replace(/\.md$/, '');
+  const out: LedgerEntry[] = [];
+  for (const ln of pySplitlines(readText(file))) {
+    const m = pyStrip(ln).match(ENTRY);
+    if (!m) continue;
+    const hits = (m[3] as string).split(',').map((h) => h.trim()).filter((h) => h && h !== '-');
+    const cost = m[4] as string;
+    out.push({
+      id: m[1] as string,
+      ledger,
+      status: pyStrip(m[2] as string),
+      hits,
+      hitCount: hits.reduce((n, h) => n + hitWeight(h), 0),
+      rounds: [...cost.matchAll(/(\d+) rounds?/g)].reduce((n, r) => n + Number(r[1]), 0),
+      dollars: [...cost.matchAll(/\$(\d+(?:\.\d+)?)/g)].reduce((n, r) => n + Number(r[1]), 0),
+      text: pyStrip(m[5] as string),
+    });
+  }
+  return out;
+}
+
+const isOpen = (e: LedgerEntry): boolean => e.status.startsWith('open');
+
+/** Lines sharing an id are one issue filed twice: hits and costs add up, and it is open if either line says so. */
+export function mergeEntries(entries: LedgerEntry[]): LedgerEntry[] {
+  const byId = new Map<string, LedgerEntry>();
+  for (const e of entries) {
+    const seen = byId.get(e.id);
+    if (!seen) {
+      byId.set(e.id, { ...e, hits: [...e.hits] });
+      continue;
+    }
+    seen.hits.push(...e.hits);
+    seen.hitCount += e.hitCount;
+    seen.rounds += e.rounds;
+    seen.dollars += e.dollars;
+    if (!isOpen(seen)) seen.status = isOpen(e) ? e.status : seen.status;
+  }
+  return [...byId.values()];
+}
+
+const idOrder = (a: LedgerEntry, b: LedgerEntry): number =>
+  a.id[0] === b.id[0] ? Number(a.id.slice(1)) - Number(b.id.slice(1)) : a.id < b.id ? 1 : -1; // T before C
+
+/** Open entries, most expensive first: dollars, then rounds, then hits, then id. */
+export function rankOpen(entries: LedgerEntry[]): LedgerEntry[] {
+  return mergeEntries(entries).filter(isOpen).sort((a, b) =>
+    b.dollars - a.dollars || b.rounds - a.rounds || b.hitCount - a.hitCount || idOrder(a, b));
+}
+
+export function formatCost(e: LedgerEntry): string {
+  const parts = [e.rounds ? `${e.rounds} round(s)` : '', e.dollars ? `$${e.dollars.toFixed(2)}` : ''].filter(Boolean);
+  return parts.length ? parts.join(', ') : 'cost unknown';
+}
+
+function ledgerLines(entries: LedgerEntry[]): string[] {
+  const merged = mergeEntries(entries);
+  const open = rankOpen(entries);
+  const fixed = merged.filter((e) => e.status.startsWith('fixed')).length;
+  const obsolete = merged.filter((e) => e.status === 'obsolete').length;
+  const lines = ['## Open ledger items', '', `${open.length} open · ${fixed} fixed · ${obsolete} obsolete, across ${LEDGERS.join(' and ')}; most expensive first, then most hit.`, ''];
+  lines.push(...open.map((e) => `- **${e.id}** (${e.ledger}) ${formatCost(e)} · ${e.hitCount} hit(s) — ${e.text}`));
+  if (!open.length) lines.push('- none');
+  lines.push('');
+  return lines;
+}
+
 /** `[target, [gate, ...]]` for every lock entry with a gate that is false, across every lockfile. */
 export function failedGates(lockDir: string): [string, string[]][] {
   const out = new Map<string, string[]>();
@@ -102,7 +205,10 @@ export function failedGates(lockDir: string): [string, string[]][] {
   return pySorted([...out.keys()]).map((t) => [t, out.get(t) as string[]]);
 }
 
-export function digest(gapFiles: GapFile[], failures: [string, string[]][], phase: string | null, now: string): string {
+export function digest(
+  gapFiles: GapFile[], failures: [string, string[]][], phase: string | null, now: string,
+  ledger: LedgerEntry[] = [], skipped: string[] = [],
+): string {
   const title = phase ? `# Gap digest — phase ${phase}` : '# Gap digest';
   const lines = [title, '', `Generated ${now} by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run \`pnpm parse\`, and the affected targets become stale by prompt hash.`, ''];
   const byComponent = new Map<string, GapFile[]>();
@@ -112,7 +218,7 @@ export function digest(gapFiles: GapFile[], failures: [string, string[]][], phas
   }
   const totals = new Map<string, number>([...ORDER, 'NOISE'].map((c) => [c, 0]));
   for (const component of pySorted([...byComponent.keys()])) {
-    const doc = `${DOCS_REL}/${component.toLowerCase()}.md`;
+    const doc = docPath(component);
     lines.push(`## ${component}`, '', `Doc: \`${doc}\``, '');
     const flat = (byComponent.get(component) as GapFile[]).flatMap((g) => g.rounds.map((r) => [r, g.platform] as [Round, string]));
     for (const [r, platform] of byNewest(flat, ([round]) => round)) {
@@ -134,6 +240,8 @@ export function digest(gapFiles: GapFile[], failures: [string, string[]][], phas
     }
   }
   lines.push('## Totals', '', [...totals].map(([c, n]) => `${c}: ${n}`).join(' · '), '');
+  if (skipped.length) lines.push(`Not per-target gap files, skipped: ${skipped.join(', ')}.`, '');
+  lines.push(...ledgerLines(ledger));
   lines.push('## Gates to fix', '');
   if (failures.length) lines.push(...failures.map(([target, gates]) => `- [ ] ${target} — ${gates.join(', ')}`));
   else lines.push('- none: every recorded target passed its gates');
@@ -150,7 +258,15 @@ function nowToMinutes(): string {
 
 export function build(gapsDir: string = paths.GAPS, lockDir: string = paths.LOCK_DIR, phase: string | null = null, now: string | null = null): string {
   const names = existsSync(gapsDir) ? sortedNames(readdirSync(gapsDir).filter((n) => n.endsWith('.md') && n !== 'SUMMARY.md')) : [];
-  return digest(names.map((n) => parseGapFile(join(gapsDir, n))), failedGates(lockDir), phase, now ?? nowToMinutes());
+  const gapNames = names.filter((n) => GAP_FILE.test(n));
+  const ledger = LEDGERS.filter((n) => names.includes(n)).flatMap((n) => parseLedger(join(gapsDir, n)));
+  const skipped = names.filter((n) => !GAP_FILE.test(n) && !LEDGERS.includes(n));
+  return digest(gapNames.map((n) => parseGapFile(join(gapsDir, n))), failedGates(lockDir), phase, now ?? nowToMinutes(), ledger, skipped);
+}
+
+/** The digest's ranked open ledger items, for stdout. */
+export function openItems(gapsDir: string = paths.GAPS): LedgerEntry[] {
+  return rankOpen(LEDGERS.filter((n) => existsSync(join(gapsDir, n))).flatMap((n) => parseLedger(join(gapsDir, n))));
 }
 
 export type Args = { phase: string | null; out: string | null };
@@ -199,6 +315,11 @@ export function main(argv: string[] = process.argv.slice(2)): number {
   const nGates = pySplitlines(text).filter((ln) => ln.startsWith('- [ ] ')).length;
   const shown = resolve(out).startsWith(resolve(paths.ROOT)) ? relative(paths.ROOT, out) : out;
   process.stdout.write(`✔ gap digest: ${nDoc} DOC line(s), ${nGates} failed target(s) → ${shown}\n`);
+  const open = openItems(paths.GAPS);
+  if (open.length) {
+    process.stdout.write(`  ${open.length} open ledger item(s); the most expensive:\n`);
+    for (const e of open.slice(0, 5)) process.stdout.write(`  ${e.id} (${e.ledger}) ${formatCost(e)} · ${e.hitCount} hit(s) — ${e.text.length > 140 ? `${e.text.slice(0, 139)}…` : e.text}\n`);
+  }
   return 0;
 }
 

@@ -60,9 +60,23 @@ export const paths = {
   FOLD_PROMPT: join(REPO_ROOT, 'prompts', 'fold-gaps.md'),
 };
 
-/** What the folding model may use. regen.ps1's AutoFold passes the same string. */
-export const FOLD_ALLOWED_TOOLS =
-  'Read,Write,Edit,MultiEdit,Glob,Grep,Bash(node tools/*),Bash(node --import tsx tools/*),Bash(pnpm *),Bash(git *)';
+/** What the folding model may use: exactly the commands prompts/fold-gaps.md names, plus read-only git and the
+ *  shell readers folds reached for (T31/T32). No network, no rm, no git commit or push (`pnpm commit` does
+ *  the commit). regen.ps1's AutoFold passes the same string. */
+export const FOLD_ALLOWED_TOOLS = [
+  'Read', 'Write', 'Edit', 'MultiEdit', 'Glob', 'Grep',
+  'Bash(node tools/*)', 'Bash(node --import tsx tools/*)', 'Bash(node logs/*.mjs)',
+  'Bash(pnpm parse)', 'Bash(pnpm check)', 'Bash(pnpm commit*)', 'Bash(pnpm test:tools*)',
+  'Bash(git diff *)', 'Bash(git log *)', 'Bash(git status*)',
+  'Bash(grep:*)', 'Bash(ls:*)', 'Bash(awk:*)',
+].join(',');
+
+/** What the folding model may never use. acceptEdits auto-approves in-repo filesystem commands such as `rm`
+ *  whatever the allow list says; a deny rule outranks that. regen.ps1's AutoFold passes the same string. */
+export const FOLD_DISALLOWED_TOOLS = [
+  'WebFetch', 'WebSearch',
+  'Bash(rm:*)', 'Bash(rmdir:*)', 'Bash(git push:*)', 'Bash(curl:*)', 'Bash(wget:*)',
+].join(',');
 
 export const DEFAULT_PLATFORM = 'web,lit,rn';
 export const DEFAULT_FOLD_MODEL = 'sonnet';
@@ -293,7 +307,8 @@ function generateCommand(phase: Phase, r: Run): Command {
 const digestCommand = (phaseName: string): Command => tsx('tools/gap_digest.ts', '--phase', phaseName);
 
 const foldArgs = (r: Run): string[] =>
-  ['-p', '--model', r.foldModel, '--permission-mode', 'acceptEdits', '--allowedTools', FOLD_ALLOWED_TOOLS];
+  ['-p', '--model', r.foldModel, '--permission-mode', 'acceptEdits', '--allowedTools', FOLD_ALLOWED_TOOLS,
+    '--disallowedTools', FOLD_DISALLOWED_TOOLS];
 
 function prepCommands(r: Run): Command[] {
   const commands = [pnpm('themes'), pnpm('parse')];

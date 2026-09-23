@@ -6,6 +6,21 @@ import type { LinkProps } from '../../packages/rn/src/Link';
 import meta from '../../packages/rn/src/Link.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<LinkProps> = {}) {
   const events = {
     onPress: jest.fn(),
@@ -31,7 +46,7 @@ function setup(given: Partial<LinkProps> = {}) {
 describe('Link', () => {
   test('click-fires-on-press', () => {
     const s = setup({});
-    fireEvent.press(s.anchor());
+    fireEvent.press(activatable(s.anchor(), s.root()));
     expect(s.events.onPress).toHaveBeenCalled();
   });
   test('external-link-announces-that-it-leaves', () => {

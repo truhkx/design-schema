@@ -594,6 +594,7 @@ component:
 
 - `F6` (Moves focus into the toast region (the first toast's action or dismiss button) from anywhere; F6 again returns to where focus was.): expect focus-first
 - `Escape` (Dismisses the focused toast and returns focus.): expect closes
+- `Tab` (Moves between the action and dismiss buttons, then out of the region.): expect focus-next
 
 ## Constants and examples
 

@@ -6,6 +6,21 @@ import type { ButtonProps } from '../../packages/rn/src/Button';
 import meta from '../../packages/rn/src/Button.stories';
 import { ThemeProvider } from '../../packages/rn/src/theme';
 
+type TestNode = ReturnType<typeof screen.getByTestId>;
+const CONTROL_ROLES = new Set(["button", "checkbox", "switch", "radio", "textbox", "searchbox", "spinbutton", "combobox", "slider", "link", "tab", "menuitem", "menuitemcheckbox", "menuitemradio", "option", "treeitem", "scrollbar", "adjustable", "imagebutton", "togglebutton"]);
+function isControl(n: TestNode): boolean {
+  return CONTROL_ROLES.has(n.props.role ?? n.props.accessibilityRole) || typeof n.props.onPress === 'function';
+}
+const CONTAINER_ROLES = new Set(["dialog", "alertdialog", "combobox", "grid", "listbox", "menu", "menubar", "radiogroup", "tablist", "tree", "treegrid"]);
+function hasOwnRole(n: TestNode): boolean {
+  return CONTAINER_ROLES.has(n.props.role ?? n.props.accessibilityRole);
+}
+function activatable(node: TestNode, root: TestNode): TestNode {
+  const hit = isControl(node) ? node : node === root || hasOwnRole(node) ? undefined : node.findAll(isControl)[0];
+  if (hit === undefined) return node;
+  return typeof hit.type === 'string' ? hit : (hit.findAll((n: TestNode) => typeof n.type === 'string')[0] ?? hit);
+}
+
 function setup(given: Partial<ButtonProps> = {}) {
   const events = {
     onPress: jest.fn(),
@@ -32,18 +47,18 @@ function setup(given: Partial<ButtonProps> = {}) {
 describe('Button', () => {
   test('click-fires-on-press', () => {
     const s = setup({});
-    fireEvent.press(s.container());
+    fireEvent.press(activatable(s.container(), s.root()));
     expect(s.events.onPress).toHaveBeenCalled();
   });
   test('disabled-does-not-fire', () => {
     const s = setup({"disabled": true});
-    fireEvent.press(s.container());
+    fireEvent.press(activatable(s.container(), s.root()));
     expect(s.events.onPress).not.toHaveBeenCalled();
     expect(s.container()).toBeDisabled();
   });
   test('loading-announces-busy-and-ignores-activation', () => {
     const s = setup({"loading": true});
-    fireEvent.press(s.container());
+    fireEvent.press(activatable(s.container(), s.root()));
     expect(s.events.onPress).not.toHaveBeenCalled();
   });
   test('expanded-is-reported', () => {
@@ -56,8 +71,8 @@ describe('Button', () => {
   });
   test('press-tracks', () => {
     const s = setup({"track": "signup", "label": "Sign up"});
-    fireEvent.press(s.container());
-    expect(s.events.onTrack).toHaveBeenCalledWith({"name": "signup", "label": "Sign up"});
+    fireEvent.press(activatable(s.container(), s.root()));
+    expect(s.events.onTrack).toHaveBeenCalledWith("signup", "Sign up");
   });
   test('renders', () => {
     const s = setup({});

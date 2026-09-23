@@ -21,6 +21,25 @@ function deep(root: ParentNode, selector: string): Element | null {
   return null;
 }
 
+function flatText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return (node as Text).data;
+  if (node instanceof HTMLStyleElement || node instanceof HTMLScriptElement) return '';
+  if (node instanceof HTMLSlotElement) return node.assignedNodes({ flatten: true }).map(flatText).join('');
+  const scope: Node = (node as HTMLElement).shadowRoot ?? node;
+  return Array.from(scope.childNodes).map(flatText).join('');
+}
+
+function hostName(el: Element): string | null {
+  const label = el.getAttribute('aria-label')?.trim();
+  if (label) return label;
+  const ids = el.getAttribute('aria-labelledby')?.trim();
+  if (!ids) return null;
+  const scope = el.getRootNode() as Document | ShadowRoot;
+  const named = ids.split(/\s+/).map((id) => scope.getElementById(id)).filter((n): n is HTMLElement => n !== null);
+  const text = named.map((n) => flatText(n).replace(/\s+/g, ' ').trim()).join(' ').trim();
+  return text || null;
+}
+
 /** Every element that is "active" from the document down through shadow roots: the host, then the inner one.
  *  document.activeElement alone is a shadow host while focus sits inside its shadow tree. */
 function activeChain(): Element[] {
@@ -58,7 +77,7 @@ async function setup(given: Record<string, unknown> = {}) {
     events,
     props,
     root_: () => el,
-    container: () => (deep(root, '[role="progressbar"]') ?? deep(root, '[part="container"]') ?? deep(root, '[data-part="container"]') ?? root.firstElementChild) as HTMLElement,
+    container: () => ((el.matches('[role="progressbar"]') ? el : null) ?? deep(root, '[role="progressbar"]') ?? (el.matches('[part~="container"], [data-part="container"]') ? el : null) ?? deep(root, '[part="container"]') ?? deep(root, '[data-part="container"]') ?? root.firstElementChild) as HTMLElement,
   };
   return s;
 }
@@ -75,7 +94,7 @@ describe('ds-progress-bar', () => {
   });
   test('the-label-names-the-task', async () => {
     const s = await setup({"label": "Importing contacts"});
-    expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Importing\\ contacts"));
+    expect(flatText(s.el)).toMatch(new RegExp("Importing\\ contacts"));
   });
   test('renders', async () => {
     const s = await setup({});
@@ -107,6 +126,7 @@ describe('ds-progress-bar', () => {
   });
   test('has-accessible-name', async () => {
     const s = await setup({});
-    expect(s.container()).toHaveAccessibleName(s.props.label);
+    if (hostName(s.el) !== null) expect(hostName(s.el)).toBe(s.props.label);
+    else expect(s.container()).toHaveAccessibleName(s.props.label);
   });
 });

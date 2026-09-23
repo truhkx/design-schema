@@ -10,6 +10,16 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+const INTERACTIVE = "button, a[href], input:not([type=\"hidden\"]), select, textarea, [role=\"button\"], [role=\"checkbox\"], [role=\"switch\"], [role=\"radio\"], [role=\"textbox\"], [role=\"searchbox\"], [role=\"spinbutton\"], [role=\"combobox\"], [role=\"slider\"], [role=\"link\"], [role=\"tab\"], [role=\"menuitem\"], [role=\"menuitemcheckbox\"], [role=\"menuitemradio\"], [role=\"option\"], [role=\"treeitem\"], [role=\"scrollbar\"]";
+const OWN_ROLE = "dialog, [role=\"dialog\"], [role=\"alertdialog\"], [role=\"combobox\"], [role=\"grid\"], [role=\"listbox\"], [role=\"menu\"], [role=\"menubar\"], [role=\"radiogroup\"], [role=\"tablist\"], [role=\"tree\"], [role=\"treegrid\"]";
+function activatable(el: Element | null, root: Element | null): HTMLElement {
+  if (el === null || el === root || el.matches(INTERACTIVE) || el.matches(OWN_ROLE)) return el as HTMLElement;
+  return (el.querySelector(INTERACTIVE) ?? el) as HTMLElement;
+}
+function focusedPart(el: Element | null, root: Element | null): Element | null {
+  return el === null || document.activeElement === el ? el : activatable(el, root);
+}
+
 function setup(given: Partial<TreeGridProps> = {}) {
   const events = {
     onExpandChange: vi.fn(),
@@ -42,12 +52,12 @@ function setup(given: Partial<TreeGridProps> = {}) {
 describe('TreeGrid', () => {
   test('the-expand-button-expands-a-row', async () => {
     const s = setup({"defaultExpanded": [], "columns": [{"key": "account", "header": "Account", "isRowHeader": true}, {"key": "balance", "header": "Balance", "align": "end"}], "data": [{"id": "assets", "account": "Assets", "balance": 100, "children": [{"id": "cash", "account": "Cash", "balance": 40}]}]});
-    await s.user.click(s.expandButton());
+    await s.user.click(activatable(s.expandButton(), s.root()));
     expect(s.events.onExpandChange).toHaveBeenCalled();
   });
   test('expanding-a-lazy-row-asks-for-its-children', async () => {
     const s = setup({"defaultExpanded": [], "columns": [{"key": "account", "header": "Account", "isRowHeader": true}], "data": [{"id": "assets", "account": "Assets", "children": "lazy"}]});
-    await s.user.click(s.expandButton());
+    await s.user.click(activatable(s.expandButton(), s.root()));
     expect(s.events.onExpand).toHaveBeenCalled();
     expect(s.events.onExpandChange).toHaveBeenCalled();
   });
@@ -61,12 +71,12 @@ describe('TreeGrid', () => {
   });
   test('activating-a-sortable-header-reports-the-sort', async () => {
     const s = setup({"columns": [{"key": "account", "header": "Account", "isRowHeader": true}, {"key": "balance", "header": "Balance", "align": "end", "sortable": true}], "data": [{"id": "assets", "account": "Assets", "balance": 100}, {"id": "equity", "account": "Equity", "balance": 50}]});
-    await s.user.click(s.sortButton());
+    await s.user.click(activatable(s.sortButton(), s.root()));
     expect(s.events.onSortChange).toHaveBeenCalled();
   });
   test('selecting-a-row-reports-the-selection', async () => {
     const s = setup({"selectable": "row", "columns": [{"key": "account", "header": "Account", "isRowHeader": true}], "data": [{"id": "assets", "account": "Assets"}, {"id": "equity", "account": "Equity"}]});
-    await s.user.click(s.selectCell());
+    await s.user.click(activatable(s.selectCell(), s.root()));
     expect(s.events.onSelectionChange).toHaveBeenCalled();
   });
   test('a-selected-row-is-marked-selected', async () => {

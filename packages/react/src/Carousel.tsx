@@ -239,7 +239,8 @@ export interface CarouselProps
   autoplay?: boolean | undefined;
   /**
    * Milliseconds between automatic advances; values below 5000 are raised to 5000 in every build,
-   * with a development warning once per instance while `autoplay` is on.
+   * with a development warning once ever per instance (a later invalid value does not warn again),
+   * and only while `autoplay` is on.
    */
   interval?: number | undefined;
   /**

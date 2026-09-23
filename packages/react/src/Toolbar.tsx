@@ -83,9 +83,32 @@ function isControlDisabled(element: HTMLElement): boolean {
   return element.getAttribute('aria-disabled') === 'true';
 }
 
-function getControls(container: HTMLElement): HTMLElement[] {
-  // The overflow Menu's popup is portaled, so nothing inside it is ever matched here.
-  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+function firstFocusable(item: Element): HTMLElement | undefined {
+  if (item instanceof HTMLElement && item.matches(FOCUSABLE_SELECTOR)) return item;
+  return item.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) ?? undefined;
+}
+
+/**
+ * One roving stop per control: each top-level entry, and each child of a top-level ToolbarGroup, gives
+ * its first focusable descendant — so a SegmentedControl is one stop (its checked radio) and any other
+ * wrapper is one bare control. The overflow Menu's root is an entry like any other (its trigger); its
+ * popup is portaled, so nothing inside it is ever matched here.
+ */
+function getControls(row: HTMLElement): HTMLElement[] {
+  const controls: HTMLElement[] = [];
+  const visit = (item: Element): void => {
+    const control = firstFocusable(item);
+    if (control) controls.push(control);
+  };
+  for (const child of Array.from(row.children)) {
+    if (child.classList.contains('ds-toolbar__separator') || child.classList.contains('ds-toolbar__reserve')) continue;
+    const items = child.classList.contains('ds-toolbar__entry') ? Array.from(child.children) : [child];
+    for (const item of items) {
+      if (item.getAttribute('data-ds') === 'ToolbarGroup') Array.from(item.children).forEach(visit);
+      else visit(item);
+    }
+  }
+  return controls;
 }
 
 // Writes only on a real change: a same-value tabIndex write still queues a mutation record, and the
@@ -129,6 +152,8 @@ function withSize(element: ReactElement<any>, size: ToolbarSize, key?: string): 
 
 type ToolbarEntry = {
   key: string;
+  /** The entry's place in the toolbar, `entry-<i>`: its overflow Menu item id and warning identity. */
+  id: string;
   kind: 'control' | 'group';
   element: ReactElement<any>;
   /** Only Buttons collapse, and a group only as a whole, when every control in it is a Button. */
@@ -138,12 +163,13 @@ type ToolbarEntry = {
 function buildEntries(children: ReactNode): ToolbarEntry[] {
   return flattenChildren(children).map((element, index): ToolbarEntry => {
     const key = element.key !== null ? String(element.key) : `ds-toolbar-entry-${index}`;
+    const id = `entry-${index}`;
     if (element.type === ToolbarGroup) {
       const groupChildren = flattenChildren((element.props as ToolbarGroupProps).children);
       const collapsible = groupChildren.length > 0 && groupChildren.every((child) => child.type === Button);
-      return { key, kind: 'group', element, collapsible };
+      return { key, id, kind: 'group', element, collapsible };
     }
-    return { key, kind: 'control', element, collapsible: element.type === Button };
+    return { key, id, kind: 'control', element, collapsible: element.type === Button };
   });
 }
 
@@ -161,7 +187,7 @@ function actionFromButton(element: ReactElement<any>, id: string, warned: Set<st
 function isTextEntry(element: HTMLElement): boolean {
   if (element instanceof HTMLTextAreaElement || element.isContentEditable) return true;
   if (!(element instanceof HTMLInputElement)) return false;
-  return !['button', 'checkbox', 'color', 'file', 'image', 'radio', 'range', 'reset', 'submit'].includes(element.type);
+  return !['button', 'checkbox', 'color', 'file', 'hidden', 'image', 'radio', 'range', 'reset', 'submit'].includes(element.type);
 }
 
 function readPx(value: string): number {
@@ -251,6 +277,9 @@ export function Toolbar({
   ...rest
 }: ToolbarProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  // The row inside the toolbar's padding: it lays out, scrolls, clips and is masked, so the fade never
+  // clouds the border or the padding.
+  const rowRef = useRef<HTMLDivElement | null>(null);
   const currentRef = useRef<HTMLElement | null>(null);
   const entryNodesRef = useRef(new Map<string, HTMLElement>());
   const probeRef = useRef<HTMLSpanElement | null>(null);
@@ -282,14 +311,13 @@ export function Toolbar({
 
   useLayoutEffect(() => {
     if (!isMenuOverflow) return undefined;
-    const container = containerRef.current;
+    const container = rowRef.current;
     if (!container) return undefined;
 
     if (hiddenKeys === null) {
-      const computed = getComputedStyle(container);
-      const available =
-        container.clientWidth - readPx(computed.paddingInlineStart || computed.paddingLeft) - readPx(computed.paddingInlineEnd || computed.paddingRight);
-      const itemGap = readPx(computed.columnGap);
+      // The row carries no padding of its own; the toolbar's padding sits outside it.
+      const available = container.clientWidth;
+      const itemGap = readPx(getComputedStyle(container).columnGap);
       const widths = new Map<string, number>();
       for (const entry of entries) widths.set(entry.key, entryNodesRef.current.get(entry.key)?.offsetWidth ?? 0);
       const separatorNode = container.querySelector<HTMLElement>(':scope > [data-part="separator"]');
@@ -339,7 +367,7 @@ export function Toolbar({
 
   const isScrollOverflow = effectiveOverflow === 'scroll';
   useLayoutEffect(() => {
-    const container = containerRef.current;
+    const container = rowRef.current;
     if (!isScrollOverflow || !container) return undefined;
     const vertical = orientation === 'vertical';
     const check = () => {
@@ -366,7 +394,7 @@ export function Toolbar({
   // Roving tabindex: the toolbar is one tab stop. Requery on every DOM change (controls mounting,
   // collapsing, or a composite control moving its own checked radio) so the stop is always real.
   useLayoutEffect(() => {
-    const container = containerRef.current;
+    const container = rowRef.current;
     if (!container) return undefined;
 
     const sync = () => {
@@ -396,7 +424,7 @@ export function Toolbar({
 
   const handleFocus = (event: ReactFocusEvent<HTMLDivElement>) => {
     onFocus?.(event);
-    const container = containerRef.current;
+    const container = rowRef.current;
     if (!container) return;
     const controls = getControls(container);
     const index = indexOfTarget(controls, event.target);
@@ -414,7 +442,7 @@ export function Toolbar({
     const prevKey = orientation === 'vertical' ? 'ArrowUp' : 'ArrowLeft';
     if (event.key !== nextKey && event.key !== prevKey && event.key !== 'Home' && event.key !== 'End') return;
 
-    const container = containerRef.current;
+    const container = rowRef.current;
     if (!container) return;
     const controls = getControls(container);
     const currentIndex = indexOfTarget(controls, event.target);
@@ -448,7 +476,7 @@ export function Toolbar({
     if (entry.kind === 'group') {
       const groupProps = entry.element.props as ToolbarGroupProps;
       const actions = flattenChildren(groupProps.children).map((child, index) => {
-        const id = `${entry.key}-${index}`;
+        const id = `${entry.id}-${index}`;
         overflowButtons.set(id, child);
         return actionFromButton(child, id, warnedRef.current);
       });
@@ -458,15 +486,16 @@ export function Toolbar({
         menuItems.push(...actions);
       }
     } else {
-      overflowButtons.set(entry.key, entry.element);
-      menuItems.push(actionFromButton(entry.element, entry.key, warnedRef.current));
+      overflowButtons.set(entry.id, entry.element);
+      menuItems.push(actionFromButton(entry.element, entry.id, warnedRef.current));
     }
   }
 
+  // Button's `onPress` contract has no payload, so the collapsed Button's onClick is called bare.
   const handleOverflowAction = (id: string) => {
     const element = overflowButtons.get(id);
-    const onClick = (element?.props as { onClick?: ((event: unknown) => void) | undefined } | undefined)?.onClick;
-    onClick?.(undefined);
+    const onClick = (element?.props as { onClick?: (() => void) | undefined } | undefined)?.onClick;
+    onClick?.();
   };
 
   const separatorOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';
@@ -534,21 +563,21 @@ export function Toolbar({
       onFocus={handleFocus}
       onKeyDown={handleKeyDown}
     >
-      {content}
-      {isMenuOverflow ? (
-        <span ref={probeRef} className="ds-toolbar__reserve" aria-hidden="true" />
-      ) : null}
-      {isMenuOverflow && menuItems.length > 0 ? (
-        <Menu
-          label={COPY.more}
-          items={menuItems}
-          triggerVariant="ghost"
-          triggerIcon="ellipsis"
-          iconOnly
-          data-part="overflowMenu"
-          onAction={handleOverflowAction}
-        />
-      ) : null}
+      <div ref={rowRef} className="ds-toolbar__row">
+        {content}
+        {isMenuOverflow ? <span ref={probeRef} className="ds-toolbar__reserve" aria-hidden="true" /> : null}
+        {isMenuOverflow && menuItems.length > 0 ? (
+          <Menu
+            label={COPY.more}
+            items={menuItems}
+            triggerVariant="ghost"
+            triggerIcon="ellipsis"
+            iconOnly
+            data-part="overflowMenu"
+            onAction={handleOverflowAction}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

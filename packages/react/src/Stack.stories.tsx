@@ -5,9 +5,10 @@ import { Button } from './Button';
 import { Input } from './Input';
 import { Text } from './Text';
 
-/* A container capped at `layout.maxWidth.prose`, so a horizontal row wraps (`Wrap`, `WrappingFilters`). */
+/* A container capped at `layout.maxWidth.prose × 0.5`, narrow enough that the eight filters wrap in
+   every theme (`Wrap`, `WrappingFilters`). A story decorator, not an arg. */
 const proseWidth: Decorator = (Story) => (
-  <div style={{ maxInlineSize: 'var(--layout-max-width-prose)' }}>
+  <div style={{ maxInlineSize: 'calc(var(--layout-max-width-prose) * 0.5)' }}>
     <Story />
   </div>
 );

@@ -65,3 +65,23 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-19 04:30 — round 3
 
 - Text: rounds 2 and 3 failed only on axe-web and keyboard-web failures from other components. Text/React appears nowhere in logs/playwright.json, Text has no keyboard block or generated spec, and axe run on only the Text/React stories (logs/text-axe.spec.ts) passes 26 stories × light/dark with 0 violations. Text's files haven't changed since round 1, and the gate output changed between rounds (new Dialog Tab and Feed Tab failures), so the gate result doesn't depend on this component. Rounds for a single component need the gates narrowed to that component's stories and specs, or they can never pass until the rest of the package is clean.
+
+## 2026-09-23 13:41 — round 1
+
+- Text: `truncate` is a boolean, so the enum-story rule doesn't cover it. The spec names only `TruncateInline`, so the plain truncate-on-`p` story is called `Truncate` (with `TruncatedCell` as the example story). The doc could name it.
+- Text: the spec says `ToneDanger` uses the `inline-error-wording` children, but not whether it also takes that example's `element: span`. I used only the children and kept the Default `element: p`.
+- Text: the spec doesn't say whether a consumer `title=""` counts as passed. With `??` an empty string wins and suppresses the automatic title. I kept that because 'forwarded unchanged' suggests it.
+
+## 2026-09-23 13:43 — round 2
+
+- Text: the `styles.color` description says Text has no `--ds-text-color` hook on web or Lit and that the tone rule reads the token directly. That contradicts the package convention and the hooks gate (a locked binding keeps its hook). I followed the gate: each `.ds-text--tone-*` sets `--ds-text-color` to its token and `.ds-text` reads `color: var(--ds-text-color)`. The spec's actual requirements still hold: `color` is not in `overrides`, and the default tone still re-scopes, because the hook resolves `var(--color-foreground)` on the Text element and so picks up an inverse container's re-scoped value. The doc should drop 'has no --ds-text-color hook' and say the hook exists but `default` resolves through the bare `--color-foreground`. Lit's Text has the same gate failure and needs the same change.
+- Text: the round-2 axe failure was ERR_CONNECTION_REFUSED on localhost:6007: the React Storybook wasn't running when the gate started, and nothing in Text caused it. Rerun scoped to Text, it passes in light and dark without a code change.
+- Text: `ToneDanger` uses only the `inline-error-wording` children, not that example's `element: span`; the doc doesn't say which (carried over from round 1).
+- Text: the doc doesn't say whether a consumer `title=""` counts as passed. It currently wins and suppresses the automatic title (carried over from round 1).
+
+## 2026-09-23 13:43 — round 3
+
+- Text: the round-3 typecheck failure was in packages/react/src/Carousel.test.tsx (ComponentProps not imported), not in Text. Another job is apparently regenerating Carousel in this worktree, and the file now has the import, so the rerun passes with no Text change. Gates for one component can fail on another component's work in progress when jobs share a worktree.
+- Text: the `styles.color` description says Text has no `--ds-text-color` hook, but the hooks gate and package convention require one. The hook is kept (`.ds-text--tone-*` set it, `.ds-text` reads it), and the default tone still resolves `var(--color-foreground)` on the Text element, so inverse-surface re-scoping still works. Lit's Text needs the same fix (carried over from round 2).
+- Text: `ToneDanger` uses only the `inline-error-wording` children, not that example's `element: span`; the doc doesn't say which (carried over from round 1).
+- Text: the doc doesn't say whether a consumer `title=""` counts as passed. It currently wins and suppresses the automatic title (carried over from round 1).

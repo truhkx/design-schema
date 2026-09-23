@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -17,6 +18,7 @@ import {
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Checkbox } from './Checkbox';
+import { FormContext } from './FormContext';
 import { Heading } from './Heading';
 import { Icon } from './Icon';
 import { Text } from './Text';
@@ -161,9 +163,31 @@ function joinClasses(...names: (string | false | null | undefined)[]): string {
   return names.filter(Boolean).join(' ');
 }
 
-/** The document language for plural selection; the runtime default when the page declares none. */
-function pageLocale(): string | undefined {
-  return typeof document !== 'undefined' && document.documentElement.lang ? document.documentElement.lang : undefined;
+/**
+ * The document language for plural selection; the runtime default when the page declares none.
+ * Read through useSyncExternalStore so the server and the hydrating client both start from the
+ * runtime default and the page's language is applied after mount.
+ */
+function subscribeNothing(): () => void {
+  return () => undefined;
+}
+function readPageLocale(): string {
+  return document.documentElement.lang;
+}
+function serverPageLocale(): string {
+  return '';
+}
+
+/**
+ * A press on a part wrapper that misses its composed control runs the control's own action, so the
+ * part is the thing a test or assistive technology can press. A click on the control, or on a
+ * label that already activates it, is left alone.
+ */
+function forwardPress(event: ReactMouseEvent<HTMLElement>, selector: string): void {
+  const control = event.currentTarget.querySelector<HTMLElement>(selector);
+  const target = event.target as Element;
+  if (!control || control.contains(target) || target.closest('label')) return;
+  control.click();
 }
 
 /**
@@ -382,13 +406,17 @@ export function Table({
      Keyboard and assistive technology use the row-header Button. */
   const onRowClick = (event: ReactMouseEvent<HTMLTableRowElement>, rowId: string): void => {
     if (!rowsInteractive) return;
-    const control = (event.target as Element).closest('button, a, input, select, textarea, label, [tabindex]');
+    // A press in a selection cell toggles its Checkbox (forwardPress) and never also activates the row.
+    const control = (event.target as Element).closest(
+      'button, a, input, select, textarea, label, [tabindex], [data-part="selectCell"]',
+    );
     if (control && event.currentTarget.contains(control)) return;
     onRowPress?.(rowId);
   };
 
   const columnCount = (selectable !== 'none' ? 1 : 0) + columns.length + (rowActions ? 1 : 0);
-  const pluralForm = new Intl.PluralRules(pageLocale()).select(data.length) === 'one' ? 'one' : 'other';
+  const pageLocale = useSyncExternalStore(subscribeNothing, readPageLocale, serverPageLocale);
+  const pluralForm = new Intl.PluralRules(pageLocale || undefined).select(data.length) === 'one' ? 'one' : 'other';
   const rowCountText = COPY.rowCount[pluralForm].replace('{count}', String(data.length));
 
   const cellClasses = (base: string, column: TableColumn): string =>
@@ -414,21 +442,24 @@ export function Table({
         className={cellClasses('ds-table__column-header', column)}
       >
         {column.sortable ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            label={column.header}
-            accessibleName={(nextDirection === 'ascending' ? COPY.sortAscending : COPY.sortDescending).replace(
-              '{column}',
-              column.header,
-            )}
-            trailingIcon={sorted ? <Icon name={sorted === 'ascending' ? 'chevron-up' : 'chevron-down'} inline /> : undefined}
-            overrides={{
-              fontWeight: overrides?.headerWeight ?? 'font.weight.semibold',
-              iconGap: overrides?.cellGap ?? 'layout.gap.tight',
-            }}
-            onClick={() => activateSort(column)}
-          />
+          /* Button writes its own part hook, so the sortButton part is this wrapper around it. */
+          <span data-part="sortButton" className="ds-table__sort" onClick={(event) => forwardPress(event, 'button')}>
+            <Button
+              variant="ghost"
+              size="sm"
+              label={column.header}
+              accessibleName={(nextDirection === 'ascending' ? COPY.sortAscending : COPY.sortDescending).replace(
+                '{column}',
+                column.header,
+              )}
+              trailingIcon={sorted ? <Icon name={sorted === 'ascending' ? 'chevron-up' : 'chevron-down'} inline /> : undefined}
+              overrides={{
+                fontWeight: overrides?.headerWeight ?? 'font.weight.semibold',
+                iconGap: overrides?.cellGap ?? 'layout.gap.tight',
+              }}
+              onClick={() => activateSort(column)}
+            />
+          </span>
         ) : (
           column.header
         )}
@@ -453,15 +484,23 @@ export function Table({
         onClick={rowsInteractive ? (event) => onRowClick(event, row.id) : undefined}
       >
         {selectable !== 'none' ? (
-          <td role="cell" data-part="selectCell" className="ds-table__select">
-            <Checkbox
-              label={COPY.selectRow.replace('{rowName}', name)}
-              hideLabel
-              name={`${id}-select`}
-              value={row.id}
-              checked={isSelected}
-              onChange={(checked) => toggleRow(row.id, checked)}
-            />
+          <td
+            role="cell"
+            data-part="selectCell"
+            className="ds-table__select"
+            onClick={(event) => forwardPress(event, 'input')}
+          >
+            {/* Selection is not a form value: the Checkbox must not register with an enclosing Form. */}
+            <FormContext value={null}>
+              <Checkbox
+                label={COPY.selectRow.replace('{rowName}', name)}
+                hideLabel
+                name={`${id}-select`}
+                value={row.id}
+                checked={isSelected}
+                onChange={(checked) => toggleRow(row.id, checked)}
+              />
+            </FormContext>
           </td>
         ) : null}
         {columns.map((column) => {
@@ -507,15 +546,23 @@ export function Table({
       <thead role="rowgroup" data-part="header" className="ds-table__header">
         <tr role="row" data-part="headerRow" className="ds-table__header-row">
           {selectable === 'multiple' ? (
-            <th role="columnheader" scope="col" data-part="selectAllCell" className="ds-table__select">
-              <Checkbox
-                label={COPY.selectAll}
-                hideLabel
-                name={`${id}-select-all`}
-                checked={allSelected}
-                indeterminate={someSelected}
-                onChange={toggleAll}
-              />
+            <th
+              role="columnheader"
+              scope="col"
+              data-part="selectAllCell"
+              className="ds-table__select"
+              onClick={(event) => forwardPress(event, 'input')}
+            >
+              <FormContext value={null}>
+                <Checkbox
+                  label={COPY.selectAll}
+                  hideLabel
+                  name={`${id}-select-all`}
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onChange={toggleAll}
+                />
+              </FormContext>
             </th>
           ) : selectable === 'single' ? (
             <td role="cell" className="ds-table__select" />

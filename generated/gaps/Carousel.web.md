@@ -76,3 +76,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Carousel: nothing is said about announcing the same slide twice — React will not re-fire the live region for an identical string, so two user changes that land on the same index announce once. Chose not to add a nonce, so a repeat announcement is silently dropped.
 - Carousel: the `the-picker-jumps-straight-to-a-slide` scenario clicks `pickerItem`, a part with one instance per slide, without saying which. The test resolves the first one (index 0, with activeIndex 1), so the expectation is onChange(0, 'picker').
 - Carousel: `copy.goTo` ('Go to slide {n}') doubles as the fallback visible tab text for a CarouselSlide missing its `label`. It is phrased as an action, not a name, so it reads oddly in a tab row; used verbatim as instructed rather than deriving a fallback name.
+
+## 2026-09-23 13:43 — round 1
+
+- Carousel: the missing-`label` development warning is tied to the tabs fallback text, but the doc also says `label` is required 'on every platform'. It does not say whether a dots or none picker should warn when the label is unused; I chose to warn only when picker is `tabs`, where the fallback text is actually shown.
+- Carousel: the prose-width breakpoint is measured on the viewport for the paging math, but the CSS literal is a container query on the root (`.ds-carousel`, container-type inline-size). The doc does not name which element is the query container; the root and the viewport are the same width in this layout, so I kept the root.
+- Carousel: the doc does not say whether the viewport's own focus should count as a focus pause for autoplay. The root's focus handling pauses on any focus inside the region, the viewport tab stop included; I kept that.
+- Carousel: the tab panels (role=tabpanel when picker is tabs) are named by copy.slideLabel through aria-label, as the doc says, rather than aria-labelledby pointing at their tab as the Tabs pattern would. I followed the doc; the difference from Tabs is not explained.
+- Carousel: `the-picker-jumps-straight-to-a-slide` fixes activeIndex at 1 but does not say whether the carousel shows index 0 afterwards. It is controlled, so it stays at 1 until the parent changes the prop; the test asserts only onChange(0, 'picker').

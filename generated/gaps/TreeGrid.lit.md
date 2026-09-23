@@ -99,3 +99,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - TreeGrid: copy.expand/collapse/selectRow take rowName 'from its row-header cell', but the doc doesn't cover an empty row-header value or a column `render`; chose the raw value as text, falling back to the row id when it is empty.
 - TreeGrid: `height: viewport` says 'as DataGrid' without restating the size; chose DataGrid's calc(100vh - 2 * layout.gap.section) for the whole component.
 - TreeGrid: the loadingColor binding says 'It reaches the composed Text as tone="muted"', but the composition map (caption, sortButton, expandButton, selectCell, selectAllCell, emptyState, statusBar) doesn't list the placeholder's Text as a composed part; chose a ds-text carrying data-part="cellContent".
+
+## 2026-09-23 19:41 — round 1
+
+- TreeGrid: Shift+click on the select column's cell area (outside the Checkbox) is not covered by the doc. It says Shift+Space and Shift+click ranges do not cascade, but not which cell of a row that covers. I left it as a cascading plain toggle; the Checkbox click itself is a plain toggle by design.
+- TreeGrid: the doc says the lazy placeholder row is counted by aria-rowindex and aria-rowcount but not by copy.rowCount or copy.selectedRows, and does not say what position copy shows when the active cell is on the placeholder. I show 'Row N, <column header>' with N the visible index + 1, as for any row.

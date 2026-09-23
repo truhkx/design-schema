@@ -347,20 +347,20 @@
     }
   },
   "DataGrid.lit": {
-    "hash": "40d9c9697b506d36",
-    "lastAttemptHash": "40d9c9697b506d36",
-    "generatedAt": "2026-09-23T19:38:07+00:00",
-    "model": "opus",
+    "hash": "42a0b9703441329e",
+    "lastAttemptHash": "42a0b9703441329e",
+    "generatedAt": "2026-09-23T23:40:54+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.9632,
+    "costUsd": 0.3704,
     "files": [
       "packages/lit/src/DataGrid.stories.ts",
       "packages/lit/src/DataGrid.test.ts",
       "packages/lit/src/DataGrid.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 11,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1314,17 +1314,19 @@
     }
   },
   "Tree.lit": {
-    "hash": "501fcb692ce7203c",
-    "lastAttemptHash": "501fcb692ce7203c",
-    "generatedAt": "2026-09-23T19:42:00+00:00",
-    "model": "opus",
+    "hash": "e0183ba7fdab9892",
+    "lastAttemptHash": "e0183ba7fdab9892",
+    "generatedAt": "2026-09-23T23:43:11+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.108,
+    "costUsd": 0.392,
     "files": [
-      "packages/lit/src/Tree.ts"
+      "packages/lit/src/Tree.stories.ts",
+      "packages/lit/src/Tree.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 4,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1339,17 +1341,20 @@
     }
   },
   "TreeGrid.lit": {
-    "hash": "5b24989e50a571b7",
-    "lastAttemptHash": "5b24989e50a571b7",
-    "generatedAt": "2026-09-23T19:40:11+00:00",
-    "model": "opus",
+    "hash": "3cebec27ef86e7e1",
+    "lastAttemptHash": "3cebec27ef86e7e1",
+    "generatedAt": "2026-09-23T23:42:15+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.1713,
+    "costUsd": 0.5281,
     "files": [
-      "packages/lit/src/TreeGrid.ts"
+      "packages/lit/src/TreeGrid.stories.ts",
+      "packages/lit/src/TreeGrid.test.ts",
+      "packages/lit/src/TreeGrid.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,

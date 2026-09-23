@@ -141,6 +141,10 @@ export class DsForm extends LitElement {
       --ds-form-error-summary-border-width: var(--border-width-thin);
       --ds-form-error-summary-radius: var(--radius-md);
       --ds-form-error-summary-padding: var(--space-md);
+      /* Locked: no overrides key, but the hook stays so a page stylesheet or the naming codemod can reach it. */
+      --ds-form-error-summary-text: var(--color-foreground-danger);
+      --ds-form-error-summary-background: var(--color-background-subtle);
+      --ds-form-error-summary-line-height: var(--font-line-height-normal);
     }
 
     :host([hidden]) {
@@ -161,21 +165,20 @@ export class DsForm extends LitElement {
       align-items: flex-start;
     }
 
-    /* errorSummaryBackground / errorSummaryText / errorSummaryLineHeight:
-       color.background.subtle / color.foreground.danger / font.lineHeight.normal, all locked, so they
-       read their tokens directly and get no --ds-form-* hook. */
+    /* errorSummaryBackground / errorSummaryText / errorSummaryLineHeight are locked: out of the
+       overrides type, but read through their :host hooks like every other binding. */
     [data-part='errorSummary'] {
       box-sizing: border-box;
       padding: var(--ds-form-error-summary-padding);
       border: var(--ds-form-error-summary-border-width) solid var(--ds-form-error-summary-border);
       border-radius: var(--ds-form-error-summary-radius);
-      background: var(--color-background-subtle);
-      color: var(--color-foreground-danger);
+      background: var(--ds-form-error-summary-background);
+      color: var(--ds-form-error-summary-text);
       /* The item Links are bare text in this box, so without this they inherit the document's
          line-height: normal and each link's box falls under the 24px target floor (WCAG 2.5.8).
          Form may not give the Links a target of their own, so the box sets the body rhythm and the
          Links inherit it, as they inherit the danger color. Locked for exactly that reason. */
-      line-height: var(--font-line-height-normal);
+      line-height: var(--ds-form-error-summary-line-height);
     }
 
     [data-part='errorSummary']:focus-visible {
@@ -316,7 +319,13 @@ export class DsForm extends LitElement {
     const gapRef = this.overrides?.errorSummaryGap;
     const stackOverrides = gapRef === undefined ? undefined : { gap: gapRef };
     return html`
-      <div part="errorSummary" data-part="errorSummary" role="alert" tabindex="-1">
+      <div
+        part="errorSummary"
+        data-part="errorSummary"
+        id=${`${this.idBase}-error-summary`}
+        role="alert"
+        tabindex="-1"
+      >
         <ds-stack gap="tight" .overrides=${stackOverrides}>
           <ds-text element="p" weight="semibold" tone="danger">${this.summaryHeading(errorEntries.length)}</ds-text>
           <ds-stack element="ul" gap="tight" .overrides=${stackOverrides}>

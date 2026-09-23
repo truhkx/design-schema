@@ -54,6 +54,14 @@ export class DsLink extends LitElement {
       --ds-link-underline-offset: var(--space-1);
       --ds-link-external-icon-gap: var(--space-1);
       --ds-link-transition: var(--motion-duration-fast);
+      /* Locked bindings: out of the overrides type, but themeable from page CSS and renameable by the naming codemod. */
+      --ds-link-color: var(--color-link);
+      --ds-link-color-hover: var(--color-link-hover);
+      --ds-link-color-visited: var(--color-link-visited);
+      --ds-link-focus-ring: var(--color-border-focus);
+      --ds-link-focus-ring-width: var(--border-width-focus);
+      --ds-link-focus-ring-radius: var(--radius-sm);
+      --ds-link-focus-ring-offset: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -77,25 +85,25 @@ export class DsLink extends LitElement {
       }
     }
 
-    /* color, colorVisited and colorHover apply under tone=default only; locked, so they read the tokens directly */
+    /* color, colorVisited and colorHover apply under tone=default only */
     :host(:not([tone='inherit'])) [data-part='anchor'] {
-      color: var(--color-link);
+      color: var(--ds-link-color);
     }
 
     :host(:not([tone='inherit'])) [data-part='anchor']:visited {
-      color: var(--color-link-visited);
+      color: var(--ds-link-color-visited);
     }
 
     /* colorHover: pointer hover only, not :active, with no hover-media guard */
     :host(:not([tone='inherit'])) [data-part='anchor']:hover {
-      color: var(--color-link-hover);
+      color: var(--ds-link-color-hover);
     }
 
     /* focusRing, focusRingWidth, focusRingRadius, focusRingOffset: the ring follows the inline text box */
     [data-part='anchor']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
-      border-radius: var(--radius-sm);
+      outline: var(--ds-link-focus-ring-width) solid var(--ds-link-focus-ring);
+      outline-offset: var(--ds-link-focus-ring-offset);
+      border-radius: var(--ds-link-focus-ring-radius);
     }
 
     /* externalIconGap, on Link's own wrapper; the icon inside is 1em of the surrounding font (ds-icon inline) */
@@ -116,7 +124,7 @@ export class DsLink extends LitElement {
     }
   `;
 
-  /** The destination. A URL. */
+  /** The destination. A URL. An empty href still renders `href=""`, so the anchor stays a link in the focus order. */
   @property() accessor href = '';
 
   /** The link text. Also the accessible name. Says where the link goes, not "click here". */
@@ -130,6 +138,13 @@ export class DsLink extends LitElement {
 
   /** Downloads the resource instead of navigating, under the server's file name. */
   @property({ type: Boolean, reflect: true }) accessor download = false;
+
+  /**
+   * The link points at the page the user is on, in a navigation list: `aria-current="page"` on the anchor.
+   * The link keeps its colours and underline; how a navigation marks it visually is that container's to say.
+   * False writes nothing.
+   */
+  @property({ type: Boolean, reflect: true }) accessor current = false;
 
   /** Per-instance style overrides: `{ underlineOffset: 'space.2' }`. Locked bindings are ignored. */
   @property({ attribute: false }) accessor overrides: Partial<Record<LinkOverridableBinding, TokenRef | undefined>> | undefined;
@@ -153,6 +168,7 @@ export class DsLink extends LitElement {
       target=${ifDefined(this.external ? '_blank' : undefined)}
       rel=${ifDefined(this.external ? 'noopener noreferrer' : undefined)}
       ?download=${this.download}
+      aria-current=${ifDefined(this.current ? 'page' : undefined)}
       ><span part="label" data-part="label">${this.label}</span>${this.external
         ? html`<span class="visually-hidden">${EXTERNAL_SUFFIX}</span
             ><span part="externalIcon" data-part="externalIcon"><ds-icon name="external" inline></ds-icon></span>`

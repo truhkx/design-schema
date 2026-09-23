@@ -10,6 +10,7 @@ interface LinkArgs {
   external: boolean;
   tone: LinkTone;
   download: boolean;
+  current: boolean;
 }
 
 const meta: Meta<LinkArgs> = {
@@ -22,6 +23,7 @@ const meta: Meta<LinkArgs> = {
     tone: { control: 'select', options: ['default', 'inherit'] },
     external: { control: 'boolean' },
     download: { control: 'boolean' },
+    current: { control: 'boolean' },
   },
   args: {
     href: '/billing/history',
@@ -29,6 +31,7 @@ const meta: Meta<LinkArgs> = {
     external: false,
     tone: 'default',
     download: false,
+    current: false,
   },
   render: (args) =>
     html`<ds-link
@@ -37,6 +40,7 @@ const meta: Meta<LinkArgs> = {
       tone=${args.tone}
       ?external=${args.external}
       ?download=${args.download}
+      ?current=${args.current}
     ></ds-link>`,
 };
 
@@ -60,6 +64,7 @@ export const ToneInherit: Story = {
         tone=${args.tone}
         ?external=${args.external}
         ?download=${args.download}
+        ?current=${args.current}
       ></ds-link
       >.</ds-text
     >`,
@@ -77,6 +82,7 @@ export const InlineInAParagraph: Story = {
         tone=${args.tone}
         ?external=${args.external}
         ?download=${args.download}
+        ?current=${args.current}
       ></ds-link
       >.</ds-text
     >`,
@@ -98,6 +104,7 @@ export const InsideMutedText: Story = {
         tone=${args.tone}
         ?external=${args.external}
         ?download=${args.download}
+        ?current=${args.current}
       ></ds-link
       >.</ds-text
     >`,

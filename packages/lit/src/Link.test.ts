@@ -8,7 +8,7 @@ import './Link.js';
 import type { DsLink } from './Link.js';
 import meta from './Link.stories.js';
 
-type Given = Partial<Pick<DsLink, 'href' | 'label' | 'external' | 'tone' | 'download'>>;
+type Given = Partial<Pick<DsLink, 'href' | 'label' | 'external' | 'tone' | 'download' | 'current'>>;
 
 /** copy.externalSuffix */
 const EXTERNAL_SUFFIX = ' (opens in new tab)';
@@ -64,6 +64,11 @@ describe('ds-link', () => {
   it('download-asks-the-browser-to-save', async () => {
     const l = await setup({ download: true });
     expect(l.anchor().getAttribute('download')).toBe('');
+  });
+
+  it('current-marks-the-page', async () => {
+    const l = await setup({ current: true });
+    expect(l.anchor().getAttribute('aria-current')).toBe('page');
   });
 
   /* derived: a11y.role */

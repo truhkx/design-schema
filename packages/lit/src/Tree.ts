@@ -248,6 +248,20 @@ export class DsTree extends LitElement {
       --ds-tree-line-height: var(--font-line-height-normal);
       --ds-tree-disabled-opacity: var(--opacity-disabled);
       --ds-tree-transition: var(--motion-duration-fast);
+      /* locked: out of the overrides type, but themeable from page CSS and renameable */
+      --ds-tree-row-height: var(--size-target-min);
+      --ds-tree-row-selected: var(--color-background-strong);
+      --ds-tree-row-selected-border: var(--color-control-selected-background);
+      --ds-tree-row-selected-border-width: var(--border-width-focus);
+      --ds-tree-label-color: var(--color-foreground);
+      --ds-tree-badge-color: var(--color-foreground-muted);
+      --ds-tree-expand-button-size: var(--size-target-min);
+      --ds-tree-checkbox-border: var(--color-control-border);
+      --ds-tree-checkbox-selected: var(--color-control-selected-background);
+      --ds-tree-checkbox-mark: var(--color-control-selected-foreground);
+      --ds-tree-min-target: var(--size-target-min);
+      --ds-tree-focus-ring: var(--color-border-focus);
+      --ds-tree-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -259,7 +273,7 @@ export class DsTree extends LitElement {
       font-size: var(--ds-tree-font-size);
       line-height: var(--ds-tree-line-height);
       /* labelColor (locked): the tree's own foreground; the label Text keeps its default tone */
-      color: var(--color-foreground);
+      color: var(--ds-tree-label-color);
     }
 
     .visually-hidden {
@@ -287,8 +301,8 @@ export class DsTree extends LitElement {
 
     /* focusRing / focusRingWidth (locked): around the whole node, the chevron included */
     [data-part='node']:focus-visible > [data-part='nodeRow'] {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-tree-focus-ring-width) solid var(--ds-tree-focus-ring);
+      outline-offset: calc(-1 * var(--ds-tree-focus-ring-width));
     }
 
     [data-part='nodeRow'] {
@@ -296,7 +310,8 @@ export class DsTree extends LitElement {
       display: flex;
       align-items: center;
       /* rowHeight / minTarget (locked) */
-      min-block-size: var(--size-target-min);
+      /* rowHeight, never below minTarget; a minimum, so a larger font override grows the row */
+      min-block-size: max(var(--ds-tree-row-height), var(--ds-tree-min-target));
       padding-inline: var(--ds-tree-row-padding-inline);
       border-radius: var(--ds-tree-row-radius);
       cursor: pointer;
@@ -304,14 +319,16 @@ export class DsTree extends LitElement {
       transition: background-color var(--ds-tree-transition) var(--motion-easing-standard);
     }
 
-    [data-part='node']:not([aria-disabled='true']) > [data-part='nodeRow']:hover {
+    /* rowHover: a selected (or checked) row keeps rowSelected */
+    [data-part='node']:not([aria-disabled='true']):not([aria-selected='true']):not([aria-checked='true'])
+      > [data-part='nodeRow']:hover {
       background: var(--ds-tree-row-hover);
     }
 
     /* rowSelected (locked): the fill on the selected (or checked) node; a mixed parent gets neither */
     [data-part='node'][aria-selected='true'] > [data-part='nodeRow'],
     [data-part='node'][aria-checked='true'] > [data-part='nodeRow'] {
-      background: var(--color-background-strong);
+      background: var(--ds-tree-row-selected);
     }
 
     /* rowSelectedBorder / rowSelectedBorderWidth (locked): drawn over the row, so selecting moves nothing */
@@ -321,7 +338,7 @@ export class DsTree extends LitElement {
       position: absolute;
       inset-block: 0;
       inset-inline-start: 0;
-      border-inline-start: var(--border-width-focus) solid var(--color-control-selected-background);
+      border-inline-start: var(--ds-tree-row-selected-border-width) solid var(--ds-tree-row-selected-border);
       pointer-events: none;
     }
 
@@ -351,8 +368,8 @@ export class DsTree extends LitElement {
       flex: none;
       display: inline-grid;
       place-items: center;
-      inline-size: var(--size-target-min);
-      min-block-size: var(--size-target-min);
+      inline-size: var(--ds-tree-expand-button-size);
+      min-block-size: var(--ds-tree-expand-button-size);
     }
 
     .chevron {
@@ -400,24 +417,28 @@ export class DsTree extends LitElement {
       inline-size: var(--ds-tree-checkbox-size);
       block-size: var(--ds-tree-checkbox-size);
       /* checkboxBorder (locked) */
-      border: var(--ds-tree-checkbox-border-width) solid var(--color-control-border);
+      border: var(--ds-tree-checkbox-border-width) solid var(--ds-tree-checkbox-border);
       border-radius: var(--ds-tree-checkbox-radius);
       background: var(--ds-tree-checkbox-background);
       /* checkboxMark (locked): the check or dash Icon takes this as currentColor */
-      color: var(--color-control-selected-foreground);
+      color: var(--ds-tree-checkbox-mark);
     }
 
     /* checkboxSelected (locked): checked or mixed fills border and background alike, so the fill has no
        contrasting edge */
     [data-part='checkbox'][data-state='true'],
     [data-part='checkbox'][data-state='mixed'] {
-      border-color: var(--color-control-selected-background);
-      background: var(--color-control-selected-background);
+      border-color: var(--ds-tree-checkbox-selected);
+      background: var(--ds-tree-checkbox-selected);
     }
 
     [data-part='icon'],
     [data-part='badge'] {
       flex: none;
+    }
+
+    [data-part='icon'] {
+      display: inline-flex;
     }
 
     [data-part='label'] {
@@ -435,7 +456,8 @@ export class DsTree extends LitElement {
       position: absolute;
       inset-block: 0;
       inset-inline-start: calc(
-        var(--ds-tree-row-padding-inline) + var(--ds-tree-indent) * var(--ds-tree-level) + var(--size-target-min) / 2
+        var(--ds-tree-row-padding-inline) + var(--ds-tree-indent) * var(--ds-tree-level) +
+          var(--ds-tree-expand-button-size) / 2
       );
       border-inline-start: var(--ds-tree-guide-line-width) solid var(--ds-tree-guide-line);
       pointer-events: none;
@@ -511,7 +533,11 @@ export class DsTree extends LitElement {
   @state() private accessor focusedId: string | undefined;
 
   private readonly instanceId = `ds-tree-${++idCounter}`;
-  private nodeMapCache: { nodes: TreeNode[]; map: Map<string, TreeNode> } | undefined;
+  private nodeMapCache:
+    | { nodes: TreeNode[]; map: Map<string, TreeNode>; parents: Map<string, string> }
+    | undefined;
+  /** The node focused when an expansion change began, so `updated` can move focus up if it disappeared. */
+  private focusBeforeUpdate: string | undefined;
   private typeaheadBuffer = '';
   private typeaheadTimer: ReturnType<typeof setTimeout> | undefined;
   private warnedLabel = false;
@@ -532,10 +558,28 @@ export class DsTree extends LitElement {
       this.internalSelected = [...(this.defaultSelected ?? [])];
     }
     if (changed.has('overrides')) this.applyOverrides();
+    if (changed.has('expanded') || changed.has('internalExpanded') || changed.has('nodes')) {
+      const item = this.renderRoot instanceof ShadowRoot ? this.renderRoot.activeElement : null;
+      const treeitem = item?.closest('[role="treeitem"]');
+      this.focusBeforeUpdate = treeitem ? this.nodeIdOf(treeitem) : undefined;
+    }
   }
 
   protected override updated(): void {
-    void this.demoteComposedLinks();
+    // When an expansion change (a controlled `expanded` above all) closes an ancestor of the focused node,
+    // focus moves up to that ancestor rather than dropping to the document.
+    const lost = this.focusBeforeUpdate;
+    this.focusBeforeUpdate = undefined;
+    if (lost !== undefined && !this.itemEl(lost)) {
+      const parents = this.parentById;
+      for (let id = parents.get(lost); id !== undefined; id = parents.get(id)) {
+        if (this.itemEl(id) && this.nodeById.get(id)?.disabled !== true) {
+          this.focusNode(id);
+          break;
+        }
+      }
+    }
+    void this.demoteComposedControls();
     if (import.meta.env.DEV && !this.label && !this.warnedLabel) {
       this.warnedLabel = true;
       console.warn('<ds-tree> requires a `label`: it names the tree for assistive technology.', this);
@@ -544,11 +588,27 @@ export class DsTree extends LitElement {
 
   /* ---------- hierarchy ---------- */
 
-  private get nodeById(): Map<string, TreeNode> {
+  private get nodeMaps(): { map: Map<string, TreeNode>; parents: Map<string, string> } {
     if (this.nodeMapCache?.nodes !== this.nodes) {
-      this.nodeMapCache = { nodes: this.nodes, map: new Map(allNodes(this.nodes).map((node) => [node.id, node])) };
+      const parents = new Map<string, string>();
+      for (const node of allNodes(this.nodes)) {
+        for (const child of loadedChildren(node)) parents.set(child.id, node.id);
+      }
+      this.nodeMapCache = {
+        nodes: this.nodes,
+        map: new Map(allNodes(this.nodes).map((node) => [node.id, node])),
+        parents,
+      };
     }
-    return this.nodeMapCache.map;
+    return this.nodeMapCache;
+  }
+
+  private get nodeById(): Map<string, TreeNode> {
+    return this.nodeMaps.map;
+  }
+
+  private get parentById(): Map<string, string> {
+    return this.nodeMaps.parents;
   }
 
   /** The caller's list with `"*"` resolved to concrete ids; a held-lazy id stays in it and in what is reported. */
@@ -656,6 +716,8 @@ export class DsTree extends LitElement {
   private toggleExpanded(id: string): void {
     const ids = this.expandedIds;
     if (this.expandedSet.has(id)) {
+      // Closing a lazy node re-arms it: only a user act reopens it, and that act fires `expand` again.
+      if (this.openedLazy.includes(id)) this.openedLazy = this.openedLazy.filter((opened) => opened !== id);
       this.commitExpanded(
         ids.filter((existing) => existing !== id),
         [],
@@ -926,7 +988,13 @@ export class DsTree extends LitElement {
           ${this.nodes.map((node, index) => this.renderNode(node, 1, index + 1, this.nodes.length, context))}
         </ul>
         ${this.nodes.length === 0
-          ? html`<ds-text data-part="emptyState" part="emptyState" tone="muted">${COPY.empty}</ds-text>`
+          ? html`<ds-text
+              data-part="emptyState"
+              part="emptyState"
+              tone="muted"
+              .overrides=${context.labelOverrides}
+              >${COPY.empty}</ds-text
+            >`
           : nothing}
         ${this.selectable === 'multiple'
           ? html`<span class="visually-hidden" role="status"
@@ -964,6 +1032,7 @@ export class DsTree extends LitElement {
         data-part="node"
         part="node"
         style=${styleMap({ '--ds-tree-level': String(level - 1) })}
+        aria-label=${node.badge !== undefined ? `${node.label}, ${node.badge}` : node.label}
         aria-level=${level}
         aria-setsize=${setsize}
         aria-posinset=${posinset}
@@ -1010,11 +1079,8 @@ export class DsTree extends LitElement {
                   @press=${(event: Event) => event.stopPropagation()}
                 >
                   <!--
-                    Not aria-hidden, though the platform notes ask for it: this is a real <button>, and
-                    tabindex="-1" takes it out of the tab order without taking it out of focus, so hiding it
-                    would be axe's aria-hidden-focus (the rule TreeGrid's own chevron settled). It stays
-                    exposed under copy.expand/collapse; ArrowLeft/Right remain the keyboard path and the
-                    treeitem's own aria-expanded is what conveys the state.
+                    Never aria-hidden: tabindex="-1" takes the button out of the tab order, not out of focus.
+                    It stays exposed under copy.expand/collapse; ArrowLeft/Right remain the keyboard path.
                   -->
                   <ds-button
                     variant="ghost"
@@ -1042,13 +1108,9 @@ export class DsTree extends LitElement {
                 : nothing}
               <span class="body">
                 ${node.icon !== undefined
-                  ? html`<ds-icon
-                      data-part="icon"
-                      part="icon"
-                      name=${node.icon}
-                      inline
-                      .overrides=${ICON_COLOR}
-                    ></ds-icon>`
+                  ? html`<span data-part="icon" part="icon"
+                      ><ds-icon name=${node.icon} inline .overrides=${ICON_COLOR}></ds-icon
+                    ></span>`
                   : nothing}
                 <ds-text data-part="label" part="label" element="span" truncate .overrides=${labelOverrides}
                   >${node.href !== undefined
@@ -1074,7 +1136,7 @@ export class DsTree extends LitElement {
         ${expanded
           ? html`<ul role="group" data-part="group" part="group">
               ${loading
-                ? this.renderLoading(level + 1)
+                ? this.renderLoading(level + 1, context)
                 : children.map((child, index) => this.renderNode(child, level + 1, index + 1, children.length, context))}
             </ul>`
           : nothing}
@@ -1082,7 +1144,7 @@ export class DsTree extends LitElement {
   }
 
   /** The lazy placeholder: a treeitem the arrows never land on, under an `aria-busy` parent. */
-  private renderLoading(level: number): TemplateResult {
+  private renderLoading(level: number, context: RenderContext): TemplateResult {
     return html`<li
       role="treeitem"
       style=${styleMap({ '--ds-tree-level': String(level - 1) })}
@@ -1096,24 +1158,26 @@ export class DsTree extends LitElement {
         <span data-part="indent" aria-hidden="true"></span>
         <span class="content">
           <span class="expand-spacer" aria-hidden="true"></span>
-          <ds-text element="span" tone="muted">${COPY.loading}</ds-text>
+          <ds-text element="span" tone="muted" .overrides=${context.labelOverrides}>${COPY.loading}</ds-text>
         </span>
       </div>
     </li>`;
   }
 
   /**
-   * The tree is one tab stop. `ds-button` forwards the host's `tabindex` to its inner `<button>` on its own,
-   * but `ds-link` does not, so each composed link's inner `<a>` is demoted after every render — otherwise the
-   * tree would have a tab stop per navigation node. A same-value write is skipped.
+   * The tree is one tab stop. A tabindex on a custom-element host does not reach the child's inner control,
+   * so each composed ds-link's `<a>` and ds-button's `<button>` is demoted after every render — otherwise the
+   * tree would have a tab stop per node. A same-value write is skipped.
    */
-  private async demoteComposedLinks(): Promise<void> {
-    const links = [...this.renderRoot.querySelectorAll<LitElement>('[data-part="link"] ds-link')];
-    if (links.length === 0) return;
-    await Promise.all(links.map((link) => link.updateComplete));
-    for (const link of links) {
-      const anchor = link.shadowRoot?.querySelector('a');
-      if (anchor && anchor.getAttribute('tabindex') !== '-1') anchor.setAttribute('tabindex', '-1');
+  private async demoteComposedControls(): Promise<void> {
+    const hosts = [
+      ...this.renderRoot.querySelectorAll<LitElement>('[data-part="link"] ds-link, [data-part="expandButton"] ds-button'),
+    ];
+    if (hosts.length === 0) return;
+    await Promise.all(hosts.map((host) => host.updateComplete));
+    for (const host of hosts) {
+      const control = host.shadowRoot?.querySelector('a, button');
+      if (control && control.getAttribute('tabindex') !== '-1') control.setAttribute('tabindex', '-1');
     }
   }
 

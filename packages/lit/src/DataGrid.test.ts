@@ -103,7 +103,8 @@ describe('ds-data-grid', () => {
         { id: 'b', sku: 'B-2' },
       ],
     });
-    s.parts('selectCell')[0]!.shadowRoot!.querySelector('input')!.click();
+    // selectCell is the cell div that holds the composed Checkbox.
+    s.parts('selectCell')[0]!.querySelector('ds-checkbox')!.shadowRoot!.querySelector('input')!.click();
     await s.el.updateComplete;
     expect(s.selectionChange).toHaveBeenCalledTimes(1);
     expect(s.selectionChange.mock.calls[0]![0].detail).toEqual({ selection: ['a'] });

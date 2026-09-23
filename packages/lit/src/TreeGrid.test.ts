@@ -134,6 +134,40 @@ describe('ds-tree-grid', () => {
     expect(s.parts('row')).toHaveLength(2);
   });
 
+  /* web-only doc scenarios: Lit renders the web DOM, so they apply here too */
+  it('a-collapsed-parent-row-reports-it', async () => {
+    const s = await setup({
+      defaultExpanded: [],
+      columns: [{ key: 'account', header: 'Account', isRowHeader: true }],
+      data: [{ id: 'assets', account: 'Assets', children: [{ id: 'cash', account: 'Cash' }] }],
+    });
+    expect(s.parts('row')[0]!).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('an-expanded-parent-row-reports-it', async () => {
+    const s = await setup({
+      defaultExpanded: ['assets'],
+      columns: [{ key: 'account', header: 'Account', isRowHeader: true }],
+      data: [{ id: 'assets', account: 'Assets', children: [{ id: 'cash', account: 'Cash' }] }],
+    });
+    expect(s.parts('row')[0]!).toHaveAttribute('aria-expanded', 'true');
+    expect(s.parts('row')[1]!).not.toHaveAttribute('aria-expanded');
+  });
+
+  it('a-selected-row-is-marked-selected', async () => {
+    const s = await setup({
+      selectable: 'row',
+      selected: ['assets'],
+      columns: [{ key: 'account', header: 'Account', isRowHeader: true }],
+      data: [
+        { id: 'assets', account: 'Assets' },
+        { id: 'equity', account: 'Equity' },
+      ],
+    });
+    expect(s.parts('row')[0]!).toHaveAttribute('aria-selected', 'true');
+    expect(s.parts('row')[1]!).toHaveAttribute('aria-selected', 'false');
+  });
+
   it('activating-a-sortable-header-reports-the-sort', async () => {
     const s = await setup({
       columns: [

@@ -81,10 +81,15 @@ export const StackBelowNever: Story = { args: { stackBelow: 'never' } };
 export const Collapsible: Story = { args: { collapsible: true } };
 export const Collapsed: Story = { args: { collapsible: true, defaultCollapsed: true } };
 
-/** Present with its separator, collapse Button and at least three focusable children, for the keyboard gate. */
+/**
+ * Present with its separator, collapse Button and at least three focusable children, for the
+ * keyboard gate. `stackBelow: never` is pinned: the gates run at widths narrow enough to stack
+ * the separator away, and a splitter without a separator has no keyboard model to check.
+ */
 export const Keyboard: Story = {
   args: {
     collapsible: true,
+    stackBelow: 'never',
     // gap=normal + align=start for the same 24px target reason as primaryContent above.
     primary: (
       <Stack element="nav" gap="normal" align="start">

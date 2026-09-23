@@ -48,6 +48,7 @@ export type FeedOverridableBinding =
   | 'itemGap'
   | 'articleInset'
   | 'articleBodyGap'
+  | 'articleRadius'
   | 'timestampSize'
   | 'newItemsOffset'
   | 'newItemsLayer'
@@ -61,6 +62,7 @@ export type FeedOverridableBinding =
 /** Bindings Feed owns as hooks on its root. The rest forward to composed children's `overrides`. */
 const ROOT_HOOK: Partial<Record<FeedOverridableBinding, string>> = {
   itemGap: '--ds-feed-item-gap',
+  articleRadius: '--ds-feed-article-radius',
   newItemsOffset: '--ds-feed-new-items-offset',
   newItemsLayer: '--ds-feed-new-items-layer',
   loadingInset: '--ds-feed-loading-inset',
@@ -225,7 +227,7 @@ export interface FeedProps
  * When to use:
  * Use a Feed for a stream of similar, time-ordered items whose total is unknown or large: activity, notifications, comments, posts, audit events. Each item is a Card with a heading and a time. Use `newItemsCount` with `onShowNew` for live streams rather than inserting items while the reader is looking; use `onItemVisible` to mark things read.
  */
-export const Feed = function Feed({
+export function Feed({
   ref,
   label,
   items,
@@ -251,13 +253,13 @@ export const Feed = function Feed({
   const articleRefs = useRef(new Map<string, HTMLElement>());
   const newItemsButtonRef = useRef<HTMLButtonElement | null>(null);
 
-  // The label is the feed's only accessible name; there is no default.
+  // The label is the feed's only accessible name; there is no default. Warns once per mount.
   const warnedLabelRef = useRef(false);
   const warnEmptyLabel = isDev && label.trim() === '';
   useEffect(() => {
     if (warnEmptyLabel && !warnedLabelRef.current) {
       warnedLabelRef.current = true;
-      console.warn('Feed: `label` is the accessible name of the feed and must not be empty.');
+      console.warn('Feed: label is the accessible name of the feed and must not be empty.');
     }
   }, [warnEmptyLabel]);
 
@@ -293,12 +295,13 @@ export const Feed = function Feed({
     }
   }, [idsKey, firstId]);
 
-  // An empty feed has no last article to observe, so it asks for its first page itself, once.
+  // An empty feed has no last article to observe, so it asks for its first page itself: on mount, again
+  // if the caller clears `items`, and again after a `loading` cycle that left it empty (a failed page).
   const firedEmptyLoadRef = useRef(false);
   useEffect(() => {
-    if (total > 0) {
+    if (total > 0 || loading) {
       firedEmptyLoadRef.current = false;
-    } else if (hasMore && !loading && !firedEmptyLoadRef.current) {
+    } else if (hasMore && !firedEmptyLoadRef.current) {
       firedEmptyLoadRef.current = true;
       onLoadMoreRef.current?.();
     }
@@ -492,7 +495,7 @@ export const Feed = function Feed({
                   <Stack gap="tight" overrides={resolved.articleBody}>
                     {item.unread ? <span className="ds-feed__visually-hidden">{COPY.unread}</span> : null}
                     <Text element="span" tone="muted" size="xs" overrides={resolved.timestamp}>
-                      <time id={timestampId} data-part="timestamp" dateTime={item.timestamp} title={absolute}>
+                      <time id={timestampId} className="ds-feed__timestamp" data-part="timestamp" dateTime={item.timestamp} title={absolute}>
                         {formatRelative(item.timestamp, now)}
                       </time>
                     </Text>
@@ -508,28 +511,29 @@ export const Feed = function Feed({
             </div>
           );
         })}
-        {/* The footer is one slot: loading wins, then an empty feed without `hasMore`, then the end message. */}
-        {!loading && total === 0 && !hasMore ? (
+      </div>
+      {/* The footer is one slot, and every piece of it sits outside the feed element (a feed owns only
+          articles): loading wins, then an empty feed with `hasMore` shows nothing, then an empty feed
+          without it shows copy.empty, then a feed with items and without `hasMore` shows the end message. */}
+      {loading ? (
+        <div className="ds-feed__loading" data-part="loadingIndicator">
+          <ProgressBar label={COPY.loading} hideLabel />
+        </div>
+      ) : total === 0 ? (
+        hasMore ? null : (
           <div className="ds-feed__empty-state" data-part="emptyState">
             <Text tone="muted" size="sm" overrides={resolved.emptyState}>
               {COPY.empty}
             </Text>
           </div>
-        ) : null}
-        {!loading && total > 0 && !hasMore ? (
-          <div className="ds-feed__end-message" data-part="endMessage">
-            <Text tone="muted" size="sm" overrides={resolved.endMessage}>
-              {endMessage ?? COPY.end}
-            </Text>
-          </div>
-        ) : null}
-      </div>
-      {/* Outside the feed element: a progressbar is not an article, so it may not be one of its children. */}
-      {loading ? (
-        <div className="ds-feed__loading" data-part="loadingIndicator">
-          <ProgressBar label={COPY.loading} hideLabel />
+        )
+      ) : hasMore ? null : (
+        <div className="ds-feed__end-message" data-part="endMessage">
+          <Text tone="muted" size="sm" overrides={resolved.endMessage}>
+            {endMessage ?? COPY.end}
+          </Text>
         </div>
-      ) : null}
+      )}
     </div>
   );
-};
+}

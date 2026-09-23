@@ -664,7 +664,6 @@ export function Select({
                   onLayout={handlePopupLayout}
                   nativeID={popupId}
                   accessibilityViewIsModal
-                  accessibilityLabel={label}
                   testID="Select.popup"
                 >
                   <View style={popupInnerStyle}>{listbox}</View>

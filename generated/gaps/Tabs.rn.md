@@ -90,3 +90,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tabs: copy.position goes to accessibilityValue={{ text }} on each tab, but the rules say to mirror every accessibilityValue as aria-valuetext, which axe's aria-allowed-attr rejects on role=tab. Did not add aria-valuetext. The mirroring rule needs an exception for accessibilityValue.text on non-range roles.
 - Tabs: web has aria-orientation on the tablist, but RN 0.87's types have no aria-orientation prop and the rn notes don't mention it, so a vertical list on react-native-web is announced without an orientation. Left it out.
 - Tabs: the tabs description says Lit is the only package that shipped TabsTab, but RN exports it from index.ts. Kept it as a @deprecated alias of TabsItem, following the rule that a package that shipped the name keeps it. The prose should name RN as well.
+
+## 2026-09-23 19:13 — round 1
+
+- Tabs: the spec's `TabsTab` alias rule says 'a package that actually shipped it keeps it', but nothing in the doc says which packages did (it only names Lit). I kept it on RN because `packages/rn/dist/index.d.ts` still contains it; the doc should list the packages that shipped it.
+- Tabs: the RN notes say each tab's decorative parts (icon, badge) are hidden, but not which hiding props to use on which parts; I applied the package's three-prop convention (`aria-hidden`, `accessibilityElementsHidden`, `importantForAccessibility`) to the icon wrapper, badge and indicator.
+- Tabs: the doc does not say whether `keepMounted` hidden panels should be hidden with `aria-hidden` on react-native-web as well as `display: 'none'`; I kept `display: 'none'` plus the native hiding props, which hides them on web through the CSS alone.

@@ -97,3 +97,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Listbox: on react-native-web the flattened group-label rows are plain text inside role=listbox (no role=group wrapper, since groups are flattened), which the web contract says may own only options and groups. The group rows get no role; the spec does not say whether they should be hidden or given role=presentation.
 - Listbox: aria-checked is mirrored on role=option rows when `multiple`, including on react-native-web, following the 'both spellings, always' rule. The web contract lists only aria-selected for options.
 - Listbox: the spec says to scroll to the row with `scrollToIndex` before focusing it after a failed submit, but gives no getItemLayout (row heights vary with descriptions and group labels). I added onScrollToIndexFailed, which approaches the row by the average row length, and focus after one animation frame, falling back to the list.
+
+## 2026-09-23 19:14 — round 1
+
+- Listbox: the composed emptyState and errorMessage Texts are said to render as element="p" and get a data-part hook, but the RN Text has no such prop and the doc does not say whether that applies on native; I applied it to neither and kept testIDs on wrapping Views.
+- Listbox: the RN notes say the active/focused row gets a border, but not what an activeValue-driven pre-highlight looks like without focus; I applied only the active background, no border.
+- Listbox: the behavior scenario `loading-replaces-the-empty-message` expects aria-busy, but that is expressible on RN only as accessibilityState.busy and aria-busy on the list; the test checks the copy alone.
+- Listbox: the doc says the optionIcon takes `optionColor` as Icon overrides.color, but `optionColor` is locked and has no override key, so I passed the 'color.foreground' token ref directly.
+- Listbox: `maxVisible` is an enum of quoted digits, but the Enum-digits rule covers only Heading level and Stack gap; I accepted both string and number anyway.
+- Listbox: the selectedCount text is a single form with no plural rules, yet the Copy contract says to use Intl.PluralRules for counts; I interpolated {count} directly as the spec says '1 selected' is intended.
+- Listbox: the RN notes do not say what the empty/loading row's accessibility role should be when the list is `disabled`; I left it as a plain readable stop.

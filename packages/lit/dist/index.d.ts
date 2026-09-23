@@ -566,7 +566,12 @@ export declare class DsInput extends LitElement {
    * shown unless the field is marked invalid.
    */
   private get displayedError();
-  /** helperSize, fontFamily and lineHeight forwarded to the description and error Text. */
+  /**
+   * helperSize, fontFamily and lineHeight forwarded to the description and error
+   * Text. The object is always passed, with `undefined` for the keys the consumer
+   * did not set, rather than withheld — a no-op for Text and one code path
+   * instead of two.
+   */
   private get textOverrides();
   private handleInput;
   private applyOverrides;
@@ -740,6 +745,8 @@ export declare class DsForm extends LitElement {
   /** Focus the error summary once it exists, after the render that follows a failed submission. */
   private pendingSummaryFocus;
   private readonly instanceId;
+  /** The forbidden-nesting dev warning is emitted once per element, not on every reconnection. */
+  private warnedAboutNesting;
   constructor();
   private get idBase();
   override connectedCallback(): void;
@@ -748,6 +755,10 @@ export declare class DsForm extends LitElement {
   protected override updated(changed: PropertyValues): void;
   protected override render(): TemplateResult;
   private renderSummary;
+  /**
+   * copy.summaryHeading, pluralised by `count` in the locale read at the failed submit. A `lang` tag
+   * `Intl.PluralRules` rejects falls back to the runtime default locale rather than throwing.
+   */
   private summaryHeading;
   /** Validate every field and, only if all pass, dispatch `submit` with the collected values. */
   submit(): void;
@@ -1383,6 +1394,8 @@ export declare class DsCard extends LitElement {
   private ownsTabindex;
   private warnedTarget;
   private warnedFocusable;
+  /** A focusin that follows a pointerdown on the card is not the scripted focus the ring is for. */
+  private afterPointerDown;
   constructor();
   override connectedCallback(): void;
   override disconnectedCallback(): void;
@@ -1401,9 +1414,16 @@ export declare class DsCard extends LitElement {
    * native control inside a `ds-link`/`ds-button` shadow root, so it is forwarded to that control.
    */
   private readonly handleHostClick;
-  /** The ring shows only while the target itself has keyboard focus, never for a header-actions or footer control. */
+  /**
+   * The ring shows only while the target itself has keyboard focus, never for a header-actions or
+   * footer control. A focusable card rings whenever it takes focus by script — only a focusin that
+   * follows a pointerdown on the card is skipped.
+   */
   private readonly handleFocusIn;
   private readonly handleFocusOut;
+  private readonly handlePointerDown;
+  /** A pointerdown that moved focus nowhere must not suppress the next scripted focus. */
+  private readonly handlePointerUp;
   /** `role="article"` named by `aria-label` when a heading is set; plain attributes so accessible-name tests see them. */
   private syncName;
   private syncTabindex;
@@ -1437,12 +1457,16 @@ export declare class DsContainer extends LitElement {
   accessor gutter: ContainerGutter;
   /** Where the capped column sits in a wider viewport. `start` sets `margin-inline: 0` on both sides. */
   accessor align: ContainerAlign;
-  /** Use `main` for the page's main column when no Landmark wraps it. */
+  /**
+   * Use `main` for the page's main column when no Landmark wraps it; a page has exactly
+   * one, which is the author's responsibility — Container cannot see the rest of the page,
+   * so it neither enforces it nor warns. The host is always the element in the DOM, so this
+   * swaps no tag: `main` sets the landmark role on the host, and `div` and `section` set
+   * none. It changes no styling, so it does not reflect.
+   */
   accessor element: ContainerElement;
   /** Per-instance style overrides: `{ maxWidth: 'layout.maxWidth.page' }`. */
   accessor overrides: Partial<Record<ContainerOverridableBinding, TokenRef | undefined>> | undefined;
-  private readonly internals;
-  constructor();
   override connectedCallback(): void;
   protected override willUpdate(changed: PropertyValues): void;
   protected override render(): TemplateResult;
@@ -1552,7 +1576,7 @@ interface DialogCloseDetail {
 /** Detail carried by the `opened` CustomEvent (none). */
 type DialogOpenedDetail = void;
 /** Overridable style hooks; see the `overrides` property. `surface`, `focusRing` and `focusRingWidth` are locked and excluded. */
-type DialogOverridableBinding = "scrim" | "border" | "borderWidth" | "shadow" | "radius" | "inset" | "partGap" | "headerGap" | "footerGap" | "descriptionGap" | "widthSm" | "widthMd" | "widthLg" | "layer" | "enter" | "exit";
+type DialogOverridableBinding = "scrim" | "border" | "borderWidth" | "shadow" | "radius" | "inset" | "partGap" | "gutter" | "headerGap" | "footerGap" | "descriptionGap" | "widthSm" | "widthMd" | "widthLg" | "layer" | "enter" | "exit";
 export declare class DsDialog extends LitElement {
   static override shadowRootOptions: ShadowRootInit;
   static override styles: CSSResult;
@@ -1617,6 +1641,8 @@ export declare class DsDialog extends LitElement {
    * `close` → the close button; without one (not dismissible), the `first` order.
    */
   private applyInitialFocus;
+  /** Focus rests on something inside the dialog — not on the scrim, and not on the page behind it. */
+  private focusIsInside;
   private releaseScroll;
   private dispatchClose;
   private applyOverrides;
@@ -1638,7 +1664,7 @@ interface AlertDialogCancelDetail {
   reason: AlertDialogCancelReason;
 }
 /** Overridable style hooks; see the `overrides` property. `surface`, `icon`, `focusRing` and `focusRingWidth` are locked and excluded. */
-type AlertDialogOverridableBinding = "scrim" | "border" | "borderWidth" | "shadow" | "radius" | "inset" | "partGap" | "textGap" | "iconGap" | "footerGap" | "iconSize" | "width" | "gutter" | "layer" | "enter" | "exit";
+type AlertDialogOverridableBinding = "scrim" | "border" | "borderWidth" | "shadow" | "radius" | "inset" | "partGap" | "textGap" | "iconGap" | "footerGap" | "iconSize" | "width" | "gutter" | "layer" | "rise" | "enter" | "exit";
 export declare class DsAlertDialog extends LitElement {
   static override shadowRootOptions: ShadowRootInit;
   static override styles: CSSResult;
@@ -1654,14 +1680,18 @@ export declare class DsAlertDialog extends LitElement {
   accessor confirmLabel;
   /** The declining action. Defaults to `copy.cancelLabel`. */
   accessor cancelLabel: string | undefined;
-  /** Blocks confirm while a precondition is unmet. Forwarded to the confirm Button's own `disabled`. Cancel always works. */
+  /**
+   * Blocks confirm while a precondition is unmet. Forwarded to the confirm Button's own
+   * `disabled`, which is focusable-but-inert, so Confirm stays the last Tab stop. Cancel
+   * always works.
+   */
   accessor confirmDisabled;
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are ignored. */
   accessor overrides: Partial<Record<AlertDialogOverridableBinding, TokenRef | undefined>> | undefined;
   /** The exit transition is playing: the dialog stays rendered a beat past `open` turning false. */
   private accessor closing;
   private accessor dialogEl;
-  private accessor scopeEl;
+  private accessor focusScopeEl;
   private accessor scrimEl;
   private accessor surfaceEl;
   private accessor cancelButtonEl;
@@ -1726,7 +1756,7 @@ interface MenuOpenChangeDetail {
   reason: MenuOpenChangeReason;
 }
 /** Overridable style hooks; see the `overrides` property. `surface`, `phoneBreakpoint`, `itemHover`, `itemColor`, `itemDangerColor`, `groupLabelColor`, `shortcutColor`, `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded. */
-type MenuOverridableBinding = "border" | "borderWidth" | "shadow" | "radius" | "popupPadding" | "popupOffset" | "typeaheadReset" | "maxHeight" | "minWidth" | "itemPaddingBlock" | "itemPaddingInline" | "itemGap" | "itemRadius" | "groupLabelSize" | "groupLabelWeight" | "shortcutSize" | "separator" | "separatorMargin" | "fontFamily" | "fontSize" | "lineHeight" | "layer" | "enter" | "enterDistance";
+type MenuOverridableBinding = "border" | "borderWidth" | "shadow" | "radius" | "popupPadding" | "popupOffset" | "typeaheadReset" | "maxHeight" | "gutter" | "minWidth" | "itemPaddingBlock" | "itemPaddingInline" | "itemGap" | "itemRadius" | "groupLabelSize" | "groupLabelWeight" | "shortcutSize" | "separator" | "separatorMargin" | "fontFamily" | "fontSize" | "lineHeight" | "layer" | "enter" | "enterDistance";
 export declare class DsMenu extends LitElement {
   static override shadowRootOptions: ShadowRootInit;
   static override styles: CSSResult;
@@ -1740,29 +1770,48 @@ export declare class DsMenu extends LitElement {
   accessor triggerIcon: MenuTriggerIcon;
   /** Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required. */
   accessor iconOnly;
-  /** Preferred position of the popup relative to the trigger; flips when it would overflow the viewport. */
+  /**
+   * Preferred position of the popup relative to the trigger (or `anchor`). Only
+   * the block side flips when the popup would overflow the viewport; `start` and
+   * `end` never flip — they resolve against the layout direction (in
+   * right-to-left `start` is the right edge) and the popup is shifted inline
+   * instead so it stays `gutter` away from the side edges.
+   */
   accessor placement: MenuPlacement;
-  /** Controlled open state (the parent flips it from `open-change`). Omit for an uncontrolled menu. */
+  /**
+   * Controlled open state (the parent flips it from `open-change`). Omit for an
+   * uncontrolled menu, which starts closed; there is no defaultOpen. A
+   * controlled menu hides only when `open` becomes false — a parent that never
+   * flips it keeps the menu open.
+   */
   accessor open: boolean | undefined;
   /**
-   * Position the popup relative to this element instead of rendering a
-   * trigger; the trigger part is omitted and `open` must be controlled.
+   * Position the popup relative to this element instead of rendering a trigger;
+   * the trigger part is omitted and `open` must be controlled. The anchor stands
+   * in for the trigger: a pointerdown on it is not `outside` and focus moving
+   * onto it is not `focus-out`.
    */
   accessor anchor: HTMLElement | undefined;
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are not accepted. */
   accessor overrides: Partial<Record<MenuOverridableBinding, TokenRef | undefined>> | undefined;
   /** Uncontrolled open state, used when `open` is omitted. */
   private accessor internalOpen;
-  /** The item carrying the roving tabindex. */
+  /** The item carrying the roving tabindex; `null` puts it on the first enabled item. */
   private accessor activeId;
+  /** Set while the popup is shown but must hold no tab stop at all, after Tab moved focus out of it. */
+  private accessor tabStopSuppressed;
   private accessor triggerEl;
   private accessor buttonEl;
   private accessor popupEl;
   private wasOpen;
   private pendingFocus;
   private restoreOnClose;
+  /** With `anchor` there is no trigger, so focus returns to whatever held it when the menu opened. */
+  private opener;
   private typeaheadBuffer;
   private typeaheadTimer;
+  /** A window blur and the focusout it causes are one focus loss, and report once. */
+  private focusLossReported;
   private warnedNothingToPress;
   /** Whether the menu is open, controlled or not. */
   get currentOpen(): boolean;
@@ -1776,27 +1825,59 @@ export declare class DsMenu extends LitElement {
   private handleOpened;
   private handleClosed;
   private hidePopup;
+  /** The element focus goes back to: the trigger, or in `anchor` mode whatever had it when the menu opened. */
   private restoreFocus;
   /** Closes and returns focus to the trigger once the menu actually closes (controlled: when `open` becomes false). */
   private closeAndRestore;
   private readonly handleTriggerPress;
   private readonly handleTriggerKeydown;
   private readonly handleMenuKeydown;
+  /**
+   * Tab and Shift+Tab close and let the browser carry on. The key is not prevented when there is
+   * somewhere to park focus — the trigger, or a focusable `anchor` standing in for it: every item
+   * drops to tabindex -1 and focus moves there, so the browser's own Tab continues from that point
+   * and a popup a controlled parent still shows holds no tab stop. Only an unfocusable anchor makes
+   * the menu move focus itself, to the first tabbable after (Tab) or last before (Shift+Tab) it.
+   */
+  private handleTab;
   private handleItemClick;
+  /**
+   * The one roving tabindex follows real focus, however the item got it. Converging write: the
+   * guard makes a same-value assignment a no-op, so this cannot loop with the re-render that
+   * moves the tabindex.
+   */
+  private handleItemFocus;
   private handleItemPointerEnter;
   /** The menu, its trigger, and the anchor standing in for a trigger. */
   private isInside;
   private readonly handleOutsidePointerDown;
   private readonly handleFocusOut;
+  private readonly handleFocusIn;
   private readonly handleWindowBlur;
+  /** One close per focus loss: the window blur and the focusout it causes report once between them. */
+  private reportFocusLoss;
   private readonly handleReposition;
   private addGlobalListeners;
   private removeGlobalListeners;
   private navigableItems;
+  private itemElements;
+  /**
+   * The item that actually holds focus. The menu moves real focus rather than pointing at an item
+   * with aria-activedescendant, so focus is the source of truth: it can land on an item without
+   * passing through `focusItem` (a click, a screen reader, a consumer calling focus()), and the
+   * arrows, Home/End and typeahead all move from wherever it really is. `activeId` only backs the
+   * roving tabindex.
+   */
+  private focusedActionId;
   private focusItem;
   private moveFocus;
   private selectItem;
   private typeahead;
+  /**
+   * Places the popup from the trigger (or `anchor`) rect for `placement`. Only the block side flips;
+   * the inline side resolves against the layout direction and is shifted, never flipped, so the popup
+   * stays `gutter` from both viewport edges (the leading edge wins when it cannot have both).
+   */
   private updatePosition;
   private applyOverrides;
 }
@@ -1838,6 +1919,8 @@ export declare class DsTooltip extends LitElement {
   private triggerEl;
   private triggerLink;
   private visible;
+  /** Escape hides the tooltip until the trigger loses hover and focus, or (controlled) `open` next changes. */
+  private dismissed;
   private pointerOverTrigger;
   private pointerOverBubble;
   private triggerFocused;
@@ -1857,8 +1940,10 @@ export declare class DsTooltip extends LitElement {
   private detachTrigger;
   /**
    * Links the trigger to the tooltip text. ID references do not reach into a trigger's shadow root, so a custom
-   * element with one gets the text (`aria-description`, or `aria-label` when the tooltip is the name); a plain
-   * light-DOM trigger gets `aria-describedby` / `aria-labelledby` pointing at the description copy.
+   * element — one whose tag name contains a hyphen, whether or not it is upgraded or its shadow root is open —
+   * gets the text itself (`aria-description`, or `aria-label` when the tooltip is the name), which ds-button,
+   * ds-link and ds-input forward to their inner control; a plain light-DOM trigger gets `aria-describedby` /
+   * `aria-labelledby` pointing at the description copy.
    */
   private updateTriggerAria;
   private clearTriggerLink;
@@ -1876,12 +1961,23 @@ export declare class DsTooltip extends LitElement {
   private readonly handleBubblePointerLeave;
   private readonly handleReposition;
   private requestShow;
-  /** Waits one pointerGrace so the pointer can cross the `offset` gap to the bubble. */
+  /**
+   * Waits one pointerGrace so the pointer can cross the `offset` gap to the bubble, then hides if the trigger
+   * has lost hover and focus. Losing both also clears an Escape dismissal, so the next hover shows it again.
+   */
   private scheduleMaybeHide;
   private showBubble;
   private hideBubble;
-  /** Resolves a duration token expression in ms through getComputedStyle; unresolved (no theme) is 0. */
+  /**
+   * Lets the browser evaluate a token expression by setting it on the always-present, visually-hidden
+   * description node — a hidden probe inside this element, so it sees the hooks set on the host — and
+   * reading the computed value back. An unresolved value (no theme loaded) computes to 0.
+   */
+  private resolveComputed;
+  /** Resolves a duration token expression in ms; unresolved (no theme) is 0. */
   private resolveMs;
+  /** Resolves a length token expression in px through a hidden probe's `padding-left`; unresolved is 0. */
+  private resolvePx;
   /** Positions the bubble from the trigger rect at `placement`, resolving start/end from the trigger's direction and flipping on overflow. */
   private updatePosition;
   /** Writes `content` into both copies: plain text in the description, a composed <ds-text data-part="text"> in the bubble. */
@@ -1910,6 +2006,8 @@ type ToastOverridableBinding = "radius" | "shadow" | "paddingBlock" | "paddingIn
 /** Overridable style hooks for `<ds-toast-region>`; see its `overrides` property. */
 type ToastRegionOverridableBinding = "stackGap" | "regionInset" | "layer";
 export declare class DsToast extends LitElement {
+  /** Focus delegates to the first control, so `toast.focus()` reaches the action or dismiss button. */
+  static override shadowRootOptions: ShadowRootInit;
   static override styles: CSSResult;
   /** One sentence saying what happened ("Message sent", "3 files deleted"). Also the toast's accessible name. */
   accessor message;
@@ -1941,7 +2039,6 @@ export declare class DsToast extends LitElement {
   private timerStartedAt;
   private pointerOver;
   private focused;
-  private warnedForcedPersistent;
   constructor();
   /** `true` once the toast has started leaving; it no longer counts toward the stack. */
   get dismissing(): boolean;
@@ -1966,7 +2063,8 @@ export declare class DsToast extends LitElement {
   /**
    * Removes the toast and dispatches `dismiss` once it has left: after the exit
    * transition, or at once for `replaced`, under reduced motion, and when the
-   * exit time cannot be resolved.
+   * exit time cannot be resolved. A toast holding focus when it leaves — for any
+   * reason, including `replaced` and `programmatic` — sends focus back first.
    */
   requestDismiss(reason: ToastDismissReason): void;
   /** shortDuration / longDuration, from the region's measurement at mount, else measured on this element. */
@@ -1976,7 +2074,8 @@ export declare class DsToast extends LitElement {
   private maybeResumeTimer;
   private clearTimer;
   private applyOverrides;
-  private warnInDev;
+  /** Warns each time a change to `duration`, `actionLabel` or `tone` makes an assigned `duration` moot. */
+  private warnForcedPersistent;
 }
 export declare class DsToastRegion extends LitElement {
   static override styles: CSSResult;
@@ -1984,8 +2083,6 @@ export declare class DsToastRegion extends LitElement {
   accessor overrides: Partial<Record<ToastRegionOverridableBinding, TokenRef | undefined>> | undefined;
   /** motion.duration.loop as resolved on the region at mount, in ms; `undefined` before mount, `null` when unresolved. */
   loopMs: number | null | undefined;
-  /** Where focus came from when it entered the region (by F6 or by Tab). */
-  private returnTarget;
   override connectedCallback(): void;
   override disconnectedCallback(): void;
   protected override willUpdate(changed: PropertyValues): void;
@@ -1996,7 +2093,6 @@ export declare class DsToastRegion extends LitElement {
    * previous one if there is none).
    */
   restoreFocus(): void;
-  private readonly handleFocusIn;
   private readonly handleDocumentKeydown;
   private applyOverrides;
 }
@@ -2076,8 +2172,11 @@ export declare class DsPopover extends LitElement {
   /** Physical side the panel resolved to on the last positioning pass. */
   private accessor side;
   private accessor panelEl;
+  /** The `heading` part is the popover-owned wrapper; `tabindex="-1"` sits on the <ds-heading> inside it. */
   private accessor headingEl;
-  private accessor closeButtonEl;
+  private accessor headingControlEl;
+  private accessor closeButtonControlEl;
+  private accessor bodyEl;
   private accessor bodySlotEl;
   private readonly popoverSupported;
   private triggerEl;
@@ -2100,6 +2199,11 @@ export declare class DsPopover extends LitElement {
   private updateTriggerExpanded;
   private readonly handleTriggerClick;
   private readonly handleCloseButtonPress;
+  /**
+   * The `closeButton` part hook is the popover-owned wrapper, so a press that lands on the
+   * wrapper rather than on <ds-button> is forwarded to the button rather than swallowed.
+   */
+  private readonly handleCloseTargetClick;
   private readonly handleDialogCancel;
   private readonly handleDialogClose;
   private readonly handlePanelKeydown;
@@ -2118,10 +2222,19 @@ export declare class DsPopover extends LitElement {
   private removeOpenListeners;
   /** The first control in the body, then the close button, then the heading, then the panel itself. */
   private applyInitialFocus;
+  /** The controls in the panel body, in flat-tree order. The first is where focus lands on open. */
   private getBodyFocusables;
-  /** Tabbable elements in panel order: the close button in the header row, then the body content. */
+  /**
+   * Tabbable elements in panel DOM order, by FocusScope's walker — the header row (so the close
+   * button) comes before the body, which the walker reaches through the `<slot>` assignments.
+   */
   private getPanelFocusables;
-  /** Focuses the first focusable element after the host in document order, else the trigger. */
+  /**
+   * Focuses the first focusable element after the host, else the trigger. "Focusable" is
+   * FocusScope's walker run over the document in DOM order, so the elements inside the host —
+   * trigger slot then panel, the panel included wherever the top layer draws it — sit together,
+   * and the first one past them is the element a native Tab would have reached.
+   */
   private focusAfterHost;
   /** Composed-tree containment: focus inside a child's shadow root counts as inside it. */
   private isWithin;
@@ -2154,23 +2267,34 @@ type BottomSheetOverridableBinding = "scrim" | "shadow" | "radius" | "handleHeig
 export declare class DsBottomSheet extends LitElement {
   static override shadowRootOptions: ShadowRootInit;
   static override styles: CSSResult;
-  /** Controlled visibility, as in Dialog. The consumer owns it; the sheet requests changes through `close`. */
+  /**
+   * Controlled visibility, as in Dialog. Controlled only — there is no uncontrolled mode; the
+   * consumer owns `open` and the sheet requests changes through `close`, never changing it itself.
+   */
   accessor open;
   /** The sheet's title and accessible name. May be visually hidden with `hideHeading`. */
   accessor heading;
-  /** Keep the heading for assistive technology but do not render it. Attribute: `hide-heading`. */
+  /**
+   * Keep the heading for assistive technology but do not render it (forwarded to Dialog above the
+   * breakpoint). The accessible name is required regardless. Attribute: `hide-heading`.
+   */
   accessor hideHeading;
-  /** `content` sizes to the body up to 90% of the viewport; `half` is a fixed half-height; `full` is near-full-screen. */
+  /**
+   * `content` sizes to the body up to 90% of the viewport; `half` is a fixed half-height; `full`
+   * is a near-full-screen sheet with the top gutter visible so the scrim still shows.
+   */
   accessor height: BottomSheetHeight;
   /**
-   * Escape, the close button, a scrim tap and the drag gesture all request close. When false,
-   * the close button and handle are not rendered, a scrim tap and a drag do nothing, and Escape
-   * still reports. Attribute: `no-dismiss`.
+   * Escape, the close button, a scrim tap and the drag gesture all request close. When false, only
+   * the footer actions close it: the close button and the drag handle are not rendered, a scrim tap
+   * and a drag do nothing, and Escape still reports with reason `escape`. Attribute: `no-dismiss`.
    */
   accessor dismissible;
   /**
-   * Drag the handle or header downward to dismiss. Purely additive: Escape always exists and the
-   * close button exists whenever the gesture does. Attribute: `no-drag-to-dismiss`.
+   * Drag the handle (or the header) downward to dismiss: release past 25% of the sheet height, or
+   * faster than 1.5 px/ms, dismisses; otherwise the sheet springs back. Purely additive — Escape
+   * always exists and the close button exists whenever the gesture does, so the handle is rendered
+   * only when `dragToDismiss` and `dismissible` are both true. Attribute: `no-drag-to-dismiss`.
    */
   accessor dragToDismiss;
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are ignored. */
@@ -2181,7 +2305,7 @@ export declare class DsBottomSheet extends LitElement {
   private accessor closing;
   /** A light-DOM child is assigned to the `footer` slot; the footer part renders only then. */
   private accessor hasFooter;
-  /** Nothing else could take initial focus, so the heading takes tabindex -1. */
+  /** Nothing else could take initial focus, so the heading takes tabindex -1 for the purpose. */
   private accessor headingIsFallback;
   private accessor dialogEl;
   private accessor scopeEl;
@@ -2205,9 +2329,15 @@ export declare class DsBottomSheet extends LitElement {
   protected override willUpdate(changed: PropertyValues): void;
   protected override updated(changed: PropertyValues): void;
   protected override render(): TemplateResult | typeof nothing;
-  /** Above the breakpoint: the same props and slots on Dialog, with the shared overrides forwarded. */
+  /**
+   * Above the breakpoint the sheet is a Dialog: the same props and slots, the shared overrides
+   * forwarded, and its `escape` / `close-button` / `scrim` / `action` reasons re-emitted as the
+   * sheet's own. `drag` has no Dialog source, and Dialog's `opened` is not re-emitted.
+   */
   private renderDialog;
   private renderSheet;
+  /** Heading writes its own data-part, so the heading part is this sheet-owned wrapper around it. */
+  private renderHeading;
   /** Every set override whose binding Dialog shares by name reaches Dialog's own overrides. */
   private dialogOverrides;
   /** Dialog's `close` is re-dispatched from the sheet so consumers see one event, from one element. */
@@ -2217,17 +2347,29 @@ export declare class DsBottomSheet extends LitElement {
   private readonly handleNativeClose;
   private readonly handleScrimClick;
   private readonly handleCloseButtonPress;
-  /** The wrapper's extra target area activates the close button. */
+  /**
+   * The wrapper's extra target area activates the Button: it focuses it and requests close itself,
+   * never reaching into the Button's internals or shadow root. A click on the Button is its own.
+   */
   private readonly handleCloseWrapperClick;
   /** A slotted form submitted with method="dialog" (or a formmethod="dialog" submitter) asks to close. */
   private readonly handleSubmit;
   private syncHasFooter;
+  /**
+   * Nothing is claimed on pointerdown, so a tap on the close button still activates it; the drag
+   * begins only once the pointer has moved `dragSlop` downward on the handle or header.
+   */
   private readonly handlePointerDown;
   private readonly handlePointerMove;
   private readonly handlePointerUp;
   private readonly handlePointerCancel;
-  /** After a drag dismiss: `open` false plays the exit from here (handleClose); still true springs back. */
+  /**
+   * After a dismissing release: `updateComplete` after the `close` dispatch plus one animation
+   * frame. If `open` is still true then, the sheet springs back; otherwise `handleClose` plays the
+   * normal exit from the released offset.
+   */
   private settleRelease;
+  /** A spring-back also finishes an interrupted enter animation: it returns the surface to rest. */
   private springBack;
   private handleOpen;
   private handleClose;
@@ -2306,7 +2448,7 @@ export declare class DsActionSheet extends LitElement {
   private closingProgrammatically;
   private focusBeforeCancel;
   private wideQuery;
-  private drag;
+  private gesture;
   /** The wide Menu reported a choice since `open` became true: no later (or earlier, pending) close is a dismissal. */
   private menuChoiceMade;
   /** A wide dismissal is already queued in this task (Menu can follow `outside` with `focus-out`). */
@@ -2337,17 +2479,32 @@ export declare class DsActionSheet extends LitElement {
   private readonly handleNativeClose;
   private readonly handleScrimClick;
   private readonly handleCancelPress;
+  /**
+   * Nothing is claimed on pointerdown, so a tap on the header is not a drag and nothing fires; the
+   * drag begins only once the pointer has moved `dragSlop` downward on the handle or header.
+   */
   private readonly handlePointerDown;
   private readonly handlePointerMove;
   private readonly handlePointerUp;
   private readonly handlePointerCancel;
-  /** Below the threshold (a tap included): back in place with the exit duration and the standard easing. */
+  /**
+   * After a dismissing release: `updateComplete` after the `close` dispatch plus one animation
+   * frame. If `open` is still true then the sheet springs back; otherwise `handleClose` plays the
+   * exit from the released offset.
+   */
+  private settleRelease;
+  /**
+   * Below the threshold (a tap included): back in place with the exit duration and the standard
+   * easing. It also finishes an interrupted enter animation, by returning the surface to rest.
+   */
   private springBack;
   private readonly handleMenuAction;
   private readonly handleMenuOpenChange;
   private handleOpen;
   private handleClose;
   private transitionsSettled;
+  /** Focus is still inside the closing sheet: hand it back to the opener before the exit plays. */
+  private restoreFocusToOpener;
   /** First enabled action; the cancel row when every action is disabled. */
   private applyInitialFocus;
   private watchBreakpoint;
@@ -2375,7 +2532,7 @@ interface SidePanelOpenChangeDetail {
   reason: SidePanelOpenChangeReason;
 }
 /** Overridable style hooks; see the `overrides` property. `surface`, `focusRing` and `focusRingWidth` are locked and excluded. */
-type SidePanelOverridableBinding = "scrim" | "shadow" | "border" | "borderWidth" | "width" | "widthNarrow" | "widthWide" | "edgeGutter" | "inset" | "headerGap" | "partGap" | "footerGap" | "layer" | "enter" | "exit";
+type SidePanelOverridableBinding = "scrim" | "shadow" | "border" | "borderWidth" | "width" | "widthNarrow" | "widthWide" | "edgeGutter" | "inset" | "headerGap" | "headingGap" | "partGap" | "footerGap" | "layer" | "enter" | "exit";
 export declare class DsSidePanel extends LitElement {
   static override shadowRootOptions: ShadowRootInit;
   static override styles: CSSResult;
@@ -2383,7 +2540,7 @@ export declare class DsSidePanel extends LitElement {
   accessor open: boolean | undefined;
   /** The panel's title and accessible name ("Menu", "Filters", "Your cart"). */
   accessor heading: string;
-  /** Keep the title for assistive technology but do not render it. The accessible name is required regardless. */
+  /** Keep the title for assistive technology but do not show it. The accessible name is required regardless. */
   accessor hideHeading;
   /** The edge the panel slides from; `start`/`end` follow the writing direction. */
   accessor side: SidePanelSide;
@@ -2402,11 +2559,12 @@ export declare class DsSidePanel extends LitElement {
   accessor scrim;
   /**
    * Escape, the close button, a scrim tap / outside click and the swipe request
-   * close. When false the close button is not rendered and taps outside do
-   * nothing; Escape still reports `open-change` with reason `escape`.
+   * close. When false the close button is not rendered and a scrim tap or an
+   * outside press does nothing; Escape still reports `open-change` with reason
+   * `escape` and the consumer decides.
    */
   accessor dismissible;
-  /** Accepted for parity; the swipe gesture is native only and not wired on Lit. Attribute `no-swipeable` negates it. */
+  /** Accepted for parity; the swipe gesture is native only and wires nothing on Lit. Attribute `no-swipeable` negates it. */
   accessor swipeable;
   /** Per-instance style overrides: `{ inset: 'layout.inset.md' }`. Locked bindings are ignored. */
   accessor overrides: Partial<Record<SidePanelOverridableBinding, TokenRef | undefined>> | undefined;
@@ -2419,6 +2577,7 @@ export declare class DsSidePanel extends LitElement {
   /** Whether the footer slot has assigned content. */
   private accessor hasFooter;
   private accessor surfaceEl;
+  private accessor dialogEl;
   private accessor headingEl;
   private accessor closeButtonEl;
   private triggerEl;
@@ -2429,6 +2588,7 @@ export declare class DsSidePanel extends LitElement {
   private openerEl;
   private focusTriggerOnClose;
   private exitTimer;
+  private warnedHeading;
   /** Whether the panel is currently open, controlled or not. */
   get currentOpen(): boolean;
   override connectedCallback(): void;
@@ -2436,18 +2596,31 @@ export declare class DsSidePanel extends LitElement {
   protected override willUpdate(changed: PropertyValues): void;
   protected override updated(): void;
   protected override render(): TemplateResult;
+  /** `inset` forwards to the body Box's `paddingInline`, but only when the caller overrode it. */
   private bodyOverrides;
+  private headingOverrides;
   private footerOverrides;
   private readonly handleTriggerSlotChange;
   private readonly handleFooterSlotChange;
   private detachTrigger;
+  /**
+   * `aria-expanded` on the slotted trigger. `aria-controls` is never set: an
+   * IDREF in the light DOM cannot address the panel inside the shadow root.
+   */
   private updateTriggerExpanded;
+  /** The trigger toggle is never gated by `dismissible`. A persistent sidebar has no trigger. */
   private readonly handleTriggerClick;
-  private readonly handleBodyClick;
+  /** A followed Link inside the panel closes it, and is never gated by `dismissible`. */
+  private readonly handlePanelClick;
   private readonly handleCloseButtonPress;
   private readonly handleSurfaceKeydown;
+  /**
+   * A `cancel` the keydown handler did not already swallow (a platform back
+   * gesture). The browser's own close is non-cancelable in some cases, so the
+   * dialog is re-shown when `open` is still true.
+   */
   private readonly handleCancel;
-  private readonly handleDialogClick;
+  /** A click whose target is the scrim element — modal and non-modal alike. */
   private readonly handleScrimClick;
   /** With no scrim to catch it, a press outside the panel and trigger (both inside the host) closes with `outside`. */
   private readonly handleOutsidePointerDown;
@@ -2463,14 +2636,19 @@ export declare class DsSidePanel extends LitElement {
   private startExit;
   private finishClose;
   private releaseScrollLock;
+  /** After showModal(): the first focusable in the body, then the footer, then the close button, then the heading. */
   private applyInitialFocus;
   private findFirstFocusable;
   private addOutsideListener;
   private removeOutsideListener;
+  /**
+   * The breakpoint is read from the theme token on `<html>` when the component
+   * connects; a theme change after that takes effect on the next mount. Where
+   * `matchMedia` does not exist (jsdom) the overlay presentation renders.
+   */
   private setupPersistentQuery;
   private readonly handlePersistentChange;
   private applyOverrides;
-  private warnedHeading;
   private warnInDev;
 }
 declare global {
@@ -2498,7 +2676,7 @@ interface TabsChangeDetail {
   value: string;
 }
 /** Overridable style hooks; see the `overrides` property. Locked bindings (`tabColor`, `tabSelectedColor`, `tabHoverBackground`, `indicator`, `indicatorThickness`, `badgeColor`, `minTarget`, `focusRing`, `focusRingWidth`) are excluded. */
-type TabsOverridableBinding = "tabPaddingBlock" | "tabPaddingInline" | "tabGap" | "listGap" | "listBorder" | "listBorderWidth" | "panelGap" | "badgeSize" | "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "radius" | "transition" | "disabledOpacity";
+type TabsOverridableBinding = "tabPaddingBlock" | "tabPaddingInline" | "tabGap" | "listGap" | "listBorder" | "listBorderWidth" | "panelGap" | "badgeWeight" | "badgeSize" | "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "radius" | "transition" | "disabledOpacity";
 export declare class DsTabPanel extends LitElement {
   static override styles: CSSResult;
   override connectedCallback(): void;
@@ -2551,6 +2729,12 @@ export declare class DsTabs extends LitElement {
   private rovingId;
   private readonly handleTabClick;
   private readonly handleKeydown;
+  /**
+   * The roving stop follows the tab that actually has focus, however it got it —
+   * Tab into the list, a click, or a programmatic `focus()` — so the next arrow
+   * key moves from there rather than from the selected tab.
+   */
+  private readonly handleFocusIn;
   /** Leaving the list returns the tab stop to the selected tab. */
   private readonly handleFocusOut;
   private handleSlotChange;
@@ -2599,15 +2783,29 @@ type SegmentedControlOverridableBinding = "groupPadding" | "groupRadius" | "segm
 export declare class DsSegmentedControl extends LitElement {
   static override shadowRootOptions: ShadowRootInit;
   static override styles: CSSResult;
-  /** Accessible name of the control ("View mode"). Not shown. */
+  /** Accessible name of the control ("View mode"). Not shown; put a visible Text label beside it when the meaning is not obvious from context. */
   accessor label: string;
-  /** Two to five options in display order. A property, not an attribute. */
+  /**
+   * Two to five options (guidance, not enforced: any count renders, with no warning) in display
+   * order. Labels are one word; with `iconOnly` the label becomes the accessible name. The icon is
+   * an Icon whose `size` is the control's `size`. A property, not an attribute.
+   */
   accessor options: SegmentedControlOption[];
   /** Controlled selected value. Omit for uncontrolled. */
   accessor value: string | undefined;
-  /** Initially selected value. Defaults to the first enabled option. */
+  /**
+   * Initially selected value. Defaults to the first enabled option — a segmented control always has
+   * a selection. A `value` or `defaultValue` is taken as given, never corrected: one naming a
+   * disabled option keeps that segment checked with the pill under it (arrows still skip it); one
+   * matching no option checks nothing and draws no pill. In both cases the tab stop is the first
+   * enabled segment. Reads the `default-value` attribute; not reflected.
+   */
   accessor defaultValue: string | undefined;
-  /** Show icons only; every option must have one. Labels become accessible names and Tooltips. */
+  /**
+   * Show icons only (every option must have one); labels become accessible names and Tooltips. An
+   * option without `icon` warns in development once per instance and shows its label as text
+   * instead, so it never renders empty; that segment gets no Tooltip and no `aria-label`.
+   */
   accessor iconOnly;
   /** Toolbar (`sm`) or standard (`md`) height. */
   accessor size: SegmentedControlSize;
@@ -2617,11 +2815,10 @@ export declare class DsSegmentedControl extends LitElement {
   accessor overrides: Partial<Record<SegmentedControlOverridableBinding, TokenRef | undefined>> | undefined;
   /** Uncontrolled selection, seeded from `defaultValue` (or the first enabled option). */
   private accessor internalValue;
-  /** The segment carrying the roving tabindex. */
-  private accessor focusedValue;
   private accessor groupEl;
   private accessor indicatorEl;
   private resizeObserver;
+  private placedRect;
   private warnedLabel;
   private warnedIcon;
   /** The currently selected value, controlled or not. */
@@ -2640,11 +2837,17 @@ export declare class DsSegmentedControl extends LitElement {
   private handleSegmentClick;
   private enabledOptions;
   private firstEnabled;
-  /** The focused segment if it is still enabled, else the selected one, else the first enabled. */
+  private segmentElement;
+  /** The value of the segment that holds focus right now, or undefined when none does. */
+  private focusedValue;
+  /** One tab stop: the selected segment when it is enabled, otherwise the first enabled one. */
   private tabStopValue;
-  private focusAndSelect;
   private select;
   private observeGroup;
+  /**
+   * Place the pill over the selected segment. Writes only when the measured box moved, so the
+   * ResizeObserver that feeds it cannot drive itself.
+   */
   private updateIndicator;
   private applyOverrides;
   private warnInDev;
@@ -2683,7 +2886,7 @@ interface ListboxActiveChangeDetail {
   value: string | null;
 }
 /** Overridable style hooks; see the `overrides` property. Locked bindings are excluded. */
-type ListboxOverridableBinding = "border" | "borderInvalid" | "partGap" | "borderWidth" | "radius" | "listPadding" | "optionPaddingBlock" | "optionPaddingInline" | "optionGap" | "optionRadius" | "optionDescriptionSize" | "optionSelectedWeight" | "groupLabelSize" | "groupLabelWeight" | "groupLabelPaddingBlock" | "fontFamily" | "fontSize" | "lineHeight" | "disabledOpacity" | "typeaheadReset";
+type ListboxOverridableBinding = "border" | "borderInvalid" | "partGap" | "borderWidth" | "radius" | "listPadding" | "optionPaddingBlock" | "optionPaddingInline" | "optionGap" | "optionRadius" | "optionDescriptionSize" | "optionWeight" | "optionSelectedWeight" | "groupLabelSize" | "groupLabelWeight" | "groupLabelPaddingBlock" | "fontFamily" | "fontSize" | "lineHeight" | "disabledOpacity" | "typeaheadReset";
 export declare class DsListbox extends LitElement {
   static formAssociated: boolean;
   static override shadowRootOptions: ShadowRootInit;
@@ -2745,8 +2948,11 @@ export declare class DsListbox extends LitElement {
   private accessor formDisabled;
   private accessor listEl;
   private readonly instanceId;
+  private readonly errorId;
+  private readonly emptyId;
   private typeaheadQuery;
   private typeaheadTimer;
+  private warnedMissingLabel;
   private readonly internals;
   constructor();
   private get flatOptions();
@@ -2759,6 +2965,8 @@ export declare class DsListbox extends LitElement {
   /** The field's own copy string for its current validity, or '' when valid. */
   get validationMessage(): string;
   private get selectedSet();
+  /** True only while DOM focus really sits on the list (a host that forwards keys keeps its own focus). */
+  private get listHasFocus();
   override connectedCallback(): void;
   override disconnectedCallback(): void;
   override focus(options?: FocusOptions): void;
@@ -2772,6 +2980,12 @@ export declare class DsListbox extends LitElement {
   protected override willUpdate(changed: PropertyValues): void;
   protected override updated(): void;
   protected override render(): TemplateResult;
+  /**
+   * A listbox owns only options and groups, so the empty/loading row is hidden
+   * from the accessibility tree and reaches the user as the list's description
+   * instead — `aria-describedby` resolves hidden text, so the still-focusable
+   * empty list announces "No options" either way.
+   */
   private renderEmpty;
   private renderItems;
   private renderOption;
@@ -2779,6 +2993,12 @@ export declare class DsListbox extends LitElement {
   private displayedMessage;
   /** `initialActiveValue` when it names an enabled option, else the first selected, else the first enabled. */
   private initialOption;
+  /**
+   * `initialActiveValue` changed while the list has no focus (a Combobox updates
+   * it as the user types): the active option moves to it silently, without
+   * firing `active-change`.
+   */
+  private followInitialActiveValue;
   private readonly handleListFocus;
   private readonly handleListBlur;
   private handleOptionClick;
@@ -2834,7 +3054,7 @@ interface SelectOpenChangeDetail {
  * `chevron`, `descriptionText`, `errorText`, `minTarget`, `minTargetSm` and
  * `focusRingWidth` are locked and excluded.
  */
-type SelectOverridableBinding = "triggerBorderInvalid" | "triggerBorderWidth" | "triggerRadius" | "triggerPaddingInline" | "triggerPaddingBlock" | "triggerGap" | "partGap" | "labelWeight" | "helperSize" | "popupSurface" | "popupBorder" | "popupBorderWidth" | "popupShadow" | "popupRadius" | "popupOffset" | "layer" | "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "disabledOpacity" | "enter";
+type SelectOverridableBinding = "triggerBorderInvalid" | "triggerBorderWidth" | "triggerRadius" | "triggerPaddingInline" | "triggerPaddingBlock" | "triggerGap" | "chevronReserve" | "partGap" | "labelWeight" | "helperSize" | "popupSurface" | "popupBorder" | "popupBorderWidth" | "popupShadow" | "popupRadius" | "popupOffset" | "layer" | "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "disabledOpacity" | "enter";
 export declare class DsSelect extends LitElement {
   static formAssociated: boolean;
   static override shadowRootOptions: ShadowRootInit;
@@ -2896,6 +3116,8 @@ export declare class DsSelect extends LitElement {
   private get usesPopup();
   /** Whether the popup is open, controlled or not. */
   get currentOpen(): boolean;
+  /** `disabled` wins over a controlled `open`: a disabled Select never shows its popup. */
+  private get showsPopup();
   /** The current selection: a value, an array with `multiple`, or null when nothing is selected. */
   get currentValue(): SelectValue | null;
   /** The owning native form, if any. */
@@ -2934,6 +3156,8 @@ export declare class DsSelect extends LitElement {
   private readonly handleReposition;
   /** Single-select: commits the active option. */
   private commitActive;
+  /** `multiple`: toggles the active option, keeping the value in option order as the Listbox does. */
+  private toggleActive;
   /** Reports the new popup state; only an uncontrolled element applies it. */
   private requestOpen;
   /** Reports a changed value; only an uncontrolled element stores it. */
@@ -3142,31 +3366,32 @@ declare global {
 //#endregion
 //#region src/Slider.d.ts
 type SliderShowValue = "always" | "hover" | "never";
-/** Shape of each entry in `marks`. */
+/** One entry of `marks`: a tick on the track, optionally labelled. */
 interface SliderMark {
   value: number;
   label?: string | undefined;
 }
-/** A single value, or `[low, high]` for `range`. */
+/** A single value, or the low and high values of a range. */
 type SliderValue = number | [number, number];
 /** Detail carried by the `change` and `change-end` CustomEvents. */
 interface SliderChangeDetail {
+  /** The new value, or the low and high values of a range. */
   value: SliderValue;
 }
 /**
  * Overridable style hooks; see the `overrides` property. `fill`, `thumbBorder`,
  * `thumbBorderWidth`, `markLabelColor`, `valueColor`, `bubbleSurface`,
- * `bubbleText`, `descriptionText`, `minTarget`, `focusRing` and
+ * `bubbleText`, `descriptionText`, `errorText`, `minTarget`, `focusRing` and
  * `focusRingWidth` are locked and excluded.
  */
-type SliderOverridableBinding = "track" | "trackHeight" | "trackRadius" | "thumb" | "thumbSize" | "thumbShadow" | "thumbActiveScale" | "haloSpread" | "mark" | "markSize" | "markLabelSize" | "markLabelGap" | "valueSize" | "bubblePaddingBlock" | "bubblePaddingInline" | "bubbleOffset" | "bubbleRadius" | "labelWeight" | "partGap" | "labelGap" | "trackPaddingBlock" | "fontFamily" | "fontSize" | "helperSize" | "errorText" | "disabledOpacity" | "transition";
+type SliderOverridableBinding = "track" | "trackHeight" | "trackRadius" | "thumb" | "thumbSize" | "thumbShadow" | "thumbActiveScale" | "haloSpread" | "mark" | "markSize" | "markLabelSize" | "markLabelGap" | "valueSize" | "bubblePaddingBlock" | "bubblePaddingInline" | "bubbleOffset" | "bubbleRadius" | "labelWeight" | "partGap" | "labelGap" | "trackPaddingBlock" | "fontFamily" | "fontSize" | "helperSize" | "disabledOpacity" | "transition";
 export declare class DsSlider extends LitElement {
   static formAssociated: boolean;
   static override shadowRootOptions: ShadowRootInit;
   static override styles: CSSResult;
-  /** Visible label naming the quantity ("Volume", "Price range"). */
+  /** Visible label naming the quantity ("Volume", "Price range"); the accessible name of the thumbs. */
   accessor label;
-  /** Field name for the Form. A range submits two entries under this name. */
+  /** Field name for the Form. A single value submits as one decimal string, a range as two under this name. */
   accessor name;
   /** Lower bound. */
   accessor min;
@@ -3174,10 +3399,12 @@ export declare class DsSlider extends LitElement {
   accessor max;
   /** Arrow-key increment and snapping granularity for drag, click and keys. */
   accessor step;
-  /** With `marks`, snap drag and click to the marks instead of `step`; PageUp/Down go to the next mark. */
+  /** With `marks`, snap drag and click to the marks instead of `step`. */
   accessor snapToMarks;
-  /** Must have a value other than the default to submit (`copy.required`). */
+  /** Must have a value other than the default to submit. */
   accessor required;
+  /** Marks the slider invalid; independent of `error`. */
+  accessor invalid;
   /** Controlled value; for a range, a two-number array. */
   accessor value: SliderValue | undefined;
   /** Initial value (or pair). Defaults to `min` (or `[min, max]`). */
@@ -3186,47 +3413,37 @@ export declare class DsSlider extends LitElement {
   accessor range;
   /** Renders the displayed and announced value ("$40", "3 h 20 min"). Defaults to the number. */
   accessor formatValue: ((value: number) => string) | undefined;
-  /** Where the value text appears: beside the label, as a bubble while pressed or focused, or not at all. */
+  /** Where the value text appears: beside the label, as a bubble while pressed or focused, or nowhere. */
   accessor showValue: SliderShowValue;
   /** Tick marks on the track, optionally labelled. */
   accessor marks: SliderMark[] | undefined;
-  /** Not adjustable, still readable (and focusable); no value is submitted. */
+  /** Not adjustable, still readable: the thumbs stay focusable and nothing is submitted. */
   accessor disabled;
   /** Helper text. */
   accessor description: string | undefined;
-  /** Per-instance style overrides: `{ trackRadius: 'radius.sm' }`. Locked bindings are ignored. */
+  /** Error message. Setting it never changes the `invalid` prop; both make the slider aria-invalid. */
+  accessor error: string | undefined;
+  /** Per-instance style overrides: `{ trackHeight: 'space.2' }`. Locked bindings are ignored. */
   accessor overrides: Partial<Record<SliderOverridableBinding, TokenRef | undefined>> | undefined;
-  private errorValue;
-  /** Error message. Setting it marks the slider invalid. */
-  get error(): string | undefined;
-  set error(value: string | undefined);
-  /** Marks the slider invalid (`copy.invalid` when no `error`). */
-  accessor invalid;
-  /** Uncontrolled value, seeded from `defaultValue`. */
+  /** The uncontrolled value; `undefined` falls back to `defaultValue`. */
   private accessor internalValue;
-  /** Disabled by an owning fieldset or form. */
-  private accessor formDisabled;
-  /** Thumb being pressed or dragged (halo and bubble). */
-  private accessor draggingIndex;
-  /** Thumb holding focus (bubble in `showValue: hover`). */
+  /** The thumb being dragged, for the halo and the bubble. */
+  private accessor pressedIndex;
+  /** The thumb holding focus (any focus, not only :focus-visible), for the bubble. */
   private accessor focusedIndex;
-  /** The message `reportValidity()` last reported; cleared once the field is valid again. */
-  private accessor reportedMessage;
-  /** Value when the current pointer or key interaction began; `null` outside one. */
-  private interactionStart;
-  /** Last value reported by `change` in the current interaction. */
-  private interactionLast;
-  /** Thumb whose handled `keydown` awaits its `keyup`. */
-  private pendingKeyIndex;
+  /** Disabled by an owning native form / fieldset. */
+  private accessor formDisabled;
   private accessor trackEl;
-  private accessor trackAreaEl;
   private readonly internals;
-  constructor();
-  /** DsFormField: the decimal string, or `[low, high]` as two strings for a range; `null` while disabled. */
-  get currentValue(): string | [string, string] | null;
+  /** The value last emitted in the running interaction; the comparison baseline within it. */
+  private emitted;
+  private interactionChanged;
+  /** The value `<ds-form>` collects: the decimal string, or two strings for a range. */
+  get currentValue(): string | string[] | null;
+  /** The owning native form, if any. */
   get form(): HTMLFormElement | null;
   get validity(): ValidityState;
-  /** The field's own copy: `copy.required`, then `error` / `copy.invalid`; empty when valid. */
+  /** The field's own message, by validation order: error, required, invalid. */
   get validationMessage(): string;
   checkValidity(): boolean;
   reportValidity(): boolean;
@@ -3237,52 +3454,80 @@ export declare class DsSlider extends LitElement {
   protected override willUpdate(changed: PropertyValues): void;
   protected override updated(): void;
   protected override render(): TemplateResult;
-  private renderTickMarks;
+  /**
+   * One thumb: the slider element itself, named by the label (single) or by the
+   * minimum/maximum copy (range), and bounded by the other thumb in a range.
+   */
   private renderThumb;
+  /**
+   * The value bubble above a thumb under `show-value="hover"`. It stays
+   * rendered while inactive so `transition` can fade it, and is always
+   * aria-hidden: the thumb's `aria-valuetext` announces the same value.
+   */
+  private renderBubble;
   private get isDisabled();
-  /** `value` when controlled, otherwise the internal value, then the default. */
-  private get resolvedValue();
-  /** What `value` falls back to: `defaultValue`, else `min` (or `[min, max]`). Also the `required` baseline. */
-  private get fallbackValue();
-  private pairValue;
-  private singleValue;
-  private thumbValue;
-  private formatOne;
-  private percentFor;
-  private clamp;
+  private get minValue();
+  private get maxValue();
   private get stepSize();
-  /** Nearest multiple of `step` from `min`, clamped to the bounds. */
-  private snapToStep;
+  /** Mark values, clamped into the bounds and in ascending order. */
   private get markValues();
-  /** Drag and click snap to the marks only with `snapToMarks`; otherwise to `step`. */
-  private snapPointerValue;
-  /** Logical position on the track (mirrored in right-to-left) to a raw value. */
-  private valueAt;
-  private readonly handlePointerDown;
-  private readonly handlePointerMove;
-  private readonly handlePointerUp;
+  /** The displayed value: `value` when controlled, the uncontrolled value otherwise, always normalized. */
+  private get resolvedValue();
+  /** The value the slider falls back to, which `required` compares against. */
+  private get pristineValue();
+  /** The value text beside the label: one formatted number, or the range copy. */
+  private get valueLabel();
+  private format;
+  private clamp;
+  private percent;
+  /**
+   * Clamp into the bounds, order a pair, and fill in the fallback for an absent
+   * value. Named `normalizeValue` because `normalize` is an HTMLElement member.
+   */
+  private normalizeValue;
+  /** Snap a raw value to the marks (with `snapToMarks`) or to the step grid. */
+  private snap;
+  /** The first mark past `from` in `direction`; the bound itself past the last one. */
+  private markPast;
+  /** The live value of one thumb: the last emitted one inside an interaction, the displayed one otherwise. */
+  private thumbValue;
+  /** Move one thumb, keeping a range ordered: neither thumb may cross the other. */
+  private setThumb;
+  /**
+   * Reports a changed value against the last one emitted in this interaction:
+   * an uncontrolled slider shows it at once, a controlled one once `value` is
+   * rebound.
+   */
+  private emit;
+  /** Pointer up, key up: `change-end` fires once, and only for an interaction that moved the value. */
+  private endInteraction;
   private handleKeydown;
   private handleKeyup;
-  /** PageUp/PageDown: ten steps; with `snapToMarks`, the next mark, and past the last mark the bound. */
-  private pageTarget;
-  /** Moves one thumb to an already-snapped value, keeping a range's thumbs from crossing. */
-  private moveThumb;
-  private beginInteraction;
-  /** `change-end` once per interaction, only when it changed the value. */
-  private endInteraction;
-  private get labelOverrides();
-  private get valueOverrides();
-  private get markLabelOverrides();
-  private get helperOverrides();
-  /** The error region: `error`, else the reported validation message, else `copy.invalid` while `invalid`. */
-  private visibleMessage;
-  /** Validation in the form contract's order: required, then invalid. */
-  private messageFor;
-  private get isAtDefault();
-  private syncFormValue;
-  private syncValidity;
+  private handleThumbFocus;
+  private handleThumbBlur;
+  /** The thumb the press belongs to: the nearest one, the low thumb on a tie. */
+  private nearestThumb;
+  /** Pointer position → a snapped value; logical, so right-to-left mirrors. */
+  private valueFromPointer;
+  private handlePointerDown;
+  private handlePointerMove;
+  private handlePointerUp;
+  private thumbAt;
+  /** Validity order: `error`, then a required miss, then `invalid`. */
+  private get message();
+  /** `copy.required` is not rendered standalone: it appears once validation reports it. */
+  private get displayedMessage();
+  /** A required slider still sitting on its default has no value to submit. */
+  private get valueMissing();
+  private textOverrides;
+  /**
+   * A shape mismatch between `range` and `value`/`defaultValue` falls back
+   * silently; `max <= min` is the one case the doc asks to warn about.
+   */
+  private warnInvalidRange;
   private applyOverrides;
-  private warnInDev;
+  /** Mirror the value and validity into ElementInternals so an owning form sees them. */
+  private syncInternals;
 }
 declare global {
   interface HTMLElementTagNameMap {
@@ -3427,6 +3672,8 @@ export declare class DsNumberInput extends LitElement {
   private handleBlur;
   private readonly stopInnerPress;
   private readonly stopRepeat;
+  /** A press that ends without a click (the pointer left the button) must not swallow the next one. */
+  private readonly endPointerStep;
   /** Hold-to-repeat timings read from the resolved theme at pointerdown; `undefined` steps once. */
   private repeatTimings;
   private handleStepperPointerDown;
@@ -3451,72 +3698,102 @@ type ProgressBarAnnounce = "none" | "milestones" | "complete";
  * `fillDanger`, `labelColor` and `valueColor` are locked and excluded.
  */
 type ProgressBarOverridableBinding = "track" | "trackHeight" | "radius" | "labelSize" | "labelWeight" | "valueSize" | "fontFamily" | "lineHeight" | "partGap" | "labelGap" | "transition" | "indeterminateLoop" | "sweepEasing";
+type ProgressBarOverrides = Partial<Record<ProgressBarOverridableBinding, TokenRef | undefined>>;
 export declare class DsProgressBar extends LitElement {
   static override styles: CSSResult;
-  /** What is progressing ("Uploading photos", "Importing contacts"). The accessible name; visible unless `hideLabel`. */
-  accessor label;
   /**
-   * Progress so far, between `min` and `max`. Omit (undefined or null) for an
-   * indeterminate bar. Clamped to `min`…`max`; a non-finite number is `min`.
+   * What is progressing ("Uploading photos", "Importing contacts"). Visible unless `hideLabel`, and
+   * always the accessible name, mirrored to `aria-label` on the host. An empty label removes
+   * `aria-label` and leaves the bar unnamed, with no development warning.
+   */
+  accessor label: string;
+  /**
+   * Progress so far, between `min` and `max`. Omit (undefined or null) for an indeterminate bar (the
+   * end is unknown). Clamped to `min`…`max` for the fill, the accessible value, `formatValue`'s
+   * argument and the announcement tiers; a non-finite number (NaN, Infinity) is treated as `min`.
    */
   accessor value: number | null | undefined;
-  /** Start of the range. */
-  accessor min;
-  /** End of the range. */
-  accessor max;
-  /** Renders the value text ("42%", "3 of 12 files"), called with the clamped value. Defaults to a whole percentage of the range. */
+  /** Start of the range. A non-finite number is treated as the default, 0. */
+  accessor min: number;
+  /** End of the range. A non-finite number is treated as the default, 100. */
+  accessor max: number;
+  /**
+   * Renders the value text ("42%", "3 of 12 files"). Defaults to a percentage over the whole range —
+   * `(value − min) / (max − min)`, the same arithmetic the fill uses, so a non-zero `min` reads
+   * correctly without a custom formatter — rounded to a whole number in the runtime's default locale
+   * (there is no locale prop), so 99.5% of the way shows "100%" before completion; completion is only
+   * the clamped value reaching `max`. Called with the clamped value. Rounding is for the text only;
+   * the fill uses the exact fraction. A `max` at or below `min` is not a range: the bar renders empty,
+   * exposes `min` as its value with the given bounds, shows and exposes "0%" unless a custom formatter
+   * says otherwise, makes no progress or completion announcements, and warns in development.
+   */
   accessor formatValue: ((value: number, min: number, max: number) => string) | undefined;
-  /** Show the value text at the end of the label row. Ignored when indeterminate. Exposed as the negated `hide-value` attribute. */
-  accessor showValue;
-  /** Visually hide the label (it remains the accessible name). */
-  accessor hideLabel;
-  /** Neutral while running; `success` at completion, `danger` when the task failed part-way. Recolors the fill only. */
+  /**
+   * Show the value text at the end of the label row. Ignored when indeterminate. A boolean attribute
+   * can only turn things on, so the attribute is the negated `hide-value` (reflected).
+   */
+  accessor showValue: boolean;
+  /**
+   * Visually hide the label (it remains the accessible name), for bars inside a Card whose heading
+   * already says what is happening. The value text, when shown, stays at the inline end of the row;
+   * with no visible value text either the row takes no space, but the header element stays so the
+   * `label` part still has a home.
+   */
+  accessor hideLabel: boolean;
+  /**
+   * Neutral while running; `success` at completion, `danger` when the task failed part-way. Recolors
+   * the fill only — the colour is never the only signal, so pair it with a text status elsewhere.
+   */
   accessor tone: ProgressBarTone;
   /** What a screen reader hears without focusing the bar: nothing, every 25%, or only completion. */
   accessor announce: ProgressBarAnnounce;
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are not accepted. */
-  accessor overrides: Partial<Record<ProgressBarOverridableBinding, TokenRef | undefined>> | undefined;
+  accessor overrides: ProgressBarOverrides | undefined;
   /** Text currently in the live region. */
   private accessor liveMessage;
-  /** Bumped per announcement so the live region's message node is replaced, even for a repeated text. */
+  /** Bumped per announcement so the message node is replaced, and a repeated text is read again. */
   private accessor liveSeq;
-  /** Highest tier (0–4) recorded; tracked for every `announce` value. */
-  private tier;
-  /** Whether the bar was indeterminate at the last update (`undefined` before the first). */
-  private wasIndeterminate;
-  /** An announcement made before the first render, spoken once the live region exists. */
+  private record;
+  /** An announcement made before the first render, spoken once the live region has rendered empty. */
   private pendingMessage;
+  private frame;
   override connectedCallback(): void;
+  override disconnectedCallback(): void;
   /** Whether `value` is omitted (the end of the task is unknown). */
   get isIndeterminate(): boolean;
-  /** Whether `min`…`max` is a range at all. */
-  private get isRange();
-  /** `value` clamped to `min`…`max`; `min` when indeterminate, non-finite or not a range. */
+  /** The exposed range: a non-finite bound falls back to the prop's default, and `max ≤ min` is not a range. */
+  private get bounds();
+  /** `value` clamped to `min`…`max`: the accessible value. Indeterminate, non-finite or not a range resolve to `min`. */
   get clampedValue(): number;
-  /** Fill fraction, `(value − min) / (max − min)`; 0 when indeterminate or not a range. */
+  /** The filled fraction, `(value − min) / (max − min)`. Exact: the rounding is for the text only. */
   get fraction(): number;
-  /** The value text, from `formatValue` or the default whole percentage of the range. */
+  /** The value text — the same string as `aria-valuetext` and as `{value}` in an announcement. */
   get displayText(): string;
   protected override willUpdate(changed: PropertyValues): void;
   protected override firstUpdated(): void;
   protected override updated(): void;
   protected override render(): TemplateResult;
-  /** `aria-*` as plain host attributes, written only when they change. */
+  /**
+   * `role` and the `aria-*` values as plain host attributes, written only when they change — an
+   * unconditional write would queue a mutation record for anything observing the host.
+   */
   private syncHostAria;
   private setOrRemove;
   /**
-   * The announcement rules: tiers are `floor(fraction × 4)` (tier 4 is `max`)
-   * and recorded for every `announce`; the state at mount is recorded
-   * silently except for indeterminate, which is announced once each time it
-   * is entered. `milestones` announces the highest newly entered tier 1–3 with
-   * `copy.progress`; reaching `max` announces `copy.complete`. A lower tier
-   * resets the record, re-arming the tiers above it. An invalid range announces
-   * no progress or completion.
+   * The announcement rules. Tiers are `floor(fraction × 4)` (74.6% is tier 2, 75% is tier 3; tier 4
+   * is `max`) and recorded for every `announce` value, so switching it mid-task never replays them.
+   * The state reached at mount — and the one reached when an invalid range becomes valid — is
+   * recorded silently; entering the indeterminate state resets the record and is announced once.
+   * `milestones` announces the highest newly entered tier 1–3 with `copy.progress`; reaching `max`
+   * announces `copy.complete`, never `copy.progress` with "100%". A lower tier resets the record, so
+   * a retried task announces its progress again on the way up.
    */
   private updateAnnouncements;
-  private announceMessage;
-  private speak;
-  private textOverrides;
+  /** `{value}` is the formatted value text — the same string as `aria-valuetext` — never the raw number. */
+  private say;
+  private emit;
+  /** Developer-facing, never shown to users, and warned once per distinct invalid pair. */
+  private warnInvalidRange;
   private applyOverrides;
 }
 declare global {
@@ -3546,7 +3823,7 @@ type StepperOverridableBinding = "indicatorSize" | "indicatorBackground" | "indi
 export declare class DsStepper extends LitElement {
   static override shadowRootOptions: ShadowRootInit;
   static override styles: CSSResult;
-  /** Accessible name of the navigation landmark. Defaults to `copy.navLabel`. */
+  /** Accessible name of the navigation landmark. Defaults to `copy.navLabel`, which an empty string also falls back to. */
   accessor label: string | undefined;
   /**
    * The steps in order. `status` is derived from `current` when omitted: before it complete, the step it
@@ -3558,13 +3835,15 @@ export declare class DsStepper extends LitElement {
   /**
    * The id of the current step. The step whose id matches is the selected one (`aria-current="step"`) and
    * the one compact reveals, whatever its `status`. When no id matches, nothing is selected, every step
-   * without an explicit status is upcoming, no step is navigable under `completed`, the count reads
-   * "Step 1 of m", and development builds log a warning.
+   * without an explicit status is upcoming, no step is navigable under `completed` (all still are under
+   * `all`), the count reads "Step 1 of m", and development builds log a warning. The warning needs a
+   * non-empty `current`: an empty one (this property's initial `''`) is treated as not yet set.
    */
   accessor current;
   /**
    * Vertical shows descriptions under each label and suits a side column; horizontal does not render
-   * descriptions at all and collapses to `compact` below the prose width.
+   * descriptions at all (not clipped, and no aria-describedby) and collapses to `compact` below the
+   * prose width.
    */
   accessor orientation: StepperOrientation;
   /**
@@ -3572,7 +3851,11 @@ export declare class DsStepper extends LitElement {
    * position, including one marked `error`), or all.
    */
   accessor navigable: StepperNavigable;
-  /** Show only the current step's label and "Step n of m"; the indicators stay. Horizontal only. */
+  /**
+   * Show only the current step's label and "Step n of m"; the indicators stay. Horizontal only, set by
+   * hand or automatically below the prose width. The other steps' labels, with their status words, are
+   * visually clipped, not removed.
+   */
   accessor compact;
   /** Per-instance style overrides: each entry sets the matching hook, or the composed Text's or Icon's own override, to that token. */
   accessor overrides: Partial<Record<StepperOverridableBinding, TokenRef | undefined>> | undefined;
@@ -3581,8 +3864,6 @@ export declare class DsStepper extends LitElement {
   protected override render(): TemplateResult;
   private renderStep;
   private select;
-  /** Forwards typography to a composed `<ds-text>`: the label weights always (Text has no token default for them), the rest when overridden. */
-  private textOverrides;
   /** The check and danger Icons match the numeral: `indicatorFontSize` is their size override. */
   private iconOverrides;
   private applyOverrides;
@@ -3686,7 +3967,12 @@ export declare class DsSearch extends LitElement {
   /** The query as shown, controlled or not. */
   private get query();
   private get isCombobox();
-  /** Inside `<ds-form>` the enclosing Form owns submission. */
+  /**
+   * Inside `<ds-form>` the enclosing Form owns submission. The walk crosses
+   * shadow boundaries through `getRootNode().host`, since a Search composed
+   * into another element's shadow root is still inside the light-DOM Form that
+   * element sits in, and `closest()` alone stops at the shadow boundary.
+   */
   private get insideForm();
   /** What the Listbox shows: nothing while loading, so its empty row carries `copy.loading`. */
   private get listOptions();
@@ -3765,7 +4051,7 @@ interface DatePickerOpenChangeDetail {
  * `weekdayColor`, `descriptionText`, `errorText`, `minTarget`, `minTargetSm`,
  * `focusRing` and `focusRingWidth` are locked and excluded.
  */
-type DatePickerOverridableBinding = "borderInvalid" | "borderWidth" | "radius" | "paddingInline" | "paddingBlock" | "fontSize" | "calendarInset" | "calendarGap" | "headerGap" | "footerGap" | "dayGap" | "dayRadius" | "dayHover" | "weekdaySize" | "weekdayWeight" | "weekNumberSize" | "monthTitleSize" | "monthTitleWeight" | "partGap" | "fieldGap" | "dayFontSize" | "fontFamily" | "lineHeight" | "labelWeight" | "helperSize" | "disabledOpacity" | "transition";
+type DatePickerOverridableBinding = "borderInvalid" | "borderWidth" | "radius" | "paddingInline" | "paddingBlock" | "fontSize" | "calendarInset" | "calendarGap" | "headerGap" | "footerGap" | "dayGap" | "dayRadius" | "dayHover" | "weekdaySize" | "weekdayWeight" | "weekNumberSize" | "weekNumberWeight" | "monthTitleSize" | "monthTitleWeight" | "partGap" | "fieldGap" | "dayFontSize" | "fontFamily" | "lineHeight" | "labelWeight" | "helperSize" | "disabledOpacity" | "transition";
 export declare class DsDatePicker extends LitElement {
   static formAssociated: boolean;
   static override shadowRootOptions: ShadowRootInit;
@@ -3893,6 +4179,15 @@ export declare class DsDatePicker extends LitElement {
   private focusDayAfterOpen;
   private readonly handlePopoverOpenChange;
   private readonly stopPress;
+  /**
+   * Escape closes the calendar wherever the focus is, and returns it to the
+   * calendar button. `ds-popover` only hears the key when focus is inside its
+   * panel — from the field itself (an input, or the calendar button, which is
+   * the trigger and so outside the panel) the keydown reaches this root
+   * instead. The popover stops propagation on the Escape it handles, so
+   * exactly one of the two runs.
+   */
+  private readonly handleRootKeydown;
   private handleInputKeydown;
   private dayButton;
   private moveViewTo;
@@ -3965,6 +4260,8 @@ export declare class DsToolbar extends LitElement {
   accessor density: ToolbarDensity;
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are not in the type. */
   accessor overrides: Partial<Record<ToolbarOverridableBinding, TokenRef | undefined>> | undefined;
+  /** One slot per top-level entry, in order, with the separators between adjacent groups. */
+  private accessor entrySlots;
   /** The overflow Menu's items, built from the collapsed controls. */
   private accessor overflowItems;
   private accessor containerEl;
@@ -3974,12 +4271,14 @@ export declare class DsToolbar extends LitElement {
   private focusedControl;
   /** Overflow item id → the original control it clicks. */
   private overflowTargets;
-  /** Controls already warned about for a missing `overflow-label` (once per control). */
+  /** Overflow item ids already warned about for a missing `overflow-label`: a control is identified by its place
+	in the toolbar (its entry, and its index inside a group) for the life of this toolbar. */
   private readonly warnedOverflowLabel;
   private recalcFrame;
   private resizeObserver;
   /** Watches the whole light-DOM subtree: a control added inside an existing group is assigned to the group's slot, so
-	the toolbar's own `slotchange` would not see it. `childList` only, so the toolbar's attribute writes never re-enter. */
+	the toolbar's own `slotchange` would not see it. `childList` only, and every write below is an attribute write,
+	so the callback can never re-enter itself. */
   private readonly mutationObserver;
   override connectedCallback(): void;
   override disconnectedCallback(): void;
@@ -3987,12 +4286,17 @@ export declare class DsToolbar extends LitElement {
   protected override willUpdate(changed: PropertyValues): void;
   protected override updated(changed: PropertyValues): void;
   protected override render(): TemplateResult;
-  private isSeparator;
+  /** `menu` is for horizontal toolbars; a vertical one treats it as `scroll`. */
+  private usesMenu;
   private isGroup;
-  /** By tag, so a control counts before its element definition has upgraded it. */
-  private isControl;
-  /** Top-level entries in order: groups and bare controls (separators excluded). */
+  /** Top-level entries in order. Every element child is one entry, so every one of them gets a slot. */
   private entries;
+  /**
+   * The focusable control an element stands for: itself when it is a design-system element or natively focusable,
+   * otherwise the first such descendant — an arbitrary wrapper makes what it holds one bare control.
+   */
+  private controlOf;
+  /** The controls of one entry: a group's children one level down, or the entry itself. */
   private controlsOf;
   /** Every control, in order, one level into groups; a control's own internals are never descended into. */
   private controls;
@@ -4000,19 +4304,30 @@ export declare class DsToolbar extends LitElement {
   private isShown;
   /** What the roving tabindex may land on: shown, enabled controls, then the More trigger when it is showing. */
   private focusable;
+  /** Focusable without a `tabindex` of its own: a native control, or a design-system element that delegates focus. */
+  private isNaturallyFocusable;
+  /**
+   * The one control in the tab sequence carries *no* `tabindex`, the rest carry `-1`.
+   * `tabindex="0"` on the host of a composed control would be a second tab stop beside the inner control it
+   * forwards its host `tabindex` to (`<ds-button tabindex="0">` renders `<button tabindex="0">`); removing the
+   * attribute instead leaves exactly the inner control tabbable. Only an element with no focusability of its
+   * own — a consumer's `<div tabindex>` — needs the explicit `0`.
+   */
+  private setTabStop;
   private syncRovingTabindex;
   private readonly handleFocusIn;
   /** A text input, textarea or editable region, which keeps ArrowLeft, ArrowRight, Home and End for its caret. */
   private isTextEntry;
   private readonly handleKeydown;
   private handleChildrenChanged;
-  /** Inserts a separator wrapper (holding a `<ds-divider>`) between adjacent groups and removes one that no longer sits
-	between two. Every move is conditional, so a pass over settled children writes nothing. */
-  private syncSeparators;
-  /** Group axis, and the separator's Divider across the toolbar axis. Separator geometry is the `::slotted` rules. */
-  private syncLayout;
+  /**
+   * Assigns every entry to its own slot and works out where a separator goes: between two adjacent shown groups.
+   * The `slot` attribute is the only thing written to the consumer's markup, and it is written only when it differs,
+   * so a pass over settled children is a no-op and the childList observer never sees it.
+   */
+  private syncEntrySlots;
   /** A Button, SegmentedControl, Select or Search without a `size` attribute when first discovered takes the toolbar's;
-	its own `size` wins. */
+	its own `size` wins, and a size the control has no value for leaves it at its own default. */
   private applyDefaultSizes;
   /** Measurement runs a frame later, after child controls have rendered their new size or density. */
   private scheduleRecalc;
@@ -4022,8 +4337,6 @@ export declare class DsToolbar extends LitElement {
   /** Which trailing collapsible entries must go so the rest, plus a `size.target.min` More trigger, fit the host.
 	Walking from the end, an entry holding any control other than a Button is skipped and stays visible. */
   private measureCollapse;
-  /** A separator shows only between two shown groups, and never twice in a row. */
-  private syncSeparatorVisibility;
   private buildOverflowItems;
   private readonly handleOverflowAction;
   /** Marks which edges have content hidden past them; re-checked on scroll and after every size or children change. */
@@ -4046,7 +4359,7 @@ interface CarouselChangeDetail {
   reason: CarouselChangeReason;
 }
 /** Overridable style hooks; see the `overrides` property. Locked bindings (`controlBackground`, `dot`, `dotActive`, `dotTarget`, `tabColor`, `tabSelectedColor`, `tabIndicatorThickness`, `minTarget`, `focusRing`, `focusRingWidth`) are excluded. */
-type CarouselOverridableBinding = "slideGap" | "controlOffset" | "controlRadius" | "controlShadow" | "pickerGap" | "pickerOffset" | "dotSize" | "radius" | "tabFontSize" | "tabFontWeight" | "tabPaddingBlock" | "tabPaddingInline" | "fontFamily" | "transition";
+type CarouselOverridableBinding = "slideGap" | "controlOffset" | "controlRadius" | "controlShadow" | "pickerGap" | "pickerOffset" | "dotSize" | "dotRadius" | "radius" | "tabFontSize" | "tabFontWeight" | "tabLineHeight" | "tabPaddingBlock" | "tabPaddingInline" | "fontFamily" | "transition";
 export declare class DsCarouselSlide extends LitElement {
   static override styles: CSSResult;
   /** The slide's name in the tabs picker. A plain string, never read from the slide's content. */
@@ -4472,6 +4785,8 @@ export declare class DsDataGrid extends LitElement {
   /** The range anchor survives Escape: with the range cleared, plain navigation keys only move it. */
   private accessor rangeAnchor;
   private accessor editing;
+  /** A select editor's popup, which the grid opens with the editor. */
+  private accessor selectOpen;
   private accessor columnWidths;
   private accessor message;
   private accessor bodyScrollTop;
@@ -4515,6 +4830,9 @@ export declare class DsDataGrid extends LitElement {
    * The visible counterpart of the live region. Only the leading span is `role="status"`, so the row count, the
    * selection count, `copy.scrollHint` and `copy.position` are shown but never announced — `aria-rowindex` and
    * `aria-colindex` already carry position, and a polite region on every arrow press would be noise.
+   *
+   * The items follow in this order and no other, with no separator characters between them. With `showStatusBar`
+   * false the bar stays in the DOM, visually hidden, holding only the live span.
    */
   private renderStatusBar;
   private get hasSelectColumn();
@@ -4732,6 +5050,12 @@ export declare class DsTreeGrid extends LitElement {
   /** Per-instance style overrides: `{ indent: 'space.4' }`. Locked bindings are not accepted. */
   accessor overrides: Partial<Record<TreeGridOverridableBinding, TokenRef | undefined>> | undefined;
   private accessor internalExpanded;
+  /**
+   * The `"lazy"` rows the user has opened. A lazy row cannot be opened programmatically: its id in `expanded` or
+   * `defaultExpanded` (or a `"*"` there) is held collapsed until a user act, and the id still travels in the
+   * caller's array and in what `expand-change` reports.
+   */
+  private accessor lazyOpened;
   private accessor internalSort;
   private accessor internalSelected;
   /** The active cell: row -1 is the header row; col 0 is the selection column in row mode. */
@@ -4776,15 +5100,23 @@ export declare class DsTreeGrid extends LitElement {
   private renderSelectCell;
   private renderCell;
   /**
-   * The row header's indent (with one guide line per ancestor level), expand button and content. The chevron's
-   * rotation is on the span this element owns around the Button, never on the Icon.
+   * The row header's indent spacer, expand button and content. The `expandButton` part is the span this element
+   * owns around the composed Button: it is the pointer target, it is `expandButtonSize` on both axes, and it
+   * carries the rotation, never the Icon. The guide lines are not drawn here — they hang off the row, whose
+   * `::before` is neither clipped by this cell's `overflow: hidden` nor moved by a sticky pinned column.
+   *
+   * Neither the span nor the Button is `aria-hidden`. The Button is a real, focusable control — `tabindex="-1"`
+   * only takes it out of the tab order — so hiding either would be axe's `aria-hidden-focus`. It stays exposed
+   * under `copy.expand`/`copy.collapse`; ArrowLeft/Right remain the keyboard path, and the row's own
+   * `aria-expanded` is what conveys the state.
    */
   private renderTreeColumn;
   private renderEditor;
   /**
-   * The visible counterpart of the live region. Only the leading span is `role="status"`, so the row count, the
-   * selection count, `copy.scrollHint` and `copy.position` are shown but never announced — `aria-rowindex` and
-   * `aria-colindex` already carry position, and a polite region on every arrow press would be noise.
+   * The visible counterpart of the live region. Only the leading span is `role="status"`, so the row count,
+   * `copy.scrollHint` and `copy.position` are shown but never announced — `aria-rowindex` and `aria-colindex`
+   * already carry position, and a polite region on every arrow press would be noise. The selection count is shown
+   * here and announced through the live region when it changes, as DataGrid.
    */
   private renderStatusBar;
   private get hasSelectColumn();
@@ -4820,7 +5152,7 @@ export declare class DsTreeGrid extends LitElement {
   private pageRows;
   /** Rendered row indexes: the visible window plus one page of overscan each way, and the active row. */
   private windowIndexes;
-  /** The live region's text: loading, invalid, sort and editing announcements only. */
+  /** The live region's text: loading, invalid, sort, selection and editing announcements only. */
   private announcement;
   /** The shown selection count over every loaded row; empty when nothing is selected. */
   private selectionText;
@@ -4828,8 +5160,9 @@ export declare class DsTreeGrid extends LitElement {
   private positionText;
   private emit;
   /**
-   * Opens or closes `targets`. Each lazy row that opens from collapsed fires `expand` (every time, so a failed load
-   * can retry), then one `expand-change` carries the whole new set.
+   * Opens or closes `targets`, from each row's shown state: a lazy row's is `lazyOpened`, so its id already sitting
+   * in `expanded` neither opens it nor suppresses this act. Each lazy row that opens from collapsed fires `expand`
+   * (every time, so a failed load can retry), then one `expand-change` carries the whole new set of ids.
    */
   private setExpanded;
   /** `*`: every expandable sibling of the focused row under the same parent, the focused row included. */
@@ -4893,10 +5226,10 @@ declare global {
 //#endregion
 //#region src/Tree.d.ts
 /**
- * A node in the hierarchy. `href` makes the node's label a Link with `tone="inherit"` nested inside the label
- * Text, so it takes the label's font and color (navigation trees); `icon` is an Icon glyph (`folder` and `file`
- * exist for the usual case); `badge` is a short trailing count or status; `children: "lazy"` loads on first
- * expand through the `expand` event.
+ * A node in the hierarchy. `href` makes the node's label a `ds-link` with `tone="inherit"` nested inside the
+ * label Text, so it takes the label's font and colour (navigation trees); `icon` is an Icon glyph (`folder`
+ * and `file` exist for the usual case); `badge` is a short trailing count or status; `children: "lazy"` loads
+ * on first expand through the `expand` event.
  */
 interface TreeNode {
   id: string;
@@ -4907,6 +5240,7 @@ interface TreeNode {
   href?: string | undefined;
   children?: TreeNode[] | "lazy" | undefined;
 }
+/** Heading level of the visible label in the page outline; its size is `headingSize` regardless. */
 type TreeHeadingLevel = "2" | "3" | "4";
 type TreeSelectable = "none" | "single" | "multiple";
 /** `selection-change` detail: every selected id, in tree (document) order, as a bare array. */
@@ -4918,23 +5252,28 @@ type TreeExpandDetail = string;
 /** `activate` detail: the id of the activated node. */
 type TreeActivateDetail = string;
 /**
- * Overridable style bindings. Locked (accessibility-bearing, never overridable): rowHeight, rowSelected,
- * rowSelectedBorder, rowSelectedBorderWidth, labelColor, iconColor, badgeColor, expandButtonSize,
- * checkboxBorder, checkboxSelected, checkboxMark, minTarget, focusRing, focusRingWidth.
+ * Style bindings that can be overridden per instance. The accessibility-bearing bindings (rowHeight,
+ * rowSelected, rowSelectedBorder, rowSelectedBorderWidth, labelColor, iconColor, badgeColor,
+ * expandButtonSize, checkboxBorder, checkboxSelected, checkboxMark, minTarget, focusRing, focusRingWidth)
+ * are locked and not in this union.
  */
 type TreeOverridableBinding = "indent" | "rowPaddingInline" | "rowRadius" | "rowGap" | "rowHover" | "labelSelectedWeight" | "headingSize" | "badgeSize" | "guideLine" | "guideLineWidth" | "checkboxGap" | "checkboxSize" | "checkboxBorderWidth" | "checkboxBackground" | "checkboxRadius" | "fontFamily" | "fontSize" | "lineHeight" | "disabledOpacity" | "transition";
 export declare class DsTree extends LitElement {
   static override shadowRootOptions: ShadowRootInit;
   static override styles: CSSResult;
-  /** What the tree lists ("Folders", "Categories"). The tree's accessible name; visible only with `showLabel`. */
+  /** What the tree lists ("Folders", "Categories"). Not visible unless `showLabel`. */
   accessor label;
-  /** Show the label as a Heading above the tree (the tree is then `aria-labelledby` it instead of `aria-label`). */
+  /** Show the label as a Heading above the tree (then the tree is aria-labelledby it instead of aria-label). */
   accessor showLabel;
   /** Heading level of the visible label in the page outline; its size is `headingSize` regardless. */
   accessor headingLevel: TreeHeadingLevel;
   /** The hierarchy. */
   accessor nodes: TreeNode[];
-  /** Controlled expanded ids. */
+  /**
+   * Controlled expanded ids. A still-`"lazy"` id here is held closed until the user opens it, exactly as in
+   * `defaultExpanded` — the id stays in the array the caller passed and in what `expand-change` reports, but
+   * the node does not render open and fires no `expand`.
+   */
   accessor expanded: string[] | undefined;
   /** Initially expanded ids. `["*"]` opens every node whose `children` is a non-empty array, never a lazy one. */
   accessor defaultExpanded: string[] | undefined;
@@ -4944,94 +5283,82 @@ export declare class DsTree extends LitElement {
   accessor selected: string[] | undefined;
   /** Initially selected ids. */
   accessor defaultSelected: string[] | undefined;
-  /** With `multiple`, selecting a parent selects its loaded, enabled descendants and parents show indeterminate. */
+  /** With `multiple`, selecting a parent selects its descendants and parents show indeterminate. */
   accessor selectChildren;
   /** With `single`, moving focus also selects. Off by default: focus moves, Enter or Space selects. */
   accessor selectOnFocus;
-  /** Vertical guide lines under open parents. The attribute is the negated `hide-guides`. */
+  /** Vertical guide lines under open parents. Defaults true, so the attribute is the negated `hide-guides`. */
   accessor showGuides;
   /** Per-instance style overrides: `{ indent: 'space.6' }`. Locked bindings are not in the type. */
   accessor overrides: Partial<Record<TreeOverridableBinding, TokenRef | undefined>> | undefined;
   private accessor internalExpanded;
+  /** Lazy ids the user has opened: a lazy id listed in `expanded`/`defaultExpanded` never opens itself. */
+  private accessor openedLazy;
   private accessor internalSelected;
-  /** The treeitem carrying the roving tabindex. */
+  /** The node the roving tabindex is parked on while focus is inside the tree. */
   private accessor focusedId;
-  private accessor liveMessage;
   private readonly instanceId;
-  /** Lazy nodes already asked for: `expand` fires once per node until the caller replaces `children`. */
-  private readonly requestedLazy;
-  private focusWithin;
-  private followingHref;
-  private typeahead;
+  private nodeMapCache;
+  private typeaheadBuffer;
   private typeaheadTimer;
   private warnedLabel;
-  private get currentExpanded();
-  private get currentSelected();
   override connectedCallback(): void;
   override disconnectedCallback(): void;
   protected override willUpdate(changed: PropertyValues): void;
   protected override updated(): void;
-  /** Tab lands on the selected node, else the first; while focus is inside, the focused node keeps the stop. */
-  private syncRovingStop;
+  private get nodeById();
+  /** The caller's list with `"*"` resolved to concrete ids; a held-lazy id stays in it and in what is reported. */
+  private get expandedIds();
+  /** What actually renders open: a still-`"lazy"` id waits for the user act that fires `expand`. */
+  private get expandedSet();
+  private get selectedIds();
+  private get selectedSet();
+  private visible;
+  /** Visible, enabled nodes: what the arrows, Home/End, type-ahead and Control+A move across. */
+  private navigable;
+  /** Tab lands on the selected node (the first in tree order when several are), else the first node. */
+  private get tabStopId();
+  private itemId;
+  private itemEl;
+  private nodeIdOf;
+  /**
+   * `expand` fires each time a still-`"lazy"` node is opened, so a failed load can retry; once the caller
+   * replaces `children` it never fires again. It fires before the `expand-change` of the same act.
+   */
+  private commitExpanded;
+  private toggleExpanded;
+  /**
+   * What a node's checkbox shows. Under `selectChildren` it is derived from the node's enabled loaded
+   * descendants (mixed when only some are selected); a node with none of those behaves as a leaf.
+   */
+  private checkedState;
+  /** Fires only when the set actually changes, with the ids in tree (document) order. */
+  private commitSelection;
+  private selectOnly;
+  private toggleSelection;
+  /** Shift+ArrowDown/Up only ever add — they never remove a node or an ancestor. */
+  private addToSelection;
+  /** Space and click: select in single, toggle in multiple, nothing in none. */
+  private selectAction;
+  private activate;
+  private focusNode;
+  /** Keyboard movement: with single + selectOnFocus, the node is selected as focus lands. */
+  private moveTo;
+  /** Leaving the tree resets the tab stop, so Tab back in lands on the selected node, else the first. */
+  private readonly handleTreeFocusOut;
+  /** Any printable character moves to the next visible node whose label starts with the buffer. */
+  private handleTypeahead;
+  private readonly handleKeydown;
   protected override render(): TemplateResult;
   private renderNode;
   /** The lazy placeholder: a treeitem the arrows never land on, under an `aria-busy` parent. */
   private renderLoading;
-  private flatten;
-  private visible;
-  /** Visible, enabled nodes: what the arrows, Home/End, type-ahead and Control+A move across. */
-  private navigable;
-  private entry;
   /**
-   * The initial expansion. `["*"]` opens every node whose `children` is a non-empty array and never a lazy one;
-   * a lazy id listed explicitly stays closed until the user opens it, since `expand` only fires for user acts.
+   * The tree is one tab stop. `ds-button` forwards the host's `tabindex` to its inner `<button>` on its own,
+   * but `ds-link` does not, so each composed link's inner `<a>` is demoted after every render — otherwise the
+   * tree would have a tab stop per navigation node. A same-value write is skipped.
    */
-  private initialExpanded;
-  /** Loaded, enabled descendants: what `selectChildren` cascades over (a lazy subtree contributes nothing). */
-  private cascadeIds;
-  /** Ancestor nodes of `id`, nearest first. */
-  private ancestors;
-  /** `selection-change` reports its ids in tree (document) order. */
-  private inTreeOrder;
-  private itemId;
-  /** `expand` fires before the `expand-change` of the same act, once per still-lazy node. */
-  private commitExpanded;
-  private toggleExpand;
-  /** `*`: opens every enabled sibling of the focused node, the focused node included. */
-  private expandSiblings;
-  /** A cascading parent's state is derived from its loaded, enabled descendants. */
-  private checkedState;
-  /** Fires only when the set actually changes, with the ids in tree order. */
-  private commitSelected;
-  /**
-   * The cascade: a node's id is in the selection exactly when all its enabled loaded descendants are, and
-   * unselecting it removes every ancestor id too.
-   */
-  private cascade;
-  private toggleMultiple;
-  /** Space and click: select in `single`, toggle in `multiple`. */
-  private selectNode;
-  /** Shift+ArrowDown/Up adds the node it lands on, cascading like Space when `selectChildren`. */
-  private extendSelection;
-  private activate;
-  /** The chevron toggles expansion and focuses the node, without changing the selection. */
-  private handleChevronClick;
-  private handleRowClick;
-  private handleRowDblClick;
-  private readonly handleFocusIn;
-  private readonly handleFocusOut;
-  private nodeIdOf;
-  /** Moves the roving stop and DOM focus; keyboard moves pass `viaKeyboard`, so `selectOnFocus` can select. */
-  private focusEntry;
-  private moveBy;
-  /** Any printable character moves to the next visible node whose label starts with the buffer. */
-  private handleTypeahead;
-  private readonly handleKeydown;
-  /**
-   * The tree is one tab stop, so the composed chevron Buttons and node Links are reachable by the arrows and
-   * Enter, not by Tab. A same-value write still queues a mutation record, so the attribute is compared first.
-   */
-  private demoteComposedControls;
+  private demoteComposedLinks;
   private applyOverrides;
 }
 declare global {
@@ -5107,6 +5434,9 @@ export declare class DsSplitter extends LitElement {
   private observedWidth;
   /** The last committed expanded size during a drag; the size a collapse keeps for restoring. */
   private dragSize;
+  /** True once a drag has actually changed the size. A press that never moved the separator is not
+	a drag and fires nothing, so a stray tap on the separator is silent. */
+  private dragMoved;
   private accessor containerEl;
   private accessor trackEl;
   private accessor separatorEl;
@@ -5131,6 +5461,7 @@ export declare class DsSplitter extends LitElement {
   protected override render(): TemplateResult;
   private handlePointerDown;
   private handlePointerMove;
+  /** A gesture the platform cancels counts as a release; a press that never moved is silent. */
   private handlePointerEnd;
   private stopDrag;
   /** The pointer as a percentage of the container along the drag axis, mirrored in RTL. */
@@ -5205,40 +5536,58 @@ export declare class DsFeed extends LitElement {
   /** Per-instance style overrides: `{ itemGap: 'layout.gap.loose' }`. Locked bindings are not accepted. */
   accessor overrides: Partial<Record<FeedOverridableBinding, TokenRef | undefined>> | undefined;
   private loadMoreObserver;
+  /** `lastId|hasMore|loading`: the feed asks at most once per change of these, so a prepend does not re-ask. */
+  private loadMoreKey;
   private visibilityObserver;
   private readonly visibilityTimers;
   private readonly reportedVisible;
-  /** The first item's id when `show-new` was fired; focus moves once the caller's prepend changes it. */
-  private showNewFirstId;
-  private mounted;
+  /** The joined item ids; a change of this is a change of `items`. */
+  private itemsKey;
+  private firstItemId;
+  /** Armed by `show-new`, spent on the next change of `items` whether or not it moved focus. */
+  private pendingShowNewFocus;
+  /** An empty feed asks for its first page once, until the caller fills or clears `items` again. */
+  private askedForFirstPage;
   private warnedLabel;
   override connectedCallback(): void;
   override disconnectedCallback(): void;
   protected override willUpdate(changed: PropertyValues): void;
   protected override render(): TemplateResult;
-  protected override updated(changed: PropertyValues): void;
+  protected override updated(): void;
   private renderArticle;
   /**
-   * While `loading` the indicator shows rather than the empty state, so a feed
-   * about to fetch never flashes `copy.empty`; an empty feed with more to come
-   * stays blank for the same reason.
+   * One slot with a fixed precedence: `loading` wins, then an empty feed with
+   * `hasMore` shows nothing (so a feed about to fetch never flashes `copy.empty`),
+   * then an empty feed without it shows `copy.empty`, then the end message. Every
+   * one of these is a sibling of the `role="feed"` column: a progressbar and a
+   * paragraph are not articles, so a feed may not own them.
    */
   private renderFooter;
-  /** The focusable Cards, in document order. */
+  /** The `role="article"` wrappers — the focus targets and the observers' targets — in document order. */
   private getArticles;
-  /** The Feed-owned wrappers the observers watch. */
-  private getArticleWrappers;
   private get newItemsButtonEl();
   private dispatchLoadMore;
   private readonly handleShowNewPress;
   private readonly handleKeydown;
   /** Escapes the feed to the nearest focusable element in document order, before (`-1`) or after (`1`) it. */
   private focusOutside;
-  private syncHostAria;
-  /** (Re)builds the load-more and visibility observers against the current articles. */
-  private syncObservers;
+  /** `label` is the feed's only accessible name; there is no default. */
+  private warnMissingLabel;
+  /** An empty feed has no last article to observe, so it asks for its first page itself, once. */
+  private askForFirstPage;
+  /**
+   * After `show-new` the first new article takes focus and is scrolled into view
+   * (instantly under reduced motion — the feed's only motion on this platform).
+   * The request lives until the next change of `items` and no further: that change
+   * takes it when it puts a new id first, and otherwise drops it, so an unrelated
+   * later prepend never steals focus.
+   */
+  private moveFocusToFirstNewArticle;
+  /** Watches the last article, at most one ask per change of its id, `hasMore` or `loading`. */
+  private syncLoadMoreObserver;
+  /** Watches every article whose id has not reported yet; ids already reported stay reported. */
+  private syncVisibilityObserver;
   private teardownObservers;
-  private readonly handleLoadMoreIntersect;
   private readonly handleVisibilityIntersect;
   private applyOverrides;
 }

@@ -19,6 +19,7 @@ const meta: Meta<typeof Disclosure> = {
     defaultOpen: false,
     disabled: false,
     keepMounted: false,
+    fullWidth: false,
     children: panel,
   },
   argTypes: {
@@ -83,6 +84,7 @@ export const Disabled: Story = {
 export const Open: Story = { args: { defaultOpen: true } };
 export const Controlled: Story = { args: { open: true } };
 export const KeepMounted: Story = { args: { keepMounted: true } };
+export const FullWidth: Story = { args: { fullWidth: true } };
 
 /* accordion: independent disclosures stacked; nothing closes its siblings. */
 export const Accordion: Story = {

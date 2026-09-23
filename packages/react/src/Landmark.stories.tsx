@@ -21,18 +21,18 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 /*
- * role — banner, main, contentinfo, complementary and search carry no label here, so no story
- * models a label on a role that refuses it or trips the missing-label warning by accident.
+ * role — banner, main and contentinfo refuse a label, so they get none; every other role gets the
+ * label the doc assigns it, so no story trips the missing-label or shared-label warning.
  */
 export const RoleBanner: Story = {
   args: { role: 'banner', label: undefined, children: <Text>Site header</Text> },
 };
-export const RoleNavigation: Story = { args: { role: 'navigation', label: 'Main' } };
+export const RoleNavigation: Story = { args: { role: 'navigation', label: 'Primary' } };
 export const RoleMain: Story = {
   args: { role: 'main', label: undefined, children: <Text>Page content</Text> },
 };
 export const RoleComplementary: Story = {
-  args: { role: 'complementary', label: undefined, children: <Text>Sidebar content</Text> },
+  args: { role: 'complementary', label: 'Related links', children: <Text>Sidebar content</Text> },
 };
 export const RoleContentinfo: Story = {
   args: { role: 'contentinfo', label: undefined, children: <Text>Site footer</Text> },
@@ -41,21 +41,21 @@ export const RoleRegion: Story = {
   args: { role: 'region', label: 'Related articles', children: <Text>Section content</Text> },
 };
 export const RoleSearch: Story = {
-  args: { role: 'search', label: undefined, children: <Text>Search form</Text> },
+  args: { role: 'search', label: 'Site search', children: <Text>Search form</Text> },
 };
 export const RoleForm: Story = { args: { role: 'form', label: 'Sign in', children: <Text>Form fields</Text> } };
 
 /* as — each element with the role it belongs to, the way the override is meant to be used. */
 export const AsHeader: Story = { args: { role: 'banner', label: undefined, as: 'header' } };
-export const AsNav: Story = { args: { role: 'navigation', label: 'Footer', as: 'nav' } };
+export const AsNav: Story = { args: { role: 'navigation', label: 'Primary', as: 'nav' } };
 export const AsMain: Story = { args: { role: 'main', label: undefined, as: 'main' } };
-export const AsAside: Story = { args: { role: 'complementary', label: undefined, as: 'aside' } };
+export const AsAside: Story = { args: { role: 'complementary', label: 'Related links', as: 'aside' } };
 export const AsFooter: Story = { args: { role: 'contentinfo', label: undefined, as: 'footer' } };
 export const AsSection: Story = { args: { role: 'region', label: 'Related articles', as: 'section' } };
-export const AsForm: Story = { args: { role: 'search', label: undefined, as: 'form' } };
+export const AsForm: Story = { args: { role: 'form', label: 'Sign in', as: 'form' } };
 export const AsDiv: Story = { args: { role: 'banner', label: undefined, as: 'div' } };
 
-/* examples */
+/* examples — exactly their `given`; Default's label is not inherited. */
 export const PageMain: Story = {
   args: { role: 'main', label: undefined, children: <Text>The page content.</Text> },
 };

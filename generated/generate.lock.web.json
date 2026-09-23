@@ -55,18 +55,21 @@
     }
   },
   "Alert.web": {
-    "hash": "2df1f9d0215b5793",
-    "lastAttemptHash": "2df1f9d0215b5793",
-    "generatedAt": "2026-09-21T07:15:26+00:00",
+    "hash": "9e23b116f8e51254",
+    "lastAttemptHash": "9e23b116f8e51254",
+    "generatedAt": "2026-09-23T19:00:51+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3645,
+    "costUsd": 0.5825,
     "files": [
       "packages/react/src/Alert.css",
-      "packages/react/src/Alert.tsx"
+      "packages/react/src/Alert.stories.tsx",
+      "packages/react/src/Alert.test.tsx",
+      "packages/react/src/Alert.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -74,6 +77,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
@@ -160,20 +164,18 @@
     }
   },
   "Breadcrumb.web": {
-    "hash": "bc5e91dba0dce8cf",
-    "lastAttemptHash": "bc5e91dba0dce8cf",
-    "generatedAt": "2026-09-21T07:36:55+00:00",
+    "hash": "343f3324c8694248",
+    "lastAttemptHash": "343f3324c8694248",
+    "generatedAt": "2026-09-23T19:03:19+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3815,
+    "costUsd": 0.5007,
     "files": [
-      "packages/react/src/Breadcrumb.css",
       "packages/react/src/Breadcrumb.stories.tsx",
-      "packages/react/src/Breadcrumb.test.tsx",
       "packages/react/src/Breadcrumb.tsx"
     ],
-    "gaps": 8,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -181,6 +183,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
@@ -267,18 +270,20 @@
     }
   },
   "Checkbox.web": {
-    "hash": "2ee58615985affaf",
-    "lastAttemptHash": "2ee58615985affaf",
-    "generatedAt": "2026-09-21T02:12:51+00:00",
+    "hash": "aadbfbff351ee315",
+    "lastAttemptHash": "aadbfbff351ee315",
+    "generatedAt": "2026-09-23T18:51:16+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.4497,
+    "rounds": 2,
+    "costUsd": 1.6368,
     "files": [
       "packages/react/src/Checkbox.css",
+      "packages/react/src/Checkbox.stories.tsx",
+      "packages/react/src/Checkbox.test.tsx",
       "packages/react/src/Checkbox.tsx"
     ],
-    "gaps": 8,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -286,6 +291,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
@@ -422,16 +428,16 @@
     }
   },
   "Disclosure.web": {
-    "hash": "dd1b63e07ce7c2d7",
-    "lastAttemptHash": "dd1b63e07ce7c2d7",
-    "generatedAt": "2026-09-21T07:01:19+00:00",
+    "hash": "f5cec780fb63e6cc",
+    "lastAttemptHash": "f5cec780fb63e6cc",
+    "generatedAt": "2026-09-23T18:59:39+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3455,
+    "costUsd": 0.6628,
     "files": [
       "packages/react/src/Disclosure.css",
-      "packages/react/src/Disclosure.test.tsx",
+      "packages/react/src/Disclosure.stories.tsx",
       "packages/react/src/Disclosure.tsx"
     ],
     "gaps": 5,
@@ -442,6 +448,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
@@ -501,17 +508,18 @@
     }
   },
   "Fieldset.web": {
-    "hash": "7827d8f600ffd028",
-    "lastAttemptHash": "7827d8f600ffd028",
-    "generatedAt": "2026-09-21T08:00:02+00:00",
+    "hash": "98af65fafd49fb65",
+    "lastAttemptHash": "98af65fafd49fb65",
+    "generatedAt": "2026-09-23T19:09:30+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.5448,
+    "rounds": 2,
+    "costUsd": 1.7409,
     "files": [
+      "packages/react/src/Fieldset.css",
       "packages/react/src/Fieldset.tsx"
     ],
-    "gaps": 6,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -519,6 +527,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
@@ -662,19 +671,21 @@
     }
   },
   "Landmark.web": {
-    "hash": "88215ade2f122c85",
-    "lastAttemptHash": "88215ade2f122c85",
-    "generatedAt": "2026-09-21T07:25:26+00:00",
+    "hash": "ce65caa728cd9748",
+    "lastAttemptHash": "ce65caa728cd9748",
+    "generatedAt": "2026-09-23T19:02:22+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.4272,
+    "costUsd": 0.5849,
     "files": [
+      "packages/react/src/Landmark.css",
       "packages/react/src/Landmark.stories.tsx",
       "packages/react/src/Landmark.test.tsx",
-      "packages/react/src/Landmark.tsx"
+      "packages/react/src/Landmark.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -682,6 +693,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
@@ -766,20 +778,18 @@
     }
   },
   "Meter.web": {
-    "hash": "75ecc5baafb708ed",
-    "lastAttemptHash": "75ecc5baafb708ed",
-    "generatedAt": "2026-09-21T07:49:24+00:00",
+    "hash": "5cfad0d5e7216989",
+    "lastAttemptHash": "5cfad0d5e7216989",
+    "generatedAt": "2026-09-23T19:06:36+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.213,
+    "rounds": 2,
+    "costUsd": 1.3017,
     "files": [
       "packages/react/src/Meter.css",
-      "packages/react/src/Meter.stories.tsx",
-      "packages/react/src/Meter.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Meter.tsx"
     ],
-    "gaps": 6,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -787,6 +797,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }
@@ -895,18 +906,21 @@
     }
   },
   "RadioGroup.web": {
-    "hash": "175f38053776dd82",
-    "lastAttemptHash": "175f38053776dd82",
-    "generatedAt": "2026-09-21T06:43:25+00:00",
+    "hash": "ddf95018b7d1b87c",
+    "lastAttemptHash": "ddf95018b7d1b87c",
+    "generatedAt": "2026-09-23T18:58:16+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.7912,
+    "rounds": 2,
+    "costUsd": 2.6926,
     "files": [
       "packages/react/src/RadioGroup.css",
-      "packages/react/src/RadioGroup.tsx"
+      "packages/react/src/RadioGroup.stories.tsx",
+      "packages/react/src/RadioGroup.test.tsx",
+      "packages/react/src/RadioGroup.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -914,6 +928,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -1127,18 +1142,18 @@
     }
   },
   "Switch.web": {
-    "hash": "9a0e9967cd0023ba",
-    "lastAttemptHash": "9a0e9967cd0023ba",
-    "generatedAt": "2026-09-21T02:31:55+00:00",
+    "hash": "0c745a3937a5bf9d",
+    "lastAttemptHash": "0c745a3937a5bf9d",
+    "generatedAt": "2026-09-23T18:53:30+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.9534,
+    "rounds": 2,
+    "costUsd": 1.6806,
     "files": [
       "packages/react/src/Switch.css",
       "packages/react/src/Switch.tsx"
     ],
-    "gaps": 7,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1146,6 +1161,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "axe": true
     }

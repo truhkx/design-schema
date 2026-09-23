@@ -46,3 +46,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Breadcrumb: expansion is one-way for the life of the instance, but no prop or event exposes the expanded state, so a consumer cannot observe it, persist it across a remount, or reset it. Left with no escape hatch as written.
 - Breadcrumb: the spec does not say whether activating a plain-text ancestor (no href, not the last item) should fire onNavigate. Chose not to — it renders no interactive element, so there is nothing to activate.
 - Breadcrumb: the focus-fallback tabindex="-1" is specified as living on index 1 and staying 'across items changes'. If items later shrinks to fewer than two entries that index no longer exists; chose to drop the attribute silently rather than warn or re-target.
+
+## 2026-09-23 15:03 — round 1
+
+- Breadcrumb: collapse is a boolean, so there is no enum; the rule 'one story per enum value' was read as CollapseTrue/CollapseFalse, which repeat the DeepTrailCollapsed example's items — the doc does not say which items those two stories should use.
+- Breadcrumb: the behavior says tabindex=-1 goes on the index-1 <li> 'when focus moves' only when no revealed item is a link; the doc does not say whether a later items change that makes index 1 a link (or leaves no fallback needed) should remove it. Kept it on index 1 for the life of the instance, per 'belongs to the position'.
+- Breadcrumb: the ellipsis <li> carries data-part="item" and minTarget like the other items; the doc says it 'sits in its own item like any other' but does not say whether it shares the `item` part hook, so tests that count `item` parts see length+1 fewer-hidden entries when collapsed.
+- Breadcrumb: the Default story's args are not specified by the doc; used the settings-trail example (three items), so the collapsed path and the focus-after-expand behavior have no behavior scenario on web.

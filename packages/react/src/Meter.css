@@ -2,6 +2,8 @@
 
 .ds-meter {
   --ds-meter-track: var(--color-background-strong);
+  --ds-meter-label-color: var(--color-foreground);
+  --ds-meter-value-color: var(--color-foreground-muted);
   --ds-meter-track-height: var(--space-2);
   --ds-meter-radius: var(--radius-full);
   --ds-meter-part-gap: var(--space-1);
@@ -19,6 +21,22 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--ds-meter-label-gap);
+}
+
+/* A long label wraps inside the row; the value text never wraps. */
+/* labelColor / valueColor are locked and realised by the Texts' tones (default, muted). Each wrapper
+ * re-scopes the token its Text's tone reads to the Meter hook — as an inverse surface re-scopes
+ * --color-foreground — so page CSS and the naming codemod reach them without restyling the Text. */
+.ds-meter__label {
+  --color-foreground: var(--ds-meter-label-color);
+  flex-shrink: 1;
+  min-inline-size: 0;
+}
+
+.ds-meter__value-text {
+  --color-foreground-muted: var(--ds-meter-value-color);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* tone → color.status.{tone}.icon: the step guaranteed 3:1 against the page background. */

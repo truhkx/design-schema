@@ -22,7 +22,22 @@
   --ds-disclosure-transition: var(--motion-duration-base);
   display: flex;
   flex-direction: column;
+  /* minTarget: the trigger is start-aligned in its column, so the hover fill hugs the summary. */
+  align-items: flex-start;
   min-inline-size: 0;
+}
+
+/* fullWidth: the trigger (and its heading, when present) spans the row as a block-level flex box. */
+.ds-disclosure--full-width > .ds-disclosure__heading,
+.ds-disclosure--full-width > .ds-disclosure__trigger,
+.ds-disclosure--full-width > .ds-disclosure__heading > .ds-disclosure__trigger {
+  align-self: stretch;
+}
+
+.ds-disclosure--full-width > .ds-disclosure__trigger,
+.ds-disclosure--full-width > .ds-disclosure__heading > .ds-disclosure__trigger {
+  display: flex;
+  inline-size: 100%;
 }
 
 /* headingLevel: the heading has no styling of its own; the button carries it. */
@@ -79,10 +94,9 @@
    size; the Icon draws in currentColor, which this wrapper sets. Pointing right when closed and down when open. */
 .ds-disclosure__icon {
   display: inline-flex;
+  flex: none;
   align-items: center;
-  flex: 0 0 auto;
   color: var(--ds-disclosure-icon);
-  line-height: 0;
   /* transition: chevron rotation only; the panel does not animate. Instant under reduced motion. */
   transition: transform var(--ds-disclosure-transition) var(--motion-easing-standard);
 }
@@ -108,6 +122,8 @@
 
 /* panel: follows the trigger in reading order; rendered only while open. */
 .ds-disclosure__panel {
+  box-sizing: border-box;
+  align-self: stretch;
   padding-block: var(--ds-disclosure-panel-padding-block);
   padding-inline: var(--ds-disclosure-panel-padding-inline);
   color: var(--ds-disclosure-panel-color);

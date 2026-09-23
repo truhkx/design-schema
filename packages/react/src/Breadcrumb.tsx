@@ -155,8 +155,8 @@ export function Breadcrumb({
         </span>
       );
     } else if (item.href === undefined || item.href === '') {
-      // A level with no page of its own is plain text, never an empty link.
-      content = <span className="ds-breadcrumb__text">{item.label}</span>;
+      // A level with no page of its own is plain text inside `item` (no part, no class), never an empty link.
+      content = <span>{item.label}</span>;
     } else {
       content = (
         <span className="ds-breadcrumb__link" data-part="link">

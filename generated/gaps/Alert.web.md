@@ -55,3 +55,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Alert: the tone enum values are assumed to be identical to the Icon glyph names (info/success/warning/danger). The styles.icon description names those glyphs in prose but nothing declares the mapping, so a future tone whose glyph has a different name would break silently.
 - Alert: the body slot is wrapped in a div carrying fontSize and bodyColor, which inherit into any child. For a plain-text body that is the intent, but for a body of Text/Link children it means the composite does reach them by inheritance — only their own explicit rules keep them unaffected. The doc says a composite never restyles a child but does not resolve inheritance.
 - Alert: no behavior scenario covers the focus-onward step on dismiss or the accessible-name rule (aria-labelledby heading, else body), which are the two most intricate parts of the web contract. They are implemented but untested by the generated suite.
+
+## 2026-09-23 15:00 — round 1
+
+- Alert: the web notes say 'no role when off' and give the root a name either way, but they don't say whether the icon span and content column need data-part hooks beyond the anatomy; only the anatomy parts (container, icon, heading, body, dismissButton) got data-part, and the content column wrapper has none.
+- Alert: the Overrides section says a binding forwarded to a child's overrides declares no hook, but iconSize is both forwarded to the Icon's `overrides.size` and written as --ds-alert-icon-size for the icon-box math; the iconSize description wins, so both exist.
+- Alert: the Behavior section limits the focus-onward step to when focus is inside the alert (`:focus-within`), but the web notes and the onDismiss description don't repeat this. The code checks root.matches(':focus-within') at click time; with a click that focused nothing, focus stays where it was.
+- Alert: the spec doesn't say whether jsdom-only tests of the focus-onward step count as behaviour scenarios; they are extra tests in a separate describe block, and the 14 scenarios stay one test each.
+- Alert: the spec doesn't say whether a `contenteditable="false"` element is a focus candidate; it is excluded (matches `[contenteditable]:not([contenteditable="false"])`).
+- Alert: the WithHeading and WithLink stories are extra 'notable states' the spec doesn't list; they were kept from the previous generation. WithLink uses Link's `tone="inherit"`, which the Alert spec never mentions (the contrast list checks color.link, the default tone).

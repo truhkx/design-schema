@@ -21,8 +21,11 @@
   --ds-switch-min-target: var(--size-target-comfortable);
   --ds-switch-disabled-opacity: var(--opacity-disabled);
   --ds-switch-transition: var(--motion-duration-fast);
-  /* helperSize and descriptionText have no hook: the composed Text realises them through its own
-     `muted` tone and `fontSize` override. */
+  /* descriptionText is locked and realised by the composed Text's `muted` tone: it keeps a declared
+     hook (so page CSS and the naming codemod can address it), but no Switch rule reads it — restyling
+     the child from here is not allowed. helperSize is only forwarded to the Text's `fontSize`
+     override, so it declares no hook. */
+  --ds-switch-description-text: var(--color-foreground-muted);
 
   /* The label's first line box, which the track slot is tall, and the thumb's travel. */
   --ds-switch-line-box: calc(var(--ds-switch-label-size) * var(--ds-switch-line-height));

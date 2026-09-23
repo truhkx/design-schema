@@ -36,7 +36,8 @@ export interface LandmarkProps
    * Accessible name. Required for `region` and `form`, and whenever the page has more than one
    * landmark of the same role (two navigations: "Main" and "Footer"). Not shown visually. An empty
    * string counts as absent. `banner`, `main` and `contentinfo` never take a label: one passed to
-   * them is not rendered and a development warning says so.
+   * them is not rendered and a development warning says so. `search` and `complementary` do take a
+   * label, and a page with two of either needs one.
    */
   label?: string | undefined;
   /** The region's content. */
@@ -86,11 +87,12 @@ const IMPLIED_ROLE: Partial<Record<LandmarkElement, LandmarkRole>> = {
 /** Roles that never take a label. */
 const UNLABELLED_ROLES: ReadonlySet<LandmarkRole> = new Set<LandmarkRole>(['banner', 'main', 'contentinfo']);
 
-/** Roles whose duplicates must be told apart by label. */
+/** Roles whose duplicates must be told apart by label (`search` takes a name too, so it is checked). */
 const DISTINGUISHED_ROLES: ReadonlySet<LandmarkRole> = new Set<LandmarkRole>([
   'navigation',
   'complementary',
   'region',
+  'search',
   'form',
 ]);
 

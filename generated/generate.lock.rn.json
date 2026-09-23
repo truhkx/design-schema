@@ -434,18 +434,20 @@
     }
   },
   "Feed.rn": {
-    "hash": "511b3be5268dc5f7",
-    "lastAttemptHash": "511b3be5268dc5f7",
-    "generatedAt": "2026-09-23T19:05:03+00:00",
-    "model": "opus",
+    "hash": "4adcaf90dc45b279",
+    "lastAttemptHash": "4adcaf90dc45b279",
+    "generatedAt": "2026-09-23T23:48:02+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9003,
+    "costUsd": 0.3042,
     "files": [
       "packages/rn/src/Feed.stories.tsx",
-      "packages/rn/src/Feed.tsx"
+      "packages/rn/src/Feed.test.tsx",
+      "packages/rn/src/Feed.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -960,14 +962,16 @@
     }
   },
   "Splitter.rn": {
-    "hash": "26a40773118020e3",
-    "lastAttemptHash": "26a40773118020e3",
-    "generatedAt": "2026-09-23T19:03:37+00:00",
-    "model": "opus",
+    "hash": "32119b2542836e50",
+    "lastAttemptHash": "32119b2542836e50",
+    "generatedAt": "2026-09-23T23:47:16+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5299,
-    "files": [],
+    "costUsd": 0.3137,
+    "files": [
+      "packages/rn/src/Splitter.tsx"
+    ],
     "gaps": 4,
     "gates": {
       "parse": true,

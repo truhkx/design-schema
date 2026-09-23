@@ -461,6 +461,7 @@ export function Splitter({
       <Animated.View
         testID="Splitter.primaryPane"
         style={primaryPaneStyle}
+        aria-hidden={isCollapsed && !stacked}
         accessibilityElementsHidden={isCollapsed && !stacked}
         importantForAccessibility={isCollapsed && !stacked ? 'no-hide-descendants' : 'auto'}
         pointerEvents={isCollapsed && !stacked ? 'none' : 'auto'}

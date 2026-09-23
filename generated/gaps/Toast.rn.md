@@ -78,3 +78,23 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toast: the focus-restore model in Guidance (F6 in, Escape/Tab out, restore to the element focus came from, FocusScope's focusable walker) has no native equivalent and the rn notes acknowledge it, so none of it is implemented. `escape` stays in ToastDismissReason but is never produced on this platform — the union member is dead code here.
 - Toast: `minTarget` (size.target.min) is a locked binding, but every interactive part is a composed Button that sizes its own target, and the doc forbids restyling a child. Toast applies it nowhere. If the intent was a floor the toast itself enforces, the schema needs to say on what.
 - Toast: the Keyboard-story rule asks for 'at least three focusable children', but a single toast has at most two (action + dismiss). The story renders two persistent action toasts plus a trigger, for four.
+
+## 2026-09-23 14:05 — round 1
+
+- Toast: another session (ds-regen-rn-85) was generating Toast in the same worktree at the same time; I stopped to avoid overwriting its work, so this run produced no finished output. Only my return-type change (`React.JSX.Element | null`) landed.
+- Toast: onDismiss now fires when the exit transition starts, but the spec only defines 'removed once the transition ends' for the region. For a Toast rendered on its own on native it doesn't say what 'removed' means; I chose render null after the exit.
+- Toast: minTarget (size.target.min, the row's minimum height) is locked, but the previous RN Toast never applied it. The row needs `minHeight: t.sizeTargetMin`.
+- Toast: the rn notes say the toast root has no role except alert for danger, but don't say whether `aria-live` should be written alongside `accessibilityLiveRegion` under the package's rule to mirror every accessibility prop as aria-*. I would mirror it (`aria-live`, plus `aria-label` on the root and the region).
+- Toast: the Guidance's Keyboard story (trigger + two persistent action toasts, the second danger) contradicts the old RN story, which made the second toast success; the doc's version should win.
+- Toast: `styles.text` says the foreground is re-scoped on the `toast` container, but the rn notes and the old code scope it on the message only. The doc should say which one native uses.
+
+## 2026-09-23 14:07 — round 1
+
+- Toast: onDismiss now fires when the exit starts, and the element is 'removed once the transition ends', but a standalone <Toast> has no parent tracking it. I made it return null after the exit, so the component returns `React.JSX.Element | null`. The doc doesn't say whether a standalone toast removes itself.
+- Toast: the rn notes say only toasts the provider itself marked exiting drop out of the count of three. Now that the toast reports onDismiss when the exit starts, the provider marks it exiting at that moment, so a toast that is timing out stops counting as soon as its exit begins. The notes' line 'still counts until it reports onDismiss' is now always true and could be simplified.
+- Toast: guidance says toast() returns a promise 'resolving to { reason } when the toast leaves'. With onDismiss firing at the start of the exit, I resolve the promise at the same moment rather than after the animation. The doc should say which moment it means.
+- Toast: a toast replaced by id while it is already playing its exit animation has already been reported. I remove it without reporting 'replaced' a second time. The doc doesn't cover this case.
+- Toast: minTarget is 'the minimum block size of the toast row'. I applied it as minHeight on the Animated.View root. The toast has no separate 'toast' part, so the root is that row on RN.
+- Toast (carried over): for non-danger tones the root has no role but has aria-label, which under react-native-web is aria-label on a div with no role. axe only lets it through because the toast has text content. The `role` prop does accept 'status'; I kept the doc's 'no role' because the danger scenario reads accessibilityRole.
+- Toast (carried over): with the region keys as no-ops on a standalone Toast, the single ToastOverridableBinding type is shared by Toast and ToastProvider, and each ignores the other's keys. The doc says the region keys form their own group but gives RN only one union type.
+- Toast (carried over): escape-dismiss, F6 and the focus-restore model have no native equivalent. 'escape' stays in the reason type but never fires on RN, and the Tab rule needs no code.

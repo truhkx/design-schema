@@ -20,7 +20,7 @@ function setup(given: Partial<ToastProps> = {}) {
   return { ...utils, props };
 }
 
-/** Lets the exit transition finish so after-change events fire. */
+/** Lets the exit transition finish so the toast is removed. */
 function flushExit(): void {
   act(() => {
     jest.advanceTimersByTime(5000);
@@ -40,8 +40,11 @@ describe('Toast', () => {
     const onDismiss = jest.fn();
     setup({ dismissible: true, onDismiss });
     fireEvent.press(screen.getByLabelText('Dismiss'));
-    flushExit();
+    // after-change: fires as the exit transition starts, not when it ends.
     expect(onDismiss).toHaveBeenCalledWith('dismiss-button');
+    flushExit();
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('Toast')).toBeNull();
   });
 
   it('the-action-button-fires-on-action', () => {

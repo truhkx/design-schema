@@ -66,7 +66,10 @@ export interface ToastProps {
   overrides?: Partial<Record<ToastOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the action button is activated, before `onDismiss('action')`. The toast then dismisses. */
   onAction?: (() => void) | undefined;
-  /** Fired once the toast has left the screen, with the reason it left. */
+  /**
+   * Fired when the toast begins to leave, with the reason — synchronously, at the state change
+   * that starts the exit transition. The toast is removed once that transition ends.
+   */
   onDismiss?: ((reason: ToastDismissReason) => void) | undefined;
 }
 
@@ -102,10 +105,17 @@ const TEXT_DEFAULT: Record<ToastTextBinding, TokenRef> = {
 type PauseSource = 'touch' | 'hidden';
 
 /**
- * Set by a `ToastProvider` when `dismiss()` asks a shown toast to leave, so it runs its
- * exit transition before reporting. `null` outside a provider and while the toast stays.
+ * Provided by a `ToastProvider` to each toast it shows. `exiting` turns true once the toast has
+ * reported `onDismiss`, or when `dismiss()` (which reports on the toast's behalf) asks it to
+ * leave; `onExited` tells the provider the exit transition has ended so it can remove the
+ * toast. `null` outside a provider.
  */
-const ToastExitContext: React.Context<ToastDismissReason | null> = React.createContext<ToastDismissReason | null>(null);
+interface ToastExit {
+  exiting: boolean;
+  onExited: () => void;
+}
+
+const ToastExitContext: React.Context<ToastExit | null> = React.createContext<ToastExit | null>(null);
 
 /**
  * Toast — says "done" and gets out of the way. Confirms an action just taken,
@@ -126,8 +136,9 @@ const ToastExitContext: React.Context<ToastDismissReason | null> = React.createC
  * (Android). iOS ignores live regions, so the message is announced once on mount
  * (queued for polite tones, interrupting for `danger`).
  *
- * The toast rises and fades in over `enter` and fades out over `exit` before
- * `onDismiss` fires; both are instant under reduced motion. A timer dismisses it after
+ * The toast rises and fades in over `enter`, and sinks and fades out over `exit`;
+ * `onDismiss` fires as the exit begins and the toast renders nothing once it ends. Both
+ * are instant under reduced motion. A timer dismisses it after
  * the effective duration unless that is `persistent` — which it always is once
  * `actionLabel` is set or `tone` is `danger` (a `__DEV__` warning flags the mismatch).
  * The timer pauses while the toast is touched and while the app is not in the
@@ -146,7 +157,7 @@ export function Toast({
   overrides,
   onAction,
   onDismiss,
-}: ToastProps): React.JSX.Element {
+}: ToastProps): React.JSX.Element | null {
   const duration: ToastDuration = durationProp ?? 'short';
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
@@ -172,14 +183,23 @@ export function Toast({
   const icon = TONE_ICON[tone];
   const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
 
-  const [dismissReason, setDismissReason] = React.useState<ToastDismissReason | null>(null);
+  // `exiting` starts the exit transition; `exited` removes the toast once it has ended.
+  const [exiting, setExiting] = React.useState(false);
+  const [exited, setExited] = React.useState(false);
   const dismissedRef = React.useRef(false);
+  const onDismissRef = React.useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+  const exitContext = React.useContext(ToastExitContext);
+
+  // `onDismiss` is after-change: it fires synchronously at the state change that starts the
+  // exit transition, so a caller knows the reason before the animation rather than after it.
   const requestDismiss = React.useCallback((reason: ToastDismissReason) => {
     if (dismissedRef.current) {
       return;
     }
     dismissedRef.current = true;
-    setDismissReason(reason);
+    setExiting(true);
+    onDismissRef.current?.(reason);
   }, []);
 
   React.useEffect(() => {
@@ -209,13 +229,15 @@ export function Toast({
     effectiveDuration === 'persistent' ? null : t.motionDurationLoop * DURATION_MULTIPLIER[effectiveDuration],
   );
 
-  // `dismiss(toastId?)` on the provider: leave through the exit transition like any other reason.
-  const exitSignal = React.useContext(ToastExitContext);
+  // `dismiss(toastId?)` on the provider has already reported `programmatic` for this toast;
+  // it leaves through the exit transition like every reason but `replaced`.
+  const providerExiting = exitContext?.exiting === true;
   React.useEffect(() => {
-    if (exitSignal !== null) {
-      requestDismiss(exitSignal);
+    if (providerExiting && !dismissedRef.current) {
+      dismissedRef.current = true;
+      setExiting(true);
     }
-  }, [exitSignal, requestDismiss]);
+  }, [providerExiting]);
   const remainingRef = React.useRef(totalDurationRef.current ?? 0);
   const timerStartRef = React.useRef(0);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -296,15 +318,20 @@ export function Toast({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fades out before leaving, so `onDismiss` (after-change) fires once the toast is gone.
+  // The reverse of `enter`: sinks by `enterOffset` while fading, then the toast is removed.
+  const finishExit = React.useCallback(() => {
+    setExited(true);
+    exitContext?.onExited();
+  }, [exitContext]);
+
   React.useEffect(() => {
-    if (dismissReason === null) {
+    if (!exiting) {
       return undefined;
     }
     stopTimer();
     // Immediate under reduced motion or when the exit time does not resolve to a positive duration.
     if (reducedMotion || !(exitDuration > 0)) {
-      onDismiss?.(dismissReason);
+      finishExit();
       return undefined;
     }
     const animation = Animated.timing(progress, {
@@ -315,12 +342,12 @@ export function Toast({
     });
     animation.start(({ finished }) => {
       if (finished) {
-        onDismiss?.(dismissReason);
+        finishExit();
       }
     });
     return () => animation.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dismissReason]);
+  }, [exiting]);
 
   const handleAction = (): void => {
     if (dismissedRef.current) {
@@ -337,6 +364,9 @@ export function Toast({
     // and a standalone toast takes the cross-axis alignment of whatever holds it.
     gap,
     maxWidth,
+    // minTarget (locked): the row is never shorter than a touch target, even with no buttons.
+    // The Buttons size their own targets; this floor is the toast's alone.
+    minHeight: t.sizeTargetMin,
     paddingVertical: paddingBlock,
     paddingHorizontal: paddingInline,
     borderRadius: radius,
@@ -366,52 +396,61 @@ export function Toast({
     return next;
   }, [overrides]);
 
+  if (exited) {
+    return null;
+  }
+
+  const live = tone === 'danger' ? 'assertive' : 'polite';
+
+  // Not `accessible`: that would merge the action and dismiss Buttons into one node.
   return (
     <Animated.View
       testID="Toast"
       style={toastStyle}
       accessibilityRole={tone === 'danger' ? 'alert' : undefined}
-      accessibilityLiveRegion={tone === 'danger' ? 'assertive' : 'polite'}
+      accessibilityLiveRegion={live}
+      aria-live={live}
       accessibilityLabel={message}
+      aria-label={message}
       onTouchStart={() => pause('touch')}
       onTouchEnd={() => resume('touch')}
       onTouchCancel={() => resume('touch')}
     >
-      {icon !== null ? (
-        <View testID="Toast.icon" style={iconCellStyle} accessibilityElementsHidden importantForAccessibility="no">
-          <Icon name={icon.name} overrides={{ color: icon.color }} />
-        </View>
-      ) : null}
-      <View testID="Toast.message" style={messageStyle}>
-        {/* text: color.inverse.foreground, locked. Text's own `color` binding is locked, so the
-            inverse surface provides its foreground to the subtree instead. */}
-        <TextForegroundContext.Provider value={t.colorInverseForeground}>
+      {/* text: color.inverse.foreground, locked. Text's own `color` binding is locked, so the
+          toast re-scopes the foreground on its own container and composes Text unchanged. */}
+      <TextForegroundContext.Provider value={t.colorInverseForeground}>
+        {icon !== null ? (
+          <View testID="Toast.icon" style={iconCellStyle} accessibilityElementsHidden importantForAccessibility="no">
+            <Icon name={icon.name} overrides={{ color: icon.color }} />
+          </View>
+        ) : null}
+        <View testID="Toast.message" style={messageStyle}>
           {/* React Native Text has no `element`, so the message part takes only `size: md`. */}
           <Text size="md" overrides={textOverrides}>
             {message}
           </Text>
-        </TextForegroundContext.Provider>
-      </View>
-      {actionLabel !== undefined ? (
-        <View testID="Toast.actionButton">
-          <Button label={actionLabel} variant="ghost" size="sm" inverse onPress={handleAction} />
         </View>
-      ) : null}
-      {isDismissible ? (
-        /* dismissColor: native has no currentColor, so the glyph takes color.inverse.link
-           through Icon's own `overrides`, the sanctioned way to color a composed child. */
-        <View testID="Toast.dismissButton">
-          <Button
-            label={COPY.dismissLabel}
-            variant="ghost"
-            size="sm"
-            iconOnly
-            inverse
-            leadingIcon={<Icon name="close" overrides={{ color: 'color.inverse.link' }} />}
-            onPress={() => requestDismiss('dismiss-button')}
-          />
-        </View>
-      ) : null}
+        {actionLabel !== undefined ? (
+          <View testID="Toast.actionButton">
+            <Button label={actionLabel} variant="ghost" size="sm" inverse onPress={handleAction} />
+          </View>
+        ) : null}
+        {isDismissible ? (
+          /* dismissColor: native has no currentColor, so the glyph takes color.inverse.link
+             through Icon's own `overrides`, the sanctioned way to color a composed child. */
+          <View testID="Toast.dismissButton">
+            <Button
+              label={COPY.dismissLabel}
+              variant="ghost"
+              size="sm"
+              iconOnly
+              inverse
+              leadingIcon={<Icon name="close" overrides={{ color: 'color.inverse.link' }} />}
+              onPress={() => requestDismiss('dismiss-button')}
+            />
+          </View>
+        ) : null}
+      </TextForegroundContext.Provider>
     </Animated.View>
   );
 }
@@ -419,14 +458,14 @@ export function Toast({
 /** Options for the imperative `toast()` call; the same shape as `ToastProps`. */
 export type ToastOptions = ToastProps;
 
-/** What `toast()` resolves to once the toast has left the screen. */
+/** What `toast()` resolves to once the toast begins to leave the screen. */
 export interface ToastResult {
   reason: ToastDismissReason;
 }
 
 export interface ToastContextValue {
   /**
-   * Shows a toast and resolves with `{ reason }` when it leaves. Showing a toast with a
+   * Shows a toast and resolves with `{ reason }` when it begins to leave. Showing a toast with a
    * `toastId` already on screen replaces it; the replaced toast leaves immediately with
    * reason `replaced`, as does the oldest one when a fourth is shown.
    */
@@ -449,8 +488,12 @@ interface ToastEntry {
   id: string;
   options: ToastOptions;
   resolve: (result: ToastResult) => void;
-  /** Set when `dismiss()` asked this toast to leave; it reports once its exit transition ends. */
-  exiting: ToastDismissReason | null;
+  /**
+   * True once the toast has been reported (`onDismiss` fired, the promise resolved) and is
+   * playing its exit transition. It no longer counts toward the three and is removed when the
+   * transition ends.
+   */
+  exiting: boolean;
 }
 
 const ToastContext: React.Context<ToastContextValue | null> = React.createContext<ToastContextValue | null>(null);
@@ -477,16 +520,32 @@ export function ToastProvider({ children, overrides }: ToastProviderProps): Reac
     setEntries(next);
   }, []);
 
-  /** Removes an entry and reports `reason` to its caller; a no-op when it is already gone. */
-  const settle = React.useCallback(
+  /** Reports `reason` to the entry's caller: its `onDismiss`, then the promise. */
+  const report = (entry: ToastEntry, reason: ToastDismissReason): void => {
+    entry.options.onDismiss?.(reason);
+    entry.resolve({ reason });
+  };
+
+  /**
+   * The toast began to leave (`onDismiss` from the toast itself): report at once and mark it
+   * exiting; it stays mounted until its exit transition ends.
+   */
+  const handleDismiss = React.useCallback(
     (id: string, reason: ToastDismissReason) => {
       const entry = entriesRef.current.find((candidate) => candidate.id === id);
-      if (entry === undefined) {
+      if (entry === undefined || entry.exiting) {
         return;
       }
+      commit(entriesRef.current.map((candidate) => (candidate === entry ? { ...candidate, exiting: true } : candidate)));
+      report(entry, reason);
+    },
+    [commit],
+  );
+
+  /** The exit transition ended: remove the toast. */
+  const remove = React.useCallback(
+    (id: string) => {
       commit(entriesRef.current.filter((candidate) => candidate.id !== id));
-      entry.options.onDismiss?.(reason);
-      entry.resolve({ reason });
     },
     [commit],
   );
@@ -496,29 +555,39 @@ export function ToastProvider({ children, overrides }: ToastProviderProps): Reac
       new Promise<ToastResult>((resolve) => {
         counterRef.current += 1;
         const id = options.toastId ?? `toast-${counterRef.current}`;
-        settle(id, 'replaced');
-        const next: ToastEntry[] = [...entriesRef.current, { id, options, resolve, exiting: null }];
-        // A toast already playing its exit transition does not count toward the three, so the
+        // `replaced` leaves immediately, without its exit transition; one already exiting
+        // under the same id has been reported and is simply removed.
+        const replaced = entriesRef.current.find((candidate) => candidate.id === id);
+        const next: ToastEntry[] = [
+          ...entriesRef.current.filter((candidate) => candidate !== replaced),
+          { id, options, resolve, exiting: false },
+        ];
+        // A toast already in its exit transition does not count toward the three, so the
         // oldest one still staying is the one evicted. Only one can exceed at a time.
-        const staying = next.filter((candidate) => candidate.exiting === null);
+        const staying = next.filter((candidate) => !candidate.exiting);
         const evicted = staying.length > MAX_TOASTS ? staying[0] : undefined;
         commit(evicted === undefined ? next : next.filter((candidate) => candidate !== evicted));
+        if (replaced !== undefined && !replaced.exiting) {
+          report(replaced, 'replaced');
+        }
         if (evicted !== undefined) {
-          // `replaced`: it leaves immediately, without its exit transition.
-          evicted.options.onDismiss?.('replaced');
-          evicted.resolve({ reason: 'replaced' });
+          report(evicted, 'replaced');
         }
       }),
-    [commit, settle],
+    [commit],
   );
 
   const dismiss = React.useCallback(
     (toastId?: string | undefined) => {
-      commit(
-        entriesRef.current.map((entry) =>
-          (toastId === undefined || entry.id === toastId) && entry.exiting === null ? { ...entry, exiting: 'programmatic' } : entry,
-        ),
-      );
+      const leaving = entriesRef.current.filter((entry) => (toastId === undefined || entry.id === toastId) && !entry.exiting);
+      if (leaving.length === 0) {
+        return;
+      }
+      // `programmatic` plays the exit transition: report now, remove once each toast has exited.
+      commit(entriesRef.current.map((entry) => (leaving.includes(entry) ? { ...entry, exiting: true } : entry)));
+      for (const entry of leaving) {
+        report(entry, 'programmatic');
+      }
     },
     [commit],
   );
@@ -555,10 +624,17 @@ export function ToastProvider({ children, overrides }: ToastProviderProps): Reac
           `accessibilityLabel` on a View with no role is an `aria-label` on a bare <div>
           under react-native-web (axe `aria-prohibited-attr`). It is also the role the web
           and Lit regions use, so the three platforms announce the same landmark. */}
-      <View testID="Toast.region" style={regionStyle} pointerEvents="box-none" role="region" accessibilityLabel={COPY.regionLabel}>
+      <View
+        testID="Toast.region"
+        style={regionStyle}
+        pointerEvents="box-none"
+        role="region"
+        accessibilityLabel={COPY.regionLabel}
+        aria-label={COPY.regionLabel}
+      >
         {entries.map((entry) => (
-          <ToastExitContext.Provider key={entry.id} value={entry.exiting}>
-            <Toast {...entry.options} onDismiss={(reason) => settle(entry.id, reason)} />
+          <ToastExitContext.Provider key={entry.id} value={{ exiting: entry.exiting, onExited: () => remove(entry.id) }}>
+            <Toast {...entry.options} onDismiss={(reason) => handleDismiss(entry.id, reason)} />
           </ToastExitContext.Provider>
         ))}
       </View>

@@ -72,7 +72,10 @@ export const WithProvider: Story = {
   },
 };
 
-/** Open with its trigger and several focusable children, for the axe gate and manual keyboard checks. */
+/**
+ * A trigger plus two persistent action toasts — four focus stops, for the axe gate and manual
+ * keyboard checks. The second is `danger`, so exactly one toast is not an alert.
+ */
 export const Keyboard: Story = {
   render: (args) => {
     function Demo(): React.JSX.Element {
@@ -83,7 +86,7 @@ export const Keyboard: Story = {
           {visible ? (
             <Stack gap="tight" align="start">
               <Toast {...args} message="3 files deleted" actionLabel="Undo" duration="persistent" onDismiss={() => setVisible(false)} />
-              <Toast {...args} message="Export ready" tone="success" actionLabel="View" duration="persistent" />
+              <Toast {...args} message="Upload failed" tone="danger" actionLabel="Retry" duration="persistent" />
             </Stack>
           ) : null}
         </Stack>

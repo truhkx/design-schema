@@ -13,7 +13,7 @@ const meta: Meta<typeof Tooltip> = {
   decorators: [withTheme({ fit: true })],
   args: {
     content: 'Includes archived items',
-    children: <Button variant="ghost" size="sm" label="Items" />,
+    children: <Button variant="secondary" label="Items" />,
     placement: 'top',
     describes: true,
     delay: 'default',
@@ -26,11 +26,11 @@ type Story = StoryObj<typeof Tooltip>;
 
 export const Default: Story = {};
 
-// placement
-export const PlacementTop: Story = { args: { placement: 'top' } };
-export const PlacementBottom: Story = { args: { placement: 'bottom' } };
-export const PlacementStart: Story = { args: { placement: 'start' } };
-export const PlacementEnd: Story = { args: { placement: 'end' } };
+// placement — rendered open, since a hover-driven bubble is otherwise invisible and the four would look identical
+export const PlacementTop: Story = { args: { placement: 'top', open: true } };
+export const PlacementBottom: Story = { args: { placement: 'bottom', open: true } };
+export const PlacementStart: Story = { args: { placement: 'start', open: true } };
+export const PlacementEnd: Story = { args: { placement: 'end', open: true } };
 
 // delay
 export const DelayDefault: Story = { args: { delay: 'default' } };

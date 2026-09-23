@@ -491,8 +491,7 @@ export function Tooltip({
           onLayout={handleBubbleLayout}
           // Hoverable under react-native-web (WCAG 1.4.13); inert on touch.
           pointerEvents={Platform.OS === 'web' ? 'auto' : 'none'}
-          onPointerEnter={handleBubbleEnter}
-          onPointerLeave={handleBubbleLeave}
+          {...(Platform.OS === 'web' ? { onPointerEnter: handleBubbleEnter, onPointerLeave: handleBubbleLeave } : {})}
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
           aria-hidden

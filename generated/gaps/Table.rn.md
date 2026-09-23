@@ -76,3 +76,20 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Table: `loading` with rows is specified as muted Text in its own polite live region, but `accessibilityLiveRegion` is Android-only and the doc does not say whether iOS should also announce it. Chose not to — the text is visible, and announcing it would fight the sort/selection announcements the doc keeps separate.
 - Table: the stacked row's accessible summary has no stated entry for the `rowActions` cell (web labels it 'Actions' through data-label). Left it out of the summary; the action Buttons stay separate accessibility stops inside the block.
 - Table: `striped` is defined for rows without saying whether stacked blocks alternate too; kept the alternation in both layouts.
+
+## 2026-09-23 14:52 — round 1
+
+- Table: numericFont asks for tabular figures, but React Native can only get them from `fontVariant: ['tabular-nums']` on the Text, and composed Text takes token overrides only (no style), so end-aligned cells get the mono family without tabular-nums. Text's schema would need a `numeric` / tabular option.
+- Table: platforms.rn asks for `copy.scrollHint` and `copy.rowCount` as descriptions, but RN 0.87 has no `aria-describedby` type. accessibilityHint covers native; react-native-web does not map hint to aria-describedby, so the web build needs hidden text with nativeID plus a web-only cast prop (currently being added in this file by a concurrent edit).
+- Table: the keyboard rule and the scrollRegion part expect a focusable scroll region (web tabindex=0, axe scrollable-region-focusable), while the RN notes say it scrolls by swipe only. The spec doesn't say whether the RN region must be focusable or draw focusRing; I planned `focusable` plus a focusRing border on its wrapper View and did not finish it.
+- Table: behavior `loading-marks-the-table-busy` is limited to web and lit, but RN also sets aria-busy on the list (a mirror of accessibilityState.busy), so the scenario could include rn.
+- Table: the spec doesn't say whether the stacked header listitem should render when there are no sort columns and no select-all (it renders empty); an empty `<li>` on react-native-web may read as an empty list item.
+
+## 2026-09-23 14:53 — round 1
+
+- Table: another session (ds-regen-rn-40) regenerated Table.tsx in the same worktree at the same time; the file mixes both sessions' edits and is not typechecked or tested.
+- Table: the RN digest says to add aria-selected wherever accessibilityState.selected is set, but ARIA doesn't allow aria-selected on role listitem (the row), button (the row-header Pressable) or a generic View (the stacked summary). The docs should say RN mirrors selection only through the Checkbox and the start-edge bar on react-native-web, which the rn platform note already half-says.
+- Table: rn notes give the row count and scroll hint only as accessibilityHint, but the web contract uses aria-describedby, which RN doesn't type. I chose hidden nativeID descriptions with a web-only aria-describedby, following AlertDialog; the doc should say which.
+- Table: the web contract gives the scroll region role=region; the rn notes only say it is labelled. I chose role="region" so its aria-label is allowed on react-native-web.
+- Table: numericFont asks for tabular figures, but Text has no fontVariant binding or style prop, so RN gets the mono family only.
+- Table: web makes the container the root, while RN needs testID="Table" on the root. I kept Table.container as an inner wrapper around the list, so the caption sits outside the container part on RN.

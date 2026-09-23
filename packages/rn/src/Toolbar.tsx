@@ -35,7 +35,8 @@ export interface ToolbarProps {
    * Controls in order: Buttons (usually `ghost` or `secondary`, `iconOnly` for glyph tools),
    * SegmentedControl, Select, Switch. Group related controls with `ToolbarGroup`; a Divider is
    * drawn between two adjacent groups only (a bare control next to a group gets `itemGap`, no
-   * Divider). Consumers never place Dividers themselves.
+   * Divider), and only between top-level groups — a group nested inside a group takes no
+   * separator and no `size` pass. Consumers never place Dividers themselves.
    */
   children: React.ReactNode;
   /** Vertical toolbars sit beside a canvas; the controls stack along the column. */
@@ -127,11 +128,21 @@ function isGroup(node: React.ReactNode): node is React.ReactElement<ToolbarGroup
  */
 export function ToolbarGroup({ label, children, ref }: ToolbarGroupProps): React.JSX.Element {
   const layout = React.useContext(ToolbarLayoutContext);
-  if (__DEV__ && layout === null) {
-    console.warn('ToolbarGroup: render it as a direct child of Toolbar; outside one it has no layout.');
-  }
+  const outside = layout === null;
+  React.useEffect(() => {
+    if (__DEV__ && outside) {
+      console.warn('ToolbarGroup: render it inside a Toolbar; outside one it has no orientation, wrapping or gap.');
+    }
+  }, [outside]);
   return (
-    <View ref={ref} role="group" accessibilityLabel={label} style={layout?.group} testID="Toolbar.group">
+    <View
+      ref={ref}
+      role="group"
+      accessibilityLabel={label}
+      aria-label={label}
+      style={layout?.group}
+      testID="Toolbar.group"
+    >
       {children}
     </View>
   );
@@ -269,13 +280,23 @@ export function Toolbar({
   };
 
   return (
-    <View ref={ref} testID="Toolbar" accessibilityRole="toolbar" accessibilityLabel={label} style={styles.root}>
+    <View
+      ref={ref}
+      testID="Toolbar"
+      accessibilityRole="toolbar"
+      accessibilityLabel={label}
+      aria-label={label}
+      style={styles.root}
+    >
       <ToolbarLayoutContext.Provider value={layout}>
         {mode === 'wrap' ? (
-          <View style={styles.row}>{content}</View>
+          <View style={styles.row} testID="Toolbar.container">
+            {content}
+          </View>
         ) : (
           <View>
             <ScrollView
+              testID="Toolbar.container"
               horizontal={!vertical}
               showsHorizontalScrollIndicator={false}
               showsVerticalScrollIndicator={false}

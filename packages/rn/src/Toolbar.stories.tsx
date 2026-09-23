@@ -4,7 +4,6 @@ import { Toolbar, ToolbarGroup } from './Toolbar';
 import { Button } from './Button';
 import { SegmentedControl } from './SegmentedControl';
 import { Select } from './Select';
-import { Switch } from './Switch';
 import { withTheme } from './decorators';
 
 function formattingControls(): React.ReactNode {
@@ -16,9 +15,10 @@ function formattingControls(): React.ReactNode {
         <Button label="Underline" variant="ghost" overflowLabel="Underline" />
       </ToolbarGroup>
       <ToolbarGroup label="Insert">
-        <Button label="Insert link" variant="ghost" overflowLabel="Insert link" />
+        <Button label="Link" variant="ghost" overflowLabel="Link" />
+        <Button label="Image" variant="ghost" overflowLabel="Image" />
+        <Button label="Table" variant="ghost" overflowLabel="Table" />
       </ToolbarGroup>
-      <Switch label="Preview" defaultChecked={false} />
     </>
   );
 }
@@ -138,17 +138,5 @@ export const WithOverrides: Story = {
   args: { overrides: { itemGap: 'layout.gap.tight', groupGap: 'layout.gap.loose' } },
 };
 
-/** Three focusable controls in two groups, for the axe gate and manual keyboard checks on react-native-web. */
-export const Keyboard: Story = {
-  render: (args) => (
-    <Toolbar {...args}>
-      <ToolbarGroup label="Text style">
-        <Button label="Bold" variant="ghost" />
-        <Button label="Italic" variant="ghost" />
-      </ToolbarGroup>
-      <ToolbarGroup label="Insert">
-        <Button label="Insert link" variant="ghost" />
-      </ToolbarGroup>
-    </Toolbar>
-  ),
-};
+/** The Default toolbar with `overflow: wrap` pinned, so every control stays rendered at a narrow gate viewport. */
+export const Keyboard: Story = { args: { overflow: 'wrap' } };

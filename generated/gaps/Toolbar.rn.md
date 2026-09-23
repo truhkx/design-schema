@@ -54,3 +54,21 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toolbar: `separatorLength` makes the separator shorter than the toolbar, but the doc does not say how it aligns across the axis. Chose `alignSelf: 'center'`, matching the web CSS.
 - Toolbar: `size` is documented as applying 'to direct children and to the children of each ToolbarGroup'. Took that as exactly one level — a control inside an arbitrary wrapper (which the doc says 'makes what it holds one bare control') is not reached into, and neither is a group nested inside a group. Matches web's identity check on `element.type`.
 - Toolbar: the doc says a Divider is drawn 'between two adjacent groups'. Chose top-level adjacency only — a ToolbarGroup nested inside another ToolbarGroup gets no separator handling, just the inherited layout context. The doc never says whether nesting groups is legal.
+
+## 2026-09-23 14:49 — round 1
+
+- Toolbar: the anatomy's `container` part has no stated element on React Native (the root View carries testID="Toolbar"); I followed Lit, where `container` is the scrollable row inside the host, and put testID="Toolbar.container" on the inner row View (wrap) or the ScrollView (scroll/menu).
+- Toolbar: the rn notes list only accessibilityRole=toolbar and accessibilityLabel on the root; RN has no `role="toolbar"` preference stated (unlike ToolbarGroup, which is told to use `role="group"`), so the root keeps accessibilityRole and mirrors the label as aria-label.
+- Toolbar: the doc says a ToolbarGroup outside a Toolbar gets 'a development warning' but not whether it fires once per process, once per instance or on every render; I warn once per mounted instance.
+- Toolbar: the Keyboard story's pinned `overflow: wrap` exists so that `menu` does not collapse controls on web; on React Native `menu` never collapses anything (it renders as scroll), so pinning it here only keeps the stories identical across platforms.
+- Toolbar: the example `compact-actions-with-overflow` passes `overflow: menu` explicitly, so on React Native this story always triggers the once-per-process dev warning and renders as scroll; the doc does not say whether the example should be adjusted for RN, so I kept its args exactly as given.
+- Toolbar: fadeWidth's 're-checked on scroll and on size changes' has no threshold; I treat an edge as hidden when content extends more than 1 point past it, to absorb rounding.
+
+## 2026-09-23 14:49 — round 1
+
+- Toolbar: the a11y section lists roving-tabindex and arrow-navigation as required, but the rn notes rule out roving focus and arrow/Home/End handling (Pressable has no key events). I followed the rn notes and implemented neither, so every control is its own stop.
+- Toolbar: the rn element props say accessibilityRole=toolbar, while the package digest prefers the `role` prop where a web role exists (Role includes 'toolbar'). I kept accessibilityRole as platforms.rn.props says, and ToolbarGroup uses role="group" as its notes require. The doc should say whether the root should switch to `role`.
+- Toolbar: the rn notes don't mention the 'container' anatomy part. On web and Lit it names the scrollable row, so I put testID "Toolbar.container" on the ScrollView (scroll/menu) or the wrapping row View (wrap), not on the root, which keeps testID "Toolbar".
+- Toolbar: behavior scenarios have `given` apply on top of the Default story's args, but they don't say whether Default pins `overflow`. Default leaves it unset (the schema default `menu`, rendered as `scroll` with no warning), so only renders-overflow-menu triggers the one-time dev warning.
+- Toolbar: `size` recognises Button/SegmentedControl/Select/Search by component identity, but a consumer's wrapper component around one of them is not reached into (the one-level rule). The doc doesn't say whether that should come with a dev warning; none is emitted.
+- Toolbar: the fade gradient is drawn from `background` (colorBackgroundSubtle) as the spec says, but a `border` override does not affect it, and the doc doesn't say whether the fade should also clip under the border radius. It sits inside the padding, so the radius is never reached.

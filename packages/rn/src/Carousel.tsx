@@ -128,6 +128,15 @@ const SlideView = View as unknown as React.ComponentType<SlideViewProps>;
 const IS_WEB = Platform.OS === 'web';
 
 /**
+ * DOM-only attributes for react-native-web, which View's and Pressable's types omit: the region and
+ * slide role descriptions, and a dot's aria-current (aria-selected is not allowed on a button).
+ * Native ignores them.
+ */
+const REGION_ATTRS: Record<string, unknown> = IS_WEB ? { 'aria-roledescription': 'carousel' } : {};
+const SLIDE_ATTRS: Record<string, unknown> = { 'aria-roledescription': 'slide' };
+const CURRENT_ATTRS: Record<string, unknown> = { 'aria-current': 'true' };
+
+/**
  * Carousel — shows several things in the space of one and lets the user page through them.
  *
  * When to use: a small set (three to eight) of peer items too rich for a grid — featured
@@ -260,14 +269,22 @@ export function Carousel({
   // iOS does. A drag that does throw momentum reopens the window in onMomentumScrollBegin; a
   // programmatic animated scroll fires the same momentum events, so it clears `endedDrag` first
   // and is never read as a swipe.
+  // The first visible index is only recorded during the drag; the change is reported when the
+  // swipe settles, so a slow drag across several slides reports once, where it stops.
   const dragging = React.useRef(false);
   const endedDrag = React.useRef(false);
+  const pendingSwipe = React.useRef<number | null>(null);
   const [settleCount, setSettleCount] = React.useState(0);
   const settleSwipe = (): void => {
     if (!dragging.current) {
       return;
     }
     dragging.current = false;
+    const landed = pendingSwipe.current;
+    pendingSwipe.current = null;
+    if (landed !== null) {
+      goTo(landed, 'swipe');
+    }
     if (isControlled) {
       setSettleCount((n) => n + 1);
     }
@@ -279,7 +296,7 @@ export function Carousel({
     }
     const first = viewableItems.find((entry) => entry.isViewable && entry.index != null);
     if (first?.index != null) {
-      latest.current.goTo(first.index, 'swipe');
+      pendingSwipe.current = first.index;
     }
   }).current;
 
@@ -371,7 +388,7 @@ export function Carousel({
    */
   const slideSemantics = (index: number, visible: boolean): SlideViewProps =>
     IS_WEB
-      ? { role: 'group', inert: !visible }
+      ? { role: picker === 'tabs' ? 'tabpanel' : 'group', inert: !visible, ...SLIDE_ATTRS }
       : {
           accessible: visible,
           accessibilityRole: 'adjustable',
@@ -388,6 +405,7 @@ export function Carousel({
       <SlideView
         testID="Carousel.slide"
         accessibilityLabel={COPY.slideLabel(index + 1, total)}
+        aria-label={COPY.slideLabel(index + 1, total)}
         {...slideSemantics(index, visible)}
         style={itemWidth > 0 ? { width: itemWidth } : undefined}
       >
@@ -437,6 +455,8 @@ export function Carousel({
       testID="Carousel"
       role="region"
       accessibilityLabel={label}
+      aria-label={label}
+      {...(IS_WEB ? REGION_ATTRS : undefined)}
       onTouchStart={() => setTouching(true)}
       onTouchEnd={() => setTouching(false)}
       onTouchCancel={() => setTouching(false)}
@@ -538,7 +558,13 @@ export function Carousel({
         </View>
       </View>
       {picker !== 'none' && total > 0 ? (
-        <View testID="Carousel.picker" role={picker === 'tabs' ? 'tablist' : 'group'} accessibilityLabel={COPY.pickerLabel} style={pickerStyle}>
+        <View
+          testID="Carousel.picker"
+          role={picker === 'tabs' ? 'tablist' : 'group'}
+          accessibilityLabel={COPY.pickerLabel}
+          aria-label={COPY.pickerLabel}
+          style={pickerStyle}
+        >
           {slides.map((slide, index) =>
             picker === 'tabs' ? (
               <CarouselTab
@@ -575,6 +601,7 @@ export function Carousel({
       <View
         testID="Carousel.liveRegion"
         accessibilityLiveRegion={rotating ? 'none' : 'polite'}
+        aria-live={rotating ? 'off' : 'polite'}
         style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0 }}
       >
         <RNText>{announcement}</RNText>
@@ -656,6 +683,10 @@ function CarouselDot({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected }}
+      // react-native-web drops accessibilityState; on the web a dot marks the current page with
+      // aria-current, as the web contract does, since aria-selected is not allowed on a button.
+      aria-label={label}
+      {...(selected ? CURRENT_ATTRS : undefined)}
       onFocus={() => {
         setFocused(true);
         onFocus();
@@ -735,6 +766,8 @@ function CarouselTab({
       accessibilityRole="tab"
       accessibilityLabel={label}
       accessibilityState={{ selected }}
+      aria-label={label}
+      aria-selected={selected}
       onFocus={() => {
         setFocused(true);
         onFocus();

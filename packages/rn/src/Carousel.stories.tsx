@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Carousel, CarouselSlide } from './Carousel';
-import { Button } from './Button';
 import { Card } from './Card';
 import { Text } from './Text';
 import { withTheme } from './decorators';
@@ -73,16 +72,8 @@ export const ThreeUpGallery: Story = {
   },
 };
 
-/** Controls plus a focusable Button in each slide, for the axe gate and manual keyboard checks on react-native-web. */
-export const Keyboard: Story = {
-  args: {
-    autoplay: true,
-    children: ['Product 1', 'Product 2', 'Product 3', 'Product 4'].map((label) => (
-      <CarouselSlide key={label} label={label}>
-        <Card heading={label} headingLevel={3}>
-          <Button label="Add to cart" variant="secondary" />
-        </Card>
-      </CarouselSlide>
-    )),
-  },
-};
+/**
+ * The Default slides with a tabs picker, for the axe gate and manual keyboard checks on
+ * react-native-web: previous, next, the four tabs and the track are the focusable children.
+ */
+export const Keyboard: Story = { args: { picker: 'tabs' } };

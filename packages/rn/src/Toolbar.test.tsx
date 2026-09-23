@@ -18,11 +18,14 @@ function setup(given: Partial<ToolbarProps> = {}) {
     <ThemeProvider mode="light">
       <Toolbar {...props}>
         <ToolbarGroup label="Text style">
-          <Button label="Bold" variant="ghost" />
-          <Button label="Italic" variant="ghost" />
+          <Button label="Bold" variant="ghost" overflowLabel="Bold" />
+          <Button label="Italic" variant="ghost" overflowLabel="Italic" />
+          <Button label="Underline" variant="ghost" overflowLabel="Underline" />
         </ToolbarGroup>
         <ToolbarGroup label="Insert">
-          <Button label="Insert link" variant="ghost" />
+          <Button label="Link" variant="ghost" overflowLabel="Link" />
+          <Button label="Image" variant="ghost" overflowLabel="Image" />
+          <Button label="Table" variant="ghost" overflowLabel="Table" />
         </ToolbarGroup>
       </Toolbar>
     </ThemeProvider>,
@@ -104,5 +107,6 @@ describe('Toolbar', () => {
     const s = setup();
     expect(s.container().props.accessibilityRole).toBe('toolbar');
     expect(s.container().props.accessibilityLabel).toBe(s.props.label);
+    expect(s.container().props['aria-label']).toBe(s.props.label);
   });
 });

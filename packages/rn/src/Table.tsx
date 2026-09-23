@@ -622,6 +622,7 @@ export function Table({
         testID="Table.row"
         role="listitem"
         accessibilityState={selectable !== 'none' ? { selected: isSelected } : undefined}
+        aria-selected={selectable !== 'none' ? isSelected : undefined}
         style={{
           flexDirection: 'row',
           alignItems: 'stretch',
@@ -645,7 +646,9 @@ export function Table({
                 testID="Table.rowHeader"
                 accessibilityRole="button"
                 accessibilityLabel={rowName(row)}
+                aria-label={rowName(row)}
                 accessibilityState={selectable !== 'none' ? { selected: isSelected } : undefined}
+                aria-selected={selectable !== 'none' ? isSelected : undefined}
                 onPress={() => onRowPress?.(row.id)}
                 onHoverIn={() => setHoveredId(row.id)}
                 onHoverOut={() => setHoveredId((current) => (current === row.id ? null : current))}
@@ -748,7 +751,9 @@ export function Table({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={summary}
+            aria-label={summary}
             accessibilityState={selectable !== 'none' ? { selected: isSelected } : undefined}
+            aria-selected={selectable !== 'none' ? isSelected : undefined}
             onPress={() => onRowPress?.(row.id)}
             onHoverIn={() => setHoveredId(row.id)}
             onHoverOut={() => setHoveredId((current) => (current === row.id ? null : current))}
@@ -764,7 +769,9 @@ export function Table({
           <View
             accessible
             accessibilityLabel={summary}
+            aria-label={summary}
             accessibilityState={selectable !== 'none' ? { selected: isSelected } : undefined}
+            aria-selected={selectable !== 'none' ? isSelected : undefined}
             style={summaryStyle}
           >
             {pairs}
@@ -806,10 +813,18 @@ export function Table({
       scrollEventThrottle={16}
       accessibilityRole="list"
       accessibilityLabel={caption}
+      aria-label={caption}
       accessibilityHint={COPY.rowCount(data.length)}
       accessibilityState={{ busy: loading }}
+      aria-busy={loading}
     />
   );
+
+  // RN has no aria-describedby; on react-native-web the hidden descriptions' ids resolve in the DOM.
+  const rowCountId = `${baseId}-row-count`;
+  const scrollHintId = `${baseId}-scroll-hint`;
+  const listWebProps: Record<string, unknown> = Platform.OS === 'web' ? { 'aria-describedby': rowCountId } : {};
+  const scrollWebProps: Record<string, unknown> = Platform.OS === 'web' ? { 'aria-describedby': scrollHintId } : {};
 
   const handleLayout = (event: LayoutChangeEvent): void => {
     setMeasuredWidth(event.nativeEvent.layout.width);
@@ -836,8 +851,11 @@ export function Table({
             <Animated.ScrollView
               testID="Table.scrollRegion"
               horizontal
+              role="region"
               accessibilityLabel={caption}
+              aria-label={caption}
               accessibilityHint={COPY.scrollHint}
+              {...scrollWebProps}
               onLayout={(event: LayoutChangeEvent) => {
                 scrollMetrics.current.viewport = event.nativeEvent.layout.width;
                 updateFadeEdges();
@@ -866,7 +884,7 @@ export function Table({
         )}
       </View>
       {loading && rows.length > 0 ? (
-        <View accessibilityLiveRegion="polite" style={cellStyle}>
+        <View accessibilityLiveRegion="polite" aria-live="polite" style={cellStyle}>
           <Text size="sm" tone="muted" overrides={bodyText}>
             {COPY.loading}
           </Text>
@@ -883,10 +901,10 @@ export function Table({
           )}
         </View>
       ) : null}
-      <View accessibilityLiveRegion="polite" style={HIDDEN_STYLE}>
+      <View accessibilityLiveRegion="polite" aria-live="polite" style={HIDDEN_STYLE}>
         <Text size="sm">{sortAnnouncement}</Text>
       </View>
-      <View accessibilityLiveRegion="polite" style={HIDDEN_STYLE}>
+      <View accessibilityLiveRegion="polite" aria-live="polite" style={HIDDEN_STYLE}>
         <Text size="sm">{selectionAnnouncement}</Text>
       </View>
     </View>

@@ -91,3 +91,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Carousel: pressing play in a controlled carousel stopped at the end fires onChange(0, 'autoplay'), but if the parent keeps activeIndex it is still on the last page and rotation stops again right away — the doc doesn't say whether play should wait for the index to change; left as immediate re-stop.
 - Carousel: the missing-label development warning is only described for the tabs picker's text; chose to warn only when picker is 'tabs', since dots and none never show the label.
 - Carousel: the `@container (max-width: 572px)` breakpoint copies layout.maxWidth.prose from the built tokens (same in calm-precise and warm-sleek); the doc says to duplicate it but doesn't give the value per theme.
+
+## 2026-09-23 19:29 — round 1
+
+- Carousel: the 572px container-query breakpoint in the CSS is a hand-copied literal of layout.maxWidth.prose; the spec says to duplicate it but does not give the number, so the existing value was kept and could go stale if the token changes.
+- Carousel: the spec does not say where the dots picker sits relative to `controlSurface` in the grid; I kept the existing layout (arrows overlaid on the viewport cell, picker in the row below).
+- Carousel: the example children ('Four CarouselSlide children ... each a Card') are prose, so the story's slide markup is my own reading.

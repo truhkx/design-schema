@@ -234,17 +234,21 @@
     }
   },
   "Carousel.web": {
-    "hash": "f68b4712f17c992f",
-    "lastAttemptHash": "f68b4712f17c992f",
-    "generatedAt": "2026-09-23T20:23:42+00:00",
-    "model": "opus",
+    "hash": "2eadd0ace967bf82",
+    "lastAttemptHash": "2eadd0ace967bf82",
+    "generatedAt": "2026-09-23T23:30:05+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7114,
+    "costUsd": 0.3116,
     "files": [
-      "packages/react/src/Carousel.tsx"
+      "packages/react/src/Carousel.css",
+      "packages/react/src/Carousel.stories.tsx",
+      "packages/react/src/Carousel.test.tsx",
+      "packages/react/src/Carousel.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 4,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1183,21 +1187,15 @@
     }
   },
   "Table.web": {
-    "hash": "26bad26ca4de7705",
-    "lastAttemptHash": "26bad26ca4de7705",
-    "generatedAt": "2026-09-23T20:25:24+00:00",
-    "model": "opus",
+    "hash": "0973c9afc93f238e",
+    "lastAttemptHash": "0973c9afc93f238e",
+    "generatedAt": "2026-09-23T23:31:11+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9804,
-    "files": [
-      "packages/react/src/Table.css",
-      "packages/react/src/Table.stories.tsx",
-      "packages/react/src/Table.test.tsx",
-      "packages/react/src/Table.tsx",
-      "packages/react/src/index.ts"
-    ],
-    "gaps": 6,
+    "costUsd": 0.308,
+    "files": [],
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1294,21 +1292,20 @@
     }
   },
   "Toolbar.web": {
-    "hash": "9526ca0147782f56",
-    "lastAttemptHash": "9526ca0147782f56",
-    "generatedAt": "2026-09-23T20:22:17+00:00",
-    "model": "opus",
+    "hash": "4fce43aede13dc1f",
+    "lastAttemptHash": "4fce43aede13dc1f",
+    "generatedAt": "2026-09-23T23:29:04+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.726,
+    "costUsd": 0.2947,
     "files": [
       "packages/react/src/Toolbar.css",
       "packages/react/src/Toolbar.stories.tsx",
-      "packages/react/src/Toolbar.test.tsx",
       "packages/react/src/Toolbar.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,

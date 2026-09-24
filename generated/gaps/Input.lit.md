@@ -211,3 +211,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Input: the spec says errorText and descriptionText have 'no --ds-input-* hook', but check_hooks requires every locked binding not forwarded through `overrides` to declare one. I declared them on :host without reading them, so page CSS setting them changes nothing. Either the doc should mark them as forwarded/exempt, or the gate should exempt bindings realised by a composed child's tone.
 - Text: check_hooks also reports its locked `--ds-text-color` as having no hook, which the Text doc describes as deliberately absent. It is outside this job and I did not touch it.
+
+## 2026-09-23 20:08 — round 1
+
+- Input: the spec says the field id is the `id` prop when given, else `<form.idBase>-<name>` inside a Form, else generated. Lit has no `id` prop (it collides with the native HTMLElement `id`) and the shadow-scoped ids are fixed (`field`, `description`, `error`), so I did not implement the Form-derived id or the error-summary link target. The doc does not say how Lit's error summary should reach an input.
+- Input: `copy.required` and `copy.invalid` contain `{label}` but the spec gives no formatter, so I interpolate the label with plain template strings.
+- Input: the doc says `readOnly` passes through native input props, but Lit has no `readonly` prop in the schema, so I added none. The inner `readonly` is driven only by disabled.
+- Input: the doc says `descriptionText` and `errorText` keep `--ds-input-*` hooks on the host, but the composed Text cannot read them without restyling the child. I declared the hooks on `:host` and nothing consumes them, so they are inert.
+- Input: `data-ds-field` sits on the host on Lit (per the Lit notes), while the web notes and the conventions say the root group. The two are inconsistent, and I followed the Lit-specific note.

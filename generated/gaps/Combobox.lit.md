@@ -95,3 +95,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Combobox: the `iconColor` binding says it has no --ds-combobox-* hook because it is forwarded to Icon's overrides.color, but check_hooks requires every locked binding without a `part` to declare a hook and does not treat it as forwarded. I forward to Icon per the spec and also declare an unused --ds-combobox-icon-color on :host to pass the gate; either the gate should exempt forwarded bindings that have no part, or the doc should stop saying there is no hook.
 - Text (lit): check_hooks also fails on Text's locked `--ds-text-color` binding (not touched here; outside Combobox).
 - Combobox: the description and error text colours (descriptionText/errorText) are set through Text's undocumented --ds-text-color hook; the spec does not name how a parent tints a composed Text.
+
+## 2026-09-23 20:10 — round 1
+
+- Combobox: the Lit notes say `aria-controls` points at the popup div, but the popup is empty while closed (Popover API), so it points at an element that is hidden rather than absent; the doc does not say whether the id should exist while closed, and I kept it always present as on web.
+- Combobox: the doc does not say whether `role="alert"` belongs on the error message or whether the region should exist while empty; I kept an always-present `role="alert"` wrapper hidden when there is no message.
+- Combobox: `iconColor` is forwarded to each Icon's `overrides.color`, but Lit's locked-hook rule also asks for a `--ds-combobox-icon-color` hook; I declared the hook on `:host` even though it reaches no child, since the doc describes the hook as reaching each Icon via `--ds-icon-color`, which conflicts with the forwarding sentence.
+- Combobox: a controlled `open` written by the consumer as the attribute `open="false"` is read as boolean absence, so the attribute cannot express a controlled closed state; the doc names no closed-controlled form for Lit.

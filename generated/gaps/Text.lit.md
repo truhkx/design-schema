@@ -90,3 +90,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-23 18:52 — round 3
 
 - Text: gate `hooks` (check_hooks) still requires a `--ds-text-color` hook for the locked `color` binding, but the Text doc's `styles.color` description says a locked color has no `--ds-text-color` hook on web or Lit and the tone rule reads the token custom property directly. Code follows the doc; the gate will keep failing until check_hooks exempts locked bindings whose doc declares no hook (for example a `hook: none` field), or the doc is changed to declare the hook. prompts/templates/lit.md ('a locked binding keeps its :host hook') conflicts with the Text doc in the same way and needs the same decision.
+
+## 2026-09-23 20:04 — round 1
+
+- Text: the truncate spec says a consumer `title` attribute on the host is 'left on the host as well', so the host and the part both expose it and some screen readers may announce the title twice; I kept both as specified.
+- Text: the spec does not say whether the `title` on `part="text"` should also be set when `truncate` is false and the consumer supplied a title; I forward the consumer title always, and only add the textContent title when `truncate` is set.
+- Text: the spec says 'the tone rule reads the hook', but does not say where `align` or the hook defaults for a tone attribute set to an invalid value should fall back; I kept `:host` defaulting to `--color-foreground`.
+- Text: the `align` binding is not a style binding in the spec, so it has no `--ds-text-*` hook; I kept it as a plain attribute-selector rule.

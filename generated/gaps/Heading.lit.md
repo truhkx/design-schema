@@ -90,3 +90,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Heading: the `color` style binding's description says the locked colour has no `--ds-heading-color` hook and the rule reads `var(--color-foreground-strong)` directly, but the Overrides section and the Lit conventions say a locked binding keeps its `:host` hook. I kept `--ds-heading-color` because the existing element and the naming codemod rely on it. The doc should drop one of the two statements.
 - Heading: the doc says `level` is required, but Lit has no required-attribute concept and holds `undefined` until set. The stories and tests type `level` as required and the element falls back to h2, which matches the doc's prose. Nothing else was ambiguous.
+
+## 2026-09-23 20:06 — round 1
+
+- Heading: the spec says the fallback warning fires 'once per element whatever later values arrive' and, on Lit, is issued when `level` is absent. It does not say when that check runs. I run it in `willUpdate` on every update until the first warning, since an unset `level` never appears in `changed` on the first render.
+- Heading: the `level` property type accepts numbers `1 | 2 | 3 | 4 | 5 | 6` alongside `HeadingLevel`, but `type: String` reflection of a number is not spelled out for Lit. I rely on Lit's String conversion writing `3` as `"3"`.
+- Heading: `HeadingOverridableBinding` is exported from Heading.ts and index.ts, but the spec names no such type. I followed the naming pattern of the other components.
+- Heading: the `overrides` value `space.0` (marginBlockEnd off) resolves through `cssVar` to `var(--space-0)`. The spec does not confirm that a `space.0` token exists, so I assumed it does.

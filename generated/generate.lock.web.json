@@ -1047,13 +1047,13 @@
     }
   },
   "Slider.web": {
-    "hash": "2540c243728674f6",
-    "lastAttemptHash": "2540c243728674f6",
-    "generatedAt": "2026-09-23T23:23:14+00:00",
+    "hash": "1754bc6dd86b4e2d",
+    "lastAttemptHash": "1754bc6dd86b4e2d",
+    "generatedAt": "2026-09-24T00:15:23+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2978,
+    "costUsd": 0.2941,
     "files": [
       "packages/react/src/Slider.css",
       "packages/react/src/Slider.stories.tsx",
@@ -1061,7 +1061,7 @@
       "packages/react/src/Slider.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 1,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,

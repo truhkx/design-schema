@@ -3446,6 +3446,11 @@ Doc: `site/src/content/docs/components/combobox.md`
 - **DOC** Combobox: `iconColor` is forwarded to each Icon's `overrides.color`, but Lit's locked-hook rule also asks for a `--ds-combobox-icon-color` hook; I declared the hook on `:host` even though it reaches no child, since the doc describes the hook as reaching each Icon via `--ds-icon-color`, which conflicts with the forwarding sentence. → `site/src/content/docs/components/combobox.md`
 - **DOC** Combobox: a controlled `open` written by the consumer as the attribute `open="false"` is read as boolean absence, so the attribute cannot express a controlled closed state; the doc names no closed-controlled form for Lit. → `site/src/content/docs/components/combobox.md`
 
+### 2026-09-23 20:10 — web round 1
+
+- **DOC** Combobox: the spec does not say whether the input's `readOnly` (from `...rest`) should also block typing when not disabled; I passed it through and made a disabled combobox read-only while keeping it focusable. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: `iconColor` is both forwarded to each Icon's `overrides.color` and declared as a `--ds-combobox-icon-color` hook, and the spec does not say which wins when both apply; I kept both, with the hook defaulting to the same token. → `site/src/content/docs/components/combobox.md`
+
 ### 2026-09-23 20:09 — rn round 1
 
 - **DOC** Combobox: `accessibilityHint` is mapped from `description` and `aria-describedby` is not wired, because neither the spec's rn props nor the anatomy says which of the two is meant. The mirror rule also has no `aria-*` counterpart for `accessibilityHint`. I kept the hint only. → `site/src/content/docs/components/combobox.md`
@@ -6884,6 +6889,11 @@ Doc: `site/src/content/docs/components/heading.md`
 - **DOC** Heading: `HeadingOverridableBinding` is exported from Heading.ts and index.ts, but the spec names no such type. I followed the naming pattern of the other components. → `site/src/content/docs/components/heading.md`
 - **DOC** Heading: the `overrides` value `space.0` (marginBlockEnd off) resolves through `cssVar` to `var(--space-0)`. The spec does not confirm that a `space.0` token exists, so I assumed it does. → `site/src/content/docs/components/heading.md`
 
+### 2026-09-23 20:06 — web round 1
+
+- **DOC** Heading: the spec's `size` default depends on `level`, and the Default story uses level 2, so the size-3xl class only appears when `size` is omitted. That worked, but the doc could say outright that web resolves the default into the modifier class, not into a prop default. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the spec lists the hook names only implicitly (`--ds-heading-<binding>` kebab). I assumed the `fontSize` hook is set per size modifier class, not on the root, because the spec says interpolated bindings set the hook per modifier class. → `site/src/content/docs/components/heading.md`
+
 ### 2026-09-23 20:05 — rn round 1
 
 - **DOC** Heading: the spec has no `aria-*` mirror for the header role and forbids `aria-level`, so react-native-web previews render every Heading as an <h1> (already documented); I added no aria props. → `site/src/content/docs/components/heading.md`
@@ -7476,6 +7486,12 @@ Doc: `site/src/content/docs/components/input.md`
 - **DOC** Input: the doc says `readOnly` passes through native input props, but Lit has no `readonly` prop in the schema, so I added none. The inner `readonly` is driven only by disabled. → `site/src/content/docs/components/input.md`
 - **DOC** Input: the doc says `descriptionText` and `errorText` keep `--ds-input-*` hooks on the host, but the composed Text cannot read them without restyling the child. I declared the hooks on `:host` and nothing consumes them, so they are inert. → `site/src/content/docs/components/input.md`
 - **DOC** Input: `data-ds-field` sits on the host on Lit (per the Lit notes), while the web notes and the conventions say the root group. The two are inconsistent, and I followed the Lit-specific note. → `site/src/content/docs/components/input.md`
+
+### 2026-09-23 20:07 — web round 1
+
+- **DOC** Input: the generation prompt says to type the ref as Ref<HTMLElement> on the root, but the platform notes say the forwarded ref targets the <input>; I kept Ref<HTMLInputElement>. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the spec says nothing about a Form-set disabled reaching the field, so I read `form.disabled` from FormContext the way the rn notes describe. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the focus padding compensation uses a `0px` literal inside `max(0px, ...)`; the spec requires the clamp but no token exists for zero, so I kept it. → `site/src/content/docs/components/input.md`
 
 ### 2026-09-23 18:58 — lit round 2
 
@@ -15336,7 +15352,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 9891 · CODE: 151 · TOOLING: 7 · NOISE: 749
+DOC: 9898 · CODE: 151 · TOOLING: 7 · NOISE: 749
 
 Not per-target gap files, skipped: CODE.2026-09-23.md, FOLDS.md, TEST-FAILURES.md, TOOLING.2026-09-23.md.
 
@@ -15394,4 +15410,4 @@ Not per-target gap files, skipped: CODE.2026-09-23.md, FOLDS.md, TEST-FAILURES.m
 
 ## Gates to fix
 
-- [ ] Heading.web — hooks
+- none: every recorded target passed its gates

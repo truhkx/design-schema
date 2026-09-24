@@ -263,17 +263,20 @@
     }
   },
   "Combobox.rn": {
-    "hash": "476d9172550c63da",
-    "lastAttemptHash": "476d9172550c63da",
-    "generatedAt": "2026-09-23T23:16:53+00:00",
+    "hash": "00ea2c3076446de6",
+    "lastAttemptHash": "00ea2c3076446de6",
+    "generatedAt": "2026-09-24T00:10:50+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3653,
+    "costUsd": 0.3598,
     "files": [
-      "packages/rn/src/Combobox.tsx"
+      "packages/rn/src/Combobox.stories.tsx",
+      "packages/rn/src/Combobox.test.tsx",
+      "packages/rn/src/Combobox.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 2,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,

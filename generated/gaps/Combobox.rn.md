@@ -93,3 +93,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Combobox: the spec doesn't say whether the clear button fires onChange when the value is already empty and only the text is cleared; I kept firing it, so a consumer sees a no-op onChange.
 - Combobox: the a11y requirement `arrow-navigation` and the scenarios `enter-commits-the-active-option` and `escape-closes-the-list` are web/lit only, and there's no rn equivalent. That is stated in the rn notes, so no test was written for them.
+
+## 2026-09-23 20:09 — round 1
+
+- Combobox: `accessibilityHint` is mapped from `description` and `aria-describedby` is not wired, because neither the spec's rn props nor the anatomy says which of the two is meant. The mirror rule also has no `aria-*` counterpart for `accessibilityHint`. I kept the hint only.
+- Combobox: `invalid` and `required` state (`aria-invalid`, `aria-required`) are not in `platforms.rn.props`. The field is identified through the error text and the ' (required)' label suffix, and I added no extra ARIA attributes.
+- Combobox: `filter: none` type-ahead passes the first matching label as the Listbox's `initialActiveValue`. The spec does not say whether that should re-apply on each keystroke once the Listbox has mounted; I did not verify it.

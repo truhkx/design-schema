@@ -67,3 +67,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Switch: disabled uses aria-disabled rather than the native attribute, so Playwright's actionability check refuses to click it. The disabled-does-not-toggle scenario therefore clicks with `{ force: true }`; the doc could note that a test harness needs to force the click.
 - Switch: React's story list (On, DisabledOn, Controlled) is wider than the doc's examples. On Lit, `Controlled` can only set the `checked` attribute as the initial state, since there is no controlled mode; the doc doesn't say what that story should show on Lit.
 - Switch: the doc says to forward clicks on 'the root itself (the band, the gap) or the description'. The implementation forwards any click in the row that isn't on the input or the label, which also covers the text column's padding and the track slot around the input. The doc could say whether that wider forwarding is intended.
+
+## 2026-09-23 19:03 — round 1
+
+- Switch: descriptionText says 'no --ds-switch-* hook', but the general rule says locked bindings keep their :host hook (only forwarded bindings declare none). I followed the component's explicit statement and declared no hook; the muted tone supplies the color.
+- Switch: the composition lists only size and tone as props for the description Text. It does not say which element the Text renders, so I passed no `element` and left Text's default. The doc should state whether the description is a p or a span.
+- Switch: `defaultChecked` is a prop but its Lit attribute name is unspecified; I used `default-checked` (kebab-case). Only `name`, `disabled` and `label-position` are listed under platforms.lit.reflect.
+- Switch: the story arg `checked` is optional and maps to `?checked`, but on Lit the attribute only sets the initial state (the live property wins afterwards). The spec's 'controlled-updates-on-set' scenario says 'given checked: false' while the Lit note says there is no controlled mode, so the test does a property write. Confirm that is the intended reading.
+- Switch: the story-parity rule says every React story has a Lit story with the same name and args, but I could not see the React stories. I kept the existing extra stories On, DisabledOn and Controlled on the assumption that they match.
+
+## 2026-09-23 19:04 — round 2
+
+- Switch: the descriptionText binding says 'no --ds-switch-* hook', but the hooks gate requires every locked, non-forwarded binding to declare one (only forwarded bindings are exempt). I declared --ds-switch-description-text and route it into the composed Text through its documented --ds-text-color hook. The doc should either drop the 'no hook' wording or mark descriptionText as forwarded.
+- Switch: the composition lists only size and tone for the description Text and never says which element it renders, so I left Text's default.
+- Switch: the Lit attribute name for defaultChecked is unspecified; I used default-checked (kebab-case).

@@ -75,3 +75,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Stack: the button-row example names 'a primary submit Button' — rendered as <ds-button type="submit" label="Submit"> relying on Button's default variant being primary, since the doc gives no explicit variant arg.
 - Stack: the eight filter Buttons are 'small secondary', mapped to Button size="sm" variant="secondary"; the doc does not name the Button enum values, so this relies on Button's current `sm`/`secondary` spelling.
 - Stack: the ElementNav story adds direction: horizontal + align: start (matching React) though the doc's rule that enum stories may add visibility args is stated only under `justify`; the doc should say whether it applies to `element` stories too.
+
+## 2026-09-23 18:53 — round 1
+
+- Stack: the spec never says whether a text node that changes from whitespace-only to real content should add an `li`; the childList observer doesn't see character-data edits, so I left it that way.
+- Stack: the Wrap story says to use `align: start` while the WrappingFilters example gives `align: center`; I followed each story's own args, so the two differ.
+- Stack: the docs say the filter Buttons are 'small secondary' but don't name the Lit prop; I used `size="sm"` from the Button element and did not check that the value exists.

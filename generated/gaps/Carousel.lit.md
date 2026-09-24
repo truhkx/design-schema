@@ -82,3 +82,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Carousel: web notes give dots aria-controls to the slide they choose, but slides are slotted light-DOM children and the dots live in the shadow root, so the idref cannot resolve; omitted, and the pairing is conveyed by aria-label (copy.goTo), aria-current and the announcement. The Lit platform section only exempts the tabs picker; it should exempt dots too.
 - Carousel: the doc does not say whether the remembered focused picker item (which decides the roving tab stop) resets when focus leaves the picker; kept it until the next non-picker change, so the stop stays on the last-focused item while that item is on the current page.
 - Carousel: the layout.maxWidth.prose breakpoint is duplicated as the literal 572 in the @container rule (from the built token); the doc says the duplication is expected but does not say where the literal comes from when themes build different values, so it tracks the default theme's build.
+
+## 2026-09-23 19:37 — round 1
+
+- Carousel: the Lit notes give `<ds-carousel-slide>` a plain `label` attribute but list no anatomy, style bindings or a tag for it. I chose `ds-carousel-slide` as a bare display-block wrapper that the carousel stamps with role, roledescription, aria-label, inert and data-part=slide.
+- Carousel: `layout.maxWidth.prose` has to appear as a literal in the `@container` query and the spec gives no value. I chose 572px, taken from the built token JSON, and read the custom property at runtime for the paging math.
+- Carousel: the spec says the region is the `region` part but does not say whether that is the host or an inner element. I used the host, with role, aria-roledescription and aria-label set as plain attributes so the name tests can read them.
+- Carousel: `aria-controls` from the arrows and picker items to the track or slides cannot resolve, because the slides are slotted and the controls are in the shadow root. I omitted it and kept the pairing through aria-selected, aria-current and the announcement.
+- Carousel: it is unclear whether the controlSurface overlays the viewport edges or sits in its own row. I put it in the viewport grid cell and offset it by `controlOffset`, using the grid rows the spec describes.
+- Carousel: `part=` attributes are set on the anatomy elements alongside `data-part`, but the spec forbids ::part styling and does not say whether to expose them. I kept them as test and inspection handles only.

@@ -84,3 +84,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - NumberInput: minTargetSm says each stepper Button 'stretches to the field's height', but Button sm has its own height and the parent may not restyle the child. Chose: the steppers stay at Button's own sm size, centred in the field. Button's schema would need a stretch/fill option for this to hold.
 - NumberInput: the hold-to-repeat notes don't say whether a stepper press may take focus from the input (a blur would commit the typed text mid-press). Chose: the stepper wrappers preventDefault on mousedown, so focus stays where it was.
 - NumberInput: after a numeric commit on a controlled field that the owner never re-binds, the display returns to the old prop value (null shows empty). This follows 'shows the new state only once the property changes', but the doc doesn't say this explicitly for commits.
+
+## 2026-09-23 19:31 — round 1
+
+- NumberInput: the disabled-opacity binding says the root group carries aria-disabled but does not say which element or role that is on Lit; I gave the group div role="group" so the attribute is valid, which the doc does not state.
+- NumberInput: the spec does not say whether `role="alert"` (a live region) belongs on the error Text; I kept role="alert" from the existing element.
+- NumberInput: `hideLabel` is listed as not reflected, but the stories and the CSS need no attribute for it; I kept the visually-hidden class approach without a reflected attribute.

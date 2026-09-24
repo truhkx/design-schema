@@ -178,16 +178,10 @@ export class DsInput extends LitElement {
     }
 
     /*
-     * errorText / descriptionText: the composed Text keeps its danger / muted tone;
-     * the parent hook only sets Text's own documented --ds-text-color hook on its
-     * host (same token by default), never Text's shadow tree.
+     * errorText / descriptionText are realised by the composed Text's danger /
+     * muted tones; a hook here could not reach the child without restyling it,
+     * so neither has a --ds-input-* hook.
      */
-    [data-part='description'] {
-      --ds-text-color: var(--ds-input-description-text);
-    }
-    [data-part='errorMessage'] {
-      --ds-text-color: var(--ds-input-error-text);
-    }
 
     [data-part='field'] {
       box-sizing: border-box;

@@ -178,6 +178,9 @@ export const WithError: Story = { args: { error: 'Choose the country you ship to
 
 export const DefaultValue: Story = { args: { defaultValue: 'fr' } };
 
+/** Disabled wins over a controlled `open`: no popup, aria-expanded="false". */
+export const DisabledOpen: Story = { args: { disabled: true, open: true } };
+
 /**
  * Open with its trigger, for the keyboard gate: the popup's Listbox holds the six country options
  * (focusable through the trigger's keyboard model) while DOM focus stays on the trigger. Args come

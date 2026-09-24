@@ -68,3 +68,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - ProgressBar: fill, fillSuccess and fillDanger are three separate locked bindings on one part, chosen by tone. I declared three hooks and picked between them with :host([tone]), where Meter reassigns one --ds-meter-fill per tone. The doc doesn't say which pattern is intended.
 - ProgressBar: the web notes say role=progressbar and data-ds are on different elements, but on Lit both are on the host. The doc should state a Lit exception.
 - ProgressBar: the behavior scenario the-bar-reports-its-value-and-range is listed for web only, although the Lit notes require the same host attributes. It is covered by a package test here; it could list lit as well.
+
+## 2026-09-23 19:32 — round 1
+
+- ProgressBar: the docs never say whether an `aria-valuetext` given a custom formatter is used for an invalid range. I chose to ignore the formatter and always show and expose the default '0%', as the formatValue description implies.
+- ProgressBar: `part` on the composed ds-text elements is my choice. The Lit notes say 'no part' only for the live region, so the anatomy names go on both `part` and `data-part`.

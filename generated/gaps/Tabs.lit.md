@@ -66,3 +66,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tabs: 'the selected tab is scrolled into the list's view on first render too, and that scroll is animated unless reduced motion is on' — a smooth scroll on first render is visible motion on page load. I followed the doc (smooth unless prefers-reduced-motion), but an instant first scroll may be what was meant.
 - Tabs: the Lit indicator gate is described only for web (`data-animate`) and React Native (has-measured latch). Lit uses the same `data-animate` attribute on the indicator part; the doc could name it for Lit too.
 - Tabs: the `Controlled` story (value: 'activity') has no handler that writes `value` back, so clicks fire `change` but never move the selection. That matches the React story, but the doc doesn't say whether Controlled should demonstrate a round trip.
+
+## 2026-09-23 19:22 — round 1
+
+- Tabs: the `overrides` property is `Partial<Record<TabsOverridableBinding, TokenRef | undefined>>`, but the spec shows the type without `| undefined`. I kept `| undefined` because exactOptionalPropertyTypes requires it.
+- Tabs: `Given` scenarios say `click: tab` is the first tab, but a first tab that is disabled (a-disabled-tab-cannot-be-selected) does not say how the Lit locator treats it. I click the first `[data-part=tab]` button regardless of `aria-disabled`.
+- Tabs: the spec sets `ariaControlsElements` on shadow tabs but does not say what to do when the panel is absent (TabWithoutPanel). I reset it to null so no stale reference remains.
+- Tabs: the spec does not say whether a `value` that matches no tab should still leave the roving stop on the first enabled tab. I applied the same fallback as for a disabled selected tab.
+- Tabs: `--font-line-height-normal` is the CSS variable name for the `font.lineHeight.normal` token; the spec does not state how camelCase token segments map to CSS names, so I followed the existing tokens.css.

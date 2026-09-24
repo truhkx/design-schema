@@ -89,3 +89,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Box: the Lit note says Box 'removes only a role it wrote itself' but doesn't say what happens when a consumer `role` is already on the host and `element` changes to article, aside, main or nav. I let `element` overwrite it, and the consumer's value is gone after that. The doc should say whether a consumer role wins over `element`.
 - Box: the doc describes a meta render that 'wraps only string children in a Text', but on Lit `children` is always a string arg because slotted content can't be an arg. So the Lit render always wraps the arg in `<ds-text>`, and there is no non-string case.
 - Box: per-value stories (InsetSm, ElementNav, ...) spread Default's highlighted-panel args and then vary one prop, matching React. The doc only fixes the args of the example stories, so the base args for per-value stories are unspecified.
+
+## 2026-09-23 18:54 — round 1
+
+- Box: the Lit meta args list every schema default (`inset`, `surface`, `radius`, `insetBlock: undefined`), but the doc names only `border: false` and `element: div` as the meta-level defaults and React lists only those two; I kept the wider set since they equal the defaults, but the doc should say whether the extra ones are wanted.
+- Box: the doc says an override recolours a border but never creates one, and that the colour hook 'may stay written' when `border` is false. Lit removes the `border` and `borderWidth` hooks when `border` is false, and the doc does not say which is preferred.
+- Box: the story arg `children` is not an element property on Lit, yet the doc's `given` lists it as one of the args. The meta render turns it into a `<ds-text>` child, and the doc should say that this is the mapping.

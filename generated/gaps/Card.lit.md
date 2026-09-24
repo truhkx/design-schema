@@ -169,3 +169,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Card: the Lit notes say the interactive ring is border-color focusRing on the reserved border.width.focus border, while `focusable` draws an outline; the spec does not say whether the interactive ring should also be an outline. Kept the border recolor for interactive and the outline for focusable, as the notes describe.
 - Card: the guidance says 'Every anatomy part carries data-part' and 'No ::part for styling', but does not say whether the `part` attribute should also be exposed; kept both `part` and `data-part` with the anatomy names, as the package digest describes.
 - Card: scenario `interactive-adds-no-focus-stop` expects `focusable: false`, but nothing says how Lit should test that; the test checks that the host has no tabindex and that host.focus() does not make it document.activeElement.
+
+## 2026-09-23 19:00 — round 1
+
+- Card: `interactive` scenarios say the children string renders as a top-level Link (href #), but nothing says how a Lit story or test expresses that. I made the story swap the body for `<ds-link label=${children}>` when `interactive` is true and used `#invoice` as the href.
+- Card: the spec names `footer` as a prop but gives no example content or a story arg for it. I added a story-only boolean arg `footer` that slots two buttons ('Choose plan', 'Compare plans'), and those labels are my own text, not `copy.*`.
+- Card: the spec gives no `Keyboard` story, so none exists, but `interactive` implies one tab stop and the `interactive-adds-no-focus-stop` scenario is the only keyboard-shaped check.
+- Card: the Lit notes say the hit-area class is added on `slotchange`, but a body assigned before first render depends on the slot's initial `slotchange`. I call `syncHitArea` from `updated` as well, without warning on the first update, and the doc doesn't say whether the initial `slotchange` is guaranteed to fire.
+- Card: the spec says a `focusable` card draws its ring from its own `focusin` state rather than `:focus-visible`, but doesn't say whether the ring should also show for a focus that comes from a keyboard Tab into a focusable child. I draw it only when the host itself is the focused element.
+- Card: the `focusable-takes-scripted-focus-only` scenario has a `focusable: true` expectation for web only, and Lit has no equivalent check, so only the `tabindex=-1` attribute is asserted.
+- Card: `border` and `borderWidth` overrides are documented as 'in effect with surface default only'. Whether a `borderWidth` override should also be skipped on an interactive card (which reserves `border.width.focus`) is stated in the binding's prose but not in the Overrides section, so I followed the prose.

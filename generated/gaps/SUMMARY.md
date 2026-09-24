@@ -1,10 +1,14 @@
-# Gap digest — phase final
+# Gap digest
 
-Generated 2026-09-23T19:48 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-23T20:02 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
 Doc: `site/src/content/docs/components/accordion.md`
+
+### 2026-09-23 19:28 — lit round 1
+
+- **DOC** Accordion: none of the spec's contradictions or ambiguities blocked the existing implementation; unchanged. → `site/src/content/docs/components/accordion.md`
 
 ### 2026-09-23 19:17 — rn round 1
 
@@ -218,6 +222,11 @@ Doc: `site/src/content/docs/components/accordion.md`
 ## ActionSheet
 
 Doc: `site/src/content/docs/components/actionsheet.md`
+
+### 2026-09-23 19:20 — lit round 1
+
+- **DOC** ActionSheet: the spec says the Keyboard story accepts `given` args from the story URL, but no keyboard rule declares any `given` args, so I added no URL-arg handling. → `site/src/content/docs/components/actionsheet.md`
+- **DOC** ActionSheet: the photo-actions example uses `icon: danger` on the delete action, which is a status-shape glyph, not a destructive-action icon. I kept it verbatim, but the example may be a typo for `close` or `trash`. → `site/src/content/docs/components/actionsheet.md`
 
 ### 2026-09-23 19:11 — rn round 1
 
@@ -489,6 +498,12 @@ Doc: `site/src/content/docs/components/actionsheet.md`
 
 Doc: `site/src/content/docs/components/alert.md`
 
+### 2026-09-23 19:08 — lit round 1
+
+- **DOC** Alert: the spec gives no Lit hook name for the `lineHeight` token `font.lineHeight.normal`; I kept `--font-line-height-normal` as the token variable, which is not confirmed against the generated token stylesheet. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the spec does not say what happens when `overrides.iconSize` is set but the hook is also set from page CSS. It says only that the hook alone resizes the box, not the glyph, so I left that unsupported and did not guard it. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the spec does not say whether the accessible name should update when the alert's own slotted text is replaced. I used a MutationObserver on the light DOM to keep the aria-label current. → `site/src/content/docs/components/alert.md`
+
 ### 2026-09-23 19:02 — rn round 1
 
 - **DOC** Alert: `live=alert` sets both accessibilityRole="alert" and accessibilityLiveRegion="assertive", while `status` has no role. The spec doesn't say what the `aria-*` mirror should be for `status`, so I mirror only `aria-live` and set no `role` prop. That leaves react-native-web with a plain live region and no status role. → `site/src/content/docs/components/alert.md`
@@ -679,6 +694,15 @@ Doc: `site/src/content/docs/components/alert.md`
 ## AlertDialog
 
 Doc: `site/src/content/docs/components/alertdialog.md`
+
+### 2026-09-23 19:16 — lit round 1
+
+- **DOC** AlertDialog: the spec says example stories render through a wrapper that owns `open` (starting true) and writes events back. The Lit meta render must be one inline template, so I put `@confirm`/`@cancel` handlers that set `open = false` on the element, plus a trigger button before it that reopens it. The doc does not say how the wrapper should look in the docs-site snippet. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: `Keyboard` is the same as Default (`open: true`). The doc says Keyboard renders the open dialog with its trigger, but the trigger sits in the meta render for every story, so I added no separate render. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: `Closed` is described as 'for parity with Dialog', but the doc does not say what it should demonstrate beyond `open: false`. The trigger reopens it. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: `role="alertdialog"` and `aria-label` sit on the inner shadow `<dialog>`, not on the host. The 'names tests can read' convention says plain host attributes, but the Lit notes say the shadow dialog is named with aria-label. I followed the notes; the doc should say which element the accessible-name scenario targets in Lit. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: `layer` (`layer.dialog`) is written as z-index on the `<dialog>` although the doc says it has no effect in the top layer. It is kept only as a hook, as the doc requires. → `site/src/content/docs/components/alertdialog.md`
+- **DOC** AlertDialog: `AlertDialogConfirmDetail` is typed `void` because `confirm` has no detail. The doc says 'no detail' but gives no type convention for an event without a payload. → `site/src/content/docs/components/alertdialog.md`
 
 ### 2026-09-23 19:08 — rn round 1
 
@@ -929,6 +953,11 @@ Doc: `site/src/content/docs/components/alertdialog.md`
 ## BottomSheet
 
 Doc: `site/src/content/docs/components/bottomsheet.md`
+
+### 2026-09-23 19:19 — lit round 1
+
+- **DOC** BottomSheet: the `height: full` sheet subtracts `--layout-gutter`, but the spec names no token for the top gutter beyond that platform-note wording; I used `--layout-gutter` from the web notes and marked it literal-ok. → `site/src/content/docs/components/bottomsheet.md`
+- **DOC** BottomSheet: `open: true` with an empty `heading` is only a development warning; the spec says the name is required but does not say what to render, so I render an empty aria-label. → `site/src/content/docs/components/bottomsheet.md`
 
 ### 2026-09-23 19:10 — rn round 1
 
@@ -1187,6 +1216,12 @@ Doc: `site/src/content/docs/components/bottomsheet.md`
 ## Box
 
 Doc: `site/src/content/docs/components/box.md`
+
+### 2026-09-23 18:54 — lit round 1
+
+- **DOC** Box: the Lit meta args list every schema default (`inset`, `surface`, `radius`, `insetBlock: undefined`), but the doc names only `border: false` and `element: div` as the meta-level defaults and React lists only those two; I kept the wider set since they equal the defaults, but the doc should say whether the extra ones are wanted. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the doc says an override recolours a border but never creates one, and that the colour hook 'may stay written' when `border` is false. Lit removes the `border` and `borderWidth` hooks when `border` is false, and the doc does not say which is preferred. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the story arg `children` is not an element property on Lit, yet the doc's `given` lists it as one of the args. The meta render turns it into a `<ds-text>` child, and the doc should say that this is the mapping. → `site/src/content/docs/components/box.md`
 
 ### 2026-09-23 18:53 — rn round 1
 
@@ -1488,6 +1523,11 @@ Doc: `site/src/content/docs/components/box.md`
 
 Doc: `site/src/content/docs/components/breadcrumb.md`
 
+### 2026-09-23 19:09 — lit round 1
+
+- **DOC** Breadcrumb: the spec has no `given` for `label` in the `the-trail-is-a-named-navigation-landmark` scenario on Lit (it is web-only), so no Lit test asserts role=navigation; I kept that as the platform notes say. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: `collapse` is a negated attribute (`no-collapse`) with a custom converter; the spec does not say whether `collapse` should be reflected when true, so I reflect only the `no-collapse` attribute, which is present only when false. → `site/src/content/docs/components/breadcrumb.md`
+
 ### 2026-09-23 19:03 — rn round 1
 
 - **DOC** Breadcrumb: the spec says the current item is the last one but never says whether `aria-current="page"` should also be set on native; I mirrored it onto the platform Text via a spread because Text's types omit it, so it reaches the DOM on react-native-web. → `site/src/content/docs/components/breadcrumb.md`
@@ -1661,6 +1701,13 @@ Doc: `site/src/content/docs/components/breadcrumb.md`
 ## Button
 
 Doc: `site/src/content/docs/components/button.md`
+
+### 2026-09-23 18:55 — lit round 1
+
+- **DOC** Button: the lit notes say locked bindings get no `--ds-button-*` hook (the rule reads the token directly), but the Overrides contract and the package conventions say locked bindings keep their `:host` hook. I kept the hooks so page CSS and the naming codemod can still reach them; the notes should be reworded. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the accessibility prose names a `touchTarget` binding for rn and swiftui, but it is not among the schema's `styles`. The existing element declares an unused `--ds-button-touch-target` hook for it. I left it in place; either add the binding to the schema or drop the hook. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the `icon-only-in-a-toolbar` example gives `leadingIcon: "Icon name=close"` as shorthand. I read it as `<ds-icon slot="leading-icon" name="close" inline>`, which needs the story arg to be the icon name (`'close'`). The doc does not say how the shorthand maps to a story arg. → `site/src/content/docs/components/button.md`
+- **DOC** Button: `copy.loading` is not exposed to the element as a value, so I hard-code the string 'Loading' in a module constant. The doc does not say whether the copy should be a token or constant reference. → `site/src/content/docs/components/button.md`
 
 ### 2026-09-23 18:54 — rn round 1
 
@@ -2335,6 +2382,16 @@ Doc: `site/src/content/docs/components/button.md`
 
 Doc: `site/src/content/docs/components/card.md`
 
+### 2026-09-23 19:00 — lit round 1
+
+- **DOC** Card: `interactive` scenarios say the children string renders as a top-level Link (href #), but nothing says how a Lit story or test expresses that. I made the story swap the body for `<ds-link label=${children}>` when `interactive` is true and used `#invoice` as the href. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the spec names `footer` as a prop but gives no example content or a story arg for it. I added a story-only boolean arg `footer` that slots two buttons ('Choose plan', 'Compare plans'), and those labels are my own text, not `copy.*`. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the spec gives no `Keyboard` story, so none exists, but `interactive` implies one tab stop and the `interactive-adds-no-focus-stop` scenario is the only keyboard-shaped check. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the Lit notes say the hit-area class is added on `slotchange`, but a body assigned before first render depends on the slot's initial `slotchange`. I call `syncHitArea` from `updated` as well, without warning on the first update, and the doc doesn't say whether the initial `slotchange` is guaranteed to fire. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the spec says a `focusable` card draws its ring from its own `focusin` state rather than `:focus-visible`, but doesn't say whether the ring should also show for a focus that comes from a keyboard Tab into a focusable child. I draw it only when the host itself is the focused element. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the `focusable-takes-scripted-focus-only` scenario has a `focusable: true` expectation for web only, and Lit has no equivalent check, so only the `tabindex=-1` attribute is asserted. → `site/src/content/docs/components/card.md`
+- **DOC** Card: `border` and `borderWidth` overrides are documented as 'in effect with surface default only'. Whether a `borderWidth` override should also be skipped on an interactive card (which reserves `border.width.focus`) is stated in the binding's prose but not in the Overrides section, so I followed the prose. → `site/src/content/docs/components/card.md`
+
 ### 2026-09-23 18:57 — rn round 1
 
 - **DOC** Card: the whole-card-is-a-link example gives `children` as a plain string but says to render a Link labelled with it; the story renders `<Link href="#" label="A Link to the invoice" />` by hand rather than with exactly its `given` args, so a generator has to guess the string-to-Link translation. → `site/src/content/docs/components/card.md`
@@ -2796,6 +2853,15 @@ Doc: `site/src/content/docs/components/card.md`
 
 Doc: `site/src/content/docs/components/carousel.md`
 
+### 2026-09-23 19:37 — lit round 1
+
+- **DOC** Carousel: the Lit notes give `<ds-carousel-slide>` a plain `label` attribute but list no anatomy, style bindings or a tag for it. I chose `ds-carousel-slide` as a bare display-block wrapper that the carousel stamps with role, roledescription, aria-label, inert and data-part=slide. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: `layout.maxWidth.prose` has to appear as a literal in the `@container` query and the spec gives no value. I chose 572px, taken from the built token JSON, and read the custom property at runtime for the paging math. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the spec says the region is the `region` part but does not say whether that is the host or an inner element. I used the host, with role, aria-roledescription and aria-label set as plain attributes so the name tests can read them. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: `aria-controls` from the arrows and picker items to the track or slides cannot resolve, because the slides are slotted and the controls are in the shadow root. I omitted it and kept the pairing through aria-selected, aria-current and the announcement. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: it is unclear whether the controlSurface overlays the viewport edges or sits in its own row. I put it in the viewport grid cell and offset it by `controlOffset`, using the grid rows the spec describes. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: `part=` attributes are set on the anatomy elements alongside `data-part`, but the spec forbids ::part styling and does not say whether to expose them. I kept them as test and inspection handles only. → `site/src/content/docs/components/carousel.md`
+
 ### 2026-09-23 19:25 — rn round 1
 
 - **DOC** Carousel: the tabs picker is described as a Tabs-style tablist controlling slides, but the RN notes give no aria-controls or accessibilityControls wiring between a tab and its slide; I set role=tab and selected state only. → `site/src/content/docs/components/carousel.md`
@@ -3079,6 +3145,16 @@ Doc: `site/src/content/docs/components/carousel.md`
 
 Doc: `site/src/content/docs/components/checkbox.md`
 
+### 2026-09-23 19:03 — lit round 2
+
+- **DOC** Checkbox: the `indicatorStroke`, `descriptionText` and `errorText` bindings say they declare no --ds-checkbox-* hook, but the hooks gate requires every locked binding to keep one unless it is forwarded through the child's `overrides`. These three are realised by the Icon's own stroke and the Text tones rather than forwarded, so they fall under the gate. I declared the hooks (defaulting to the same tokens the children use) and applied them through the children's documented `--ds-icon-stroke-width` and `--ds-text-color` hooks. The doc should either drop the 'no hook' wording or the gate should exempt these bindings. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the disabled description gives no validity rule for a disabled field. I kept the existing behaviour: a disabled field submits no value and reports valid. → `site/src/content/docs/components/checkbox.md`
+
+### 2026-09-23 19:02 — lit round 1
+
+- **DOC** Checkbox: the `disabled` description gives no validity rule for a disabled field. I kept the existing behaviour: a disabled field submits no value and reports valid, like a native disabled control. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the `indicatorStroke`, `descriptionText` and `errorText` bindings say 'no hook', but the overrides contract and the Lit conventions say a locked binding keeps its `:host` hook. I followed the binding text and declared no hooks for them. The doc should say which rule wins. → `site/src/content/docs/components/checkbox.md`
+
 ### 2026-09-23 18:59 — rn round 1
 
 - **DOC** Checkbox: the rn notes say the drawn control is hidden with accessibilityElementsHidden and importantForAccessibility="no" but do not mention aria-hidden, which react-native-web needs to hide it in the DOM; I added it per the package conventions. → `site/src/content/docs/components/checkbox.md`
@@ -3300,6 +3376,19 @@ Doc: `site/src/content/docs/components/checkbox.md`
 ## Combobox
 
 Doc: `site/src/content/docs/components/combobox.md`
+
+### 2026-09-23 19:27 — lit round 2
+
+- **DOC** Combobox: the `iconColor` binding says it has no --ds-combobox-* hook because it is forwarded to Icon's overrides.color, but check_hooks requires every locked binding without a `part` to declare a hook and does not treat it as forwarded. I forward to Icon per the spec and also declare an unused --ds-combobox-icon-color on :host to pass the gate; either the gate should exempt forwarded bindings that have no part, or the doc should stop saying there is no hook. → `site/src/content/docs/components/combobox.md`
+- **DOC** Text (lit): check_hooks also fails on Text's locked `--ds-text-color` binding (not touched here; outside Combobox). → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the description and error text colours (descriptionText/errorText) are set through Text's undocumented --ds-text-color hook; the spec does not name how a parent tints a composed Text. → `site/src/content/docs/components/combobox.md`
+
+### 2026-09-23 19:27 — lit round 1
+
+- **DOC** Combobox: the `iconColor` binding says forwarded to Icon's `overrides.color` with no hook, but the general Overrides text says locked bindings keep a `:host` hook. I followed the binding's own description (no hook, forwarded as `color.foreground.muted`), as ds-search does. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the doc says `open` is mirrored to the attribute by hand and that a consumer's attribute write makes the element controlled. It does not say whether removing the attribute returns to uncontrolled, so I left `open` as `boolean | undefined` with `type: Boolean`, where an absent attribute leaves it uncontrolled. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the Text `--ds-text-color` hook used to colour description and error text from the locked `descriptionText` and `errorText` bindings is not named in the doc. I set it on the part element; Text's own tone (muted/danger) already gives the same colour. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the Lit notes say the toggle stays tabbable because ds-button has no way to leave the tab order. No `tabindex` prop is documented on Button, so the toggle is a second tab stop inside the field. → `site/src/content/docs/components/combobox.md`
 
 ### 2026-09-23 19:16 — rn round 1
 
@@ -3563,6 +3652,11 @@ Doc: `site/src/content/docs/components/combobox.md`
 ## Container
 
 Doc: `site/src/content/docs/components/container.md`
+
+### 2026-09-23 18:59 — lit round 1
+
+- **DOC** Container: the spec gives no story-shape rule for `children` on Lit beyond 'a string is rendered inside a Text with its defaults'. I wrapped it in `<ds-text>`, which defaults to `p` on Lit. → `site/src/content/docs/components/container.md`
+- **DOC** Container: the derived `renders-*` scenarios on Lit have no observable render target for a slot-only host. I asserted the reflected attribute for width, gutter and align, and the shadow-root `<slot>` for element. The doc could say which assertion a `renders: true` scenario should use. → `site/src/content/docs/components/container.md`
 
 ### 2026-09-23 18:56 — rn round 1
 
@@ -4272,6 +4366,15 @@ Doc: `site/src/content/docs/components/datagrid.md`
 
 Doc: `site/src/content/docs/components/datepicker.md`
 
+### 2026-09-23 19:35 — lit round 1
+
+- **DOC** DatePicker: the doc gives no rule for what `hideLabel` reflects. `platforms.lit.reflect` omits it, so I left it unreflected as `hide-label`. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `isDateDisabled` is documented as skipping days on Arrow keys but not on Enter or click of an already-focused day. I chose that a disabled day can take focus but `selectDay` ignores it. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the doc says Today is disabled while today cannot be picked, but not whether it is also disabled when the whole field is disabled. I chose disabled in both cases. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the doc does not say what a typed date that is out of `min`/`max` does to the calendar view when the popover is open. I moved the view to it, like any parsed date. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `open` is a property without a default, and the doc does not say whether `.open=${undefined}` in a story template counts as controlled. I treated `undefined` as uncontrolled. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the Escape rule says focus returns to the calendar button when it was inside the calendar. The doc does not say whether that is DatePicker's job or ds-popover's; I relied on ds-popover's own Escape handling and only handle Escape from the field on the root. → `site/src/content/docs/components/datepicker.md`
+
 ### 2026-09-23 19:24 — rn round 1
 
 - **DOC** DatePicker: the `calendarInset` binding says it is forwarded to the BottomSheet as `overrides.inset`, but the parts section lists it only under the Popover's forwards. I followed the rn platform notes and forwarded it to the sheet. → `site/src/content/docs/components/datepicker.md`
@@ -4541,6 +4644,12 @@ Doc: `site/src/content/docs/components/datepicker.md`
 ## Dialog
 
 Doc: `site/src/content/docs/components/dialog.md`
+
+### 2026-09-23 19:15 — lit round 1
+
+- **DOC** Dialog: the doc says the Default story is 'the rename-project example's args', but meta.args also has hideHeading/size/dismissible/initialFocus set to their defaults; I kept them, since example stories restate defaults anyway. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: the doc says the footer is present when a light-DOM child has slot="footer" but does not say whether a nested (non-direct) slot="footer" child counts; the existing code checks direct children only, though the observer watches the subtree. → `site/src/content/docs/components/dialog.md`
+- **DOC** Dialog: the doc does not name a story for description alone, or for hideHeading or dismissible; the existing HideHeading, WithDescription and NotDismissible stories are extras that may not exist in React, so parity for them is unverified. → `site/src/content/docs/components/dialog.md`
 
 ### 2026-09-23 19:07 — rn round 1
 
@@ -4863,6 +4972,12 @@ Doc: `site/src/content/docs/components/dialog.md`
 
 Doc: `site/src/content/docs/components/disclosure.md`
 
+### 2026-09-23 19:07 — lit round 1
+
+- **DOC** Disclosure: `open` is reflected, but an uncontrolled disclosure has `open` undefined, so its resolved state is not reflected and `[open]` cannot style it; only `currentOpen` shows it. Reflecting it would turn the element controlled. I left uncontrolled unreflected; the doc could say so. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: `copy.expanded` / `copy.collapsed` are declared, but the platform notes say Lit must not render them. I did not render them. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the echo rule ('the consumer sets open to the value a user toggle already reported') does not say what happens when `open` moves from undefined to a value, that is, when the element switches from uncontrolled to controlled. I fire no `controlled` event on the first update and treat later changes as controlled. → `site/src/content/docs/components/disclosure.md`
+
 ### 2026-09-23 19:01 — rn round 1
 
 - **DOC** Disclosure: `headingLevel` is typed as '2'..'6' plus the numbers 2..6. The rn notes say the level only sets the header role, but the prop schema lists strings only, so the number form is an assumption carried over from the web notes. → `site/src/content/docs/components/disclosure.md`
@@ -5054,6 +5169,11 @@ Doc: `site/src/content/docs/components/disclosure.md`
 ## Divider
 
 Doc: `site/src/content/docs/components/divider.md`
+
+### 2026-09-23 19:01 — lit round 1
+
+- **DOC** Divider: the doc says a label ignored on a vertical divider warns in development but gives no wording; I kept the existing wording, which matches React's, and fires it once per appearance or change of the ignored label. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the doc doesn't say how the unlabelled vertical line paints when the host already carries the thickness as inline-size; I kept the host as the sized box and the inner line span as the painted flex child (flex: 1 1 auto). → `site/src/content/docs/components/divider.md`
 
 ### 2026-09-23 18:58 — rn round 1
 
@@ -5344,6 +5464,14 @@ Doc: `site/src/content/docs/components/feed.md`
 - **DOC** Feed: the spec says copy strings are used verbatim but gives no i18n mechanism on rn, so the copy is hard-coded in a local COPY table; showNew, position and the relative-time strings are plain template literals, not Intl.PluralRules selections, because the spec lists one form for each. → `site/src/content/docs/components/feed.md`
 - **DOC** Feed: the `behavior` scenario `loading-marks-the-feed-busy` is limited to web and lit, so there is no rn test for `accessibilityState.busy`; I left it untested rather than invent an rn expectation. → `site/src/content/docs/components/feed.md`
 
+### 2026-09-23 19:44 — lit round 1
+
+- **DOC** Feed: copy.showNew, copy.position and the relative-time strings are interpolated with plain template literals; the spec lists params but no plural forms, so no Intl.PluralRules is used and 'Show 1 new' stays as written. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: 'a moment' of dwell for item-visible is given as one second only in the platform notes, not in the props description; I used 1000 ms as a module constant. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the spec says a fractional newItemsCount is interpolated as given, but a Lit `type: Number` attribute converter does not reject fractions either; I left the value untouched and did not test it. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the article wrapper's aria-label copies the heading, but the Card also renders the same heading inside the article, so a reader hears it twice; the spec offers no way to avoid this on Lit. → `site/src/content/docs/components/feed.md`
+- **DOC** Feed: the spec doesn't say whether Ctrl+End with hasMore false and loading true should leave the feed. I chose to leave it, since 'does nothing while loading' is stated only for hasMore. → `site/src/content/docs/components/feed.md`
+
 ### 2026-09-23 16:43 — web round 1
 
 - **DOC** Feed: the web notes say the loading indicator is 'not live, aria-busy covers loading', but the ProgressBar they specify (`label={copy.loading} hideLabel`) announces `copy.indeterminate` by default (announce defaults to `complete`). I passed `announce="none"`; the notes should list that prop on the composed ProgressBar. → `site/src/content/docs/components/feed.md`
@@ -5615,6 +5743,12 @@ Doc: `site/src/content/docs/components/feed.md`
 
 Doc: `site/src/content/docs/components/fieldset.md`
 
+### 2026-09-23 19:11 — lit round 1
+
+- **DOC** Fieldset: the Overrides section says a locked binding still declares its :host hook, but legendColor, descriptionText and errorText each say 'no --ds-fieldset-* hook' and the guidance says only partGap and disabledOpacity have hooks. I followed the binding descriptions and declared no hook for the locked bindings, and removed the earlier --ds-text-color forwarding. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the copy.requiredIndicator ' (required)' has no stated behaviour for a legend that is empty, so I append it after whatever legend text there is. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the spec doesn't say whether aria-disabled on a <legend> and on a plain <div> wrapper is valid ARIA, since neither has a role that supports it. I added it because the disabledOpacity description demands it. → `site/src/content/docs/components/fieldset.md`
+
 ### 2026-09-23 19:04 — rn round 1
 
 - **DOC** Fieldset: the spec's `partGap` says the group root holds the gap, but `disabledOpacity` names part `legend` while the notes say it also dims the description; I dimmed both wrappers. → `site/src/content/docs/components/fieldset.md`
@@ -5846,6 +5980,11 @@ Doc: `site/src/content/docs/components/fieldset.md`
 
 Doc: `site/src/content/docs/components/focusscope.md`
 
+### 2026-09-23 19:11 — lit round 1
+
+- **DOC** FocusScope: the spec says `data-ds` goes on the host, but the `the-wrapper-is-not-focusable` and `auto-focus-container` scenarios locate the scope via the shadow-root anchor's `data-part`. The doc never says which element carries `data-focus-scope`; I left it off the Lit anchor. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the doc says the 'aria-hidden' subtree is excluded from the walker but does not say whether the slotted host's own `aria-hidden` counts. I treated it as excluding that subtree, the same as any element. → `site/src/content/docs/components/focusscope.md`
+
 ### 2026-09-23 19:05 — rn round 1
 
 - **DOC** FocusScope: the `the-scope-adds-no-role` scenario says `attribute: role is null`, but the rn notes say the test must assert role, accessibilityRole and accessibilityLabel are all absent. I asserted all three undefined, following the notes. → `site/src/content/docs/components/focusscope.md`
@@ -6054,6 +6193,14 @@ Doc: `site/src/content/docs/components/focusscope.md`
 ## Form
 
 Doc: `site/src/content/docs/components/form.md`
+
+### 2026-09-23 18:59 — lit round 1
+
+- **DOC** Form: the web note says the locked summary bindings (errorSummaryText, errorSummaryBackground) get no --ds-form-* hook 'on web or Lit', but the Overrides section says locked bindings keep their :host hook. I kept the hooks (including errorSummaryLineHeight, which the note does not list); the doc should pick one. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the `Keyboard` story exists but the spec has no `keyboard` block, so it is a harness convenience with no rules to test; the doc should either declare the rules (Tab order, Enter submits) or drop the requirement. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the spec does not say what a field with a name but no `id` and no registered host does in the summary Link's href when it is inside a shadow root; I use field.id after assigning `{idBase}-{name}` at submit time. → `site/src/content/docs/components/form.md`
+- **DOC** Form: an unnamed form's id base is the `ds-form-<n>` counter, so the id depends on how many forms were created on the page; it is not stable across renders in tests or SSR, and the doc does not say whether that matters. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the nesting warning only inspects light-DOM ancestors (parentElement.closest), so a ds-form inside another component's shadow root within a native form is not detected; the doc does not say whether that case should warn. → `site/src/content/docs/components/form.md`
 
 ### 2026-09-23 18:56 — rn round 1
 
@@ -6601,6 +6748,11 @@ Doc: `site/src/content/docs/components/form.md`
 
 Doc: `site/src/content/docs/components/heading.md`
 
+### 2026-09-23 18:53 — lit round 1
+
+- **DOC** Heading: the `color` style binding's description says the locked colour has no `--ds-heading-color` hook and the rule reads `var(--color-foreground-strong)` directly, but the Overrides section and the Lit conventions say a locked binding keeps its `:host` hook. I kept `--ds-heading-color` because the existing element and the naming codemod rely on it. The doc should drop one of the two statements. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the doc says `level` is required, but Lit has no required-attribute concept and holds `undefined` until set. The stories and tests type `level` as required and the element falls back to h2, which matches the doc's prose. Nothing else was ambiguous. → `site/src/content/docs/components/heading.md`
+
 ### 2026-09-23 18:51 — rn round 1
 
 - **DOC** Heading: the spec covers everything I needed, so I made no changes. One small ambiguity: 'once per element for its lifetime' could be read as per mount or per instance, and I read it as per mounted instance, using a ref guard inside an effect. → `site/src/content/docs/components/heading.md`
@@ -6841,6 +6993,11 @@ Doc: `site/src/content/docs/components/heading.md`
 ## Icon
 
 Doc: `site/src/content/docs/components/icon.md`
+
+### 2026-09-23 18:49 — lit round 1
+
+- **DOC** Icon: the spec says the empty glyph for an unknown name keeps 'size, viewBox and fill=none'; on Lit the fill/stroke live on both the svg attributes and the CSS, so I kept both. Not contradictory, but it is stated per platform for web only. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the spec does not say whether `name` gets an initial value on the element. It is required with no default, so I left the accessor unset (`name!`) and the Default story supplies `check`. → `site/src/content/docs/components/icon.md`
 
 ### 2026-09-23 18:49 — rn round 1
 
@@ -7152,6 +7309,18 @@ Doc: `site/src/content/docs/components/icon.md`
 ## Input
 
 Doc: `site/src/content/docs/components/input.md`
+
+### 2026-09-23 18:58 — lit round 2
+
+- **DOC** Input: the spec says errorText and descriptionText have 'no --ds-input-* hook', but check_hooks requires every locked binding not forwarded through `overrides` to declare one. I declared them on :host without reading them, so page CSS setting them changes nothing. Either the doc should mark them as forwarded/exempt, or the gate should exempt bindings realised by a composed child's tone. → `site/src/content/docs/components/input.md`
+- **DOC** Text: check_hooks also reports its locked `--ds-text-color` as having no hook, which the Text doc describes as deliberately absent. It is outside this job and I did not touch it. → `site/src/content/docs/components/input.md`
+
+### 2026-09-23 18:57 — lit round 1
+
+- **DOC** Input: the notes say the Lit host carries `data-ds-field` while the web notes say the root group carries it and 'never the <input>'; I kept it on the host on Lit, as the Lit notes say. → `site/src/content/docs/components/input.md`
+- **DOC** Input: `locked` says a locked binding keeps its `:host` hook, but errorText and descriptionText say they have no --ds-input-* hook; I followed the binding descriptions and declared no hook for those two. → `site/src/content/docs/components/input.md`
+- **DOC** Input: `controls.event: onChange` names `defaultValue`, but the Lit attribute is `default-value` and the spec never says whether an initial `value` attribute is also accepted; I kept `value` property-only. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the notes say `formResetCallback` restores the uncontrolled value to `defaultValue`; I do that by clearing the edited value so `defaultValue` shows again, which leaves a later `defaultValue` change visible. The doc doesn't say whether the reset should freeze the value. → `site/src/content/docs/components/input.md`
 
 ### 2026-09-23 18:43 — web round 2
 
@@ -7716,6 +7885,11 @@ Doc: `site/src/content/docs/components/input.md`
 
 Doc: `site/src/content/docs/components/landmark.md`
 
+### 2026-09-23 19:08 — lit round 1
+
+- **DOC** Landmark: the doc says the behavior scenario `an-overridden-element-still-carries-its-role` and the `as` prop are web-only, so Lit has no `As*` stories and no `BannerThatIsNotThePageHeader` story; this is stated in the prop's platforms but the Lit parity rule ('every React story has a Lit story') does not say to skip web-only ones, so I skipped them. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the doc does not say whether `label` set as a property on a role that refuses it (banner/main/contentinfo) should keep the property value while the attribute is omitted; I kept the property value and only omit `aria-label` (as the Lit notes imply). → `site/src/content/docs/components/landmark.md`
+
 ### 2026-09-23 19:02 — rn round 1
 
 - **DOC** Landmark: The spec has no Keyboard block, so no Keyboard story was added. → `site/src/content/docs/components/landmark.md`
@@ -7868,6 +8042,13 @@ Doc: `site/src/content/docs/components/landmark.md`
 ## Link
 
 Doc: `site/src/content/docs/components/link.md`
+
+### 2026-09-23 18:56 — lit round 1
+
+- **DOC** Link: The Lit platform notes say locked bindings (colours, focus ring) get no `--ds-link-*` hook and their rules read the token directly. The Overrides section and package conventions say locked bindings keep their `:host` hook so page CSS and the naming codemod can still reach them. I kept the hooks (the existing element already had them) and the rules read the hooks; the doc should pick one. → `site/src/content/docs/components/link.md`
+- **DOC** Link: `copy.external` ('opens in new tab') is unused on Lit; only `copy.externalSuffix` is rendered. The doc does not say what `copy.external` is for on web or Lit, so I left it unused. → `site/src/content/docs/components/link.md`
+- **DOC** Link: The doc says `external` writes a modifier class or attribute 'even though no rule reads it'. The reflected `external` attribute serves as that modifier, and I added no class. → `site/src/content/docs/components/link.md`
+- **DOC** Link: The spec does not say whether the `ToneDefault` story should pass explicit `tone` args or rely on the meta defaults. I rely on the meta defaults and override `tone: 'default'` only. → `site/src/content/docs/components/link.md`
 
 ### 2026-09-23 18:54 — rn round 1
 
@@ -8370,6 +8551,12 @@ Doc: `site/src/content/docs/components/link.md`
 
 Doc: `site/src/content/docs/components/listbox.md`
 
+### 2026-09-23 19:24 — lit round 1
+
+- **DOC** Listbox: the `error` doc says a Form message is shown on web/RN but Lit's ds-form pushes none; I show only `error`, then copy.required/copy.invalid, which the doc states. No ambiguity beyond that. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `Enter` action text says 'inside a Select or Combobox, also closes the popup' but Listbox has no popup; I select only and leave closing to the host, which sees the `change` event. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the keyboard rules `when: multiple` (Shift+Arrow, Control+a) can only be exercised by the `Keyboard` story with `multiple=true` passed via URL args; the doc does not say whether the story should default to multiple, so it stays single-select. → `site/src/content/docs/components/listbox.md`
+
 ### 2026-09-23 19:14 — rn round 1
 
 - **DOC** Listbox: the composed emptyState and errorMessage Texts are said to render as element="p" and get a data-part hook, but the RN Text has no such prop and the doc does not say whether that applies on native; I applied it to neither and kept testIDs on wrapping Views. → `site/src/content/docs/components/listbox.md`
@@ -8659,6 +8846,13 @@ Doc: `site/src/content/docs/components/listbox.md`
 ## Menu
 
 Doc: `site/src/content/docs/components/menu.md`
+
+### 2026-09-23 19:17 — lit round 1
+
+- **DOC** Menu: `label` is required but the doc gives Lit no behaviour for an empty label; the element renders an empty aria-label (no dev warning, as the doc says iconOnly is the only warning). → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: the doc says groups render a 'non-interactive heading row' but names no ARIA role for it; I used role="presentation" on the groupLabel div, named by the group's aria-labelledby. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: itemHover has `state: hover` but the doc also says keyboard focus shares it; I apply it to both :hover and :focus, and suppress it for aria-disabled items on hover only. → `site/src/content/docs/components/menu.md`
+- **DOC** Menu: the doc says the focus-out close covers 'focus leaving the host' on Lit, but does not say whether a focusout whose relatedTarget is null (click on non-focusable ground) is a focus-out or an outside press; I report only the pointerdown as `outside` and rely on focusLossReported/focusin to avoid a second close. → `site/src/content/docs/components/menu.md`
 
 ### 2026-09-23 19:08 — rn round 1
 
@@ -8972,6 +9166,12 @@ Doc: `site/src/content/docs/components/menu.md`
 
 Doc: `site/src/content/docs/components/meter.md`
 
+### 2026-09-23 19:10 — lit round 1
+
+- **DOC** Meter: the spec asks for a `Keyboard` story only for components with a `keyboard` block; Meter has none, so none was added. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the spec doesn't say whether the ds-text host that aria-labelledby points at should be given the fixed id `label`; I used `id="label"`, which is unique within the one shadow root. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the spec doesn't say whether `--ds-meter-label-color` / `--ds-meter-value-color` hooks should exist for the locked labelColor/valueColor bindings, given they are 'realised by the Text tone'; I declared them on :host, unread by any rule, so the CSS escape hatch and naming codemod still see them. → `site/src/content/docs/components/meter.md`
+
 ### 2026-09-23 19:03 — rn round 1
 
 - **DOC** Meter: the styles list `track` and `fill` as parts but the RN notes only give testIDs for `Meter.label` and `Meter.valueText`; I kept `Meter.header`, `Meter.track` and `Meter.fill` (anatomy names verbatim) — the doc should say whether those are part of the contract. → `site/src/content/docs/components/meter.md`
@@ -9160,6 +9360,12 @@ Doc: `site/src/content/docs/components/meter.md`
 ## NumberInput
 
 Doc: `site/src/content/docs/components/numberinput.md`
+
+### 2026-09-23 19:31 — lit round 1
+
+- **DOC** NumberInput: the disabled-opacity binding says the root group carries aria-disabled but does not say which element or role that is on Lit; I gave the group div role="group" so the attribute is valid, which the doc does not state. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the spec does not say whether `role="alert"` (a live region) belongs on the error Text; I kept role="alert" from the existing element. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: `hideLabel` is listed as not reflected, but the stories and the CSS need no attribute for it; I kept the visually-hidden class approach without a reflected attribute. → `site/src/content/docs/components/numberinput.md`
 
 ### 2026-09-23 19:19 — rn round 1
 
@@ -9571,6 +9777,13 @@ Doc: `site/src/content/docs/patterns/settings-page.md`
 
 Doc: `site/src/content/docs/components/popover.md`
 
+### 2026-09-23 19:18 — lit round 1
+
+- **DOC** Popover: `layer` is a hook that only matters in the position:fixed fallback; the doc doesn't say whether the fallback panel should also stack above a modal Popover's top layer, so I applied z-index only. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: the doc says the arrow is a plain 50% of the facing edge for all placements, but says nothing about arrow z-order relative to the panel's content border in the fallback path; I kept it as the panel's first child so it paints above the border. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: the `date-picker-panel` and `contextual-help` examples describe their children in prose (`Three quick-pick date Buttons`, `One sentence of help ending in a Link`); the exact sentence for contextual-help is not specified, so the story wording is my own. → `site/src/content/docs/components/popover.md`
+- **DOC** Popover: `copy` has only `closeLabel`; the demo Form/Switch labels in stories are story-local text the spec doesn't supply. → `site/src/content/docs/components/popover.md`
+
 ### 2026-09-23 19:09 — rn round 1
 
 - **DOC** Popover: the tablet panel's name chain is stated as `accessibleName`, else string `label`, but the phone chain also includes `accessibilityLabel`; I used the phone chain (accessibleName, accessibilityLabel, label) in both presentations so one trigger names both. → `site/src/content/docs/components/popover.md`
@@ -9815,6 +10028,11 @@ Doc: `site/src/content/docs/components/popover.md`
 
 Doc: `site/src/content/docs/components/progressbar.md`
 
+### 2026-09-23 19:32 — lit round 1
+
+- **DOC** ProgressBar: the docs never say whether an `aria-valuetext` given a custom formatter is used for an invalid range. I chose to ignore the formatter and always show and expose the default '0%', as the formatValue description implies. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: `part` on the composed ds-text elements is my choice. The Lit notes say 'no part' only for the live region, so the anatomy names go on both `part` and `data-part`. → `site/src/content/docs/components/progressbar.md`
+
 ### 2026-09-23 19:19 — rn round 1
 
 - **DOC** ProgressBar: composition props `element: span` on the label and valueText Texts have no counterpart on the RN Text (it takes no `element`); ignored, and the wrapper Views carry the testIDs as the rn notes say. → `site/src/content/docs/components/progressbar.md`
@@ -10027,6 +10245,20 @@ Doc: `site/src/content/docs/components/progressbar.md`
 
 Doc: `site/src/content/docs/components/radiogroup.md`
 
+### 2026-09-23 19:06 — lit round 2
+
+- **DOC** RadioGroup: the spec says descriptionText and errorText have no --ds-radio-group-* hook (realised by the composed Text's tone), but tools/check_hooks.ts fails any locked binding that is not forwarded to a child's overrides and declares no hook. I declared both hooks on :host as inert declarations. Nothing reads them because Text has no colour hook to feed. Either the docs should let these two bindings be marked hook-exempt, or Text should gain a documented colour hook. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the Lit notes say the disabled-group click guard sits on the fieldset, while the web notes say it sits on each input. I followed the Lit notes. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the spec does not say whether a click on the row's padding should select. I made the whole row select, per minTarget's 'the whole row is the hit area'. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: copy.position is declared but the Lit notes say it is not rendered on Lit, so it is unused. → `site/src/content/docs/components/radiogroup.md`
+
+### 2026-09-23 19:05 — lit round 1
+
+- **DOC** RadioGroup: the spec says descriptionText/errorText are realised by the composed Text's tone and have no --ds-radio-group-* hook, but the previous Lit output declared hooks for them that fed a non-existent --ds-text-color hook on Text (Text documents its colour as locked with no hook). I removed them; the doc could say outright that these two locked bindings declare no hook on Lit. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the Lit notes say the disabled-group click guard sits on the fieldset, while the web notes say it sits on each input so unrelated content in the group is not cancelled. I followed the Lit notes (guard on the fieldset); the contradiction between the two platform notes is unresolved. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the spec does not say whether a click on the row outside the label, radio and description (the padding) should select. I made the whole row select via a row click handler, per minTarget's 'the whole row is the hit area'. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: copy.position is declared in the copy block but the Lit notes say it is not rendered on Lit, so it is unused here. → `site/src/content/docs/components/radiogroup.md`
+
 ### 2026-09-23 19:00 — rn round 1
 
 - **DOC** RadioGroup: the conventions say to mirror every accessibilityValue as aria-valuetext, but copy.position ('1 of 3') sits on a role=radio row, where aria-valuetext is not an allowed ARIA attribute (axe aria-allowed-attr). I did not mirror it, so on web the position is not exposed. The spec should say whether position is native-only on rn-web. → `site/src/content/docs/components/radiogroup.md`
@@ -10228,6 +10460,11 @@ Doc: `site/src/content/docs/components/radiogroup.md`
 ## Search
 
 Doc: `site/src/content/docs/components/search.md`
+
+### 2026-09-23 19:34 — lit round 1
+
+- **DOC** Search: the spec's Lit notes say the input carries no aria-activedescendant and the highlighted label goes to a polite live span linked by aria-describedby, but the anatomy lists no part for that span. I kept an unnamed visually-hidden span (id=active-option) with no data-part, so it is not covered by the anatomy. → `site/src/content/docs/components/search.md`
+- **DOC** Search: statusDebounce says to update at once when the token can't be read, but does not say whether a computed value of 0 (a zeroed theme token) counts as unreadable. I treat a delay of 0 or less as unreadable and announce immediately. → `site/src/content/docs/components/search.md`
 
 ### 2026-09-23 19:22 — rn round 2
 
@@ -10477,6 +10714,14 @@ Doc: `site/src/content/docs/components/search.md`
 
 Doc: `site/src/content/docs/components/segmentedcontrol.md`
 
+### 2026-09-23 19:23 — lit round 1
+
+- **DOC** SegmentedControl: the `part` attribute (as opposed to `data-part`) is not called for by the doc or conventions; I kept `part=` on group, segment, segmentLabel, segmentIcon, tooltip and indicator as the existing element has it, even though conventions say 'No ::part for styling'. Doc should state whether `part` is wanted at all. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: Icon colour is forwarded as fixed token refs ('color.foreground.muted' / 'color.foreground.strong') because the doc says segmentColor/segmentSelectedColor are forwarded but does not say how a page-level CSS re-theme of the locked hooks (--ds-segmented-control-segment-color) reaches the Icon; I chose the token refs, so a page override of the hook recolours the label but not the icon. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: doc gives no Lit-specific story list beyond the three examples; `Fill`, `Controlled`, `DisabledSegment` are extras I kept from the existing file for parity guesswork, since React's story set was not stated in the prompt. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: the disabled-segment-is-not-selectable scenario clicks an `aria-disabled` button; Playwright's actionability check refuses it, so the test must pass `force: true`. The doc could note this for Lit. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: on Lit the toolbar lookup crosses shadow roots via each root's host; the doc says so but the Toolbar element's own role attribute (attribute vs ElementInternals role) is not stated, and the check reads the `role` attribute only. → `site/src/content/docs/components/segmentedcontrol.md`
+
 ### 2026-09-23 19:14 — rn round 1
 
 - **DOC** SegmentedControl: the behavior list for click-selects-a-segment says `then: event: onChange` twice (second one carries `with: list`) — I read it as one call with 'list' and asserted toHaveBeenCalledTimes(1); the duplicate entry is ambiguous. → `site/src/content/docs/components/segmentedcontrol.md`
@@ -10674,6 +10919,13 @@ Doc: `site/src/content/docs/components/segmentedcontrol.md`
 ## Select
 
 Doc: `site/src/content/docs/components/select.md`
+
+### 2026-09-23 19:25 — lit round 1
+
+- **DOC** Select: the Lit notes say ds-form 'collects ds-select ... DsFormField.currentValue is string | boolean | string[] | null', but the DsFormField interface in Form.ts also allows number and [number, number]. I kept the Select getter at string | string[] | null, which is assignable. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the guidance says the listbox is passed `labelledBy` and `initialActiveValue`, but the composition props list gives neither, and Lit never resolves labelledBy across shadow roots. I pass both plus `activeValue`, and the list is named by `label`. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the spec does not say whether the Lit element must literally `implements DsFormField`. It satisfies the shape structurally and I did not add an explicit clause. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the `DisabledOpen` story exists in React but is not among the doc's examples or a derived scenario, so the story-parity rule is the only thing that requires it. It would be worth naming in the doc. → `site/src/content/docs/components/select.md`
 
 ### 2026-09-23 19:15 — rn round 1
 
@@ -10940,6 +11192,14 @@ Doc: `site/src/content/docs/components/select.md`
 ## SidePanel
 
 Doc: `site/src/content/docs/components/sidepanel.md`
+
+### 2026-09-23 19:21 — lit round 1
+
+- **DOC** SidePanel: `swipeable` is documented as accepted for parity with no gesture on Lit, but the Lit reflect list gives it a `no-swipeable` attribute while the platform note lists only `modal`, `hide-heading`, `no-scrim` and `landmark` as non-reflected attributes. I kept the reflected negated attribute per the reflect list. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: `aria-controls` cannot reach the shadow panel, so only `aria-expanded` is set on the trigger. The prop text says aria-controls is set whenever the target is in the DOM, and does not say this is web-only. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the keyboard Tab and Shift+Tab rules are `expect: manual` with `from: trigger`/`first`. On Lit they rely on document order, and the spec does not say how a keyboard gate should treat them. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the `outside` press is a capture-phase pointerdown on `document`, and anything inside the host, panel or slotted trigger is treated as inside. The spec says 'outside the panel and trigger' without saying whether slotted children of the host count as inside; I counted them as inside. → `site/src/content/docs/components/sidepanel.md`
+- **DOC** SidePanel: the `persistent` sidebar with no `matchMedia`, or a token that measures 0px, falls back to overlay. The spec only names jsdom for this; I applied it to both cases. → `site/src/content/docs/components/sidepanel.md`
 
 ### 2026-09-23 19:12 — rn round 1
 
@@ -11230,6 +11490,12 @@ Doc: `site/src/content/docs/components/sidepanel.md`
 ## Slider
 
 Doc: `site/src/content/docs/components/slider.md`
+
+### 2026-09-23 19:30 — lit round 1
+
+- **DOC** Slider: the spec says a Form-reported message shows in the error region, but the Lit form contract does not say how ds-form hands one to a field. I assumed ds-form sets the field's `error` property and left it at that. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the `Keyboard` story only has the two range thumbs, so the usual three-focusable rule does not apply. The Guidance section says so, but the Keyboard section and the generator rules still ask for three stops. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the spec does not say whether a `<ds-slider>` outside a `<ds-form>` should call `checkValidity()` when it is created. I sync validity to ElementInternals on every update and leave it at that. → `site/src/content/docs/components/slider.md`
 
 ### 2026-09-23 16:05 — web round 2
 
@@ -11537,6 +11803,14 @@ Doc: `site/src/content/docs/components/splitter.md`
 - **DOC** Splitter: stackBelow reads `layoutMaxWidthProse`/`layoutMaxWidthContent` as numbers in the RN tokens; the spec's px/rem/em unit-parsing wording does not say what a non-number RN token should do, so any non-number never stacks. → `site/src/content/docs/components/splitter.md`
 - **DOC** Splitter: the spec says a collapse fires no size events but is silent on whether `persistKey` should record `collapsed` while `collapsible` is false; I record the pinned value (false). → `site/src/content/docs/components/splitter.md`
 
+### 2026-09-23 19:43 — lit round 1
+
+- **DOC** Splitter: `collapsed` reflects when true, but the spec does not say what happens when a controlled `collapsed` is set to `false` while the attribute is present; I treat an absent attribute as uncontrolled (undefined) and a property `false` as controlled. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the spec does not say whether the Enter key is consumed (preventDefault) when the splitter is not `collapsible`; I let it through, since the scenario only asks for no collapse-change. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: `aria-controls` on the separator points at the primary pane's shadow-root id, which works because both are in the same shadow root, but the Lit note says the collapse Button gets no aria-controls; I set none on it and rely on its label. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the spec says the primary size is clamped to minSize–maxSize for layout, but does not say what happens when minSize >= maxSize; I keep the min/max clamp order (max wins) and only warn in development. → `site/src/content/docs/components/splitter.md`
+- **DOC** Splitter: the `the-collapse-button-collapses-the-pane` scenario has no `platforms` list, so it applies to Lit, but the collapse Button's click reaches the inner ds-button through the wrapper; the doc does not say whether the test should click the wrapper or the inner button. → `site/src/content/docs/components/splitter.md`
+
 ### 2026-09-23 16:42 — web round 1
 
 - **DOC** Splitter: onSizeChange 'never repeats the size it last reported' is undefined for a controlled splitter whose parent ignores the report — pressing End twice re-reports maxSize because the comparison is against the rendered (prop) size, not the last reported value; chose to compare against the rendered size → `site/src/content/docs/components/splitter.md`
@@ -11799,6 +12073,12 @@ Doc: `site/src/content/docs/components/splitter.md`
 ## Stack
 
 Doc: `site/src/content/docs/components/stack.md`
+
+### 2026-09-23 18:53 — lit round 1
+
+- **DOC** Stack: the spec never says whether a text node that changes from whitespace-only to real content should add an `li`; the childList observer doesn't see character-data edits, so I left it that way. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the Wrap story says to use `align: start` while the WrappingFilters example gives `align: center`; I followed each story's own args, so the two differ. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the docs say the filter Buttons are 'small secondary' but don't name the Lit prop; I used `size="sm"` from the Button element and did not check that the value exists. → `site/src/content/docs/components/stack.md`
 
 ### 2026-09-23 18:52 — rn round 1
 
@@ -12064,6 +12344,11 @@ Doc: `site/src/content/docs/components/stack.md`
 
 Doc: `site/src/content/docs/components/stepper.md`
 
+### 2026-09-23 19:33 — lit round 1
+
+- **DOC** Stepper: the styles list labelColor, labelUpcomingColor, descriptionColor and countColor as locked and say 'no --ds-stepper-* hook', while the Lit convention says locked bindings keep a :host hook. Text's tone is locked and has no colour hook, so a Stepper hook would do nothing; I declared none. The doc should say plainly that these four are realised by Text's tone on every platform. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: layout.maxWidth.prose is emitted as a literal 572px container-query breakpoint. The doc does not give the resolved number, so it has to be read from the built tokens and can go stale if the token changes. → `site/src/content/docs/components/stepper.md`
+
 ### 2026-09-23 19:21 — rn round 2
 
 - **DOC** Stepper: the doc doesn't say what role a display-only step gets on React Native when compact removes its label text. A role-less View with aria-label fails axe aria-prohibited-attr, so I used role="img" and dropped selected state there. → `site/src/content/docs/components/stepper.md`
@@ -12292,6 +12577,20 @@ Doc: `site/src/content/docs/components/stepper.md`
 
 Doc: `site/src/content/docs/components/switch.md`
 
+### 2026-09-23 19:04 — lit round 2
+
+- **DOC** Switch: the descriptionText binding says 'no --ds-switch-* hook', but the hooks gate requires every locked, non-forwarded binding to declare one (only forwarded bindings are exempt). I declared --ds-switch-description-text and route it into the composed Text through its documented --ds-text-color hook. The doc should either drop the 'no hook' wording or mark descriptionText as forwarded. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the composition lists only size and tone for the description Text and never says which element it renders, so I left Text's default. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the Lit attribute name for defaultChecked is unspecified; I used default-checked (kebab-case). → `site/src/content/docs/components/switch.md`
+
+### 2026-09-23 19:03 — lit round 1
+
+- **DOC** Switch: descriptionText says 'no --ds-switch-* hook', but the general rule says locked bindings keep their :host hook (only forwarded bindings declare none). I followed the component's explicit statement and declared no hook; the muted tone supplies the color. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the composition lists only size and tone as props for the description Text. It does not say which element the Text renders, so I passed no `element` and left Text's default. The doc should state whether the description is a p or a span. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: `defaultChecked` is a prop but its Lit attribute name is unspecified; I used `default-checked` (kebab-case). Only `name`, `disabled` and `label-position` are listed under platforms.lit.reflect. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the story arg `checked` is optional and maps to `?checked`, but on Lit the attribute only sets the initial state (the live property wins afterwards). The spec's 'controlled-updates-on-set' scenario says 'given checked: false' while the Lit note says there is no controlled mode, so the test does a property write. Confirm that is the intended reading. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the story-parity rule says every React story has a Lit story with the same name and args, but I could not see the React stories. I kept the existing extra stories On, DisabledOn and Controlled on the assumption that they match. → `site/src/content/docs/components/switch.md`
+
 ### 2026-09-23 18:59 — rn round 1
 
 - **DOC** Switch: the spec says the Form contract is `discovery: context` and says a disabled Switch stays registered, but not how the Form's own `disabled` (form?.disabled) should combine with the Switch's. I treated it as OR-ed with the prop and the Fieldset's `disabled`, as Checkbox does. → `site/src/content/docs/components/switch.md`
@@ -12483,6 +12782,13 @@ Doc: `site/src/content/docs/components/switch.md`
 ## Table
 
 Doc: `site/src/content/docs/components/table.md`
+
+### 2026-09-23 19:39 — lit round 1
+
+- **DOC** Table: the spec gives no Lit-specific selector for the `ArrowRight`/`ArrowLeft` scroll step besides `space.10` "read from the built token"; I read `--space-10` from the region's computed style and parse px or rem, which assumes the custom property is not registered with a resolved type. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `layout.maxWidth.prose` and `content` widths must be baked into `@container` conditions as literals (572 and 960, marked literal-ok) because container queries cannot read custom properties; the spec does not say which built values to use, so they are copied from the current theme's token JSON and will go stale if the theme changes. → `site/src/content/docs/components/table.md`
+- **DOC** Table: the spec says the `sortButton` forward reaches Button's `overrides.fontWeight`/`iconGap`, but does not say whether Table should also declare a `--ds-table-header-weight` hook for the same binding; I kept the hook because `headerWeight` also styles the header cells, and forward the same value to the Button. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `selectable: single` header cell is an empty `<td role="cell">` per the notes, but the spec does not say whether it should carry the `selectAllCell` part; I gave it no part. → `site/src/content/docs/components/table.md`
 
 ### 2026-09-23 19:34 — rn round 2
 
@@ -12765,6 +13071,14 @@ Doc: `site/src/content/docs/components/table.md`
 
 Doc: `site/src/content/docs/components/tabs.md`
 
+### 2026-09-23 19:22 — lit round 1
+
+- **DOC** Tabs: the `overrides` property is `Partial<Record<TabsOverridableBinding, TokenRef | undefined>>`, but the spec shows the type without `| undefined`. I kept `| undefined` because exactOptionalPropertyTypes requires it. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: `Given` scenarios say `click: tab` is the first tab, but a first tab that is disabled (a-disabled-tab-cannot-be-selected) does not say how the Lit locator treats it. I click the first `[data-part=tab]` button regardless of `aria-disabled`. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the spec sets `ariaControlsElements` on shadow tabs but does not say what to do when the panel is absent (TabWithoutPanel). I reset it to null so no stale reference remains. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the spec does not say whether a `value` that matches no tab should still leave the roving stop on the first enabled tab. I applied the same fallback as for a disabled selected tab. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: `--font-line-height-normal` is the CSS variable name for the `font.lineHeight.normal` token; the spec does not state how camelCase token segments map to CSS names, so I followed the existing tokens.css. → `site/src/content/docs/components/tabs.md`
+
 ### 2026-09-23 19:13 — rn round 1
 
 - **DOC** Tabs: the spec's `TabsTab` alias rule says 'a package that actually shipped it keeps it', but nothing in the doc says which packages did (it only names Lit). I kept it on RN because `packages/rn/dist/index.d.ts` still contains it; the doc should list the packages that shipped it. → `site/src/content/docs/components/tabs.md`
@@ -12994,6 +13308,20 @@ Doc: `site/src/content/docs/components/tabs.md`
 ## Text
 
 Doc: `site/src/content/docs/components/text.md`
+
+### 2026-09-23 18:52 — lit round 3
+
+- **DOC** Text: gate `hooks` (check_hooks) still requires a `--ds-text-color` hook for the locked `color` binding, but the Text doc's `styles.color` description says a locked color has no `--ds-text-color` hook on web or Lit and the tone rule reads the token custom property directly. Code follows the doc; the gate will keep failing until check_hooks exempts locked bindings whose doc declares no hook (for example a `hook: none` field), or the doc is changed to declare the hook. prompts/templates/lit.md ('a locked binding keeps its :host hook') conflicts with the Text doc in the same way and needs the same decision. → `site/src/content/docs/components/text.md`
+
+### 2026-09-23 18:51 — lit round 2
+
+- **DOC** Text: gate `hooks` (tools check_hooks) requires a `--ds-text-color` hook for the locked `color` binding, but the Text doc's `styles.color` description says a locked color has no `--ds-text-color` hook on web or Lit and that the tone rule reads `var(--color-foreground)` / `var(--color-foreground-on-action)` directly. Code follows the doc, so the gate still fails. Either check_hooks needs a per-binding exemption (for example a `hook: none` field on a locked style) or the Text doc must be changed to declare the hook. The prompts/templates lit.md text ('a locked binding keeps its :host hook') has the same conflict with this doc. → `site/src/content/docs/components/text.md`
+
+### 2026-09-23 18:50 — lit round 1
+
+- **DOC** Text: the conventions say a locked binding keeps its `:host` hook, but the `color` styles description says a locked color has no `--ds-text-color` hook on Lit. I followed the component doc (no hook) and dropped the hook the existing element declared; the package conventions text should carve out this case. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the truncate scenario only checks the title on `part="text"`. Nothing tests that a consumer `title` attribute on the host wins or that the title follows live text edits, and both are specified, so I added no tests for them. → `site/src/content/docs/components/text.md`
+- **DOC** Text: `TruncateInline` and `Truncate` decorators use a literal `max-inline-size: 24ch`. The doc sanctions this as story scaffolding, but the literal linter is not told, so it may need a `literal-ok` exemption. → `site/src/content/docs/components/text.md`
 
 ### 2026-09-23 18:50 — rn round 1
 
@@ -13246,6 +13574,13 @@ Doc: `site/src/content/docs/components/text.md`
 ## Toast
 
 Doc: `site/src/content/docs/components/toast.md`
+
+### 2026-09-23 19:14 — lit round 1
+
+- **DOC** Toast: the region's wide-screen breakpoint (960px) is written into Toast.ts as a literal-ok media query. The spec says to read it from the default theme's layout.maxWidth.content at generation time, but gives no value, so I kept the existing number. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the spec doesn't say whether `dismissible: false` on a non-persistent toast leaves it with no controls at all. The existing code hides the dismiss button in that case, and only Escape or the timer can close it. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the spec doesn't name the timing fallback (50ms) added to the resolved exit duration when `transitionend` never fires. It is kept as a private constant, not a token. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the spec says F6 is 'from any' focus position and returns focus on a second press, but not what happens with two regions on a page. The existing code lets the first region's handler that acts win the press. → `site/src/content/docs/components/toast.md`
 
 ### 2026-09-23 19:06 — rn round 1
 
@@ -13523,6 +13858,12 @@ Doc: `site/src/content/docs/components/toast.md`
 
 Doc: `site/src/content/docs/components/toolbar.md`
 
+### 2026-09-23 19:36 — lit round 1
+
+- **DOC** Toolbar: The spec says Default and Keyboard use the same two labelled ToolbarGroups, but the React story list is not visible from this spec. I inferred that Lit's children arg is a string key naming a child set, using each example's `children` description verbatim. Where that convention lives is not stated. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: The Lit stories pick children through a lookup helper interpolated inside the meta render. The docs snippet reader may not be able to quote the child controls from that, and the spec gives no other way to express `children` as a story arg. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: The spec does not say whether the toolbar should set `part` attributes on its `data-part` elements. It says no `::part` for styling. I kept `part` alongside `data-part`, as other components do. → `site/src/content/docs/components/toolbar.md`
+
 ### 2026-09-23 19:24 — rn round 1
 
 - **DOC** Toolbar: the FormattingToolbar and VerticalToolPalette examples give three Buttons with no overflowLabel, while Default and Keyboard give each an overflowLabel; on React Native the label is never used (no overflow Menu), so I left it off the examples and kept it on Default and Keyboard. → `site/src/content/docs/components/toolbar.md`
@@ -13761,6 +14102,16 @@ Doc: `site/src/content/docs/components/toolbar.md`
 ## Tooltip
 
 Doc: `site/src/content/docs/components/tooltip.md`
+
+### 2026-09-23 19:13 — lit round 2
+
+- **DOC** Tooltip: the generated keyboard test for Escape (`expect: focus-unchanged`) fails unless something already holds focus when the story loads, but the doc does not say the Keyboard story must start with focus on a trigger. I added `autofocus` to the first trigger. The doc should state that the Keyboard story focuses the first trigger. → `site/src/content/docs/components/tooltip.md`
+
+### 2026-09-23 19:12 — lit round 1
+
+- **DOC** Tooltip: `delay` is not listed under platforms.lit.reflect, so it is a non-reflected attribute; I kept that. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the docs say the warm window is module-global, but do not say whether a `none` tooltip's hide should also start it. I made every hide start the window. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: hover, focus and Escape behaviours (delay timing, grace period, warm window, RTL flip) have no behavior scenario, so only the role, hidden-copy, renders and Escape checks are tested. → `site/src/content/docs/components/tooltip.md`
 
 ### 2026-09-23 19:05 — rn round 1
 
@@ -14360,6 +14711,11 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 - **DOC** TreeGrid: the spec gives cells aria-selected in selectable=cell mode but does not say which role carries it; a plain `cell` fails axe aria-allowed-attr, so data cells use role=gridcell in that mode and cell otherwise. → `site/src/content/docs/components/treegrid.md`
 
+### 2026-09-23 19:41 — lit round 1
+
+- **DOC** TreeGrid: Shift+click on the select column's cell area (outside the Checkbox) is not covered by the doc. It says Shift+Space and Shift+click ranges do not cascade, but not which cell of a row that covers. I left it as a cascading plain toggle; the Checkbox click itself is a plain toggle by design. → `site/src/content/docs/components/treegrid.md`
+- **DOC** TreeGrid: the doc says the lazy placeholder row is counted by aria-rowindex and aria-rowcount but not by copy.rowCount or copy.selectedRows, and does not say what position copy shows when the active cell is on the placeholder. I show 'Row N, <column header>' with N the visible index + 1, as for any row. → `site/src/content/docs/components/treegrid.md`
+
 ### 2026-09-23 16:38 — web round 1
 
 - **DOC** TreeGrid: onEditStart is declared `cancelable` ('skips the default action when the handler returns false or calls preventDefault() on the event it receives'), but its payload is positional (rowId, column) with no event object, so on web only `return false` cancels; kept that, as DataGrid does. → `site/src/content/docs/components/treegrid.md`
@@ -14652,7 +15008,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 9543 · CODE: 151 · TOOLING: 7 · NOISE: 749
+DOC: 9728 · CODE: 151 · TOOLING: 7 · NOISE: 749
 
 Not per-target gap files, skipped: CODE.2026-09-23.md, FOLDS.md, TEST-FAILURES.md, TOOLING.2026-09-23.md.
 
@@ -14710,4 +15066,4 @@ Not per-target gap files, skipped: CODE.2026-09-23.md, FOLDS.md, TEST-FAILURES.m
 
 ## Gates to fix
 
-- none: every recorded target passed its gates
+- [ ] Text.lit — hooks

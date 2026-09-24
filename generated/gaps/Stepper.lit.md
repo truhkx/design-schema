@@ -68,3 +68,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Stepper: the doc gives the exact dev-warning text but not whether it fires once or on every change to steps/current. Chose to check again on each change to steps or current.
 - Stepper: the keyboard block's Tab rule (from: first, expect: focus-next) is in the schema but missing from the resolved lit Keyboard section, which lists only Enter/Space as native. Chose native tab order only: non-navigable steps are <div>s and so are not focusable.
 - Stepper: the count is shown and hidden 'through Text's layout-only className'. Lit has no className prop, so class='count' goes on the <ds-text> host inside Stepper's shadow root, where Stepper's own shadow styles show and hide it. That controls the host's layout only.
+
+## 2026-09-23 19:33 — round 1
+
+- Stepper: the styles list labelColor, labelUpcomingColor, descriptionColor and countColor as locked and say 'no --ds-stepper-* hook', while the Lit convention says locked bindings keep a :host hook. Text's tone is locked and has no colour hook, so a Stepper hook would do nothing; I declared none. The doc should say plainly that these four are realised by Text's tone on every platform.
+- Stepper: layout.maxWidth.prose is emitted as a literal 572px container-query breakpoint. The doc does not give the resolved number, so it has to be read from the built tokens and can go stale if the token changes.

@@ -75,3 +75,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Fieldset: the doc does not say what happens to a field the group disabled that then leaves the group. Chose to hand it back: on slotchange, a field Fieldset disabled that is no longer a direct child gets disabled=false.
 - Fieldset: the required indicator is recomputed on the direct children's `required` attribute changes, but the guidance says 'the property or the attribute, either counts'; a property-only change that does not reflect cannot be observed. Chose a MutationObserver on the attribute plus a property read at recompute time; the doc should say whether field components must reflect `required`.
 - Fieldset: the examples give `children` as prose; stories keep the prose as the arg and map it to ds-input/ds-checkbox fragments. React's extra stories RequiredIndicator, WithDescription, WithError and Disabled are mirrored for parity; RequiredIndicator uses a children string that the doc never defines.
+
+## 2026-09-23 19:11 — round 1
+
+- Fieldset: the Overrides section says a locked binding still declares its :host hook, but legendColor, descriptionText and errorText each say 'no --ds-fieldset-* hook' and the guidance says only partGap and disabledOpacity have hooks. I followed the binding descriptions and declared no hook for the locked bindings, and removed the earlier --ds-text-color forwarding.
+- Fieldset: the copy.requiredIndicator ' (required)' has no stated behaviour for a legend that is empty, so I append it after whatever legend text there is.
+- Fieldset: the spec doesn't say whether aria-disabled on a <legend> and on a plain <div> wrapper is valid ARIA, since neither has a role that supports it. I added it because the disabledOpacity description demands it.

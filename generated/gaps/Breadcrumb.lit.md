@@ -51,3 +51,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Breadcrumb: the focus-fallback ring's `outline-offset` is not specified. Used `focusRingWidth` as the offset, the same as the web version.
 - Breadcrumb: composition says the `link` part gets exactly `{ tone: default }` and `expand` gets `{ variant, size, iconOnly }`, but Link also needs `href` and `label` and Button needs `label` (copy.expandLabel) plus the `ellipsis` icon in its `leading-icon` slot. Passed those as necessary data; the composition block should list them.
 - Breadcrumb: 'more than four items' is read from `COLLAPSE_ABOVE = 4` with no token or constant expression in the doc, so the number is hard-coded.
+
+## 2026-09-23 19:09 — round 1
+
+- Breadcrumb: the spec has no `given` for `label` in the `the-trail-is-a-named-navigation-landmark` scenario on Lit (it is web-only), so no Lit test asserts role=navigation; I kept that as the platform notes say.
+- Breadcrumb: `collapse` is a negated attribute (`no-collapse`) with a custom converter; the spec does not say whether `collapse` should be reflected when true, so I reflect only the `no-collapse` attribute, which is present only when false.

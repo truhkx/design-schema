@@ -144,3 +144,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Container: the derived `renders-*` scenarios assert only `renders: true`, so there is no observable check that a width/gutter value styles anything; the Lit test checks the reflected attribute (and the slot for the element scenarios), which proves the prop took effect but not the resulting max-width or padding. A `then` that names the computed style (or the hook's value) would make these scenarios meaningful.
 - Container: the spec says stories wrap a string `children` in a Text but gives no rule for tests, so the Lit test slots the string as plain text rather than a `<ds-text>`; nothing in the scenarios depends on the difference.
 - Container: the bare `:host` must be the responsive default gutter before the first update (lit notes), so the responsive media rules are written for both `:host` and `:host([gutter='default'])`. The spec says the fixed values outrank 'the bare responsive rules' but does not say the responsive rules exist twice on Lit; I kept both and relied on attribute specificity to keep narrow/wide/none fixed.
+
+## 2026-09-23 18:59 — round 1
+
+- Container: the spec gives no story-shape rule for `children` on Lit beyond 'a string is rendered inside a Text with its defaults'. I wrapped it in `<ds-text>`, which defaults to `p` on Lit.
+- Container: the derived `renders-*` scenarios on Lit have no observable render target for a slot-only host. I asserted the reflected attribute for width, gutter and align, and the shadow-root `<slot>` for element. The doc could say which assertion a `renders: true` scenario should use.

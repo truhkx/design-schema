@@ -109,3 +109,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tooltip: the `text` binding names part `text` but its description says the foreground is re-scoped on the bubble container (not set on the Text part). Implemented as `--color-foreground: var(--ds-tooltip-text)` on the popup, so the binding is not applied to the `data-part="text"` element itself.
 - Tooltip: the bubble's rules can't live in the element's shadow stylesheet because the bubble sits in the light DOM; the doc doesn't say how to style it. Chose a single <style> injected once per document or shadow root, built from token/hook vars only.
 - Tooltip: `renders` scenarios for placement/delay cannot distinguish values (the bubble is hidden without `open`); tests only assert the element and its role=tooltip copy render.
+
+## 2026-09-23 19:12 — round 1
+
+- Tooltip: `delay` is not listed under platforms.lit.reflect, so it is a non-reflected attribute; I kept that.
+- Tooltip: the docs say the warm window is module-global, but do not say whether a `none` tooltip's hide should also start it. I made every hide start the window.
+- Tooltip: hover, focus and Escape behaviours (delay timing, grace period, warm window, RTL flip) have no behavior scenario, so only the role, hidden-copy, renders and Escape checks are tested.
+
+## 2026-09-23 19:13 — round 2
+
+- Tooltip: the generated keyboard test for Escape (`expect: focus-unchanged`) fails unless something already holds focus when the story loads, but the doc does not say the Keyboard story must start with focus on a trigger. I added `autofocus` to the first trigger. The doc should state that the Keyboard story focuses the first trigger.

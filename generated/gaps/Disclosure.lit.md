@@ -47,3 +47,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Disclosure: the focus ring's `outline-offset` isn't specified. I reused `focusRingWidth` (`border.width.focus`) as the offset.
 - Disclosure: the `Accordion` story in React and Lit stacks three plain disclosures, but the `fullWidth` doc says Accordion sets it on every section. I left the story without `full-width` to keep parity with React; the doc should say whether that story should set it.
 - Disclosure: the doc doesn't say whether a `part` attribute should sit alongside `data-part`. I kept `part` on trigger, triggerIcon and panel with the anatomy names; nothing styles through `::part`.
+
+## 2026-09-23 19:07 — round 1
+
+- Disclosure: `open` is reflected, but an uncontrolled disclosure has `open` undefined, so its resolved state is not reflected and `[open]` cannot style it; only `currentOpen` shows it. Reflecting it would turn the element controlled. I left uncontrolled unreflected; the doc could say so.
+- Disclosure: `copy.expanded` / `copy.collapsed` are declared, but the platform notes say Lit must not render them. I did not render them.
+- Disclosure: the echo rule ('the consumer sets open to the value a user toggle already reported') does not say what happens when `open` moves from undefined to a value, that is, when the element switches from uncontrolled to controlled. I fire no `controlled` event on the first update and treat later changes as controlled.

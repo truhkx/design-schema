@@ -212,10 +212,6 @@ export class DsStepper extends LitElement {
       --ds-stepper-indicator-error-background: var(--color-status-danger-background);
       --ds-stepper-indicator-error-foreground: var(--color-status-danger-foreground);
       --ds-stepper-indicator-error-border: var(--color-status-danger-icon);
-      --ds-stepper-label-color: var(--color-foreground);
-      --ds-stepper-label-upcoming-color: var(--color-foreground-muted);
-      --ds-stepper-description-color: var(--color-foreground-muted);
-      --ds-stepper-count-color: var(--color-foreground-muted);
       --ds-stepper-connector-complete: var(--color-control-selected-background);
       --ds-stepper-connector-width: var(--border-width-focus);
       --ds-stepper-min-target: var(--size-target-min);
@@ -230,24 +226,8 @@ export class DsStepper extends LitElement {
       display: none;
     }
 
-    /* Label, description and count size and weight reach the composed Text's overrides. Their colours
-       are the Text's tone; the locked colour bindings keep their own hooks, which feed Text's documented
-       --ds-text-color hook (same token as the tone by default) so page CSS can still re-theme them. */
-    [data-part='label'] {
-      --ds-text-color: var(--ds-stepper-label-color);
-    }
-
-    li[data-status='upcoming'] [data-part='label'] {
-      --ds-text-color: var(--ds-stepper-label-upcoming-color);
-    }
-
-    [data-part='description'] {
-      --ds-text-color: var(--ds-stepper-description-color);
-    }
-
-    [data-part='count'] {
-      --ds-text-color: var(--ds-stepper-count-color);
-    }
+    /* Label, description and count size and weight reach the composed Text's overrides; their colours
+       are the Text's tone (locked, no hook). */
 
     /* The count follows the list, stepGap after it; while it is display:none the gap collapses with it. */
     nav {

@@ -52,3 +52,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Landmark: the guidance says the per-role stories label navigation "Primary", complementary "Related links" and search "Site search", but packages/react/src/Landmark.stories.tsx uses "Main" for RoleNavigation and no label for RoleComplementary and RoleSearch. I followed the doc in Lit, so the two platforms' stories now have different args; the React stories need regenerating to match.
 - Landmark: the behavior list has no scenario for the development warnings (no role, missing label on region/form, refused label, duplicate main, shared or missing labels between peers) or for dropping aria-labelledby on banner/main/contentinfo. The element does all of these, but no generated test covers them. The doc could add scenarios with a `warns` expectation.
 - Landmark: the doc does not say whether a Lit story can set `aria-labelledby` on the host, since there is no labelledBy property and the attribute is not observed. I added no aria-labelledby story.
+
+## 2026-09-23 19:08 — round 1
+
+- Landmark: the doc says the behavior scenario `an-overridden-element-still-carries-its-role` and the `as` prop are web-only, so Lit has no `As*` stories and no `BannerThatIsNotThePageHeader` story; this is stated in the prop's platforms but the Lit parity rule ('every React story has a Lit story') does not say to skip web-only ones, so I skipped them.
+- Landmark: the doc does not say whether `label` set as a property on a role that refuses it (banner/main/contentinfo) should keep the property value while the attribute is omitted; I kept the property value and only omit `aria-label` (as the Lit notes imply).

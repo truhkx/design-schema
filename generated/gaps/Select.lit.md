@@ -88,3 +88,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Select: labelWeight and helperSize are overridable with no :host hook (reached only through the Texts' overrides). The Overrides section's 'every style binding becomes a hook on :host' contradicts that for these two bindings.
 - Select: the doc doesn't say whether the role=alert error Text is always rendered (empty) or only when there is a message. I kept Input's pattern (rendered only with a message).
 - Select: `hideLabel` has no Lit attribute name in the doc and isn't reflected. I used `hide-label`.
+
+## 2026-09-23 19:25 — round 1
+
+- Select: the Lit notes say ds-form 'collects ds-select ... DsFormField.currentValue is string | boolean | string[] | null', but the DsFormField interface in Form.ts also allows number and [number, number]. I kept the Select getter at string | string[] | null, which is assignable.
+- Select: the guidance says the listbox is passed `labelledBy` and `initialActiveValue`, but the composition props list gives neither, and Lit never resolves labelledBy across shadow roots. I pass both plus `activeValue`, and the list is named by `label`.
+- Select: the spec does not say whether the Lit element must literally `implements DsFormField`. It satisfies the shape structurally and I did not add an explicit clause.
+- Select: the `DisabledOpen` story exists in React but is not among the doc's examples or a derived scenario, so the story-parity rule is the only thing that requires it. It would be worth naming in the doc.

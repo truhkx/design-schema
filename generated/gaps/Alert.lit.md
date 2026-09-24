@@ -59,3 +59,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Alert: the `onDismiss` event says 'no detail', but the Lit index exports an `AlertDismissDetail` type. I kept it as `void` (the CustomEvent's detail is null) so the public type export keeps working. The doc could say whether a `<Name><Event>Detail` type should exist when there is no payload.
 - Alert: the scenario an-empty-heading-falls-back-to-the-body only asserts `text`. The Lit test also checks that no heading part renders and that the host `aria-label` equals the body text, which the scenario's description implies but its `then` does not state.
 - Alert: the next-focusable rule lists `[tabindex] ≥ 0` but does not say whether a custom-element host that forwards its tabindex (such as ds-button) counts as a separate candidate from the native button in its shadow root. The walk picks the first match in flat-tree order, which is the host only when it carries a tabindex.
+
+## 2026-09-23 19:08 — round 1
+
+- Alert: the spec gives no Lit hook name for the `lineHeight` token `font.lineHeight.normal`; I kept `--font-line-height-normal` as the token variable, which is not confirmed against the generated token stylesheet.
+- Alert: the spec does not say what happens when `overrides.iconSize` is set but the hook is also set from page CSS. It says only that the hook alone resizes the box, not the glyph, so I left that unsupported and did not guard it.
+- Alert: the spec does not say whether the accessible name should update when the alert's own slotted text is replaced. I used a MutationObserver on the light DOM to keep the aria-label current.

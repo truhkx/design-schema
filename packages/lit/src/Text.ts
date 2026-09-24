@@ -65,10 +65,6 @@ export class DsText extends LitElement {
       --ds-text-font-size: var(--font-size-md);
       --ds-text-font-weight: var(--font-weight-regular);
       --ds-text-line-height: var(--font-line-height-normal);
-      /* color is locked: no overrides entry, but the hook stays so page CSS can re-theme it.
-         It resolves against the host's inherited --color-foreground, so an inverse surface that
-         re-scopes that property on its container still recolours the default tone. */
-      --ds-text-color: var(--color-foreground);
     }
 
     /* A span-like host gets out of the way so the inline run joins its surrounding line. */
@@ -83,8 +79,10 @@ export class DsText extends LitElement {
       font-size: var(--ds-text-font-size);
       font-weight: var(--ds-text-font-weight);
       line-height: var(--ds-text-line-height);
-      /* color: color.foreground.{tone}, locked — hook only, not in overrides */
-      color: var(--ds-text-color);
+      /* color: color.foreground.{tone} is locked: no hook, the tone rules below read the token
+         directly. The default tone is the bare --color-foreground, which an inverse surface
+         re-scopes on its own container. */
+      color: var(--color-foreground);
       text-align: start;
     }
 
@@ -127,20 +125,20 @@ export class DsText extends LitElement {
     }
 
     /* color: color.foreground.{tone} ("default" is the bare color.foreground token) */
-    :host([tone='default']) {
-      --ds-text-color: var(--color-foreground);
+    :host([tone='default']) .text {
+      color: var(--color-foreground);
     }
-    :host([tone='strong']) {
-      --ds-text-color: var(--color-foreground-strong);
+    :host([tone='strong']) .text {
+      color: var(--color-foreground-strong);
     }
-    :host([tone='muted']) {
-      --ds-text-color: var(--color-foreground-muted);
+    :host([tone='muted']) .text {
+      color: var(--color-foreground-muted);
     }
-    :host([tone='danger']) {
-      --ds-text-color: var(--color-foreground-danger);
+    :host([tone='danger']) .text {
+      color: var(--color-foreground-danger);
     }
-    :host([tone='onAction']) {
-      --ds-text-color: var(--color-foreground-on-action);
+    :host([tone='onAction']) .text {
+      color: var(--color-foreground-on-action);
     }
 
     :host([align='start']) .text {
@@ -183,7 +181,7 @@ export class DsText extends LitElement {
    * Semantic color. `onAction` is only for text placed on an action background.
    * There is no `inverse` tone: an inverse surface re-scopes `--color-foreground`
    * on its own container, which the `default` tone resolves through. The colour
-   * is locked (not in `overrides`); page CSS can still set `--ds-text-color`.
+   * is locked: not in `overrides` and it has no `--ds-text-color` hook.
    */
   @property({ type: String, reflect: true }) accessor tone: TextTone = 'default';
 

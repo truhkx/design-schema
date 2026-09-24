@@ -65,3 +65,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - RadioGroup: defaultValue is 'read once', but the doc doesn't say what formResetCallback restores. Chose the defaultValue captured at first render.
 - RadioGroup: 'error — setting it marks the group invalid' doesn't say what clearing it does. Chose invalid = Boolean(error) on every assignment, so clearing error also clears an invalid that was set directly.
 - RadioGroup: the disabled-group-is-inert scenario's `state: disabled` names no node. The test asserts the reflected `disabled` attribute on the host and aria-disabled="true" on the group fieldset.
+
+## 2026-09-23 19:05 — round 1
+
+- RadioGroup: the spec says descriptionText/errorText are realised by the composed Text's tone and have no --ds-radio-group-* hook, but the previous Lit output declared hooks for them that fed a non-existent --ds-text-color hook on Text (Text documents its colour as locked with no hook). I removed them; the doc could say outright that these two locked bindings declare no hook on Lit.
+- RadioGroup: the Lit notes say the disabled-group click guard sits on the fieldset, while the web notes say it sits on each input so unrelated content in the group is not cancelled. I followed the Lit notes (guard on the fieldset); the contradiction between the two platform notes is unresolved.
+- RadioGroup: the spec does not say whether a click on the row outside the label, radio and description (the padding) should select. I made the whole row select via a row click handler, per minTarget's 'the whole row is the hit area'.
+- RadioGroup: copy.position is declared in the copy block but the Lit notes say it is not rendered on Lit, so it is unused here.
+
+## 2026-09-23 19:06 — round 2
+
+- RadioGroup: the spec says descriptionText and errorText have no --ds-radio-group-* hook (realised by the composed Text's tone), but tools/check_hooks.ts fails any locked binding that is not forwarded to a child's overrides and declares no hook. I declared both hooks on :host as inert declarations. Nothing reads them because Text has no colour hook to feed. Either the docs should let these two bindings be marked hook-exempt, or Text should gain a documented colour hook.
+- RadioGroup: the Lit notes say the disabled-group click guard sits on the fieldset, while the web notes say it sits on each input. I followed the Lit notes.
+- RadioGroup: the spec does not say whether a click on the row's padding should select. I made the whole row select, per minTarget's 'the whole row is the hit area'.
+- RadioGroup: copy.position is declared but the Lit notes say it is not rendered on Lit, so it is unused.

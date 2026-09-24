@@ -623,7 +623,11 @@ export class DsNumberInput extends LitElement {
     const hi = finite(this.max);
 
     return html`
-      <div class=${classMap({ group: true, disabled: isDisabled })}>
+      <div
+        class=${classMap({ group: true, disabled: isDisabled })}
+        role="group"
+        aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
+      >
         <label
           class=${classMap({ 'visually-hidden': this.hideLabel })}
           part="label"

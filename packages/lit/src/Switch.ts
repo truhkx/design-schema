@@ -414,7 +414,6 @@ export class DsSwitch extends LitElement {
                   class="description"
                   part="description"
                   data-part="description"
-                  element="p"
                   size="sm"
                   tone="muted"
                   .overrides=${this.textOverrides}

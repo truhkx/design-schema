@@ -80,3 +80,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - BottomSheet: `maxWidth` is locked, and check_hooks requires every locked binding to declare `--ds-bottom-sheet-max-width`, but the doc says maxWidth is 'the breakpoint only — the value styles nothing' and must be 'read from the theme token, not per instance' (the resolved `--layout-max-width-prose` on the document root). Declared the hook on :host defaulting to the token to satisfy the gate, but nothing reads it: consumer CSS on the hook has no effect. The doc should either exempt breakpoint-only bindings from the hook rule or say the hook is inert.
 - BottomSheet: the doc names the focusRing/focusRingWidth bindings but not the part they apply to (no `part`). Applied them to the heading wrapper's :has(:focus-visible) outline, the one focus ring the sheet draws itself (the heading as the initial-focus fallback); the close Button and slotted controls draw their own rings.
 - BottomSheet: `layout.gap.*`/`space.*` bindings aside, the doc gives no hook for the `half`/`full` heights or the `enter` slide distance; they remain literal-ok CSS values (50dvh, calc(100dvh - var(--layout-gutter)), translateY(100%)).
+
+## 2026-09-23 19:19 — round 1
+
+- BottomSheet: the `height: full` sheet subtracts `--layout-gutter`, but the spec names no token for the top gutter beyond that platform-note wording; I used `--layout-gutter` from the web notes and marked it literal-ok.
+- BottomSheet: `open: true` with an empty `heading` is only a development warning; the spec says the name is required but does not say what to render, so I render an empty aria-label.

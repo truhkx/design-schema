@@ -224,3 +224,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-23 18:43 — round 2
 
 - Input: styles.errorText and styles.descriptionText say 'no --ds-input-* hook, since a hook could not reach the child', but the hooks gate (tools/check_hooks.ts) and the web conventions require a hook for every locked binding unless the doc lists it under composition.<part>.forwards, and Input has no composition block. I followed the sibling fields (Select, Combobox, NumberInput) and declared --ds-input-description-text and --ds-input-error-text on the root with their tokens. Nothing reads them yet, because the composed Text draws the color from its tone, so setting either hook from page CSS does nothing. The doc should either drop the 'no hook' wording or add a composition entry (description/errorMessage → Text) that makes the exemption explicit, and it should say whether these hooks are expected to actually re-theme the helper text.
+
+## 2026-09-23 20:07 — round 1
+
+- Input: the generation prompt says to type the ref as Ref<HTMLElement> on the root, but the platform notes say the forwarded ref targets the <input>; I kept Ref<HTMLInputElement>.
+- Input: the spec says nothing about a Form-set disabled reaching the field, so I read `form.disabled` from FormContext the way the rn notes describe.
+- Input: the focus padding compensation uses a `0px` literal inside `max(0px, ...)`; the spec requires the clamp but no token exists for zero, so I kept it.

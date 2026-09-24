@@ -13,6 +13,7 @@ import { resolveRole, type ComponentDef, type PlatformId } from '../../../schema
 // a rename or a moved CSS export then reaches the docs with a build, not with a search-and-replace.
 import reactManifest from '../../../packages/react/package.json';
 import litManifest from '../../../packages/lit/package.json';
+import tokensManifest from '../../../packages/tokens/package.json';
 
 /** One entry of `a11y.requires`. Taken from the schema so a new requirement fails typecheck here. */
 export type Requirement = ComponentDef['a11y']['requires'][number];
@@ -306,7 +307,7 @@ export function reducedMotionNote(def: ComponentDef): string | undefined {
 export interface BasicUsage {
   /** The install command, a shell one-liner. */
   install: string;
-  /** The import lines a consumer writes to use this component — the stylesheet, then the component. */
+  /** The import lines a consumer writes to use this component — the theme, the stylesheet, then the component. */
   imports: string;
 }
 
@@ -329,18 +330,39 @@ function stylesheetSubpath(): string {
 }
 
 /**
+ * The first theme stylesheet the tokens package publishes (`./<theme>/css`), from its `exports` map.
+ *
+ * The component stylesheet only binds `--ds-*` hooks to token custom properties; without a theme's
+ * sheet those properties are undefined and the component renders with no colour, space or type. And
+ * under pnpm the transitive tokens dependency cannot be imported by the app, so the install line
+ * names the tokens package too.
+ */
+function themeStylesheetSubpath(): string {
+  const entry = Object.keys(tokensManifest.exports).find((subpath) => subpath.endsWith('/css'));
+  if (entry === undefined) {
+    throw new Error(
+      `${tokensManifest.name} publishes no <theme>/css export, so the Basic Usage snippet cannot name one. ` +
+        'Update apps/website/src/component-page.ts if the theme stylesheets moved.',
+    );
+  }
+  return entry.replace(/^\.\//, '');
+}
+
+/**
  * Basic Usage for one component (website-plan.md, "Component page template" step 2).
  *
- * Two snippets, both derived: the package name and its stylesheet export come from
- * `packages/react/package.json`, and the imported symbol is the component's own schema name, which
- * is also the name the package exports. So this is a *package* fact rather than hand-written prose —
- * the distinction job 507 drew when it moved the live render out of this section and into the
- * examples `Tabs`, leaving the snippet as the only thing Basic Usage still owes the reader.
+ * Two snippets, both derived: the package names and their stylesheet exports come from
+ * `packages/react/package.json` and `packages/tokens/package.json`, and the imported symbol is the
+ * component's own schema name, which is also the name the package exports. So this is a *package*
+ * fact rather than hand-written prose — the distinction job 507 drew when it moved the live render
+ * out of this section and into the examples `Tabs`, leaving the snippet as the only thing Basic Usage
+ * still owes the reader.
  */
 export function basicUsage(name: string): BasicUsage {
   return {
-    install: `pnpm add ${reactManifest.name}`,
+    install: `pnpm add ${reactManifest.name} ${tokensManifest.name}`,
     imports: [
+      `import '${tokensManifest.name}/${themeStylesheetSubpath()}';`,
       `import '${reactManifest.name}/${stylesheetSubpath()}';`,
       `import { ${name} } from '${reactManifest.name}';`,
     ].join('\n'),

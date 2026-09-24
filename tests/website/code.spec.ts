@@ -72,7 +72,11 @@ test.describe('code presentation', () => {
     // Read off the DOM, not the source: Shiki splits a line into one span per token, so the command
     // is never a contiguous string in the markup. Its text is still the command.
     await expect(page.locator('.ds-code').first(), 'the install command').toHaveText(
-      'pnpm add @design-schema/react',
+      'pnpm add @design-schema/react @design-schema/tokens',
+    );
+    // A theme's tokens first: the component stylesheet alone renders nothing but undefined properties.
+    await expect(page.locator('.ds-code').nth(1), 'the theme import').toContainText(
+      "import '@design-schema/tokens/calm-precise/css';",
     );
     await expect(page.locator('.ds-code').nth(1), 'the import lines').toContainText(
       "import { Button } from '@design-schema/react';",

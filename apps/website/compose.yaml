@@ -47,7 +47,7 @@ services:
 
   tunnel:
     profiles: [tunnel]
-    image: cloudflare/cloudflared:2025.7.0
+    image: cloudflare/cloudflared:2026.9.2
     command: tunnel --no-autoupdate run
     # Not `${TUNNEL_TOKEN:?…}`: Compose interpolates every service before it applies profiles, so a required
     # variable here would fail even a local-only `docker compose up website`. deploy.ps1 refuses an empty

@@ -29,9 +29,9 @@
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
 		-Server
-		# Uncomment once the public hostname is HTTPS-only at Cloudflare (SSL/TLS > Edge Certificates >
-		# Always Use HTTPS). Browsers ignore it over plain HTTP, so the local check port is unaffected.
-		# Strict-Transport-Security "max-age=31536000"
+		# designschema.ai is HTTPS-only at Cloudflare (SSL/TLS > Edge Certificates > Always Use HTTPS). Browsers
+		# ignore it over plain HTTP, so the local check port is unaffected.
+		Strict-Transport-Security "max-age=31536000"
 	}
 
 	# Directories serve their index.html, and /about redirects to /about/.

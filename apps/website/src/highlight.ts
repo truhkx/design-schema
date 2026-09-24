@@ -8,8 +8,9 @@
  * in and nothing in the 51 could render it. Rather than invent a component the schema does not
  * describe, the site uses Astro's built-in `<Code>` (Shiki) in exactly two places and nowhere else:
  *
- *   1. the Basic Usage install/import snippet on a component page — a literal `<Code>`, since it is
- *      static Astro markup (see pages/docs/components/[slug].astro);
+ *   1. install/import snippets — the Basic Usage snippet on a component page and the per-platform
+ *      Install section of the docs landing page — each a literal `<Code>`, since it is static Astro
+ *      markup (see pages/docs/components/[slug].astro and pages/docs/index.astro);
  *   2. each example's per-platform snippets — `highlightSnippets()` below, which calls the same Shiki `<Code>`
  *      calls, from the page's frontmatter, because those snippets live inside a React island (the
  *      examples `Tabs`) and Astro can only pass markup into an island through a *statically named*

@@ -5,8 +5,8 @@
  * It used to be three links and a count, on the reasoning that the sidebar does the navigating. The
  * sidebar does, but a landing page that says less than the navigation beside it is a screenful of
  * nothing: an adopter arriving here cannot see what the system contains without opening ten
- * disclosures. So this page shows it — the ten roadmap phases with their components, and the two
- * prose sections with the documents each one holds.
+ * disclosures. So this page shows it — how to install the packages on each platform, the ten roadmap
+ * phases with their components, and the two prose sections with the documents each one holds.
  *
  * Nothing on it is written twice. The phases and their components are `generated/nav.json`, which
  * tools/site_nav.ts writes from the schema; the documents are the `docs` collection's own titles and
@@ -14,12 +14,15 @@
  * foundations document appears here on the next build, in the right place, without this file
  * changing.
  */
+import { Code } from 'astro:components';
 import { getCollection } from 'astro:content';
 import { Card, Heading, Link, Stack, Text } from '@design-schema/react';
 
 import DocsLayout from '../../layouts/DocsLayout.astro';
+import { CODE_THEME } from '../../highlight';
 import { componentRoute, DOCS_SECTIONS, siteNav } from '../../nav';
 import { docHref, sectionDocs } from './_prose';
+import '../../components/code.css';
 import '../../styles/docs-index.css';
 
 /** The page's own words: the section names, and the one sentence that says what the docs are. */
@@ -34,7 +37,56 @@ const COPY = {
   foundations: 'Foundations',
   patterns: 'Patterns',
   also: 'Also in these docs',
+  install: 'Install',
+  installIntro:
+    'The components ship on npm for three platforms. Every one of them styles itself from a theme’s ' +
+    'tokens, so an app imports the tokens once, at its root, alongside the components.',
 };
+
+/**
+ * One install/import pair per platform. Written out rather than derived: unlike a component page's
+ * Basic Usage (../../component-page.ts), this is the whole setup a platform needs — the Lit
+ * side-effect import and the React Native provider are wiring no manifest records.
+ */
+const PLATFORMS = [
+  {
+    name: 'React',
+    install: 'npm install @design-schema/react @design-schema/tokens',
+    lang: 'tsx',
+    usage: [
+      "import '@design-schema/tokens/calm-precise/css';",
+      "import '@design-schema/react/index.css';",
+      "import { Button } from '@design-schema/react';",
+      '',
+      '<Button label="Save" onClick={save} />',
+    ].join('\n'),
+  },
+  {
+    name: 'Lit (web components)',
+    install: 'npm install @design-schema/lit @design-schema/tokens',
+    lang: 'html',
+    usage: [
+      '<script type="module">',
+      "  import '@design-schema/tokens/calm-precise/css';",
+      "  import '@design-schema/lit'; // registers every ds-* element",
+      '</script>',
+      '',
+      '<ds-button label="Save"></ds-button>',
+    ].join('\n'),
+  },
+  {
+    name: 'React Native',
+    install: 'npm install @design-schema/rn @design-schema/tokens react-native-svg',
+    lang: 'tsx',
+    usage: [
+      "import { Button, ThemeProvider } from '@design-schema/rn';",
+      '',
+      '<ThemeProvider>',
+      '  <Button label="Save" onPress={save} />',
+      '</ThemeProvider>',
+    ].join('\n'),
+  },
+] as const;
 
 const { docs } = siteNav();
 const componentCount = docs.reduce((total, group) => total + group.components.length, 0);
@@ -64,6 +116,27 @@ const naming = DOCS_SECTIONS.find((section) => section.href === '/docs/naming-de
     <Stack direction="vertical" gap="normal">
       <Heading level={1}>{COPY.title}</Heading>
       <Text>{COPY.intro}</Text>
+    </Stack>
+
+    <Stack direction="vertical" gap="normal">
+      <Heading level={2}>{COPY.install}</Heading>
+      <Text tone="muted">{COPY.installIntro}</Text>
+      {
+        PLATFORMS.map((platform) => (
+          // `surface="subtle"` for the reason the component page's Basic Usage gives: the blocks take
+          // the page background (code.css), so they read as insets in the card.
+          <Card heading={platform.name} headingLevel="3" surface="subtle" inset="lg">
+            <Stack direction="vertical" gap="normal">
+              <div class="ds-code">
+                <Code code={platform.install} lang="sh" theme={CODE_THEME} />
+              </div>
+              <div class="ds-code">
+                <Code code={platform.usage} lang={platform.lang} theme={CODE_THEME} />
+              </div>
+            </Stack>
+          </Card>
+        ))
+      }
     </Stack>
 
     <Stack direction="vertical" gap="normal">

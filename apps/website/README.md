@@ -265,8 +265,8 @@ URL that does not resolve.
 ## Code presentation
 
 Syntax highlighting is the one piece of UI on this site that is not a generated component, and the
-exception is scoped to two spots and written down at the top of `src/highlight.ts`: the Basic Usage
-install/import snippets on a component page, and each example's source. Nothing else — a prop name
+exception is scoped to two kinds of spot and written down at the top of `src/highlight.ts`: install/import
+snippets (Basic Usage on a component page, and the Install section of the docs landing page), and each example's source. Nothing else — a prop name
 or a token path is a `Mono`, which is a `Text`. The reason it is an exception at all is that syntax
 highlighting has no role, no keyboard contract and no state, so there is no APG pattern and no
 schema for it to live in.

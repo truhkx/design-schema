@@ -90,3 +90,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-23 18:53 — round 3
 
 - Heading: unresolved contradiction, same as the previous round. The schema's `color` binding description says the locked AAA pair has no `--ds-heading-color` hook and the rule reads `var(--color-foreground-strong)` directly; tools/check_hooks (and prompts/templates/{web,lit}.md) require every locked binding to declare its hook and have rules read `var(--ds-<component>-<binding>)`. I kept the code to the spec, so the hooks gate keeps failing for Heading. Resolve by either exempting bindings whose description declares no hook in check_hooks, or changing the Heading doc to keep the standard locked-hook behavior. A declared-but-unread hook would satisfy the gate's string check but is inert, contradicts the spec's 'no hook', and would mislead the naming codemod, so I did not add one.
+
+## 2026-09-23 20:06 — round 1
+
+- Heading: the spec's `size` default depends on `level`, and the Default story uses level 2, so the size-3xl class only appears when `size` is omitted. That worked, but the doc could say outright that web resolves the default into the modifier class, not into a prop default.
+- Heading: the spec lists the hook names only implicitly (`--ds-heading-<binding>` kebab). I assumed the `fontSize` hook is set per size modifier class, not on the root, because the spec says interpolated bindings set the hook per modifier class.

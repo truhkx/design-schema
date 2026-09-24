@@ -295,17 +295,20 @@
     }
   },
   "Combobox.lit": {
-    "hash": "73b08451230737d5",
-    "lastAttemptHash": "73b08451230737d5",
-    "generatedAt": "2026-09-23T23:28:29+00:00",
+    "hash": "68bd70dad21fff09",
+    "lastAttemptHash": "68bd70dad21fff09",
+    "generatedAt": "2026-09-24T00:12:46+00:00",
     "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 0.9881,
+    "rounds": 1,
+    "costUsd": 0.3837,
     "files": [
-      "packages/lit/src/Combobox.ts"
+      "packages/lit/src/Combobox.stories.ts",
+      "packages/lit/src/Combobox.test.ts",
+      "packages/lit/src/Combobox.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,

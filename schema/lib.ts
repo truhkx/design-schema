@@ -1,6 +1,6 @@
 /**
  * The helpers the schema's own checks need, kept here so schema/ imports nothing but `zod` and `node:` modules
- * and can be published on its own (`pnpm schema:publish`). tools/lib/py.ts, tools/lib/pyyaml.ts and
+ * and stays self-contained. tools/lib/py.ts, tools/lib/pyyaml.ts and
  * tools/check_contrast.ts re-export these, so every tool still reads one implementation.
  *
  * Python semantics, because the ported tools' error messages and prompts must stay byte-identical: `repr()` of

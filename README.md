@@ -36,8 +36,6 @@ tests/gates/                           the Playwright axe gate, run over every s
 
 Node is the whole toolchain: every tool is TypeScript run by `node --import tsx`, with no build step and no Python.
 
-**Maintainers:** `tools/publish_schema.ts` (`pnpm schema:publish`) is the owner's sync of `schema/` to a sibling checkout of the public schema repository. It is not part of the pipeline, and adopters never need it.
-
 ## Setup
 
 The same steps on every OS:

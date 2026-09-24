@@ -640,17 +640,20 @@
     }
   },
   "Input.lit": {
-    "hash": "ddf948ed6293de3c",
-    "lastAttemptHash": "ddf948ed6293de3c",
-    "generatedAt": "2026-09-23T22:58:31+00:00",
+    "hash": "89345d9f6f6f48eb",
+    "lastAttemptHash": "89345d9f6f6f48eb",
+    "generatedAt": "2026-09-24T00:09:39+00:00",
     "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 0.6202,
+    "rounds": 1,
+    "costUsd": 0.2797,
     "files": [
-      "packages/lit/src/Input.ts"
+      "packages/lit/src/Input.stories.ts",
+      "packages/lit/src/Input.test.ts",
+      "packages/lit/src/Input.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,

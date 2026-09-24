@@ -1,6 +1,6 @@
-# Gap digest
+# Gap digest — phase final
 
-Generated 2026-09-23T20:02 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-23T20:19 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -3439,6 +3439,13 @@ Doc: `site/src/content/docs/components/checkbox.md`
 
 Doc: `site/src/content/docs/components/combobox.md`
 
+### 2026-09-23 20:10 — lit round 1
+
+- **DOC** Combobox: the Lit notes say `aria-controls` points at the popup div, but the popup is empty while closed (Popover API), so it points at an element that is hidden rather than absent; the doc does not say whether the id should exist while closed, and I kept it always present as on web. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the doc does not say whether `role="alert"` belongs on the error message or whether the region should exist while empty; I kept an always-present `role="alert"` wrapper hidden when there is no message. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: `iconColor` is forwarded to each Icon's `overrides.color`, but Lit's locked-hook rule also asks for a `--ds-combobox-icon-color` hook; I declared the hook on `:host` even though it reaches no child, since the doc describes the hook as reaching each Icon via `--ds-icon-color`, which conflicts with the forwarding sentence. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: a controlled `open` written by the consumer as the attribute `open="false"` is read as boolean absence, so the attribute cannot express a controlled closed state; the doc names no closed-controlled form for Lit. → `site/src/content/docs/components/combobox.md`
+
 ### 2026-09-23 19:27 — lit round 2
 
 - **DOC** Combobox: the `iconColor` binding says it has no --ds-combobox-* hook because it is forwarded to Icon's overrides.color, but check_hooks requires every locked binding without a `part` to declare a hook and does not treat it as forwarded. I forward to Icon per the spec and also declare an unused --ds-combobox-icon-color on :host to pass the gate; either the gate should exempt forwarded bindings that have no part, or the doc should stop saying there is no hook. → `site/src/content/docs/components/combobox.md`
@@ -6864,6 +6871,13 @@ Doc: `site/src/content/docs/components/form.md`
 
 Doc: `site/src/content/docs/components/heading.md`
 
+### 2026-09-23 20:06 — lit round 1
+
+- **DOC** Heading: the spec says the fallback warning fires 'once per element whatever later values arrive' and, on Lit, is issued when `level` is absent. It does not say when that check runs. I run it in `willUpdate` on every update until the first warning, since an unset `level` never appears in `changed` on the first render. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the `level` property type accepts numbers `1 | 2 | 3 | 4 | 5 | 6` alongside `HeadingLevel`, but `type: String` reflection of a number is not spelled out for Lit. I rely on Lit's String conversion writing `3` as `"3"`. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: `HeadingOverridableBinding` is exported from Heading.ts and index.ts, but the spec names no such type. I followed the naming pattern of the other components. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the `overrides` value `space.0` (marginBlockEnd off) resolves through `cssVar` to `var(--space-0)`. The spec does not confirm that a `space.0` token exists, so I assumed it does. → `site/src/content/docs/components/heading.md`
+
 ### 2026-09-23 18:53 — web round 3
 
 - **DOC** Heading: unresolved contradiction, same as the previous round. The schema's `color` binding description says the locked AAA pair has no `--ds-heading-color` hook and the rule reads `var(--color-foreground-strong)` directly; tools/check_hooks (and prompts/templates/{web,lit}.md) require every locked binding to declare its hook and have rules read `var(--ds-<component>-<binding>)`. I kept the code to the spec, so the hooks gate keeps failing for Heading. Resolve by either exempting bindings whose description declares no hook in check_hooks, or changing the Heading doc to keep the standard locked-hook behavior. A declared-but-unread hook would satisfy the gate's string check but is inert, contradicts the spec's 'no hook', and would mislead the naming codemod, so I did not add one. → `site/src/content/docs/components/heading.md`
@@ -7443,6 +7457,14 @@ Doc: `site/src/content/docs/components/icon.md`
 ## Input
 
 Doc: `site/src/content/docs/components/input.md`
+
+### 2026-09-23 20:08 — lit round 1
+
+- **DOC** Input: the spec says the field id is the `id` prop when given, else `<form.idBase>-<name>` inside a Form, else generated. Lit has no `id` prop (it collides with the native HTMLElement `id`) and the shadow-scoped ids are fixed (`field`, `description`, `error`), so I did not implement the Form-derived id or the error-summary link target. The doc does not say how Lit's error summary should reach an input. → `site/src/content/docs/components/input.md`
+- **DOC** Input: `copy.required` and `copy.invalid` contain `{label}` but the spec gives no formatter, so I interpolate the label with plain template strings. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the doc says `readOnly` passes through native input props, but Lit has no `readonly` prop in the schema, so I added none. The inner `readonly` is driven only by disabled. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the doc says `descriptionText` and `errorText` keep `--ds-input-*` hooks on the host, but the composed Text cannot read them without restyling the child. I declared the hooks on `:host` and nothing consumes them, so they are inert. → `site/src/content/docs/components/input.md`
+- **DOC** Input: `data-ds-field` sits on the host on Lit (per the Lit notes), while the web notes and the conventions say the root group. The two are inconsistent, and I followed the Lit-specific note. → `site/src/content/docs/components/input.md`
 
 ### 2026-09-23 18:58 — lit round 2
 
@@ -11695,6 +11717,11 @@ Doc: `site/src/content/docs/components/sidepanel.md`
 
 Doc: `site/src/content/docs/components/slider.md`
 
+### 2026-09-23 20:14 — lit round 1
+
+- **DOC** Slider: fontFamily is both forwarded to every composed Text's overrides and a root hook (--ds-slider-font-family, applied to .root). The spec says a forwarded binding declares no hook of its own, but also that fontFamily is overridable; I kept both (harmless duplication). Say which is intended. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the Lit value for `required` compares against `defaultValue` normalized (min or [min,max]) but the spec's 'the default' for a controlled `value` slider is ambiguous; I compare the displayed value with the normalized defaultValue in both modes. → `site/src/content/docs/components/slider.md`
+
 ### 2026-09-23 19:30 — lit round 1
 
 - **DOC** Slider: the spec says a Form-reported message shows in the error region, but the Lit form contract does not say how ds-form hands one to a field. I assumed ds-form sets the field's `error` property and left it at that. → `site/src/content/docs/components/slider.md`
@@ -13552,6 +13579,13 @@ Doc: `site/src/content/docs/components/tabs.md`
 
 Doc: `site/src/content/docs/components/text.md`
 
+### 2026-09-23 20:04 — lit round 1
+
+- **DOC** Text: the truncate spec says a consumer `title` attribute on the host is 'left on the host as well', so the host and the part both expose it and some screen readers may announce the title twice; I kept both as specified. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the spec does not say whether the `title` on `part="text"` should also be set when `truncate` is false and the consumer supplied a title; I forward the consumer title always, and only add the textContent title when `truncate` is set. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the spec says 'the tone rule reads the hook', but does not say where `align` or the hook defaults for a tone attribute set to an invalid value should fall back; I kept `:host` defaulting to `--color-foreground`. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the `align` binding is not a style binding in the spec, so it has no `--ds-text-*` hook; I kept it as a plain attribute-selector rule. → `site/src/content/docs/components/text.md`
+
 ### 2026-09-23 18:52 — lit round 3
 
 - **DOC** Text: gate `hooks` (check_hooks) still requires a `--ds-text-color` hook for the locked `color` binding, but the Text doc's `styles.color` description says a locked color has no `--ds-text-color` hook on web or Lit and the tone rule reads the token custom property directly. Code follows the doc; the gate will keep failing until check_hooks exempts locked bindings whose doc declares no hook (for example a `hook: none` field), or the doc is changed to declare the hook. prompts/templates/lit.md ('a locked binding keeps its :host hook') conflicts with the Text doc in the same way and needs the same decision. → `site/src/content/docs/components/text.md`
@@ -15285,7 +15319,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 9864 · CODE: 151 · TOOLING: 7 · NOISE: 749
+DOC: 9883 · CODE: 151 · TOOLING: 7 · NOISE: 749
 
 Not per-target gap files, skipped: CODE.2026-09-23.md, FOLDS.md, TEST-FAILURES.md, TOOLING.2026-09-23.md.
 
@@ -15344,4 +15378,3 @@ Not per-target gap files, skipped: CODE.2026-09-23.md, FOLDS.md, TEST-FAILURES.m
 ## Gates to fix
 
 - [ ] Heading.web — hooks
-- [ ] Text.lit — hooks

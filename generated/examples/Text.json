@@ -22,7 +22,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text>Use the email you signed up with.</Text>",
         "lit": "<ds-text>Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text>Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text>Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -51,7 +51,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"xs\">Use the email you signed up with.</Text>",
         "lit": "<ds-text size=\"xs\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"xs\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"xs\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -83,7 +83,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"sm\">Use the email you signed up with.</Text>",
         "lit": "<ds-text size=\"sm\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"sm\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"sm\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -115,7 +115,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"md\">Use the email you signed up with.</Text>",
         "lit": "<ds-text size=\"md\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"md\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"md\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -147,7 +147,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"lg\">Use the email you signed up with.</Text>",
         "lit": "<ds-text size=\"lg\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"lg\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"lg\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -179,7 +179,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"xl\">Use the email you signed up with.</Text>",
         "lit": "<ds-text size=\"xl\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"xl\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"xl\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -211,7 +211,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"regular\">Use the email you signed up with.</Text>",
         "lit": "<ds-text weight=\"regular\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"regular\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"regular\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -243,7 +243,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"medium\">Use the email you signed up with.</Text>",
         "lit": "<ds-text weight=\"medium\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"medium\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"medium\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -275,7 +275,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"semibold\">Use the email you signed up with.</Text>",
         "lit": "<ds-text weight=\"semibold\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"semibold\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"semibold\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -307,7 +307,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"bold\">Use the email you signed up with.</Text>",
         "lit": "<ds-text weight=\"bold\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"bold\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"bold\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -339,7 +339,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"default\">Use the email you signed up with.</Text>",
         "lit": "<ds-text tone=\"default\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"default\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"default\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -371,7 +371,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"strong\">Use the email you signed up with.</Text>",
         "lit": "<ds-text tone=\"strong\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"strong\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"strong\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -403,7 +403,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"muted\">Use the email you signed up with.</Text>",
         "lit": "<ds-text tone=\"muted\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"muted\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"muted\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -467,7 +467,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"onAction\">Text on an action background</Text>",
         "lit": "<ds-text tone=\"onAction\">Text on an action background</ds-text>",
-        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Box, Text, useTheme } from '@design-schema/rn';\n\nfunction OnActionSurface(props: React.ComponentProps<typeof Text>): React.JSX.Element {\n  const { tokens } = useTheme();\n  return (\n    <View style={{ backgroundColor: tokens.colorActionPrimaryBackground }}>\n      <Box inset=\"md\">\n        <Text {...props} />\n      </Box>\n    </View>\n  );\n}\n\n<OnActionSurface tone=\"onAction\">Save changes</OnActionSurface>",
+        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Box, Text, useTheme } from '@design-schema/rn';\n\nfunction OnActionSurface(props: React.ComponentProps<typeof Text>): React.JSX.Element {\n  const { tokens } = useTheme();\n  return (\n    <View style={{ backgroundColor: tokens.colorActionPrimaryBackground }}>\n      <Box inset=\"md\">\n        <Text {...props} />\n      </Box>\n    </View>\n  );\n}\n\n<OnActionSurface tone=\"onAction\">Text on an action background</OnActionSurface>",
         "swift": null
       },
       "stories": {
@@ -499,7 +499,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text align=\"start\">Use the email you signed up with.</Text>",
         "lit": "<ds-text align=\"start\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"start\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"start\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -531,7 +531,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text align=\"center\">Use the email you signed up with.</Text>",
         "lit": "<ds-text align=\"center\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"center\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"center\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {
@@ -563,7 +563,7 @@
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text align=\"end\">Use the email you signed up with.</Text>",
         "lit": "<ds-text align=\"end\">Use the email you signed up with.</ds-text>",
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"end\">Use the email you signed up with. We will send a verification code to it.</Text>",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"end\">Use the email you signed up with.</Text>",
         "swift": null
       },
       "stories": {

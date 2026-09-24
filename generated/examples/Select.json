@@ -884,13 +884,13 @@
       },
       "snippets": {
         "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select label=\"Country\" name=\"country\" options={COUNTRIES} disabled open />",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRIES} open disabled></ds-select>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "DisabledOpen",
-        "lit": null,
+        "lit": "DisabledOpen",
         "rn": null,
         "swift": null
       },

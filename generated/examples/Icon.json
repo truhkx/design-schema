@@ -965,7 +965,7 @@
       "snippets": {
         "react": "import { Icon, Text } from '@design-schema/react';\n\n<Text>\n  Read the release notes <Icon name=\"external\" inline />\n</Text>",
         "lit": "<ds-text>Read the release notes <ds-icon name=\"external\" inline></ds-icon></ds-text>",
-        "rn": "import { Icon, Text } from '@design-schema/rn';\n\n<Text size=\"lg\">\n  Read the release notes <Icon name=\"external\" inline />\n</Text>",
+        "rn": "import { Icon, Text } from '@design-schema/rn';\n\n<Text>\n  Read the release notes <Icon name=\"external\" inline />\n</Text>",
         "swift": null
       },
       "stories": {

@@ -52,7 +52,7 @@ hold for the mechanism to be what it claims to be:
 | src/Link.tsx                     | (same name)            | 697   | 11     | CSS custom-property prefix, class or custom-element name, package scope                                       |
 | src/Stack.css                    | (same name)            | 164   | 27     | CSS custom-property prefix, class or custom-element name                                                      |
 | src/Stack.tsx                    | (same name)            | 700   | 10     | CSS custom-property prefix, class or custom-element name, package scope                                       |
-| src/Text.css                     | (same name)            | 230   | 42     | CSS custom-property prefix, class or custom-element name                                                      |
+| src/Text.css                     | (same name)            | 229   | 42     | CSS custom-property prefix, class or custom-element name                                                      |
 | src/Text.tsx                     | (same name)            | 654   | 18     | CSS custom-property prefix, class or custom-element name, package scope                                       |
 | src/custom/analytics.ts          | (same name)            | 65    | 0      | —                                                                                                             |
 | behavior/Alert.web.test.tsx      | Callout.web.test.tsx   | 461   | 11     | component name, file name                                                                                     |

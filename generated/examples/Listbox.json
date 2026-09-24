@@ -958,13 +958,13 @@
       },
       "snippets": {
         "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\n<Listbox label=\"Fruit\" options={SINGLE_PICKER} embedded activeValue=\"banana\" />",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\nhtml`\n  <ds-listbox\n    label=\"Fruit\"\n    .options=${SINGLE_PICKER}\n    embedded\n    .activeValue=${'banana'}\n  ></ds-listbox>\n`;",
         "rn": "import { Listbox, type ListboxItem } from '@design-schema/rn';\n\nconst people: ListboxItem[] = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Listbox label=\"Assignee\" options={people} activeValue=\"jo\" />",
         "swift": null
       },
       "stories": {
         "react": "ActiveValue",
-        "lit": null,
+        "lit": "ActiveValue",
         "rn": "ActiveValue",
         "swift": null
       },
@@ -1014,13 +1014,13 @@
       },
       "snippets": {
         "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst PEOPLE: ListboxOption[] = [\n  { value: 'ana', label: 'Ana Souza', description: 'Product design' },\n  { value: 'bo', label: 'Bo Lin', description: 'Engineering' },\n  { value: 'cara', label: 'Cara Nash', description: 'Engineering', icon: 'success' },\n  { value: 'deshawn', label: 'DeShawn Reid', description: 'Out of office', disabled: true },\n];\n\n<Listbox\n  label=\"Assignee\"\n  options={[{ group: 'Team', options: PEOPLE }, { group: 'Empty', options: [] }]}\n/>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst PEOPLE: ListboxOption[] = [\n  { value: 'ana', label: 'Ana Souza', description: 'Product design' },\n  { value: 'bo', label: 'Bo Lin', description: 'Engineering' },\n  { value: 'cara', label: 'Cara Nash', description: 'Engineering', icon: 'success' },\n  { value: 'deshawn', label: 'DeShawn Reid', description: 'Out of office', disabled: true },\n];\n\nhtml`\n      <ds-listbox\n        label=\"Assignee\"\n        .options=${[\n    { group: 'Team', options: PEOPLE },\n    { group: 'Empty', options: [] },\n  ]}\n      ></ds-listbox>\n`;",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "WithGroupsAndDisabled",
-        "lit": null,
+        "lit": "WithGroupsAndDisabled",
         "rn": null,
         "swift": null
       },

@@ -89,3 +89,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Disclosure: `ref` resolves to the trigger button on web (Accordion moves focus with it), but the rn rules put it on the root View. I followed the rn rules, so an rn Accordion cannot move focus between triggers through `ref`.
 - Disclosure: the transition binding says later changes animate unless `useReducedMotion` reads true 'at that moment', but not what happens when the reduced-motion answer arrives mid-animation or after a toggle. The effect reruns on that change and snaps the chevron to its current target.
 - Disclosure: the scenario `disabled-trigger-does-not-toggle` checks `state: disabled`. On rn that is `accessibilityState.disabled` (RNTL `toBeDisabled`), not focusability, as the notes say. `disabled-trigger-stays-focusable` is web/Lit only, so native has no test that the disabled trigger stays focusable.
+
+## 2026-09-23 19:01 — round 1
+
+- Disclosure: `headingLevel` is typed as '2'..'6' plus the numbers 2..6. The rn notes say the level only sets the header role, but the prop schema lists strings only, so the number form is an assumption carried over from the web notes.
+- Disclosure: the spec says the summary Text uses the header role but never says whether `headingLevel` should wrap the trigger. I put the role on the summary Text inside the Pressable, as the rn notes state.
+- Disclosure: the `triggerBackgroundHover` state is named `hover`, but the rn notes say RN uses `pressed` or `onHoverIn`/`onHoverOut`. I applied it for either and suppressed it while disabled.
+- Disclosure: no `chevron-left` or `chevron-right` glyph is confirmed in the Icon name list by the spec. I assumed both exist in `tools/icon-paths.json`.

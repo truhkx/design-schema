@@ -98,3 +98,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Dialog: `footer` is content; the spec says the footer wrapper is 'not rendered when there is no footer' without saying whether null counts as no footer. Chose to skip it for both undefined and null.
 - Dialog: 'Focus restore runs when `open` becomes false' is delegated to FocusScope (active={open}, restoreFocus); the spec does not say how FocusScope restores on native, where there is no focus to capture, so rn restore is only as good as FocusScope's.
 - Dialog: the keyboard Tab-wrap rules and initial-focus-lands-on-the-close-button are web and Lit only; the Keyboard story exposes them on react-native-web, but Jest has no scenario that checks them.
+
+## 2026-09-23 19:07 — round 1
+
+- Dialog: no `aria-describedby` can be written on rn because the description has no id, and the spec says the description is only the surface's accessibilityHint. That leaves react-native-web with no accessible description, which conflicts with the rule to mirror every accessibility prop as aria-*. Kept the hint only, and no `aria-description` was added.
+- Dialog: the spec says `initialFocus: first` looks in the body, then the footer, then the close button, then the heading. The rn note says it always lands on the body wrapper, since children is required. Followed the rn note, so the fallback order is dead code on rn.
+- Dialog: the spec doesn't say what setAccessibilityFocus targets when `hideHeading` is true and `initialFocus` is `title`. Chose the surface View, following the rn note.
+- Dialog: the spec doesn't say whether the close button wrapper View that receives focus should hide the composed Button's own accessibility. Left the Button labelled with copy.closeLabel, with no aria-hidden on the wrapper, per the no-hide-descendants rule.
+- Dialog: the spec doesn't say how `reducedMotion` and a zero `enter` or `exit` duration interact with an override. Treated either one as instant, the same way the reduced-motion path works.
+- Dialog: `layer` is written as zIndex on the centring container as the spec asks, but a Modal window ignores it, so no test can observe it.

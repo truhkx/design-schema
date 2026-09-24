@@ -932,7 +932,9 @@ export function DataGrid({
               aria-label={COPY.cellLabel(column.header, value)}
               accessibilityHint={canEdit ? COPY.editHint : undefined}
               accessibilityState={mode === 'cell' ? { selected: cellSelected } : undefined}
-              aria-selected={mode === 'cell' ? cellSelected : undefined}
+              // ARIA allows aria-selected on rowheader but not on `cell` (RN's Role has no gridcell), so
+              // a plain cell carries the native state only.
+              aria-selected={mode === 'cell' && isRowHeader ? cellSelected : undefined}
               onPress={
                 interactive
                   ? () => {

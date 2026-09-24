@@ -16,7 +16,7 @@ const meta: Meta<typeof Text> = {
     tone: 'default',
     align: 'start',
     truncate: false,
-    children: 'Use the email you signed up with. We will send a verification code to it.',
+    children: 'Use the email you signed up with.',
   },
 };
 
@@ -69,7 +69,7 @@ function NarrowColumn(props: React.ComponentProps<typeof Text>): React.JSX.Eleme
   );
 }
 export const ToneOnAction: Story = {
-  args: { tone: 'onAction', children: 'Save changes' },
+  args: { tone: 'onAction', children: 'Text on an action background' },
   render: (args) => <OnActionSurface {...args} />,
 };
 

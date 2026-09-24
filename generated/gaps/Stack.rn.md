@@ -84,3 +84,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Stack: the button-row example says 'a primary submit Button', and the children text says the submit Button is labelled "Submit". I took that to mean `type="submit"` with the default primary variant. The doc doesn't say whether `type: submit` is part of the scaffolding.
 - Stack: `resolveToken(t, overrides.gap)` returns a general token value, so it is cast to `number` for the `gap` style. The overrides contract doesn't say how to narrow a TokenRef to a dimension; a gap override that points at a color token would type-check but break layout.
 - Stack: the spec lists no stories beyond the enum values, `Wrap` and the examples. The existing `WithOverrides` story (`overrides.gap: 'space.lg'`) was kept as a 'notable state', but the doc names no overrides story.
+
+## 2026-09-23 18:52 — round 1
+
+- Stack: the `wrap` a11y note asks that a wrapped row still fits when the platform's text size is turned up, but gives no testable criterion on native, so no test asserts it; the `renders-*` scenarios only check that the component renders, not that the flex styles or gap token are applied.
+- Stack: the spec does not say whether the `WithOverrides` story (gap: 'space.lg') should exist; it is not an enum, boolean or example story, so I kept the existing one.

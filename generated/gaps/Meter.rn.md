@@ -70,3 +70,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Meter: the anatomy has `header`, `track` and `fill`, but the RN notes only name testIDs for `label` and `valueText`. I kept `Meter.header`, `Meter.track` and `Meter.fill`, using the anatomy names as the parts rule requires.
 - Meter: `alignItems: 'baseline'` for the header row comes from the Behavior prose ('aligned on their text baseline'). It isn't a style binding, and there's no RN note on whether baseline alignment works across the two wrapper Views.
 - Meter: the Default story's args include `valueText: '3.2 GB of 10 GB'`. The doc doesn't say what Default should show; with that value set, the default percentage path appears only in the extra `Percentage` story.
+
+## 2026-09-23 19:03 — round 1
+
+- Meter: the styles list `track` and `fill` as parts but the RN notes only give testIDs for `Meter.label` and `Meter.valueText`; I kept `Meter.header`, `Meter.track` and `Meter.fill` (anatomy names verbatim) — the doc should say whether those are part of the contract.
+- Meter: the RN notes say `accessibilityValue` is not asserted by the scenarios, so no test covers the clamp, the percentage fallback or the invalid-range 'now = min' behaviour on RN; the scenarios are web/lit-only for those, and I did not add tests beyond the doc's 8.

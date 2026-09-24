@@ -106,3 +106,18 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - DataGrid: rowHover on native is 'the pressed fill', but the doc doesn't say which elements report the press; I tint on pressIn of the select cell and of interactive cells, and on hover (react-native-web) of any cell.
 - DataGrid: behaviour scenario 'click: sortButton' / 'click: selectCell' targets the part, which on rn is a wrapper around the composed Button/Checkbox; I made both wrappers Pressables with accessible={false} so a press on the part itself acts, mirroring the web note that the part 'takes the click'.
 - DataGrid: cellContent, editor, rangeOverlay and body have no rn element or only a plain wrapper; rangeOverlay and body are omitted per the rn notes, copy.sortedAnnouncement direction is interpolated as the raw enum value ('ascending'/'descending') since no localized direction copy exists.
+
+## 2026-09-23 19:35 — round 1
+
+- DataGrid: the schema has a `Keyboard` story rule but the rn platform notes say no keyboard model is wired, so it is unclear what the `Keyboard` story must exercise; the existing story just renders enough rows and columns for touch use.
+- DataGrid: `copy.rowCount` says plural forms use `new Intl.PluralRules(locale)`, but rn has no locale source beyond the runtime default; the runtime default is used.
+- DataGrid: the `statusBar` part is said to sit on the live status Text, but the live region needs a wrapper View with `role="status"` and `accessibilityLiveRegion`; the `DataGrid.statusBar` testID is on that wrapper, not on the Text.
+- DataGrid: `captionLevel` is declared as the strings '2'|'3'|'4' while the generator rules say quoted-digit enums also accept numbers; the type accepts both.
+- DataGrid: `onEditStart` is cancelable by returning false, but the rn events section does not say whether a `void` return also allows the edit; only an explicit `false` refuses.
+- DataGrid: the platform notes say the `escape` accessibility action cancels an edit, but do not say what a failed `validate` on the `activate` action does; the editor stays open and the message goes to the status bar.
+- DataGrid: `selectable: range` degrades to `row`, so `onSelectionChange` never reports a range on rn, but the shared payload type still includes the range shape; it is kept in the type for parity.
+
+## 2026-09-23 19:42 — round 2
+
+- DataGrid: the rn notes say cells use role `cell` and the doc mirrors every accessibilityState as aria-*, but ARIA forbids aria-selected on `cell` and RN's Role has no `gridcell`; in cell mode only the row-header cell carries aria-selected and plain cells carry the native accessibilityState.selected only, so react-native-web exposes no selected state on them.
+- DataGrid: TreeGrid (same cell-selection pattern) and Tree still fail aria-allowed-attr in the same gate; they are outside this job and were not changed.

@@ -85,3 +85,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - NumberInput: the mirror-every-prop convention collides with the rn notes limiting accessibilityValue to `text`. Only aria-valuetext is mirrored (no aria-valuenow/min/max), even though react-native-web renders the adjustable role as a slider, which ARIA expects to carry aria-valuenow. The rn axe gate was not run.
 - NumberInput: the rn notes put aria-disabled on the root and TextInput but say nothing about aria-invalid or aria-required. The TextInput carries neither (Input's rn precedent), so on react-native-web the invalid and required state reach assistive technology only through the label's ' (required)' and the hint text.
 - NumberInput: at size sm the stepper Buttons (Button sm, stretched to the field) sit on the 24px minTargetSm floor, while a11y.requires lists target-44px. The minTargetSm description justifies this with the WCAG 2.5.8 exception, but `requires` still says 44px without naming the exception.
+
+## 2026-09-23 19:19 — round 1
+
+- NumberInput: the spec says the steppers' wrapper is a 'plain wrapper' and that Buttons are named from copy, but not whether the stepper View should carry `accessible={false}` or similar; I left it with no accessibility props so the Buttons stay in the tree.
+- NumberInput: the RN notes say the description is reached via a wrapper but RN has no aria-describedby on TextInput; I put description plus the drawn error into accessibilityHint. The spec does not say whether the hint should include the error.
+- NumberInput: labelWeight/helperSize are forwarded to Text via its `overrides` (fontWeight, fontSize); the spec names the child bindings only for description and errorMessage, not for the label Text, so the label's forward mapping (fontSize/fontWeight/fontFamily/lineHeight) is my inference.
+- NumberInput: the behavior scenario 'typing-a-number-reports-it' has no `given`, so the test relies on the Default story's (empty) value; the spec does not say what happens to the displayed text when uncontrolled typing '7' is followed by blur.
+- NumberInput: under format percent, `precision` on the displayed side interacts with Intl percent formatting (which divides by 100 and can round 10.5 at precision 0); the spec gives examples but not the rounding order, so I round the stored number to precision first, then format.

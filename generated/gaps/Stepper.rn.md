@@ -84,3 +84,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Stepper: the composed Text parts have `element: span`, but RN Text has no `element` prop, so it is omitted. The same note appears in earlier rounds and the rn notes still don't say to drop it.
 - Stepper: the `Keyboard` story still uses navigable: all / current: review so four Pressables can take focus. The keyboard block has no `given`, so those args are my choice.
 - Stepper: a boolean story named `<Prop><Value>` becomes `CompactTrue`; kept.
+
+## 2026-09-23 19:20 — round 1
+
+- Stepper: composition lists `element: span` for the label, description and count Text, but the RN Text component has no `element` prop, so it was ignored.
+- Stepper: the doc does not say how aria-current="step" is mirrored on RN, because View's types omit `aria-current`. I spread `{'aria-current': 'step'}` through an untyped record on the current step's control.
+- Stepper: `accessibilityState.selected` on a non-navigable step is a plain `accessible` View with no role. The doc does not say whether that needs a role, so I kept it role-less.
+
+## 2026-09-23 19:21 — round 2
+
+- Stepper: the doc doesn't say what role a display-only step gets on React Native when compact removes its label text. A role-less View with aria-label fails axe aria-prohibited-attr, so I used role="img" and dropped selected state there.
+- Stepper: the doc says compact reveals the first step's label when `current` matches no id, but its RN notes only mention the current step's label. I implemented the reveal from the property doc.
+- Stepper: the spec's RN notes give a display-only step `accessibilityState.selected` and a label, but axe rejects both on a role-less View once its text is not rendered.

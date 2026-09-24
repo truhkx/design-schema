@@ -71,3 +71,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - ProgressBar: the header's cross-axis alignment between label and value text isn't specified. I used alignItems 'baseline' (layout only, no token).
 - ProgressBar: the value text's wrapping isn't specified. Its wrapper has flexShrink 0 so only the label wraps; Meter's doc could share the same wording.
 - ProgressBar: formatValue for an invalid range must show "0%". The code always uses the default percentage formatter there, even when a custom formatValue is passed; the doc only implies this.
+
+## 2026-09-23 19:19 — round 1
+
+- ProgressBar: composition props `element: span` on the label and valueText Texts have no counterpart on the RN Text (it takes no `element`); ignored, and the wrapper Views carry the testIDs as the rn notes say.
+- ProgressBar: the 'value: 1 fraction crosses tier 4 only when clamped === max' rule is implied by floor(fraction × 4); floating-point fractions just below 1 (e.g. 0.9999999) stay tier 3 — I relied on the fraction arithmetic and did not add an epsilon.
+- ProgressBar: the a-hidden-label-is-still-the-accessible-name scenario says `name: true` without saying whether the visible label part must be absent on rn; the test asserts both the missing `ProgressBar.label` and the accessibilityLabel.
+- ProgressBar: the spec does not say whether the determinate fill's animation easing is overridable; only `sweepEasing` is a binding, so the fill uses motion.easing.standard directly (as the transition binding text states).

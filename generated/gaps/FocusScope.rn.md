@@ -71,3 +71,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - FocusScope: the scenario the-scope-adds-no-role asserts `attribute: role is null`, but rn has no single `role` spelling. Following the notes, the test checks that role, accessibilityRole and accessibilityLabel are all undefined.
 - FocusScope: the example `children` are prose descriptions. The stories keep the description string as the `children` arg and render it as Text plus the Buttons it names, plus the rn-only Open/Close panel controls. So the story's children arg doesn't match what renders; the guidance allows this, but the example contract ('exactly its given as args') doesn't mention render overrides.
 - FocusScope: the Keyboard story uses "Third" as its close control instead of adding a separate "Close panel" Button. The guidance says both that 'every rn story renders one Button more than its children describe' and that 'Third closes the panel'. Chose Third-closes, so the Keyboard story's only extra Button is "Open panel".
+
+## 2026-09-23 19:05 — round 1
+
+- FocusScope: the `the-scope-adds-no-role` scenario says `attribute: role is null`, but the rn notes say the test must assert role, accessibilityRole and accessibilityLabel are all absent. I asserted all three undefined, following the notes.
+- FocusScope: the spec says `ref` exposes the wrapper root, while the conventions say to pass `ref` straight through. The wrapper needs an internal ref for setAccessibilityFocus, so I used useImperativeHandle rather than attaching the caller's ref directly.
+- FocusScope: the `Platform.OS === 'web'` branch that omits accessibilityViewIsModal has no test, because Jest runs under `ios`. The spec says as much, so I left it uncovered.

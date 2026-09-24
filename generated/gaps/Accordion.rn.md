@@ -78,3 +78,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Accordion: the dev warning's key is the requested id list, including ids that match no item. The spec says unknown ids are 'silently ignored' but also that the warning fires when the resolved `value`/`defaultValue` 'holds more than one id'. It doesn't say whether an unmatched id counts towards that. Chose: it counts, because the raw list is what gets checked.
 - Accordion: a `keyboard` block exists, so the rules require a `Keyboard` story, but the RN notes say no keyboard scenario is generated for this platform. Chose: keep the story, open, with three enabled triggers and no disabled item.
 - Accordion: the spec doesn't say whether switching between controlled and uncontrolled mode (`value` appearing or disappearing) should fire any events. Chose: nothing fires, and any pending just-emitted set is cleared while uncontrolled.
+
+## 2026-09-23 19:17 — round 1
+
+- Accordion: `platforms.rn.props` is empty, so nothing says which native props (e.g. `accessibilityLabel`) the root View should accept; I added none beyond `testID`, `ref` and `overrides`.
+- Accordion: the RN notes say no keyboard scenario is generated, yet the `keyboard` block still requires a `Keyboard` story; I shipped one with three enabled items and no disabled item, on the assumption the axe gate needs it.
+- Accordion: `headingLevel` is typed as string or number for ergonomics; the spec only lists the string values '2'..'6'.
+- Accordion: the spec doesn't say whether `exclusive` trimming of a controlled `value` should be tracked by the `controlled` diff; I diff only `value` changes, so a trim alone reports nothing.

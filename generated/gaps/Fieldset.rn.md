@@ -82,3 +82,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Fieldset: role=alert on the error wrapper is web/Lit only, and the doc doesn't say whether react-native-web should get it. Left it off (Android live region plus iOS announcement only), since a-group-error-is-announced excludes rn.
 - Fieldset: the fieldsGap description says the forward is 'always sent (the override, else the default)', but the other Text forwards (legendSize, helperSize, fontFamily, lineHeight) aren't spelled out the same way for rn. Kept sending undefined when not overridden, so Text falls back to its own size/weight defaults, which resolve to the same tokens.
 - Fieldset: another writer was editing packages/rn/src/Fieldset.tsx in the same worktree during this job. My changes were applied as targeted edits on top of theirs rather than a full rewrite.
+
+## 2026-09-23 19:04 — round 1
+
+- Fieldset: the spec's `partGap` says the group root holds the gap, but `disabledOpacity` names part `legend` while the notes say it also dims the description; I dimmed both wrappers.
+- Fieldset: `platforms.rn.props` lists only role, accessibilityLabel and accessibilityHint, while the a11y text asks for `aria-invalid` and `aria-describedby` on the group; I emit those only under Platform.OS === 'web' because RN's View types lack them.
+- Fieldset: the spec doesn't say which components count as a 'field' on RN beyond 'reads FieldsetContext'. I used Input, NumberInput, Checkbox, Switch, RadioGroup, Select, Slider and DatePicker, which is a guess for the last four.

@@ -72,3 +72,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toolbar: behavior scenarios have `given` apply on top of the Default story's args, but they don't say whether Default pins `overflow`. Default leaves it unset (the schema default `menu`, rendered as `scroll` with no warning), so only renders-overflow-menu triggers the one-time dev warning.
 - Toolbar: `size` recognises Button/SegmentedControl/Select/Search by component identity, but a consumer's wrapper component around one of them is not reached into (the one-level rule). The doc doesn't say whether that should come with a dev warning; none is emitted.
 - Toolbar: the fade gradient is drawn from `background` (colorBackgroundSubtle) as the spec says, but a `border` override does not affect it, and the doc doesn't say whether the fade should also clip under the border radius. It sits inside the padding, so the radius is never reached.
+
+## 2026-09-23 19:24 — round 1
+
+- Toolbar: the FormattingToolbar and VerticalToolPalette examples give three Buttons with no overflowLabel, while Default and Keyboard give each an overflowLabel; on React Native the label is never used (no overflow Menu), so I left it off the examples and kept it on Default and Keyboard.
+- Toolbar: the 'has-accessible-name' scenario has no rn-specific check; I assert accessibilityRole, accessibilityLabel and aria-label on the root, because the spec doesn't say which name the test should read on native.
+- Toolbar: the fade's hiding props are not stated for the decorative gradient View; I applied the package's three-prop convention (aria-hidden, accessibilityElementsHidden, importantForAccessibility=no), which the doc could name.
+- Toolbar: the spec asks the Keyboard story to exercise keyboard rules, but on RN there is no roving focus or arrow handling; Keyboard is Default with overflow: wrap and only exercises Tab order and activation.

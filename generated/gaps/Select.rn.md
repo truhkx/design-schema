@@ -88,3 +88,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Select: popupShadow on rn resolves to a shadow style object that is spread onto the popup. The doc doesn't say how shadow.overlay maps to RN (shadow* props vs boxShadow).
 - Select: chevronReserve is accepted in the overrides type and does nothing on rn, as the doc says. The derived NativeAlways and ForcedNativePicker stories render the same as auto, which is expected, not a defect.
 - Select: the minTargetSm exception (24px floor at sm) is applied, but the doc doesn't say whether hitSlop should extend the sm trigger toward 44px on touch. I added no hitSlop.
+
+## 2026-09-23 19:15 — round 1
+
+- Select: the spec gives the popup part no accessibility role, yet the popup View is modal (`accessibilityViewIsModal`) and could reasonably carry a label. A label needs a role on react-native-web, so I dropped the popup's label and left the Listbox to name the list.
+- Select: `chevronReserve` is overridable but has no effect on React Native, since `native: always` means `auto` here. I accept the override and do nothing with it, as the doc says.
+- Select: the doc lists `accessibilityHint` for the description but names no `aria-describedby` mirror on React Native, so I mirrored only `aria-label` and `aria-expanded`.

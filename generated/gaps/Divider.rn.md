@@ -53,3 +53,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Divider: `semantic` has no rendering effect on this platform (the doc's own position), so nothing distinguishes `semantic: true` without a label from the default beyond the __DEV__ warning — the decorative root stays `accessibilityElementsHidden`. That also means the `semantic-divider-is-a-separator` scenario has no rn assertion; the parser already narrowed it out of the rn list, so no test was written for it.
 - Divider: the web note has the root set `flex-shrink: 0` to protect the thickness inside a flex Stack; the rn note omits it. React Native's flexShrink already defaults to 0, so I wrote no rule — if the intent is an explicit guard the rn note should say so.
 - Divider: `overrides` is typed as any `TokenRef` for any binding, so `thickness`/`spacing`/`labelGap` resolve through an `as number` cast and `color` through `as string`. A caller passing e.g. a color ref for `thickness` type-checks and produces a bad style; the doc does not say whether the per-binding token category should be enforced in the type.
+
+## 2026-09-23 18:58 — round 1
+
+- Divider: the spec's `spacing` override case (an `overrides.spacing` under `spacing: none` is a no-op) has no behavior scenario, so it is untested on rn.
+- Divider: the labelled row applies `spacing` as `paddingVertical`, but the spec never says whether a labelled divider can be vertical. I treated a vertical label as ignored, so there is no vertical labelled row.
+- Divider: the `label` prop declares the vertical-ignored dev warning, but no behavior scenario checks the two dev warnings, so they are untested.
+- Divider: `composition.label.forwards` names `labelSize` and `fontFamily` as overrides for Text's `fontSize` and `fontFamily`. Undefined entries are passed when neither is overridden, which relies on Text ignoring undefined overrides; the spec does not say to omit them.

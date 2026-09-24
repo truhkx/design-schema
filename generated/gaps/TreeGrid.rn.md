@@ -92,3 +92,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - TreeGrid: the loading placeholder row has no expand Button but reserves expandButtonSize of blank width so its text aligns with its siblings' text. The notes say 'copy.loading in the row-header column' but not whether it aligns with sibling text or sits at the indent start.
 - TreeGrid: selectable='cell' on a parent row header: pressing it toggles and never selects, so the parent's row-header cell can only be selected through a data cell in the same row. The docs do not say whether a cell-mode parent row header is reachable for selection at all on rn.
 - TreeGrid: the expandAll root action opens every loaded row including lazy ones (one onExpand each). The rn notes say 'every loaded row, not only siblings', and the defaultExpanded prop text says 'the native expandAll action does the same over every loaded row' as `*`. I read that as including lazy rows because it is a user act, but 'loaded' could also be read as excluding still-lazy rows.
+
+## 2026-09-23 19:43 — round 2
+
+- TreeGrid: the spec gives cells aria-selected in selectable=cell mode but does not say which role carries it; a plain `cell` fails axe aria-allowed-attr, so data cells use role=gridcell in that mode and cell otherwise.
+
+## 2026-09-23 19:44 — round 3
+
+- TreeGrid: RN 0.87's `Role` union has no `gridcell`, yet a cell carrying aria-selected (selectable=cell) needs it for axe; the spec names neither, so the role is cast (`'gridcell' as 'cell'`) and only react-native-web honours it.

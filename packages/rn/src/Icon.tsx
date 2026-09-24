@@ -6,7 +6,7 @@ import type { TokenRef } from '@design-schema/tokens';
 import { TextStyleContext } from './Text';
 import { useTheme } from './theme';
 import type { Tokens } from './theme';
-import { paths } from './paths';
+import { grid, paths } from './paths';
 import type { IconName } from './paths';
 
 export type { IconName };
@@ -59,8 +59,8 @@ const SIZE_TOKEN = {
   xl: 'fontSizeXl',
 } as const satisfies Record<IconSize, keyof Tokens>;
 
-/** The shared glyph grid every platform draws on: path data is 16×16 and `viewBox` scales it to the rendered box. */
-const GRID = 16; // literal-ok: the glyph grid's coordinate space, not a size value
+/** `viewBox` over the shared glyph grid every platform draws on, scaled to the rendered box. */
+const VIEW_BOX = `0 0 ${grid} ${grid}`;
 
 /**
  * Icon — a single glyph that takes its size from the type scale and, on this
@@ -149,7 +149,7 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
     if (__DEV__) {
       console.warn(`Icon: unknown name "${name}"`);
     }
-    return wrap(<Svg width={dimension} height={dimension} viewBox="0 0 16 16" fill="none" />);
+    return wrap(<Svg width={dimension} height={dimension} viewBox={VIEW_BOX} fill="none" />);
   }
 
   // `border.width.focus` is a screen-pixel thickness. react-native-web honors
@@ -163,13 +163,13 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
     ? undefined
     : web
       ? t.borderWidthFocus
-      : t.borderWidthFocus * (GRID / dimension);
+      : t.borderWidthFocus * (grid / dimension);
 
   return wrap(
     <Svg
       width={dimension}
       height={dimension}
-      viewBox="0 0 16 16"
+      viewBox={VIEW_BOX}
       fill="none"
       stroke={resolvedColor}
       strokeLinecap="round"

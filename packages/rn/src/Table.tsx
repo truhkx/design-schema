@@ -622,7 +622,6 @@ export function Table({
         testID="Table.row"
         role="listitem"
         accessibilityState={selectable !== 'none' ? { selected: isSelected } : undefined}
-        aria-selected={selectable !== 'none' ? isSelected : undefined}
         style={{
           flexDirection: 'row',
           alignItems: 'stretch',
@@ -648,7 +647,6 @@ export function Table({
                 accessibilityLabel={rowName(row)}
                 aria-label={rowName(row)}
                 accessibilityState={selectable !== 'none' ? { selected: isSelected } : undefined}
-                aria-selected={selectable !== 'none' ? isSelected : undefined}
                 onPress={() => onRowPress?.(row.id)}
                 onHoverIn={() => setHoveredId(row.id)}
                 onHoverOut={() => setHoveredId((current) => (current === row.id ? null : current))}
@@ -753,7 +751,6 @@ export function Table({
             accessibilityLabel={summary}
             aria-label={summary}
             accessibilityState={selectable !== 'none' ? { selected: isSelected } : undefined}
-            aria-selected={selectable !== 'none' ? isSelected : undefined}
             onPress={() => onRowPress?.(row.id)}
             onHoverIn={() => setHoveredId(row.id)}
             onHoverOut={() => setHoveredId((current) => (current === row.id ? null : current))}
@@ -771,7 +768,6 @@ export function Table({
             accessibilityLabel={summary}
             aria-label={summary}
             accessibilityState={selectable !== 'none' ? { selected: isSelected } : undefined}
-            aria-selected={selectable !== 'none' ? isSelected : undefined}
             style={summaryStyle}
           >
             {pairs}

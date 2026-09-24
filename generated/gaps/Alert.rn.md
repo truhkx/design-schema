@@ -65,3 +65,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Alert: the conventions ask for aria-* mirrors while the rn notes say to use accessibilityRole/accessibilityLiveRegion, not the role prop. I mirrored aria-live and aria-label but added no role/aria role for live=status, because the notes forbid role=status on react-native-web. The doc should say whether aria-live counts as the allowed mirror.
 - Alert: iconSize is always forwarded to the Icon as overrides.size (the default token path 'font.size.lg' when there's no override), since the doc says Icon's size enum isn't used; the doc doesn't say whether to leave the forward out when there's no override.
 - Alert: the dismiss button wrapper sets marginTop and marginEnd of -dismissMargin, and the container's alignItems flex-start stops it stretching; the doc doesn't say which container alignment is intended.
+
+## 2026-09-23 19:02 — round 1
+
+- Alert: `live=alert` sets both accessibilityRole="alert" and accessibilityLiveRegion="assertive", while `status` has no role. The spec doesn't say what the `aria-*` mirror should be for `status`, so I mirror only `aria-live` and set no `role` prop. That leaves react-native-web with a plain live region and no status role.
+- Alert: copy.dismissLabel has no exported copy constant to import, so the component holds its own COPY table with 'Dismiss'. A shared copy source would remove the duplication.

@@ -88,3 +88,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Combobox: a comma dropped when there is nothing to commit ('the text before it kept'). If the text before the comma equals the current text, the state doesn't change and RN's controlled TextInput keeps showing the comma. The spec doesn't say how to force the re-render (proposed: a render tick).
 - Combobox: the clear button with text but no selected value. The spec says clear empties the value and text and reports '' or []. The current code fires onChange even when the value was already empty. The spec should say whether onChange fires only when the value changes.
 - Combobox: `open` 'claims DOM focus unless focus is already inside the field, never from a focused clear or chip-remove Button'. On native there is no DOM activeElement, and Button exposes no focus state to its parent. The spec doesn't say how native tells the two apart (proposed: web checks document.activeElement against the field; native focuses the input when TextInput.isFocused() is false).
+
+## 2026-09-23 19:16 — round 1
+
+- Combobox: the spec doesn't say whether the clear button fires onChange when the value is already empty and only the text is cleared; I kept firing it, so a consumer sees a no-op onChange.
+- Combobox: the a11y requirement `arrow-navigation` and the scenarios `enter-commits-the-active-option` and `escape-closes-the-list` are web/lit only, and there's no rn equivalent. That is stated in the rn notes, so no test was written for them.

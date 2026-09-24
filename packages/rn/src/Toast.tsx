@@ -420,7 +420,7 @@ export function Toast({
           toast re-scopes the foreground on its own container and composes Text unchanged. */}
       <TextForegroundContext.Provider value={t.colorInverseForeground}>
         {icon !== null ? (
-          <View testID="Toast.icon" style={iconCellStyle} accessibilityElementsHidden importantForAccessibility="no">
+          <View testID="Toast.icon" style={iconCellStyle} aria-hidden accessibilityElementsHidden importantForAccessibility="no">
             <Icon name={icon.name} overrides={{ color: icon.color }} />
           </View>
         ) : null}
@@ -663,4 +663,9 @@ export function toast(options: ToastOptions): Promise<ToastResult> {
     return new Promise<ToastResult>(() => undefined);
   }
   return activeDispatch.toast(options);
+}
+
+/** Dismisses the toast with this `toastId`, or every toast when called with no id, with reason `programmatic`. A no-op without a mounted `ToastProvider`. */
+export function dismiss(toastId?: string | undefined): void {
+  activeDispatch?.dismiss(toastId);
 }

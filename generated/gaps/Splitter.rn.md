@@ -105,3 +105,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Splitter: the collapse Button's Icon color is not specified for native beyond 'the Button's own ghost foreground'; chose t.colorActionGhostForeground passed to Icon's color prop, which assumes that key matches what Button uses internally.
 - Splitter: `stackBelow` reads layout.maxWidth.* 'as a length in px, rem or em' — on native the token is a bare number, so 'unreadable' was taken to mean 'not a number'.
 - Splitter: the Keyboard story's 'at least three focusable children' and the decorator's fixed-height frame (a vertical splitter needs a definite height) are only spelled out in the Lit notes; the native stories wrap every story in a fixed-height View with no guidance on its height.
+
+## 2026-09-23 19:47 — round 1
+
+- Splitter: the schema never says whether the separator should also carry `aria-orientation` on react-native-web; rn props omit it, so it is not set (axe passes for role=slider without it).
+- Splitter: `collapseButtonOffset` is described as distance from the separator's start edge along the separator; I applied it as `top` (horizontal) or `left` (vertical) on the button's wrapper View, and the schema does not say whether RTL should flip the vertical case.
+- Splitter: stackBelow reads `layoutMaxWidthProse`/`layoutMaxWidthContent` as numbers in the RN tokens; the spec's px/rem/em unit-parsing wording does not say what a non-number RN token should do, so any non-number never stacks.
+- Splitter: the spec says a collapse fires no size events but is silent on whether `persistKey` should record `collapsed` while `collapsible` is false; I record the pinned value (false).

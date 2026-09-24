@@ -91,3 +91,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Container: 'the gutter reads the window width' is unambiguous on a device but not under react-native-web, where `useWindowDimensions` returns the containing iframe's width — so in Storybook docs mode and in any embedded view the gutter is chosen by the frame, not the page. Not addressed; I used `useWindowDimensions` as written.
 - Container: `children` is `required: true` but no behaviour is specified for an empty column on rn. The Lit note says an empty default slot is a legitimate intermediate state with no development warning; the rn note is silent. I emitted no `__DEV__` warning, matching Lit.
 - Container: the stories contract asks for one story per enum value plus Default, and the examples contract asks for a story per example, but neither mentions an overrides story. I kept the existing `WithOverrides` story (both bindings set) as a notable state; if the generator should emit exactly the enum + example stories, this one is extra.
+
+## 2026-09-23 18:56 — round 1
+
+- Container: the doc says the responsive `default` gutter is `layout.gutter.default`, but the token for that value is the bare `layout.gutter` (`layoutGutter`), and the doc doesn't say so on the RN side. I used `t.layoutGutter`.
+- Container: no scenario checks the RN style output (maxWidth, alignSelf, paddingHorizontal, or the gutter switching at the content and page widths). The derived scenarios only assert `renders: true`, so the responsive gutter and the `>=` boundaries are untested on RN.
+- Container: the doc doesn't say what an override does to the `default` gutter on RN. I applied it at every window width, matching the web statement, and ignored it when `gutter` is `none`.
+- Container: the `Keyboard` story rule doesn't apply, since there is no keyboard block. The doc doesn't say whether the string-in-Text wrapper also applies to a non-string `children` example. I wrap only strings.

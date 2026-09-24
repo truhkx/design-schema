@@ -89,3 +89,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - SegmentedControl: the derived `has-accessible-name` scenario implies getByRole, but the group is deliberately not `accessible`; the test asserts role and name on the testID root, as the platform note says in prose only.
 - SegmentedControl: no example or scenario covers a controlled `value` (checked state held until the parent updates) or a `value` matching no option (no pill); both are implemented but untested on React Native, and the arrow scenarios are web/Lit only so the react-native-web onKeyDown path has no test either.
 - SegmentedControl: segments are Pressables with a transparent focus-width border always reserved (so focus doesn't shift layout); the spec names the focus ring's radius (segmentRadius) but not whether the ring's width should be reserved or drawn outside the box. I reserved it.
+
+## 2026-09-23 19:14 — round 1
+
+- SegmentedControl: the behavior list for click-selects-a-segment says `then: event: onChange` twice (second one carries `with: list`) — I read it as one call with 'list' and asserted toHaveBeenCalledTimes(1); the duplicate entry is ambiguous.
+- SegmentedControl: `segmentShadow` resolves to an object; the doc says it is spread into the pill's style (shadowColor, shadowOffset, shadowRadius, elevation) but does not name the resolved token shape or say whether shadowOpacity is included; I spread t.shadowRaised as-is and cast an override to the same type.
+- SegmentedControl: the doc says the group's direction is read at keydown but gives no RN source for it; I used the computed style of currentTarget on react-native-web and I18nManager.isRTL elsewhere (same as Tabs).
+- SegmentedControl: the Keyboard story has no `given`, so it is just Default with three options; the doc does not say whether it should include a disabled segment to exercise skipping.
+- SegmentedControl: pill vertical placement (top/height from the selected segment's layout) is not specified; I copy y and height from onLayout and only animate x and width.

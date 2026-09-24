@@ -115,3 +115,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Menu: when the enter animation starts relative to accessibility focus is unspecified; the popup animates once both measurements are in, and focus moves to the first enabled item when the animation finishes (immediately under reduced motion).
 - Menu: escape-closes-without-choosing is limited to web and lit, so rn has no test for onRequestClose → `escape`.
 - Menu: the minWidth trigger-width floor uses the width of the wrapping `Menu.trigger` View, since Button exposes no ref; the doc names this View as the measured node but not as the width source.
+
+## 2026-09-23 19:08 — round 1
+
+- Menu: the spec says the trigger part is a wrapping View with testID Menu.trigger and that the popup is named by its trigger, but on rn the popup takes accessibilityLabel/aria-label=label rather than an accessibilityLabelledBy reference; I kept the label string, since the two agree and the trigger Button has no stable id.
+- Menu: `minWidth` says an override replaces the base and the × 2.5 stays, but does not say whether the override token is itself the base (space.20 equivalent) or the final width; I treated it as the base, so an override of space.24 gives 2.5 × space.24.
+- Menu: `popupOffset` and `gutter` say web/Lit read the token in px, and rn uses the resolved theme value, but the doc does not say how a phone-width ActionSheet presentation should treat placement, gutter and overrides; I ignored them there, since ActionSheet takes no overrides from Menu.
+- Menu: the Keyboard story requirement says to render enough items for every rule, but on rn there are no arrow keys or typeahead, so the number of items only matters for the axe gate; I reused the Default story's four actions with a group, a separator and a disabled item.
+- Menu: the doc says focus returns to the anchor View, which the consumer must make focusable, but does not say what Menu should do when the anchor ref is null at close time; I silently skip the focus move.

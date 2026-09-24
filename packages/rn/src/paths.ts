@@ -26,6 +26,9 @@ export type IconName =
   | 'folder'
   | 'file';
 
+/** The grid's side length, copied from `tools/icon-paths.json` (`grid`). */
+export const grid: number = 16; // literal-ok: the glyph grid's coordinate space, not a size value
+
 /** One glyph: an SVG path `d` on the shared 16×16 grid. Line glyphs stroke; `filled` glyphs fill (fillRule evenodd) and draw no stroke. */
 export interface IconGlyph {
   readonly d: string;

@@ -485,6 +485,7 @@ export function Tabs({
       style={indicatorStyle}
       testID="Tabs.indicator"
       pointerEvents="none"
+      aria-hidden
       accessibilityElementsHidden
       importantForAccessibility="no"
     />
@@ -718,7 +719,7 @@ function TabButton({
       testID="Tabs.tab"
     >
       {tab.icon !== undefined ? (
-        <View testID="Tabs.tabIcon" accessibilityElementsHidden importantForAccessibility="no">
+        <View testID="Tabs.tabIcon" aria-hidden accessibilityElementsHidden importantForAccessibility="no">
           <Icon name={tab.icon} size="md" color={foreground} />
         </View>
       ) : null}
@@ -726,7 +727,7 @@ function TabButton({
         {tab.label}
       </RNText>
       {tab.badge !== undefined ? (
-        <RNText testID="Tabs.tabBadge" style={badgeStyle} accessibilityElementsHidden importantForAccessibility="no">
+        <RNText testID="Tabs.tabBadge" style={badgeStyle} aria-hidden accessibilityElementsHidden importantForAccessibility="no">
           {tab.badge}
         </RNText>
       ) : null}

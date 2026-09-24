@@ -685,8 +685,9 @@ export function Tree({
           }}
           aria-disabled={disabled || undefined}
           aria-expanded={parent ? isExpanded : undefined}
-          aria-selected={selectable === 'single' ? isSelected : undefined}
-          aria-checked={checked}
+          // aria-selected and aria-checked are not allowed on role button or link (axe
+          // aria-allowed-attr), and react-native-web ignores accessibilityState, so selected and
+          // checked are conveyed by accessibilityState on native only; the DOM has the row fill.
           aria-busy={busy}
           accessibilityActions={actions.length > 0 ? actions : undefined}
           onAccessibilityAction={actions.length > 0 ? handleAction : undefined}

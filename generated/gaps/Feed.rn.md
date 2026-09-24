@@ -93,3 +93,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Feed: headingLevel is passed to Card for parity only. On native no test can see a difference, so the renders-heading-level-* scenarios only prove that it renders.
 - Feed: the Keyboard story's 'at least three focusable children' has to come from the story's own items, because the schema's examples have no actions. I chose Default's items with an Undo button added to the third item.
 - Feed: the doc gives no rule for whether visually-hidden Text runs (unread, position) should be clipped Views (position absolute, width/height 1, overflow hidden). That is what's used here, since native Text has no visually-hidden option; Text's schema should provide one.
+
+## 2026-09-23 19:47 — round 1
+
+- Feed: the spec says copy strings are used verbatim but gives no i18n mechanism on rn, so the copy is hard-coded in a local COPY table; showNew, position and the relative-time strings are plain template literals, not Intl.PluralRules selections, because the spec lists one form for each.
+- Feed: the `behavior` scenario `loading-marks-the-feed-busy` is limited to web and lit, so there is no rn test for `accessibilityState.busy`; I left it untested rather than invent an rn expectation.

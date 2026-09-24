@@ -116,3 +116,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-19 03:54 — round 3
 
 - Icon: the rn axe gate (tests/gates/axe.spec.ts, project axe-rn) runs every story in the React Native Storybook, and both rounds' reports list only other components: Toolbar/TreeGrid/SegmentedControl/Demo Preferences aria-required-attr and nested-interactive, Tree/Listbox aria-required-children/parent, Tree/TreeGrid target-size, Demo/Preferences color-contrast, Toast/Patterns SettingsPage aria-prohibited-attr. No Icon or Demo/Icon story appears in either mode, and an Icon-limited run of the same axe check (logs/icon-axe/icon-axe.config.ts, 37 stories) passes light and dark on the current code. No Icon change can make this gate pass. The gate needs to be limited to the component under generation or checked against a known-failures baseline; otherwise the job keeps failing on other components' debt.
+
+## 2026-09-23 18:49 — round 1
+
+- Icon: the spec says paths.ts copies a `grid` field from icon-paths.json, but the file had no such field. I added a `grid` export, which is not part of the JSON's per-glyph shape, so the doc should say whether it is a named export or a table field.
+- Icon: the rn notes put `testID` and the accessibility props on the `Svg`, but react-native-web spreads them onto the DOM svg and axe fails. The conventions say to put them on a wrapping View, so the View carries testID="Icon" and the a11y props. The spec should name the wrapper as the root.
+- Icon: the decorative-beside-a-label example says the story wraps the glyph in a Text of the same size, but does not say whether the Text's size prop should be set on the Icon or only on the Text. I set size=sm on both.

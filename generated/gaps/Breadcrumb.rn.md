@@ -63,3 +63,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Breadcrumb: the scenario `the-last-item-is-the-current-page` covers web and lit only, so no RN test asserts the selected state or the '<label>, current page' accessibility label; neither is tested on native.
 - Breadcrumb: the Link wrapper Text's overrides fall back to the binding defaults written as token-ref literals ('font.size.sm' and so on) because Text needs a value to forward. This duplicates the schema's default tokens in code; the doc could say whether to forward only the caller's overrides or always the full default set.
 - Breadcrumb: collapse is a boolean, so the per-enum-value stories were read as CollapseTrue/CollapseFalse using the deep five-item trail, since the Default three-item trail would look the same both ways; the spec does not say which items those stories use.
+
+## 2026-09-23 19:03 — round 1
+
+- Breadcrumb: the spec says the current item is the last one but never says whether `aria-current="page"` should also be set on native; I mirrored it onto the platform Text via a spread because Text's types omit it, so it reaches the DOM on react-native-web.
+- Breadcrumb: the spec says the Text around each Link receives `overrides` for the four type bindings, but not what to pass when the caller gave no override; I passed the default token names ('font.size.sm' and so on) as explicit refs.
+- Breadcrumb: no `Keyboard` story is required because there is no `keyboard` block, and the doc says nothing about the ellipsis being keyboard-reachable on native beyond Button's own behaviour.

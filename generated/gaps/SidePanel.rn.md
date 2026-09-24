@@ -76,3 +76,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - SidePanel: the trigger contract says the trigger is 'exactly one element' cloned with onPress/expanded, but a composite wrapper component (e.g. a story's MenuTrigger) silently drops those props unless it forwards them; the doc does not say the trigger must be a Button or forward its props.
 - SidePanel: Keyboard rules for Tab/Shift+Tab stitching and Enter/Space on the trigger have no rn equivalent beyond Button's own activation; only Escape (onRequestClose / onAccessibilityEscape) is implemented, per the native-subset rule.
 - SidePanel: whether an uncontrolled panel with hideHeading and no trigger is valid is unstated; `trigger` is optional and an uncontrolled panel without one can never open. No warning added.
+
+## 2026-09-23 19:12 — round 1
+
+- SidePanel: `copy.expanded` is said to be carried in COPY but never rendered on rn; I added it as an unused constant, and nothing in the schema says how an unused copy key should be exempted from an unused-symbol lint.
+- SidePanel: the `Keyboard` story requirement (Enter/Space, Tab, Escape, Shift+Tab) describes web keyboard rules that mostly have no native meaning; the rn notes give only Escape/back = dismiss, so I did not implement Tab or Shift+Tab stitching and treated `expect: manual` as web-only.
+- SidePanel: `non-dismissible-still-reports-escape` is scoped to web and lit, so rn has no test for it even though the rn code implements it via onRequestClose; the scenario list does not say whether the back-button path should be covered.

@@ -73,3 +73,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Search: the `aria-disabled` on the dimmed root is required only by the disabledOpacity description, not by the platforms.rn notes; the rn notes should name it.
 - Search: the Keyboard story must use the `with-suggestions` example's suggestions (from the Behavior prose), but the Keyboard rules in the spec don't say so.
 - Search: blur-with-no-new-focus-target (a window switch does not close the list) has no native equivalent; native closes on every blur except during a press inside the list. The notes don't say whether that web exemption applies on react-native-web.
+
+## 2026-09-23 19:22 — round 1
+
+- Search: the guidance says clear returns focus to the input, but on native a Button press cannot be verified in the test renderer; I call inputRef.focus() after clear and left it untested.
+- Search: the spec says a `suggestions` array arriving while the field is focused but untouched must not open the list, yet also that the list closes on blur to an element outside Search. Native has no 'element outside Search' notion, so I close on any input blur except during a list press.
+- Search: 'locale of the nearest [lang] ancestor' has no native equivalent; I use Intl.PluralRules(undefined), the runtime locale.
+- Search: the Escape rule says 'closes suggestions if open', but with the list opened by ArrowDown and no rows highlighted on native it was unclear whether an empty list counts as open; I treat any shown list as open.
+- Search: the schema lists an `open` state only implicitly. The Keyboard story cannot start open, so I render a closed field with defaultValue and suggestions as the guidance says.
+
+## 2026-09-23 19:22 — round 2
+
+- Search: platforms.rn says the TextInput takes role="searchbox", but the schema also puts aria-expanded on it when suggestions are set, and searchbox does not allow aria-expanded (axe aria-allowed-attr). The web note says combobox wins whenever `suggestions` is set; the rn notes never say so. I applied the web rule on native: role is combobox with suggestions, searchbox without. The rn notes should state it.
+- Search: aria-autocomplete="list" is required by the web combobox note, but RN TextInput does not obviously type that prop, so I did not set it on native. The doc should say whether native needs it.

@@ -69,3 +69,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Switch: the package rule says to mirror every accessibility prop as aria-* on every element that carries the native one, but react-native-web's Switch puts only aria-label on the input and spreads aria-checked and aria-disabled onto a container with no role (axe aria-allowed-attr). The mirrors are therefore native only, like accessibilityRole. The spec should say the always-mirror rule has this exception for the native Switch.
 - Switch: props.disabled says the switch stays registered and reports isDisabled(), but not how a later change of disabled reaches the Form's field order. I copied Input's pattern: register again when isDisabled changes, and only when name is set.
 - Switch: the spec gives no copy for a Fieldset-prefixed name and calls ', ' fixed punctuation; I used the template literal `${legend}, ${label}` without copy lookups.
+
+## 2026-09-23 18:59 — round 1
+
+- Switch: the spec says the Form contract is `discovery: context` and says a disabled Switch stays registered, but not how the Form's own `disabled` (form?.disabled) should combine with the Switch's. I treated it as OR-ed with the prop and the Fieldset's `disabled`, as Checkbox does.
+- Switch: `labelColor` is locked and listed among the bindings forwarded through Text `overrides`, but Text's default tone already resolves to color.foreground and locked bindings are not in the overrides type. I passed no colour override.
+- Switch: `aria-*` mirrors are required by the package conventions, but the spec says accessibilityRole is set only off web. I read that as covering the aria-label/checked/disabled mirrors too and applied them on native only, since the web input already carries them.
+- Switch: `overrides.lineHeight` and `labelSize` size the track slot (labelSize × lineHeight) as well as the label Text. The spec states this, but not that the same override must feed both, so I resolve them once and use them for both.

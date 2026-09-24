@@ -389,7 +389,7 @@ export function Checkbox({
         {(state) => (
           <>
             <View style={controlSlotStyle}>
-              <Animated.View testID="Checkbox.control" style={controlStyle} accessibilityElementsHidden importantForAccessibility="no">
+              <Animated.View testID="Checkbox.control" style={controlStyle} aria-hidden accessibilityElementsHidden importantForAccessibility="no">
                 <View style={overlayStyle(state)} />
                 {/* Nothing is rendered while unchecked: the glyph appears, disappears and swaps instantly. */}
                 {filled ? (

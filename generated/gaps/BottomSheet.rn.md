@@ -91,3 +91,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - BottomSheet: dismissVelocity says to measure between the last two move samples but not whether the sample is the raw gesture dy or the offset from where the slop was crossed, clamped at 0; I chose raw dy, since the clamp can zero out a real downward flick.
 - BottomSheet: 'a spring-back also finishes an interrupted enter animation' does not say what happens when the release comes after open went false (the racing close); the on-disk edit returns only the drag offset and lets the exit keep playing, which seems right but is not stated.
 - BottomSheet: the non-dismissible-still-reports-escape scenario is web/lit only, but rn does report Escape (onRequestClose, onAccessibilityEscape) when not dismissible; RNTL 13 cannot fire a Modal's onRequestClose directly, which is presumably why rn is excluded — the doc could say so.
+
+## 2026-09-23 19:10 — round 1
+
+- BottomSheet: the spec says the body is a Box inside an unnamed scroll element with the body part hook, but Box writes its own testID on rn; I put `testID="BottomSheet.body"` on a wrapper View inside the ScrollView. The doc should say which element owns the rn body testID.
+- BottomSheet: the spec does not say where `BottomSheet.header`, `BottomSheet.heading`, `BottomSheet.handle` and `BottomSheet.scrim` testIDs go on rn; I put them on the header View, a wrapper View around Heading, the handle View and the scrim Pressable.
+- BottomSheet: `drag` and the derived scenarios cannot be exercised in Jest, because PanResponder gestures are not driven by testing-library; the spec says nothing about how to test the drag on rn, so no drag test exists.
+- BottomSheet: the spec gives no rn-specific reduced-motion behaviour for the drag release beyond 'instant'; I set the offset to 0 without animation.

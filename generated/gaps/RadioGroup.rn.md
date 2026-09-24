@@ -74,3 +74,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - RadioGroup: the spec does not say how the control lines up with a label that wraps to several lines or has a description. Chose a slot as tall as the label's first line, with the control centred in it.
 - RadioGroup: the rn notes do not say whether the group's accessibilityLabel should include the Fieldset legend prefix when it is inside a Form but not inside a Fieldset. Chose no prefix without FieldsetContext.
 - RadioGroup: the spec says 'announced as in Input' but does not say whether a group that is invalid from its first render should be announced. Chose to announce only when the error appears or changes after mount.
+
+## 2026-09-23 19:00 — round 1
+
+- RadioGroup: the conventions say to mirror every accessibilityValue as aria-valuetext, but copy.position ('1 of 3') sits on a role=radio row, where aria-valuetext is not an allowed ARIA attribute (axe aria-allowed-attr). I did not mirror it, so on web the position is not exposed. The spec should say whether position is native-only on rn-web.
+- RadioGroup: the rn notes say the decorative circle is 'hidden from accessibility' but do not list the three props (aria-hidden, accessibilityElementsHidden, importantForAccessibility). The existing code lacked aria-hidden, which react-native-web needs; the doc should spell it out.
+- RadioGroup: the rn notes give no aria-required or aria-invalid mirror for the group. The web section says aria-invalid/aria-required go on the fieldset, and the rn notes say there is no invalid state. I chose no aria-invalid or aria-required on rn; the doc should state that explicitly.
+- RadioGroup: the group has role radiogroup and aria-label but no aria-describedby wiring on rn. The description goes on accessibilityHint only and the error is announced through a live region. The spec never says whether the rn description and error need nativeID links.

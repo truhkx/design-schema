@@ -88,6 +88,17 @@ const isWeb = Platform.OS === 'web';
 /** The DOM element react-native-web renders for a `Pressable`; this package has no DOM lib. */
 type WebElement = { setAttribute(name: string, value: string): void; removeAttribute(name: string): void };
 
+/** The computed writing direction of a react-native-web DOM node, or `undefined` off the web. */
+function readDirection(node: unknown): boolean | undefined {
+  const getComputedStyle = (globalThis as { getComputedStyle?: (element: unknown) => { direction?: string } })
+    .getComputedStyle;
+  if (!isWeb || node == null || getComputedStyle === undefined) {
+    return undefined;
+  }
+  const direction = getComputedStyle(node).direction;
+  return direction === undefined || direction === '' ? undefined : direction === 'rtl';
+}
+
 /**
  * SegmentedControl — switches a mode: list or grid, day or week, metric or imperial.
  * Exactly one segment is always selected and choosing one takes effect at once; there
@@ -237,7 +248,12 @@ export function SegmentedControl({
   const tabStopValue = enabledOptions.some((option) => option.value === currentValue) ? currentValue : firstEnabledValue;
 
   // react-native-web only: View has no key events on iOS/Android.
-  const handleKeyDown = (event: { key?: string; nativeEvent?: { key?: string }; preventDefault?: () => void }): void => {
+  const handleKeyDown = (event: {
+    key?: string;
+    nativeEvent?: { key?: string };
+    currentTarget?: unknown;
+    preventDefault?: () => void;
+  }): void => {
     const key = event.key ?? event.nativeEvent?.key;
     if (enabledOptions.length === 0 || key === undefined) {
       return;
@@ -246,8 +262,8 @@ export function SegmentedControl({
     // when the value names a disabled option or none).
     const fromValue = focusedValueRef.current ?? tabStopValue;
     const fromIndex = enabledOptions.findIndex((option) => option.value === fromValue);
-    // The writing direction is read at keydown: in RTL ArrowLeft is "next".
-    const rtl = I18nManager.isRTL;
+    // The group's computed `direction` is read at keydown (I18nManager elsewhere): in RTL ArrowLeft is "next".
+    const rtl = readDirection(event.currentTarget) ?? I18nManager.isRTL;
     const nextKeys = rtl ? ['ArrowLeft', 'ArrowDown'] : ['ArrowRight', 'ArrowDown'];
     const prevKeys = rtl ? ['ArrowRight', 'ArrowUp'] : ['ArrowLeft', 'ArrowUp'];
     let targetIndex: number;
@@ -320,6 +336,7 @@ export function SegmentedControl({
       ref={ref}
       {...keyProps}
       testID="SegmentedControl"
+      role="radiogroup"
       accessibilityRole="radiogroup"
       accessibilityLabel={label}
       aria-label={label}
@@ -330,6 +347,7 @@ export function SegmentedControl({
           testID="SegmentedControl.indicator"
           style={pillStyle}
           pointerEvents="none"
+          aria-hidden
           accessibilityElementsHidden
           importantForAccessibility="no-hide-descendants"
         />
@@ -477,6 +495,7 @@ function Segment({
         registerRef(option.value, instance);
       }}
       testID="SegmentedControl.segment"
+      role="radio"
       accessibilityRole="radio"
       // An `iconOnly` segment carries its label as the accessible name; a segment showing its
       // label as text is named by that text, and gets no label of its own. No
@@ -506,7 +525,7 @@ function Segment({
       style={rowStyle}
     >
       {showIcon ? (
-        <View testID="SegmentedControl.segmentIcon" accessibilityElementsHidden importantForAccessibility="no">
+        <View testID="SegmentedControl.segmentIcon" aria-hidden accessibilityElementsHidden importantForAccessibility="no">
           {/* The segment's own colour, forwarded to Icon's `color` binding (no currentColor on native). */}
           <Icon name={option.icon!} size={s.iconSize} overrides={{ color: selected ? SELECTED_COLOR : COLOR }} />
         </View>

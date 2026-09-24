@@ -96,3 +96,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Combobox: `iconColor` has no --ds-combobox-* hook per the spec, yet the CSS declares `--ds-combobox-icon-color`, `--ds-combobox-description-text` and `--ds-combobox-error-text` so locked bindings stay themeable. The spec and the override contract disagree about hooks for forwarded bindings; I kept the declared hooks.
 - Combobox: the spec says `aria-controls` is always rendered, pointing at an id that is absent while closed. I followed it, which axe may flag as an invalid IDREF while the list is closed; the spec does not say whether that is acceptable.
 - Combobox: `value` is `string | string[]` but the form valueType is `string[]`. I chose to submit a bare string in single mode and an array with `multiple`, through getValue; the spec does not say which.
+
+## 2026-09-23 20:10 — round 1
+
+- Combobox: the spec does not say whether the input's `readOnly` (from `...rest`) should also block typing when not disabled; I passed it through and made a disabled combobox read-only while keeping it focusable.
+- Combobox: `iconColor` is both forwarded to each Icon's `overrides.color` and declared as a `--ds-combobox-icon-color` hook, and the spec does not say which wins when both apply; I kept both, with the hook defaulting to the same token.

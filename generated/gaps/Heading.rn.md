@@ -87,3 +87,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Heading: the spec covers everything I needed, so I made no changes. One small ambiguity: 'once per element for its lifetime' could be read as per mount or per instance, and I read it as per mounted instance, using a ref guard inside an effect.
 - Heading: `overrides.fontSize`, `overrides.lineHeight` and `overrides.fontWeight` are resolved with `resolveToken` and cast to `number`. The spec doesn't say what to do if an override names a token of another type (for example a colour), so I did not guard against it.
+
+## 2026-09-23 20:05 — round 1
+
+- Heading: the spec has no `aria-*` mirror for the header role and forbids `aria-level`, so react-native-web previews render every Heading as an <h1> (already documented); I added no aria props.
+- Heading: the spec's `fontFamily` binding reads `font.family.heading` but the conventions only mention `fontFamilyBody`; I used `t.fontFamilyHeading`, which matches the token name by pattern.

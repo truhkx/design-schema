@@ -421,7 +421,7 @@ export function Input({
 
   const handleBlur = (): void => {
     setFocused(false);
-    if (form !== null && (form.validateMode === 'blur' || form.submitFailed)) {
+    if (form !== null && (form.validateMode === 'blur' || form.validateMode === 'change' || form.submitFailed)) {
       form.reportValidity(name, validateValue(currentValue));
     }
     onBlur?.();

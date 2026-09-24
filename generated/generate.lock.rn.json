@@ -583,18 +583,15 @@
     }
   },
   "Input.rn": {
-    "hash": "ff6b95e7f8a6e621",
-    "lastAttemptHash": "ff6b95e7f8a6e621",
-    "generatedAt": "2026-09-23T22:55:51+00:00",
+    "hash": "f5dd6b8db6e32bd1",
+    "lastAttemptHash": "f5dd6b8db6e32bd1",
+    "generatedAt": "2026-09-24T00:08:16+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2607,
+    "costUsd": 0.2786,
     "files": [
-      "packages/rn/src/Input.stories.tsx",
-      "packages/rn/src/Input.test.tsx",
-      "packages/rn/src/Input.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Input.tsx"
     ],
     "gaps": 0,
     "gates": {

@@ -1,6 +1,6 @@
 {
   "name": "@design-schema/tokens",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Built design tokens, one entry per theme, mode and platform. Generated into dist/ by `pnpm tokens` (Style Dictionary, tokens/build.mjs).",
   "license": "MIT",
   "repository": {

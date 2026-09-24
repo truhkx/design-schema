@@ -1,6 +1,6 @@
-# Gap digest
+# Gap digest — phase final
 
-Generated 2026-09-23T20:02 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-23T20:15 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -3439,6 +3439,12 @@ Doc: `site/src/content/docs/components/checkbox.md`
 
 Doc: `site/src/content/docs/components/combobox.md`
 
+### 2026-09-23 20:09 — rn round 1
+
+- **DOC** Combobox: `accessibilityHint` is mapped from `description` and `aria-describedby` is not wired, because neither the spec's rn props nor the anatomy says which of the two is meant. The mirror rule also has no `aria-*` counterpart for `accessibilityHint`. I kept the hint only. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: `invalid` and `required` state (`aria-invalid`, `aria-required`) are not in `platforms.rn.props`. The field is identified through the error text and the ' (required)' label suffix, and I added no extra ARIA attributes. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: `filter: none` type-ahead passes the first matching label as the Listbox's `initialActiveValue`. The spec does not say whether that should re-apply on each keystroke once the Listbox has mounted; I did not verify it. → `site/src/content/docs/components/combobox.md`
+
 ### 2026-09-23 19:27 — lit round 2
 
 - **DOC** Combobox: the `iconColor` binding says it has no --ds-combobox-* hook because it is forwarded to Icon's overrides.color, but check_hooks requires every locked binding without a `part` to declare a hook and does not treat it as forwarded. I forward to Icon per the spec and also declare an unused --ds-combobox-icon-color on :host to pass the gate; either the gate should exempt forwarded bindings that have no part, or the doc should stop saying there is no hook. → `site/src/content/docs/components/combobox.md`
@@ -6863,6 +6869,11 @@ Doc: `site/src/content/docs/components/form.md`
 ## Heading
 
 Doc: `site/src/content/docs/components/heading.md`
+
+### 2026-09-23 20:05 — rn round 1
+
+- **DOC** Heading: the spec has no `aria-*` mirror for the header role and forbids `aria-level`, so react-native-web previews render every Heading as an <h1> (already documented); I added no aria props. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the spec's `fontFamily` binding reads `font.family.heading` but the conventions only mention `fontFamilyBody`; I used `t.fontFamilyHeading`, which matches the token name by pattern. → `site/src/content/docs/components/heading.md`
 
 ### 2026-09-23 18:53 — web round 3
 
@@ -11695,6 +11706,12 @@ Doc: `site/src/content/docs/components/sidepanel.md`
 
 Doc: `site/src/content/docs/components/slider.md`
 
+### 2026-09-23 20:11 — rn round 1
+
+- **DOC** Slider: the spec has no way to say which of the two same-value range thumbs receives focus or a screen-reader action; on native the higher thumb paints on top, so I kept the press-side rule only for gestures. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: `label-association` for a range has no `labelledBy` (the thumbs are named by copy labels), so nothing ties the visible label to the range's thumbs on native beyond the copy strings; I left it that way as the doc directs. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: bubble and focus behaviour on a device (focus events on a core View) are only defined for react-native-web, so a device is press-only, as the doc says; nothing further to decide. → `site/src/content/docs/components/slider.md`
+
 ### 2026-09-23 19:30 — lit round 1
 
 - **DOC** Slider: the spec says a Form-reported message shows in the error region, but the Lit form contract does not say how ds-form hands one to a field. I assumed ds-form sets the field's `error` property and left it at that. → `site/src/content/docs/components/slider.md`
@@ -15285,7 +15302,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 9864 · CODE: 151 · TOOLING: 7 · NOISE: 749
+DOC: 9872 · CODE: 151 · TOOLING: 7 · NOISE: 749
 
 Not per-target gap files, skipped: CODE.2026-09-23.md, FOLDS.md, TEST-FAILURES.md, TOOLING.2026-09-23.md.
 

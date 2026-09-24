@@ -27,6 +27,13 @@ test-results/
 playwright-report/
 *.log
 
+# Secrets: apps/website/.env holds the Cloudflare Tunnel token. Every .env is ignored; the committed
+# templates are the .env.example files.
+.env
+.env.*
+!.env.example
+apps/website/.env
+
 # Scratch folders that are not part of the system
 _to_delete/
 _xfer/

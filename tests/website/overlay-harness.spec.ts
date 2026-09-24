@@ -23,14 +23,14 @@ interface Example {
   title: string;
   storyId: string;
   args: Record<string, unknown>;
-  harness: 'trigger' | null;
+  harness: 'trigger' | 'state' | null;
 }
 const examples = (name: string) => (JSON.parse(read(`generated/examples/${name}.json`)) as { examples: Example[] }).examples;
 
 /**
  * Where the overlay stands, measured in the page: the component's `data-ds` root, or a dialog, alert
- * dialog or menu — a sheet presents as a centred Dialog at desktop width and ActionSheet as a Menu, so
- * the root there is another component's — outside the site's own header (the mobile drawer is a
+ * dialog or menu — ActionSheet presents as a Menu at desktop width, so the root there is another
+ * component's — outside the site's own header (the mobile drawer is a
  * SidePanel too). Its `surface` part where it has one: the host of a sheet can be on screen while the
  * panel inside it is parked off-canvas, which is exactly SidePanel's bug in the audit. `shown` is
  * anything visible at all; `open` is visible, opacity 1 all the way up, and wholly inside the viewport.
@@ -73,7 +73,7 @@ const CASES: { name: string; title?: string }[] = [
   { name: 'Popover', title: 'Default' },
 ];
 
-/** Desktop, where the sheets present as a Dialog and a Menu, and a phone, where they are sheets. */
+/** Desktop, where ActionSheet presents as a Menu and BottomSheet is a capped sheet, and a phone. */
 const VIEWPORTS = [
   { label: 'desktop', width: 1280, height: 800 },
   { label: 'phone', width: 390, height: 844 },
@@ -103,6 +103,9 @@ for (const viewport of VIEWPORTS) test.describe(`an overlay example opens from i
         await expect(card).toHaveAttribute('data-example-harness', 'trigger');
         await expect(opener).toHaveText(/^(Open|Show) /);
       }
+      // Centred, as a reader scrolls to it: an anchored panel (Popover) does not flip on web, so a
+      // trigger left at the bottom edge by the last scroll would open it past the viewport.
+      await card.evaluate((el) => el.scrollIntoView({ block: 'center' }));
       await opener.click();
       await expect.poll(() => overlayState(page, name), { message: `${name} opens: visible, opacity 1, in the viewport` }).toEqual({ shown: true, open: true });
 
@@ -178,6 +181,202 @@ test.describe('every harness example opens with content', () => {
         expect(text.length, `${name} / ${example.title} has content`).toBeGreaterThan(0);
       });
     }
+  }
+});
+
+/**
+ * Every floating surface a visitor can see, outside the site's header: a menu, dialog, listbox or
+ * tooltip, or a component's `popup` part (Tooltip's bubble is an aria-hidden popup; its role=tooltip
+ * node is a visually hidden description, 1px square, which is why anything that small is skipped).
+ * Each with whether it sits wholly inside the viewport.
+ */
+async function floatingSurfaces(page: Page) {
+  return page.evaluate(() =>
+    [...document.querySelectorAll('[role="menu"], [role="dialog"], [role="listbox"], [role="tooltip"], [data-part="popup"]')]
+      .filter((el) => el.closest('[role="banner"]') === null && el.checkVisibility({ visibilityProperty: true, opacityProperty: true }))
+      .map((el) => ({ role: el.getAttribute('role') ?? el.getAttribute('data-part'), rect: el.getBoundingClientRect() }))
+      .filter(({ rect }) => rect.width > 1 && rect.height > 1)
+      .map(({ role, rect }) => ({
+        role,
+        inViewport: rect.left >= -1 && rect.top >= -1 && rect.right <= window.innerWidth + 1 && rect.bottom <= window.innerHeight + 1,
+      })),
+  );
+}
+
+/**
+ * Job 550: the components with an opener of their own. Before it, a story whose args said `open: true`
+ * (Menu's placements, Popover Default, Select Disabled Open, Tooltip's placements…) mounted open with
+ * nothing wired to close it, and a menu took focus the moment its tab was selected. The `state` harness
+ * (tools/docs_examples.ts `harnessOf`) holds that `open` instead, and floating panels start closed.
+ *
+ * For every example tab: selecting it opens nothing and leaves focus on the tab; then the component's
+ * own trigger, clicked for real with the card scrolled to the centre, opens a panel that fits in the
+ * viewport (examples.css gives the card the room), and a real Escape closes it with focus back on the
+ * trigger. Disclosure has no floating panel and does not close on Escape, so its trigger is held to
+ * toggling `aria-expanded` both ways instead — "Controlled" is the one that could not collapse.
+ */
+const OWN_OPENER = ['Menu', 'Popover', 'Tooltip', 'Select', 'Combobox', 'DatePicker', 'Disclosure'];
+
+test.describe('an example with its own opener starts closed and opens from it', () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  for (const name of OWN_OPENER) {
+    for (const example of examples(name)) {
+      test(`${name} / ${example.title}`, async ({ page }) => {
+        await page.goto(`/docs/components/${SLUGS.get(name)}`);
+        await expect(() => page.getByRole('heading', { name: 'Examples', level: 2, exact: true }).scrollIntoViewIfNeeded({ timeout: 2000 })).toPass();
+        await expect(page.locator('astro-island[ssr][component-url*="Examples"]')).toHaveCount(0);
+
+        if ((await page.getByRole('tab', { name: example.title, exact: true }).count()) === 0) {
+          await page.getByRole('button', { name: /^More examples \(\d+\)$/ }).click();
+        }
+        const tab = page.getByRole('tab', { name: example.title, exact: true }).first();
+        await tab.click();
+        const card = page.locator(`[data-example="${example.storyId}"]`);
+        await expect(card).toBeVisible();
+        // A pinned `open` is the harness's to hold — unless there is no event to hold it with (Tooltip),
+        // where the page drops it and the component runs uncontrolled.
+        const { harnessEvents } = JSON.parse(read(`generated/examples/${name}.json`)) as { harnessEvents: { close: string[]; change: string[] } | null };
+        const wired = harnessEvents !== null && harnessEvents.close.length + harnessEvents.change.length > 0;
+        if (example.args['open'] !== undefined && wired) await expect(card).toHaveAttribute('data-example-harness', 'state');
+
+        // Nothing opened by selecting the tab, and nothing took focus from it. Given a beat: a menu that
+        // claims focus does it in an effect after the panel mounts.
+        await page.waitForTimeout(300);
+        expect(await floatingSurfaces(page), 'nothing floating is open after selecting the tab').toEqual([]);
+        expect(await tab.evaluate((el) => el === document.activeElement), 'focus stays on the tab').toBe(true);
+
+        // The component's own opener: whatever in the card says it expands or pops something up, or
+        // Tooltip's trigger, which says neither.
+        const popups = card.locator('[aria-haspopup]:not([aria-haspopup="false"]), [aria-expanded]');
+        const opener = (await popups.count()) > 0 ? popups.first() : card.getByRole('button').first();
+        // Nothing to open: a disabled field, or a native <select> whose picker is the browser's.
+        if ((await opener.count()) === 0 || (await opener.isDisabled()) || (await opener.getAttribute('aria-disabled')) === 'true') return;
+
+        if (name === 'Disclosure') {
+          const before = await opener.getAttribute('aria-expanded');
+          const after = before === 'true' ? 'false' : 'true';
+          await opener.click();
+          await expect(opener, 'the trigger toggles it').toHaveAttribute('aria-expanded', after);
+          await opener.click();
+          await expect(opener, 'and toggles it back').toHaveAttribute('aria-expanded', before ?? 'false');
+          return;
+        }
+
+        await card.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+        await opener.click();
+        await expect
+          .poll(async () => (await floatingSurfaces(page)).length, { message: `${name} / ${example.title} opens from its trigger` })
+          .toBeGreaterThan(0);
+        await expect
+          .poll(async () => (await floatingSurfaces(page)).every((surface) => surface.inViewport), { message: 'the panel opens inside the viewport' })
+          .toBe(true);
+
+        // Escape closes a popover "from inside". Popover moves focus in itself, except with
+        // `initialFocus: "none"`, where its contract gives that move to the composing component — and
+        // "Initial Focus None" is the story with no composer, so the test makes the composer's move.
+        // Everything else here hears Escape where focus already is (a menu, a calendar, a list's
+        // field, a tooltip's trigger).
+        const inside = await opener.evaluate((el) => el !== document.activeElement);
+        if (!inside && (await floatingSurfaces(page)).some((surface) => surface.role === 'dialog')) {
+          await page.evaluate(() => {
+            const dialog = [...document.querySelectorAll('[role="dialog"]')].find((el) => el.closest('[role="banner"]') === null && el.checkVisibility());
+            (dialog?.querySelector('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])') as HTMLElement | null)?.focus();
+          });
+        }
+        await page.keyboard.press('Escape');
+        await expect.poll(() => floatingSurfaces(page), { message: `${name} / ${example.title} closes on Escape` }).toEqual([]);
+        await expect(opener, 'focus returns to the trigger').toBeFocused();
+      });
+    }
+  }
+});
+
+/**
+ * Job 551: a bottom sheet is a sheet at every width. Before it, BottomSheet rendered a centred Dialog
+ * above `layout.maxWidth.prose`, so on a desktop page its examples were indistinguishable from Dialog's.
+ * Now every example, at both widths, opens as a surface whose bottom edge is the viewport's, whose width
+ * is min(viewport, the prose token) with equal margins, and which slides up: the transform is sampled
+ * 50ms and 400ms after the click, by timers the click itself starts, so test latency cannot skew them.
+ */
+const SHEET_VIEWPORTS = [
+  { label: 'desktop', width: 1280, height: 900 },
+  { label: 'phone', width: 375, height: 812 },
+];
+
+for (const viewport of SHEET_VIEWPORTS) test.describe(`BottomSheet is a bottom sheet at every width (${viewport.label})`, () => {
+  test.use({ viewport: { width: viewport.width, height: viewport.height } });
+
+  for (const example of examples('BottomSheet').filter((entry) => entry.harness === 'trigger')) {
+    test(example.title, async ({ page }) => {
+      await page.goto(`/docs/components/${SLUGS.get('BottomSheet')}`);
+      await expect(() => page.getByRole('heading', { name: 'Examples', level: 2, exact: true }).scrollIntoViewIfNeeded({ timeout: 2000 })).toPass();
+      await expect(page.locator('astro-island[ssr][component-url*="Examples"]')).toHaveCount(0);
+
+      if ((await page.getByRole('tab', { name: example.title, exact: true }).count()) === 0) {
+        await page.getByRole('button', { name: /^More examples \(\d+\)$/ }).click();
+      }
+      await page.getByRole('tab', { name: example.title, exact: true }).first().click();
+      const card = page.locator(`[data-example="${example.storyId}"]`);
+      await expect(card).toHaveAttribute('data-example-harness', 'trigger');
+      await card.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+
+      const opener = card.getByRole('button').first();
+      // No named declarations in the body: tsx's keepNames would serialize a `__name` call into the page.
+      await opener.evaluate((el) => {
+        const samples: (number | null)[] = [];
+        (window as unknown as { __sheetSamples: (number | null)[] }).__sheetSamples = samples;
+        el.addEventListener(
+          'click',
+          () => {
+            for (const delay of [50, 400]) {
+              setTimeout(() => {
+                const surface = document.querySelector('[data-ds="BottomSheet"] [data-part="surface"]');
+                samples.push(surface === null ? null : new DOMMatrix(getComputedStyle(surface).transform).m42);
+              }, delay);
+            }
+          },
+          { once: true, capture: true },
+        );
+      });
+      await opener.click();
+      await expect.poll(() => overlayState(page, 'BottomSheet'), { message: `${example.title} opens` }).toEqual({ shown: true, open: true });
+      await expect.poll(() => page.evaluate(() => (window as unknown as { __sheetSamples: unknown[] }).__sheetSamples.length)).toBe(2);
+
+      const measured = await page.evaluate(() => {
+        const probe = document.createElement('div');
+        probe.style.cssText = 'position: absolute; inline-size: var(--layout-max-width-prose); block-size: 1px; visibility: hidden';
+        document.body.append(probe);
+        const cap = probe.getBoundingClientRect().width;
+        probe.remove();
+        const roots = [...document.querySelectorAll('[data-ds="BottomSheet"]')].filter((el) => el.checkVisibility());
+        const surface = roots[0]?.querySelector('[data-part="surface"]') ?? null;
+        const rect = surface?.getBoundingClientRect() ?? null;
+        return {
+          roots: roots.length,
+          cap,
+          viewportWidth: document.documentElement.clientWidth,
+          viewportHeight: window.innerHeight,
+          rect: rect && { left: rect.left, right: rect.right, bottom: rect.bottom, width: rect.width },
+          samples: (window as unknown as { __sheetSamples: (number | null)[] }).__sheetSamples,
+        };
+      });
+
+      // The BottomSheet itself, not a Dialog standing in for it.
+      expect(measured.roots, 'one BottomSheet root is open').toBe(1);
+      expect(measured.cap, 'the prose token resolves on the page').toBeGreaterThan(0);
+      const rect = measured.rect!;
+      expect(rect, 'the sheet has a surface part').not.toBeNull();
+      expect(Math.abs(rect.bottom - measured.viewportHeight), 'the bottom edge is the viewport bottom').toBeLessThanOrEqual(1);
+      const width = Math.min(measured.viewportWidth, measured.cap);
+      expect(Math.abs(rect.width - width), `width is min(${measured.viewportWidth}, ${measured.cap})`).toBeLessThanOrEqual(1);
+      expect(Math.abs(rect.left - (measured.viewportWidth - rect.right)), 'centred with equal margins').toBeLessThanOrEqual(1);
+
+      // Slides up: still below its resting place at 50ms, at rest by 400ms.
+      const [early, late] = measured.samples;
+      expect(early, 'at 50ms the sheet is still rising').toBeGreaterThan(1);
+      expect(Math.abs(late ?? Number.NaN), 'at 400ms the sheet is at rest').toBeLessThanOrEqual(0.5);
+    });
   }
 });
 

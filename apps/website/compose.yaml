@@ -1,30 +1,93 @@
-# docker compose -f apps/website/compose.yaml up -d --build
+# The public website, served from a home machine through a Cloudflare Tunnel (README, "Self-hosting").
 #
-# Locally: http://localhost:8080. On a server with a domain pointed at it, create apps/website/.env with
-#   SITE_ADDRESS=example.com
-#   HTTP_PORT=80
-#   HTTPS_PORT=443
-# and Caddy serves HTTPS with a certificate it obtains and renews itself (kept in the caddy_data volume).
+#   docker compose -f apps/website/compose.yaml up -d --build website       # local only: http://127.0.0.1:8080
+#   apps/website/deploy.ps1                                                  # website + tunnel (the `tunnel` profile)
+#
+# Variables come from apps/website/.env (gitignored; template in .env.example). Under the tunnel nothing is
+# published beyond 127.0.0.1: cloudflared connects *out* to Cloudflare, Cloudflare terminates TLS on the public
+# hostname, and requests reach Caddy over the compose network as plain HTTP on :80. No router ports, no
+# certificates on this machine, and the home IP is not in DNS.
 
 name: design-schema-website
 
+x-website-build: &website-build
+  context: ../..
+  dockerfile: apps/website/Dockerfile
+  args:
+    # Astro's `site` (canonical URLs). Empty builds exactly as before it existed.
+    PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-}
+
+# Container hardening shared by both ways of serving. Caddy writes only its instance id (/data) and its
+# autosaved config (/config); on :80 neither holds anything worth keeping, so both are tmpfs.
+x-website-hardening: &website-hardening
+  read_only: true
+  cap_drop: [ALL]
+  cap_add: [NET_BIND_SERVICE]
+  security_opt: [no-new-privileges:true]
+  healthcheck:
+    test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null || exit 1"]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    start_period: 5s
+  restart: unless-stopped
+
 services:
   website:
-    build:
-      context: ../..
-      dockerfile: apps/website/Dockerfile
+    build: *website-build
     image: design-schema-website
+    <<: *website-hardening
+    # Plain HTTP on :80 for any Host; the tunnel reaches it as http://website:80. This port is only for
+    # checking the build from this machine.
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8080}:80"
+    tmpfs:
+      - /data
+      - /config
+
+  tunnel:
+    profiles: [tunnel]
+    image: cloudflare/cloudflared:2025.7.0
+    command: tunnel --no-autoupdate run
+    # Not `${TUNNEL_TOKEN:?…}`: Compose interpolates every service before it applies profiles, so a required
+    # variable here would fail even a local-only `docker compose up website`. deploy.ps1 refuses an empty
+    # token instead, and cloudflared exits with an error without one.
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      website:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # The alternative, not the default: Caddy on a public IP with its own Let's Encrypt certificate. Needs a DNS
+  # A record pointing at this machine and inbound 80/443 forwarded on the router. Run it *instead of* the
+  # tunnel (both use the image, and this one binds 80/443 on every interface):
+  #   SITE_ADDRESS=example.com in apps/website/.env, then
+  #   docker compose -f apps/website/compose.yaml --profile letsencrypt up -d --build website-letsencrypt
+  # Here /data is a volume, because it holds the certificates and the ACME account.
+  website-letsencrypt:
+    profiles: [letsencrypt]
+    build: *website-build
+    image: design-schema-website
+    <<: *website-hardening
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    # With a domain, :80 answers with a redirect to HTTPS on that domain, which a check against 127.0.0.1
+    # cannot follow; any HTTP status line means Caddy is up.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qS --spider http://127.0.0.1/ 2>&1 | grep -q 'HTTP/1.1 '"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     ports:
-      - "${HTTP_PORT:-8080}:80"
-      - "${HTTPS_PORT:-8443}:443"
-      - "${HTTPS_PORT:-8443}:443/udp"
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
     volumes:
       - caddy_data:/data
-      - caddy_config:/config
-    restart: unless-stopped
+    tmpfs:
+      - /config
 
 volumes:
   caddy_data:
-  caddy_config:

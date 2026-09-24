@@ -6,7 +6,13 @@
     "rn": true,
     "swift": false
   },
-  "harnessEvents": null,
+  "harnessEvents": {
+    "close": [],
+    "change": [
+      "onOpenChange"
+    ]
+  },
+  "floating": true,
   "examples": [
     {
       "title": "Default",
@@ -55,7 +61,7 @@
       "storyId": "select-react--default",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -109,7 +115,7 @@
         "value": "sm"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -163,7 +169,7 @@
         "value": "md"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -217,7 +223,7 @@
         "value": "auto"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -271,7 +277,7 @@
         "value": "always"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -325,7 +331,7 @@
         "value": "never"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -364,7 +370,7 @@
       "storyId": "select-react--country-picker",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -403,7 +409,7 @@
       "storyId": "select-react--multi-select-roles",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -438,7 +444,7 @@
       "storyId": "select-react--forced-native-picker",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -474,7 +480,7 @@
       "storyId": "select-react--compact-picker-in-a-header",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -532,7 +538,7 @@
       "storyId": "select-react--multiple",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -583,7 +589,7 @@
       "storyId": "select-react--with-description",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -637,7 +643,7 @@
         "value": true
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -689,7 +695,7 @@
       "storyId": "select-react--disabled",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -743,7 +749,7 @@
         "value": true
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -794,7 +800,7 @@
       "storyId": "select-react--with-error",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -845,59 +851,7 @@
       "storyId": "select-react--default-value",
       "sweep": null,
       "decorated": false,
-      "harness": null,
-      "primary": false
-    },
-    {
-      "title": "Disabled Open",
-      "args": {
-        "label": "Country",
-        "name": "country",
-        "options": [
-          {
-            "value": "ca",
-            "label": "Canada"
-          },
-          {
-            "value": "fr",
-            "label": "France"
-          },
-          {
-            "value": "de",
-            "label": "Germany"
-          },
-          {
-            "value": "jp",
-            "label": "Japan"
-          },
-          {
-            "value": "mx",
-            "label": "Mexico"
-          },
-          {
-            "value": "us",
-            "label": "United States"
-          }
-        ],
-        "disabled": true,
-        "open": true
-      },
-      "snippets": {
-        "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select label=\"Country\" name=\"country\" options={COUNTRIES} disabled open />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\nhtml`\n  <ds-select label=\"Country\" name=\"country\" .options=${COUNTRIES} open disabled></ds-select>\n`;",
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "DisabledOpen",
-        "lit": "DisabledOpen",
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "select-react--disabled-open",
-      "sweep": null,
-      "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     }
   ]

@@ -87,7 +87,9 @@ const name = definition.name;
 const generated = Object.hasOwn(reactPackage, name);
 
 /** Storybook's own stories for this component, via `generated/examples/<Name>.json`, and how to lay them out. */
-const { layout, platforms, harnessEvents, examples } = examplesFor(name);
+const { layout, platforms, harnessEvents, floating, examples } = examplesFor(name);
+/** What a harnessed example first mounts with depends on the set — see ../../../example-args.ts, `exampleProps`. */
+const harness = { floating, harnessEvents };
 const sweep = layout === 'sweep';
 /** Absent until job 510 publishes a Storybook, which is when the deep links start being rendered. */
 const storybookUrl = reactStorybookUrl();
@@ -107,7 +109,7 @@ const sweepCode = sweep
 /** The island gets the highlighted code above, not the raw snippets a second time. */
 const exampleViews = examples.map(({ snippets: _snippets, stories: _stories, ...view }) => view);
 /** Which of them render from args alone, established by rendering them — see ../../../example-probe.ts. */
-const renderable = renderableExamples(name, examples);
+const renderable = renderableExamples(name, examples, harness);
 /**
  * The props the schema marks required. An example that lost one of them — or its `children` — to an
  * arg the extractor could not carry would render as a working-looking shell with nothing in it, so
@@ -117,19 +119,19 @@ const required = Object.entries(definition.props)
   .filter(([, prop]) => prop.required)
   .map(([prop]) => prop);
 /** Which of them render only closed, from their own trigger, without the story's `open` — see the same file. */
-const withoutOpen = withoutOpenExamples(name, examples);
+const withoutOpen = withoutOpenExamples(name, examples, harness);
 /**
  * Which of them would render an `<h1>` — the one heading level this page has already spent, on the
  * component's name above. Those are shown as source; ../../../example-probe.ts says why the question
  * is asked of the rendered markup rather than of the args.
  */
-const pageHeading = pageHeadingExamples(name, examples);
+const pageHeading = pageHeadingExamples(name, examples, harness);
 /**
  * What heading level each one renders, for the grid: tiles stand side by side in the outline, so a
  * tile whose heading would skip a level after the one before it is shown as source instead — see
  * ../../../example-probe.ts.
  */
-const headingLevel = headingLevelExamples(name, examples);
+const headingLevel = headingLevelExamples(name, examples, harness);
 /** A grid's captions: each tile's token, and its built value in every published theme — see ../../../example-sweep.ts. */
 const themeTokens = sweep ? publishedThemeTokens() : [];
 const captions = sweep ? sweepCaptions(definition, examples, renderable, themeTokens) : [];
@@ -219,6 +221,7 @@ const keyboard: KeyboardLine[] | undefined = spec?.rules.map((rule) => ({
       renderable={renderable}
       withoutOpen={withoutOpen}
       harnessEvents={harnessEvents}
+      floating={floating}
       required={required}
       pageHeading={pageHeading}
       headingLevel={headingLevel}

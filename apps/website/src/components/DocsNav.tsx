@@ -2,13 +2,21 @@ import { useEffect, useRef, useState } from 'react';
 import { Disclosure, Landmark, Link, Select, Stack, type ListboxOption, type SelectValue } from '@design-schema/react';
 import { layoutBreakpointMd } from '@design-schema/tokens/calm-precise/light';
 
-import { componentRoute, type NavGroup, type TopItem } from '../nav';
+import { componentRoute, isCurrentPage, normalizeRoute, type NavGroup, type TopItem } from '../nav';
 
 /** User-facing strings, in one place, the way the generated components keep theirs. */
 const COPY = {
   navLabel: 'Component docs',
   selectPlaceholder: 'Jump to a page…',
 };
+
+/**
+ * Every phase group starts open. The group holding the current page starts open whatever this says
+ * (process/website-audit-2.md, "Current location"), so turning it off later can never hide the
+ * entry the sidebar scrolls to. Open state is not remembered between pages, so a group the visitor
+ * collapsed elsewhere is open again here.
+ */
+const GROUPS_OPEN_BY_DEFAULT: boolean = true;
 
 export interface DocsNavProps {
   /** Foundations and Patterns, above the phase groups. From `DOCS_SECTIONS`. */
@@ -60,8 +68,9 @@ export default function DocsNav({ sections, groups, current }: DocsNavProps) {
     return () => query.removeEventListener('change', update);
   }, []);
 
+  // Link's own `current` writes `aria-current="page"`; how the sidebar shows it is docs-sidebar.css's.
   const link = (href: string, label: string) => (
-    <Link key={href} href={href} label={label} tone="inherit" aria-current={href === current ? 'page' : undefined} />
+    <Link key={href} href={href} label={label} tone="inherit" current={isCurrentPage(href, current)} />
   );
 
   /** The same two lists the sidebar renders, as `Select`'s grouped options: sections first, then one
@@ -83,7 +92,7 @@ export default function DocsNav({ sections, groups, current }: DocsNavProps) {
     ...sections.map((section) => section.href),
     ...groups.flatMap((group) => group.components.map((component) => componentRoute(component.slug))),
   ]);
-  const chosen = current !== undefined && routes.has(current) ? current : undefined;
+  const chosen = current !== undefined && routes.has(normalizeRoute(current)) ? normalizeRoute(current) : undefined;
 
   // Cross-page navigation, not in-page state: there is no client-side router on this site, so the
   // chosen route is a plain assignment (website-plan.md, "Sidebar → Select").
@@ -107,7 +116,14 @@ export default function DocsNav({ sections, groups, current }: DocsNavProps) {
             <Stack direction="vertical" gap="normal">
               {sections.map((section) => link(section.href, section.label))}
               {groups.map((group) => (
-                <Disclosure key={group.phase} summary={group.phase} defaultOpen>
+                <Disclosure
+                  key={group.phase}
+                  summary={group.phase}
+                  defaultOpen={
+                    GROUPS_OPEN_BY_DEFAULT ||
+                    group.components.some((component) => isCurrentPage(componentRoute(component.slug), current))
+                  }
+                >
                   <Stack direction="vertical" gap="tight">
                     {group.components.map((component) => link(componentRoute(component.slug), component.name))}
                   </Stack>

@@ -340,6 +340,37 @@ describe('examplesFor', () => {
     expect(set.harnessEvents).toEqual(events);
     expect(JSON.parse(examples.render(set))).toMatchObject({ harnessEvents: events });
   });
+
+  test('`floating` is written only for a harnessed component', () => {
+    expect(built().floating).toBe(false);
+    expect(examples.examplesFor('Widget', examples.parseStories('Widget.stories.tsx', STORIES), stories(), { ...WIDGET, floating: true }).floating).toBe(false);
+    const set = examples.examplesFor('Widget', examples.parseStories('Widget.stories.tsx', STORIES), stories(), {
+      ...WIDGET,
+      harness: 'state',
+      harnessEvents: { close: [], change: ['onOpenChange'] },
+      floating: true,
+    });
+    expect(set.floating).toBe(true);
+    expect(JSON.parse(examples.render(set))).toMatchObject({ floating: true, harnessEvents: { change: ['onOpenChange'] } });
+  });
+
+  /** The fixture plus `Open` and `Disabled Open` stories, listed in the manifest. */
+  const withOpenStories = (component: examples.ComponentInfo) => {
+    const manifest = stories();
+    const extra = ['Open', 'DisabledOpen'].map((exportName) => {
+      const name = exportName === 'Open' ? 'Open' : 'Disabled Open';
+      manifest.set(`./src/Widget.stories.tsx#${exportName}`, { id: `widget-react--${exportName.toLowerCase()}`, name, importPath: './src/Widget.stories.tsx', exportName });
+      return { exportName, args: { open: true }, set: ['open'], code: false, decorated: false };
+    });
+    return examples.examplesFor('Widget', [...examples.parseStories('Widget.stories.tsx', STORIES), ...extra], manifest, component).examples.map((e) => e.title);
+  };
+
+  test('a floating harnessed component drops its Open stories; an inline one keeps them', () => {
+    const events = { close: [], change: ['onOpenChange'] };
+    expect(withOpenStories({ ...WIDGET, harness: 'state', harnessEvents: events, floating: true })).toEqual(built().examples.map((e) => e.title));
+    expect(withOpenStories({ ...WIDGET, harness: 'state', harnessEvents: events, floating: false })).toEqual([...built().examples.map((e) => e.title), 'Open', 'Disabled Open']);
+    expect(withOpenStories(WIDGET)).toContain('Open');
+  });
 });
 
 describe('harnessOf', () => {
@@ -363,20 +394,23 @@ describe('harnessOf', () => {
     expect(examples.harnessOf({ props: { open: { type: 'boolean' }, trigger: { type: 'content' } }, events: { onOpenChange: openChange } })).toBe('trigger');
   });
 
-  test('a component that opens itself gets none', () => {
+  test('a component that opens itself gets a state harness, not a button', () => {
     const base = { props: { open: { type: 'boolean' } }, events: { onOpenChange: openChange } };
-    // Popover, Menu, Tooltip: anchored to their own trigger.
-    expect(examples.harnessOf({ ...base, overlay: { anchor: 'trigger' } })).toBeNull();
+    // Popover, Menu: anchored to their own trigger.
+    expect(examples.harnessOf({ ...base, overlay: { anchor: 'trigger' } })).toBe('state');
+    // Tooltip: anchored, and no events at all.
+    expect(examples.harnessOf({ props: base.props, overlay: { anchor: 'trigger' } })).toBe('state');
     // A required trigger prop.
-    expect(examples.harnessOf({ ...base, props: { ...base.props, trigger: { type: 'content', required: true } } })).toBeNull();
+    expect(examples.harnessOf({ ...base, props: { ...base.props, trigger: { type: 'content', required: true } } })).toBe('state');
     // Select, Combobox, DatePicker: the field is the opener.
-    expect(examples.harnessOf({ ...base, form: { name: 'value' } })).toBeNull();
+    expect(examples.harnessOf({ ...base, form: { name: 'value' } })).toBe('state');
+    // Disclosure: its only event is `onToggle`, which carries the new `open`.
+    expect(examples.harnessOf({ props: base.props, events: { onToggle: openChange } })).toBe('state');
   });
 
-  test('no boolean open, or no way to hear "close", is no harness', () => {
-    // Tooltip has `open` and no events at all; Disclosure's only event is `onToggle`.
+  test('no boolean open, or nothing to drive it with, is no harness', () => {
     expect(examples.harnessOf({ props: { open: { type: 'boolean' } } })).toBeNull();
-    expect(examples.harnessOf({ props: { open: { type: 'boolean' } }, events: { onToggle: openChange } })).toBeNull();
+    expect(examples.harnessOf({ props: { open: { type: 'boolean' } }, events: { onDone: { timing: { phase: 'after-change' } } } })).toBeNull();
     expect(examples.harnessOf({ props: { open: { type: 'string' } }, events: { onClose: request } })).toBeNull();
     expect(examples.harnessOf({ props: {}, events: { onClose: request } })).toBeNull();
   });
@@ -396,7 +430,26 @@ describe('harnessOf', () => {
       { component: { name: 'Widget', ...WIDGET } },
     ]);
     expect(info.get('Sheet')).toMatchObject({ harness: 'trigger', harnessEvents: { close: ['onClose'], change: [] } });
-    expect(info.get('Widget')).toMatchObject({ harness: null, harnessEvents: null });
+    expect(info.get('Widget')).toMatchObject({ harness: null, harnessEvents: null, floating: false });
+    expect(info.get('Sheet')).toMatchObject({ floating: false });
+  });
+
+  test('floating: an overlay block, a `layer.*` style, or a composed part that has either', () => {
+    const open = { open: { type: 'boolean' } };
+    const info = examples.componentInfo([
+      { component: { name: 'Pop', category: 'overlay', props: open, events: { onOpenChange: openChange }, overlay: { anchor: 'trigger' } } },
+      { component: { name: 'Field', category: 'form', props: open, events: { onOpenChange: openChange }, form: {}, styles: { layer: { token: 'layer.dropdown' } } } },
+      { component: { name: 'Picker', category: 'form', props: open, events: { onOpenChange: openChange }, form: {}, composition: { popover: { component: 'Pop' }, button: 'Button' } } },
+      { component: { name: 'Reveal', category: 'disclosure', props: open, events: { onToggle: openChange }, styles: { gap: { token: 'space.md' } } } },
+      { component: { name: 'Button', category: 'action', props: {} } },
+    ]);
+    expect(Object.fromEntries([...info].map(([name, entry]) => [name, [entry.harness, entry.floating]]))).toEqual({
+      Pop: ['state', true],
+      Field: ['state', true],
+      Picker: ['state', true],
+      Reveal: ['state', false],
+      Button: [null, false],
+    });
   });
 });
 

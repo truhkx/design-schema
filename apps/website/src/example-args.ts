@@ -22,7 +22,7 @@ import { Fragment, createElement, type ElementType, type ReactNode } from 'react
 // can name any other one (`children: <TabPanel>…`, `headerActions: <Button …/>`).
 import * as reactPackage from '@design-schema/react';
 
-import type { ElementValue, Example, UnsupportedValue, Value } from './examples';
+import type { ElementValue, Example, ExampleSet, UnsupportedValue, Value } from './examples';
 
 /** The exports of `@design-schema/react`, by name. */
 export const COMPONENTS = reactPackage as unknown as Record<string, unknown>;
@@ -79,24 +79,40 @@ export function decodeArgs(args: Record<string, Value>): Record<string, unknown>
   return decode(args) as Record<string, unknown>;
 }
 
+/** What `exampleProps` reads off an example's set: whether it floats, and what its harness can wire. */
+export type HarnessContext = Pick<ExampleSet, 'floating' | 'harnessEvents'>;
+
 /**
- * The props an example mounts with on this page, which differ from the story's args in two cases,
- * both about `open` — a story sets it to show an overlay open in a Storybook canvas, and a page
+ * The props an example mounts with on this page, which differ from the story's args in three cases,
+ * all about `open` — a story sets it to show an overlay open in a Storybook canvas, and a page
  * cannot open an overlay over itself on load:
  *
  *   - a `trigger` harness example starts shut. `open` is the harness's state from here on, and it is
  *     `false` until the visitor presses the harness's button (./components/Examples.tsx);
+ *   - a `state` harness example whose story sets `open` starts from the harness's first value:
+ *     `false` for a floating component (`context.floating` — Menu, Select, Tooltip), the story's own
+ *     for an inline one (Disclosure). A component with no event to wire (Tooltip, whose `open` makes
+ *     it ignore hover and focus) has nothing to hold, so the story's `open` is dropped and it runs
+ *     uncontrolled. A story that does not set `open` is left alone either way;
  *   - `withoutOpen`: ./example-probe.ts found that the story's `open` is what stops it rendering here
  *     (an open Popover portals into a document the server does not have) on a component that opens
  *     itself from its own trigger. The page renders it the way a visitor first meets it, closed and
  *     uncontrolled, and the trigger opens it. The code panel still shows the story as written.
  */
-export function exampleProps(example: Pick<Example, 'args' | 'harness'>, withoutOpen = false): Record<string, unknown> {
+export function exampleProps(
+  example: Pick<Example, 'args' | 'harness'>,
+  withoutOpen = false,
+  context: HarnessContext = { floating: false, harnessEvents: null },
+): Record<string, unknown> {
   const props = decodeArgs(example.args);
   if (example.harness === 'trigger') return { ...props, open: false };
-  if (!withoutOpen) return props;
   const { open: _open, ...rest } = props;
-  return rest;
+  if (example.harness === 'state' && props['open'] !== undefined) {
+    const events = context.harnessEvents;
+    if (events === null || events.close.length + events.change.length === 0) return rest;
+    return context.floating ? { ...props, open: false } : props;
+  }
+  return withoutOpen ? rest : props;
 }
 
 /** Whether an encoded value holds an `{ $unsupported }` marker anywhere inside it. */

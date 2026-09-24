@@ -6,7 +6,13 @@
     "rn": true,
     "swift": false
   },
-  "harnessEvents": null,
+  "harnessEvents": {
+    "close": [],
+    "change": [
+      "onOpenChange"
+    ]
+  },
+  "floating": true,
   "examples": [
     {
       "title": "Default",
@@ -84,7 +90,7 @@
       "storyId": "popover-react--default",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -162,7 +168,7 @@
       "storyId": "popover-react--heading-level-2",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -240,7 +246,7 @@
       "storyId": "popover-react--heading-level-3",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -318,7 +324,7 @@
       "storyId": "popover-react--heading-level-4",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -396,7 +402,7 @@
       "storyId": "popover-react--placement-bottom-start",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -474,7 +480,7 @@
       "storyId": "popover-react--placement-bottom",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -552,7 +558,7 @@
       "storyId": "popover-react--placement-bottom-end",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -630,7 +636,7 @@
       "storyId": "popover-react--placement-top-start",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -708,7 +714,7 @@
       "storyId": "popover-react--placement-top",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -786,7 +792,7 @@
       "storyId": "popover-react--placement-top-end",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -864,7 +870,7 @@
       "storyId": "popover-react--placement-start",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -942,7 +948,7 @@
       "storyId": "popover-react--placement-end",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -1020,7 +1026,7 @@
       "storyId": "popover-react--initial-focus-first",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -1098,7 +1104,7 @@
       "storyId": "popover-react--initial-focus-none",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -1176,7 +1182,7 @@
       "storyId": "popover-react--not-dismissible",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -1254,7 +1260,7 @@
       "storyId": "popover-react--with-arrow",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -1332,7 +1338,7 @@
       "storyId": "popover-react--modal",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -1410,7 +1416,7 @@
       "storyId": "popover-react--filter-panel",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -1489,7 +1495,7 @@
       "storyId": "popover-react--date-picker-panel",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -1553,7 +1559,7 @@
       "storyId": "popover-react--required-step",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -1615,7 +1621,7 @@
       "storyId": "popover-react--contextual-help",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     }
   ]

@@ -1,5 +1,7 @@
 # Design Schema
 
+**Website and docs: [designschema.ai](https://designschema.ai)**
+
 A documentation-first, schema-driven design system generator. One Markdown doc per component (YAML frontmatter = schema, prose = guidance) plus a W3C DTCG token set drive the docs site, props tables, per-platform generation prompts, an MCP server, and generated React / Lit / React Native components.
 
 Open source, for two people: an **adopter** (a business owner and their AI engineer) who writes a one-page theme doc and gets a complete, accessible system on three platforms for free — components are generated once and contain no literal values, so a theme is the whole customisation — and an **owner** who edits the schema itself and regenerates with `pnpm generate` (one component, or `--stale` for every changed doc) or `pnpm regen` (the whole suite in composition order), the only steps that call a model (a dollar or two per component per platform, less on Sonnet, gated by type-check, a literal linter and contrast). See the docs page *Two ways in*.

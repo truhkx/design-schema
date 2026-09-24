@@ -71,6 +71,20 @@
   min-inline-size: 0;
 }
 
+/*
+ * The section you are in (process/website-audit-2.md, "Current location"): HeaderNav passes Link's
+ * `current` — Docs on every `/docs/*` page, About on `/about` — and this shows it, the same weight
+ * the docs sidebar uses plus an underline that stays. links.css takes the underline away from every
+ * link at rest (job 530); `a:any-link[aria-current]` inside a class outranks its `a:any-link`, so the
+ * current link keeps it. Not colour alone: weight and underline, nothing else changes. The drawer is
+ * portaled to <body>, outside `.ds-site-header`, so its nav carries a wrapper class of its own.
+ */
+.ds-site-header a:any-link[aria-current="page"],
+.ds-site-header__drawer-nav a:any-link[aria-current="page"] {
+  font-weight: var(--font-weight-medium);
+  text-decoration: underline;
+}
+
 .ds-site-header__wide {
   display: none;
 }

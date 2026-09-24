@@ -13,6 +13,7 @@
     ],
     "change": []
   },
+  "floating": true,
   "examples": [
     {
       "title": "Default",

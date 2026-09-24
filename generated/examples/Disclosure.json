@@ -6,7 +6,13 @@
     "rn": true,
     "swift": false
   },
-  "harnessEvents": null,
+  "harnessEvents": {
+    "close": [],
+    "change": [
+      "onToggle"
+    ]
+  },
+  "floating": false,
   "examples": [
     {
       "title": "Default",
@@ -39,7 +45,7 @@
       "storyId": "disclosure-react--default",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -77,7 +83,7 @@
         "value": "2"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -115,7 +121,7 @@
         "value": "3"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -153,7 +159,7 @@
         "value": "4"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -191,7 +197,7 @@
         "value": "5"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -229,7 +235,7 @@
         "value": "6"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -261,7 +267,7 @@
         "value": "3"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -289,7 +295,7 @@
       "storyId": "disclosure-react--advanced-options",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -317,7 +323,7 @@
       "storyId": "disclosure-react--open-with-form-fields",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -348,7 +354,7 @@
         "value": true
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -385,7 +391,7 @@
         "value": true
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -423,7 +429,7 @@
         "value": true
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -460,7 +466,7 @@
         "value": true
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -497,7 +503,7 @@
         "value": true
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -531,7 +537,7 @@
       "storyId": "disclosure-react--accordion",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     }
   ]

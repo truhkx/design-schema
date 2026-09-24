@@ -20,7 +20,6 @@ import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Box } from './Box';
 import { Button } from './Button';
-import { Dialog, type DialogOverridableBinding } from './Dialog';
 import { FocusScope } from './FocusScope';
 import { Heading } from './Heading';
 import { Icon } from './Icon';
@@ -65,25 +64,6 @@ const OVERRIDE_HOOK: Record<BottomSheetOverridableBinding, string> = {
   enter: '--ds-bottom-sheet-enter',
   exit: '--ds-bottom-sheet-exit',
 };
-
-/**
- * Bindings sharing a name with a Dialog binding; the wide presentation forwards those the caller set
- * to Dialog's `overrides`, so Dialog keeps its own tokens (its `layer.dialog` included) otherwise.
- * The handle bindings, `headerPaddingTop` and `handleGap` have no counterpart there, and a locked
- * binding (`surface`, `maxWidth`, `minTarget`, the focus ring) is never forwarded.
- */
-const DIALOG_FORWARDED: ReadonlyArray<BottomSheetOverridableBinding & DialogOverridableBinding> = [
-  'scrim',
-  'shadow',
-  'radius',
-  'inset',
-  'partGap',
-  'headerGap',
-  'footerGap',
-  'layer',
-  'enter',
-  'exit',
-];
 
 function overridesToStyle(overrides: Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
@@ -157,40 +137,6 @@ function lockScroll(): () => void {
   };
 }
 
-/**
- * maxWidth — `layout.maxWidth.prose`, read from the loaded theme, since a media query cannot read a
- * custom property. Wide is `(width > token)`; exactly the token width is still a sheet. When the token
- * does not resolve (no theme stylesheet, jsdom, SSR) the sheet presentation renders.
- */
-function wideQuery(): MediaQueryList | null {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
-  const breakpoint = getComputedStyle(document.documentElement).getPropertyValue('--layout-max-width-prose').trim();
-  if (!breakpoint) return null;
-  // literal-ok: the media query text is the resolved token value, not an authored length.
-  return window.matchMedia(`(width > ${breakpoint})`);
-}
-
-/**
- * The presentation, decided after mount: null until the layout effect has read the breakpoint (the
- * server and the hydration render never read `matchMedia`), then false for the sheet, true for Dialog.
- * Nothing renders while it is null, which is also what the server rendered, since both forms portal.
- */
-function useIsWideViewport(): boolean | null {
-  const [isWide, setIsWide] = useState<boolean | null>(null);
-  useLayoutEffect(() => {
-    const query = wideQuery();
-    if (!query) {
-      setIsWide(false);
-      return undefined;
-    }
-    const update = (): void => setIsWide(query.matches);
-    update();
-    query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
-  }, []);
-  return isWide;
-}
-
 /** False on the server and through hydration, true on a client-only mount and after hydration. */
 function subscribeNothing(): () => void {
   return () => {};
@@ -227,8 +173,8 @@ export interface BottomSheetProps
   /** The sheet's title and accessible name. May be visually hidden with `hideHeading` when the content is self-explanatory (a share sheet). */
   heading: string;
   /**
-   * Keep the heading for assistive technology but do not render it (forwarded to Dialog above the
-   * breakpoint). The accessible name is required regardless; visually hidden is fine, absent is not.
+   * Keep the heading for assistive technology but do not render it. The accessible name is required
+   * regardless; visually hidden is fine, absent is not.
    */
   hideHeading?: boolean | undefined;
   /** The body. Scrolls inside the sheet when taller than the sheet's height. */
@@ -240,8 +186,7 @@ export interface BottomSheetProps
   /**
    * Escape, the close button, a scrim tap and the drag gesture all request close. When false, only the
    * footer actions close it, as in Dialog: the close button and the drag handle are not rendered, a
-   * scrim tap and a drag do nothing, and Escape still reports with reason `escape`. The wide Dialog
-   * presentation receives the same value.
+   * scrim tap and a drag do nothing, and Escape still reports with reason `escape`.
    */
   dismissible?: boolean | undefined;
   /**
@@ -260,7 +205,7 @@ export interface BottomSheetProps
   onDragDismiss?: (() => void) | undefined;
   /** Portal target. Defaults to `document.body`. A platform prop, not part of the schema. */
   container?: HTMLElement | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. Bindings Dialog shares by name are forwarded to it above the breakpoint. */
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
@@ -274,10 +219,10 @@ export interface BottomSheetProps
  * for a browsable list where seeing the page behind matters (a map with results). For a flat list of
  * actions, ActionSheet is the lighter component.
  *
- * Above the `layout.maxWidth.prose` breakpoint the same props render `Dialog` of size md directly, so
- * the root and `ref` are Dialog's `<dialog>` and `drag` never fires. Below it `ref` resolves to the
- * sheet's `<dialog>`, null while closed. The sheet never closes itself: Escape, the close button, a
- * scrim tap and the drag gesture all call `onClose` with a reason and the consumer flips `open`.
+ * One presentation at every width: the surface sits at the bottom edge, capped at
+ * `layout.maxWidth.prose` and centred. `ref` resolves to the sheet's `<dialog>`, null while closed.
+ * The sheet never closes itself: Escape, the close button, a scrim tap and the drag gesture all call
+ * `onClose` with a reason and the consumer flips `open`.
  */
 export function BottomSheet({
   ref,
@@ -298,15 +243,12 @@ export function BottomSheet({
   style: _style,
   ...rest
 }: BottomSheetProps & { ref?: Ref<HTMLDialogElement> | undefined }): ReactElement | null {
-  const isWide = useIsWideViewport();
   // The portal needs `document`: render nothing until hydrated, exactly as the server did.
   const hydrated = useSyncExternalStore(
     subscribeNothing,
     () => true,
     () => false,
   );
-  /** The narrow sheet is on screen only once hydrated and the breakpoint says so. */
-  const isSheet = hydrated && isWide === false;
 
   const generatedId = useId();
   const headingId = `ds-bottom-sheet${generatedId}-heading`;
@@ -347,8 +289,7 @@ export function BottomSheet({
     console.warn('BottomSheet: `heading` is required and becomes the accessible name; it must not be empty.');
   }
 
-  // The wide presentation is Dialog's own lifecycle, so presence there just follows `open`.
-  if (isWide ? present !== open : open && !present) setPresent(open);
+  if (open && !present) setPresent(true);
 
   /** Initial focus: the body, then the footer, then the close button, then the heading (tabindex -1). */
   const placeInitialFocus = (): void => {
@@ -363,11 +304,11 @@ export function BottomSheet({
     headingElement.focus();
   };
 
-  // Narrow open: showModal(), move focus in, reveal on the next frame. Keyed on everything that decides
+  // Open: showModal(), move focus in, reveal on the next frame. Keyed on everything that decides
   // whether the surface exists (present, open, the presentation, hydrated), so the flip is never
   // scheduled before it is in the DOM; it also runs when `open` returns true during the exit transition.
   useLayoutEffect(() => {
-    if (!isSheet || !present || !open) return undefined;
+    if (!hydrated || !present || !open) return undefined;
     const dialog = dialogRef.current;
     if (!dialog || !surfaceRef.current) return undefined;
     selfClosingRef.current = false;
@@ -380,11 +321,11 @@ export function BottomSheet({
     placeInitialFocus();
     const frame = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(frame);
-  }, [isSheet, present, open]);
+  }, [hydrated, present, open]);
 
-  // Narrow close: run the exit transition, then close() and unmount (FocusScope restores the opener).
+  // Close: run the exit transition, then close() and unmount (FocusScope restores the opener).
   useEffect(() => {
-    if (open || !present || !isSheet) return undefined;
+    if (open || !present || !hydrated) return undefined;
     setVisible(false);
     const dialog = dialogRef.current;
     const surface = surfaceRef.current;
@@ -406,7 +347,7 @@ export function BottomSheet({
     };
     surface.addEventListener('transitionend', handleExited);
     return () => surface.removeEventListener('transitionend', handleExited);
-  }, [open, present, isSheet]);
+  }, [open, present, hydrated]);
 
   // The released offset stays on the surface until the consumer's next render decides what it means.
   useLayoutEffect(() => {
@@ -450,11 +391,11 @@ export function BottomSheet({
     return () => surface.removeEventListener('transitionend', handleSettled);
   }, [dragPhase, open]);
 
-  // Scroll lock on <html> while the narrow sheet is present; Dialog locks its own.
+  // Scroll lock on <html> while the sheet is present.
   useEffect(() => {
-    if (!present || !isSheet) return undefined;
+    if (!present || !hydrated) return undefined;
     return lockScroll();
-  }, [present, isSheet]);
+  }, [present, hydrated]);
 
   /** Each Escape is reported exactly once, whichever of keydown, `cancel` or `close` reaches us first. */
   const reportEscape = (): void => {
@@ -594,37 +535,6 @@ export function BottomSheet({
     onDragDismiss?.();
     onClose?.('drag');
   };
-
-  // Above the breakpoint the sheet *is* a Dialog: the root carries Dialog's own hooks, `ref` resolves
-  // to its <dialog>, and its `escape` / `close-button` / `scrim` / `action` reasons pass straight
-  // through. `drag` has no Dialog source, and Dialog's `onOpened` is not re-emitted.
-  // Nothing is decided before the breakpoint is read after mount; the server rendered nothing too.
-  if (isWide === null) return null;
-
-  if (isWide) {
-    let dialogOverrides: Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined;
-    for (const binding of DIALOG_FORWARDED) {
-      const value = overrides?.[binding];
-      if (value) dialogOverrides = { ...dialogOverrides, [binding]: value };
-    }
-    return (
-      <Dialog
-        {...rest}
-        ref={ref}
-        open={open}
-        heading={heading}
-        hideHeading={hideHeading}
-        footer={footer}
-        size="md"
-        dismissible={dismissible}
-        onClose={onClose}
-        container={container}
-        overrides={dialogOverrides}
-      >
-        {children}
-      </Dialog>
-    );
-  }
 
   if (!present || !hydrated) return null;
 

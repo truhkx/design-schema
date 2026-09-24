@@ -6,7 +6,13 @@
     "rn": true,
     "swift": false
   },
-  "harnessEvents": null,
+  "harnessEvents": {
+    "close": [],
+    "change": [
+      "onOpenChange"
+    ]
+  },
+  "floating": true,
   "examples": [
     {
       "title": "Default",
@@ -29,7 +35,7 @@
       "storyId": "datepicker-react--default",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -57,7 +63,7 @@
         "value": "sm"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -85,7 +91,7 @@
         "value": "md"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -110,7 +116,7 @@
       "storyId": "datepicker-react--date-of-birth",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -138,7 +144,7 @@
         "value": true
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -167,7 +173,7 @@
         "value": true
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -193,7 +199,7 @@
       "storyId": "datepicker-react--compact-cell-editor",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -218,7 +224,7 @@
       "storyId": "datepicker-react--with-a-value",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -247,7 +253,7 @@
       "storyId": "datepicker-react--range-with-dates",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -273,7 +279,7 @@
       "storyId": "datepicker-react--with-an-error",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -299,33 +305,7 @@
       "storyId": "datepicker-react--german-locale",
       "sweep": null,
       "decorated": false,
-      "harness": null,
-      "primary": false
-    },
-    {
-      "title": "Open",
-      "args": {
-        "label": "Due date",
-        "name": "due",
-        "open": true,
-        "defaultValue": "2026-09-10"
-      },
-      "snippets": {
-        "react": "import { DatePicker } from '@design-schema/react';\n\n<DatePicker label=\"Due date\" name=\"due\" open defaultValue=\"2026-09-10\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-date-picker\n    label=\"Due date\"\n    name=\"due\"\n    .defaultValue=${'2026-09-10'}\n    .open=${true}\n  ></ds-date-picker>\n`;",
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "Open",
-        "lit": "Open",
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "datepicker-react--open",
-      "sweep": null,
-      "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -350,7 +330,7 @@
       "storyId": "datepicker-react--with-description",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -378,7 +358,7 @@
         "value": true
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -404,7 +384,7 @@
       "storyId": "datepicker-react--disabled",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -432,7 +412,7 @@
       "storyId": "datepicker-react--weekends-disabled",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     }
   ]

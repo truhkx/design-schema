@@ -1,0 +1,1 @@
+const i="768px";function r(t){return`/docs/components/${t}`}function o(t){return t.replace(/\/+$/,"")||"/"}function a(t,n){return n!==void 0&&o(t)===o(n)}function u(t,n){if(n===void 0||!t.startsWith("/"))return!1;const e=o(t),s=o(n);return e==="/"?!1:s===e||s.startsWith(`${e}/`)}export{u as a,r as c,a as i,i as l,o as n};

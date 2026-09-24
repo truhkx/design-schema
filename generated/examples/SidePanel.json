@@ -12,6 +12,7 @@
       "onOpenChange"
     ]
   },
+  "floating": true,
   "examples": [
     {
       "title": "Default",
@@ -857,83 +858,6 @@
       "primary": false
     },
     {
-      "title": "Open",
-      "args": {
-        "trigger": {
-          "$element": "Button",
-          "props": {
-            "variant": "ghost",
-            "iconOnly": true,
-            "label": "Menu",
-            "leadingIcon": {
-              "$element": "Icon",
-              "props": {
-                "name": "menu",
-                "inline": true
-              },
-              "children": []
-            }
-          },
-          "children": []
-        },
-        "heading": "Menu",
-        "children": {
-          "$element": "Stack",
-          "props": {
-            "gap": "tight"
-          },
-          "children": [
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#dashboard",
-                "label": "Dashboard",
-                "aria-current": "page"
-              },
-              "children": []
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#projects",
-                "label": "Projects"
-              },
-              "children": []
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#settings",
-                "label": "Settings"
-              },
-              "children": []
-            }
-          ]
-        },
-        "open": true
-      },
-      "snippets": {
-        "react": "import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';\nimport { SidePanel, Button, Icon, Link, Stack } from '@design-schema/react';\n\ntype SidePanelArgs = ComponentProps<typeof SidePanel>;\n\nfunction StatefulSidePanel(args: SidePanelArgs): ReactElement {\n  const [open, setOpen] = useState<boolean | undefined>(args.open);\n  useEffect(() => setOpen(args.open), [args.open]);\n  if (open === undefined) return <SidePanel {...args} />;\n  return (\n    <SidePanel\n      {...args}\n      open={open}\n      onOpenChange={(next, reason) => {\n        setOpen(next);\n        args.onOpenChange?.(next, reason);\n      }}\n    />\n  );\n}\n\nconst menuTrigger = <Button variant=\"ghost\" iconOnly label=\"Menu\" leadingIcon={<Icon name=\"menu\" inline />} />;\n\nconst navigationLinks = (\n  <Stack gap=\"tight\">\n    <Link href=\"#dashboard\" label=\"Dashboard\" aria-current=\"page\" />\n    <Link href=\"#projects\" label=\"Projects\" />\n    <Link href=\"#settings\" label=\"Settings\" />\n  </Stack>\n);\n\n<StatefulSidePanel trigger={menuTrigger} heading=\"Menu\" open>{navigationLinks}</StatefulSidePanel>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { DsSidePanel, SidePanelOpenChangeDetail } from '@design-schema/lit';\n\nfunction followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {\n  const panel = event.currentTarget as DsSidePanel;\n  if (panel.open !== undefined) {\n    panel.open = event.detail.open;\n  }\n}\n\nhtml`\n  <ds-side-panel open heading=\"Menu\" landmark=\"complementary\" @open-change=${followOpenChange}>\n    <ds-button slot=\"trigger\" variant=\"ghost\" icon-only label=\"Menu\">\n      <ds-icon slot=\"leading-icon\" name=\"menu\"></ds-icon>\n    </ds-button>\n    <ds-stack gap=\"tight\">\n      <ds-link href=\"#dashboard\" label=\"Dashboard\"></ds-link>\n      <ds-link href=\"#projects\" label=\"Projects\"></ds-link>\n      <ds-link href=\"#settings\" label=\"Settings\"></ds-link>\n    </ds-stack>\n  </ds-side-panel>\n`;",
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "Open",
-        "lit": "Open",
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "sidepanel-react--open",
-      "sweep": {
-        "prop": "open",
-        "value": true
-      },
-      "decorated": false,
-      "harness": "trigger",
-      "primary": true
-    },
-    {
       "title": "Modal",
       "args": {
         "trigger": {
@@ -1307,7 +1231,7 @@
       "sweep": null,
       "decorated": false,
       "harness": "trigger",
-      "primary": false
+      "primary": true
     },
     {
       "title": "Navigation Drawer",

@@ -18,7 +18,7 @@ function trackPress(name, label) {
 //#region src/Button.tsx
 /** Copy from the component doc, used verbatim. */
 const COPY$33 = { loading: "Loading" };
-const OVERRIDE_HOOK$34 = {
+const OVERRIDE_HOOK$35 = {
 	iconGap: "--ds-button-icon-gap",
 	paddingInline: "--ds-button-padding-inline",
 	paddingBlock: "--ds-button-padding-block",
@@ -33,10 +33,10 @@ const OVERRIDE_HOOK$34 = {
 	loadingSpin: "--ds-button-loading-spin",
 	spinnerSize: "--ds-button-spinner-size"
 };
-function overridesToStyle$28(overrides) {
+function overridesToStyle$29(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
-		const hook = OVERRIDE_HOOK$34[binding];
+		const hook = OVERRIDE_HOOK$35[binding];
 		const ref = overrides[binding];
 		if (hook && ref) style[hook] = cssVar(ref);
 	}
@@ -53,7 +53,7 @@ function overridesToStyle$28(overrides) {
 * the alternatives beside it, `ghost` for low-emphasis actions in dense UI such as toolbars, and
 * `danger` only for destructive, hard-to-undo actions.
 */
-function Button({ ref, label, variant = "primary", size = "md", leadingIcon, trailingIcon, type = "button", expanded, disabled = false, accessibleName, overflowLabel: _overflowLabel, iconOnly = false, loading = false, inverse = false, track, overrides, onClick, onTrack, "aria-expanded": ariaExpanded, "aria-describedby": describedBy, ...props }) {
+function Button({ ref, label, variant = "primary", size = "md", leadingIcon, trailingIcon, type = "button", expanded, haspopup, disabled = false, accessibleName, overflowLabel: _overflowLabel, iconOnly = false, loading = false, inverse = false, track, overrides, onClick, onTrack, "aria-expanded": ariaExpanded, "aria-haspopup": ariaHaspopup, "aria-describedby": describedBy, ...props }) {
 	const { className: _className, style: _style, ...rest } = props;
 	const form = useFormContext();
 	const loadingId = `ds-button${useId()}-loading`;
@@ -88,11 +88,12 @@ function Button({ ref, label, variant = "primary", size = "md", leadingIcon, tra
 		"data-ds": "Button",
 		"data-part": "container",
 		className: classes,
-		style: overrides ? overridesToStyle$28(overrides) : void 0,
+		style: overrides ? overridesToStyle$29(overrides) : void 0,
 		"aria-disabled": isDisabled ? "true" : void 0,
 		"aria-busy": loading ? "true" : void 0,
 		"aria-label": accessibleName ?? (iconOnly ? label : void 0),
 		"aria-expanded": expanded ?? ariaExpanded,
+		"aria-haspopup": haspopup ?? ariaHaspopup,
 		"aria-describedby": describedByValue || void 0,
 		onClick: handleClick,
 		children: [
@@ -127,17 +128,17 @@ function Button({ ref, label, variant = "primary", size = "md", leadingIcon, tra
 }
 //#endregion
 //#region src/Heading.tsx
-const OVERRIDE_HOOK$33 = {
+const OVERRIDE_HOOK$34 = {
 	fontFamily: "--ds-heading-font-family",
 	fontWeight: "--ds-heading-font-weight",
 	fontSize: "--ds-heading-font-size",
 	lineHeight: "--ds-heading-line-height",
 	marginBlockEnd: "--ds-heading-margin-block-end"
 };
-function overridesToStyle$27(overrides) {
+function overridesToStyle$28(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
-		const hook = OVERRIDE_HOOK$33[binding];
+		const hook = OVERRIDE_HOOK$34[binding];
 		const ref = overrides[binding];
 		if (hook && ref) style[hook] = cssVar(ref);
 	}
@@ -185,7 +186,7 @@ function Heading({ ref, level, size, children, align = "start", overrides, ...re
 	}, [valid, raw]);
 	const Tag = ELEMENT_BY_LEVEL[key];
 	const classes = `ds-heading ds-heading--size-${size ?? SIZE_BY_LEVEL[key]} ds-heading--align-${align}`;
-	const style = overrides ? overridesToStyle$27(overrides) : void 0;
+	const style = overrides ? overridesToStyle$28(overrides) : void 0;
 	return /* @__PURE__ */ jsx(Tag, {
 		"data-part": "text",
 		...rest,
@@ -198,17 +199,17 @@ function Heading({ ref, level, size, children, align = "start", overrides, ...re
 }
 //#endregion
 //#region src/Text.tsx
-const OVERRIDE_HOOK$32 = {
+const OVERRIDE_HOOK$33 = {
 	fontFamily: "--ds-text-font-family",
 	fontSize: "--ds-text-font-size",
 	fontWeight: "--ds-text-font-weight",
 	lineHeight: "--ds-text-line-height"
 };
-function overridesToStyle$26(overrides) {
+function overridesToStyle$27(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
 		const ref = overrides[binding];
-		const hook = OVERRIDE_HOOK$32[binding];
+		const hook = OVERRIDE_HOOK$33[binding];
 		if (ref && hook) style[hook] = cssVar(ref);
 	}
 	return style;
@@ -243,7 +244,7 @@ function Text({ ref, children, size = "md", weight = "regular", tone = "default"
 		truncate && element === "span" ? "ds-text--truncate-inline" : null,
 		className ?? null
 	].filter(Boolean).join(" ");
-	const overrideStyle = overrides ? overridesToStyle$26(overrides) : void 0;
+	const overrideStyle = overrides ? overridesToStyle$27(overrides) : void 0;
 	const mergedStyle = overrideStyle || style ? {
 		...overrideStyle,
 		...style
@@ -471,20 +472,20 @@ function Input({ ref, label, name, value, defaultValue, placeholder, description
 }
 //#endregion
 //#region src/Icon.tsx
-const OVERRIDE_HOOK$31 = {
+const OVERRIDE_HOOK$32 = {
 	size: "--ds-icon-size",
 	color: "--ds-icon-color"
 };
-function overridesToStyle$25(overrides) {
+function overridesToStyle$26(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
-		const hook = OVERRIDE_HOOK$31[binding];
+		const hook = OVERRIDE_HOOK$32[binding];
 		const ref = overrides[binding];
 		if (hook && ref) style[hook] = cssVar(ref);
 	}
 	return style;
 }
-const isDev$20 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$19 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 /**
 * Glyphs drawn on a 16×16 grid, keyed by `name` — one `<path>` each, with the `d` taken verbatim
 * from `tools/icon-paths.json`, the one table every platform draws from (the SwiftUI paths and the
@@ -578,7 +579,7 @@ const paths = {
 function Icon({ ref, name, size = "md", inline = false, label, overrides, ...rest }) {
 	const labelled = label !== void 0 && label !== "";
 	const glyph = Object.hasOwn(paths, name) ? paths[name] : void 0;
-	if (isDev$20 && !glyph) console.warn(`Icon: unknown name "${String(name)}"`);
+	if (isDev$19 && !glyph) console.warn(`Icon: unknown name "${String(name)}"`);
 	const classes = inline ? `ds-icon ds-icon--${size} ds-icon--inline` : `ds-icon ds-icon--${size}`;
 	return /* @__PURE__ */ jsx("svg", {
 		...rest,
@@ -586,7 +587,7 @@ function Icon({ ref, name, size = "md", inline = false, label, overrides, ...res
 		"data-ds": "Icon",
 		"data-part": "glyph",
 		className: classes,
-		style: overrides ? overridesToStyle$25(overrides) : void 0,
+		style: overrides ? overridesToStyle$26(overrides) : void 0,
 		viewBox: "0 0 16 16",
 		width: "1em",
 		height: "1em",
@@ -605,18 +606,18 @@ function Icon({ ref, name, size = "md", inline = false, label, overrides, ...res
 //#region src/Link.tsx
 /** Copy strings from the schema, used verbatim. `copy.external` is the SwiftUI accessibility label and unused on web. */
 const COPY$31 = { externalSuffix: " (opens in new tab)" };
-const OVERRIDE_HOOK$30 = {
+const OVERRIDE_HOOK$31 = {
 	underlineThickness: "--ds-link-underline-thickness",
 	underlineOffset: "--ds-link-underline-offset",
 	externalIconGap: "--ds-link-external-icon-gap",
 	transition: "--ds-link-transition"
 };
-function overridesToStyle$24(overrides, external) {
+function overridesToStyle$25(overrides, external) {
 	const style = {};
-	for (const binding of Object.keys(OVERRIDE_HOOK$30)) {
+	for (const binding of Object.keys(OVERRIDE_HOOK$31)) {
 		if (binding === "externalIconGap" && !external) continue;
 		const ref = overrides[binding];
-		if (ref) style[OVERRIDE_HOOK$30[binding]] = cssVar(ref);
+		if (ref) style[OVERRIDE_HOOK$31[binding]] = cssVar(ref);
 	}
 	return Object.keys(style).length > 0 ? style : void 0;
 }
@@ -629,7 +630,7 @@ function overridesToStyle$24(overrides, external) {
 * default) and standalone in navigation lists. Use `external` whenever the destination leaves the
 * product, so people are warned before they lose their place.
 */
-function Link({ ref, href, label, external = false, tone = "default", download = false, overrides, onClick, ...rest }) {
+function Link({ ref, href, label, external = false, tone = "default", download = false, current = false, overrides, onClick, ...rest }) {
 	const classes = [
 		"ds-link",
 		`ds-link--tone-${tone}`,
@@ -645,10 +646,11 @@ function Link({ ref, href, label, external = false, tone = "default", download =
 		"data-ds": "Link",
 		"data-part": "anchor",
 		className: classes,
-		style: overrides ? overridesToStyle$24(overrides, external) : void 0,
+		style: overrides ? overridesToStyle$25(overrides, external) : void 0,
 		target: external ? "_blank" : void 0,
 		rel: external ? "noopener noreferrer" : void 0,
 		download: download ? true : void 0,
+		...current ? { "aria-current": "page" } : {},
 		onClick: handleClick,
 		children: [/* @__PURE__ */ jsx("span", {
 			className: "ds-link__label",
@@ -669,12 +671,12 @@ function Link({ ref, href, label, external = false, tone = "default", download =
 }
 //#endregion
 //#region src/Stack.tsx
-const OVERRIDE_HOOK$29 = { gap: "--ds-stack-gap" };
-function overridesToStyle$23(overrides) {
+const OVERRIDE_HOOK$30 = { gap: "--ds-stack-gap" };
+function overridesToStyle$24(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
 		const ref = overrides[binding];
-		if (ref) style[OVERRIDE_HOOK$29[binding]] = cssVar(ref);
+		if (ref) style[OVERRIDE_HOOK$30[binding]] = cssVar(ref);
 	}
 	return style;
 }
@@ -700,7 +702,7 @@ function Stack({ ref, children, direction = "vertical", gap = "normal", align = 
 		isList ? "ds-stack--list" : null,
 		className ?? null
 	].filter(Boolean).join(" ");
-	const overrideStyle = overrides ? overridesToStyle$23(overrides) : void 0;
+	const overrideStyle = overrides ? overridesToStyle$24(overrides) : void 0;
 	const mergedStyle = overrideStyle || style ? {
 		...overrideStyle,
 		...style
@@ -750,18 +752,18 @@ function summaryHeading(count, locale) {
 	return (rules.select(count) === "one" ? COPY$30.summaryHeading.one : COPY$30.summaryHeading.other).replace("{count}", String(count));
 }
 /** CSS hooks written inline. `errorSummaryGap` is absent: it is forwarded to the summary's Stack `gap`. */
-const OVERRIDE_HOOK$28 = {
+const OVERRIDE_HOOK$29 = {
 	gap: "--ds-form-gap",
 	errorSummaryBorder: "--ds-form-error-summary-border",
 	errorSummaryBorderWidth: "--ds-form-error-summary-border-width",
 	errorSummaryRadius: "--ds-form-error-summary-radius",
 	errorSummaryPadding: "--ds-form-error-summary-padding"
 };
-function overridesToStyle$22(overrides) {
+function overridesToStyle$23(overrides) {
 	const style = {};
-	for (const binding of Object.keys(OVERRIDE_HOOK$28)) {
+	for (const binding of Object.keys(OVERRIDE_HOOK$29)) {
 		const ref = overrides[binding];
-		if (ref) style[OVERRIDE_HOOK$28[binding]] = cssVar(ref);
+		if (ref) style[OVERRIDE_HOOK$29[binding]] = cssVar(ref);
 	}
 	return Object.keys(style).length > 0 ? style : void 0;
 }
@@ -796,11 +798,15 @@ function Form({ ref, children, actions, name, label, labelledBy, validate = "sub
 	const submitFailed = failedSubmissions > 0;
 	const [locale, setLocale] = useState(void 0);
 	const summaryRef = useRef(null);
+	const [, setRegistryVersion] = useState(0);
 	const register = useCallback((field) => {
 		fieldsRef.current.set(field.name, field);
 		knownFieldsRef.current.set(field.name, field);
+		setRegistryVersion((version) => version + 1);
 		return () => {
-			if (fieldsRef.current.get(field.name) === field) fieldsRef.current.delete(field.name);
+			if (fieldsRef.current.get(field.name) !== field) return;
+			fieldsRef.current.delete(field.name);
+			setRegistryVersion((version) => version + 1);
 		};
 	}, []);
 	/**
@@ -939,7 +945,7 @@ function Form({ ref, children, actions, name, label, labelledBy, validate = "sub
 			"data-ds": "Form",
 			"data-part": "container",
 			className: "ds-form",
-			style: overrides ? overridesToStyle$22(overrides) : void 0,
+			style: overrides ? overridesToStyle$23(overrides) : void 0,
 			noValidate: true,
 			"aria-label": labelledBy ? void 0 : label,
 			"aria-labelledby": labelledBy,
@@ -1001,18 +1007,18 @@ function Form({ ref, children, actions, name, label, labelledBy, validate = "sub
 }
 //#endregion
 //#region src/Box.tsx
-const OVERRIDE_HOOK$27 = {
+const OVERRIDE_HOOK$28 = {
 	paddingBlock: "--ds-box-padding-block",
 	paddingInline: "--ds-box-padding-inline",
 	border: "--ds-box-border",
 	borderWidth: "--ds-box-border-width",
 	radius: "--ds-box-radius"
 };
-function overridesToStyle$21(overrides) {
+function overridesToStyle$22(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
 		const ref = overrides[binding];
-		const hook = OVERRIDE_HOOK$27[binding];
+		const hook = OVERRIDE_HOOK$28[binding];
 		if (ref && hook) style[hook] = cssVar(ref);
 	}
 	return style;
@@ -1043,7 +1049,7 @@ function Box({ ref, children, inset = "none", insetBlock, insetInline, surface =
 		`ds-box--radius-${radius}`,
 		className ?? null
 	].filter(Boolean).join(" ");
-	const overrideStyle = overrides ? overridesToStyle$21(overrides) : void 0;
+	const overrideStyle = overrides ? overridesToStyle$22(overrides) : void 0;
 	const mergedStyle = overrideStyle || style ? {
 		...overrideStyle,
 		...style
@@ -1079,7 +1085,7 @@ const INDICATOR_COLOR = "color.control.selectedForeground";
 * helperSize has no hook: it reaches the description and error Texts only through their `fontSize`
 * override. fontFamily and lineHeight are both a hook (the label's own rule) and a forward.
 */
-const OVERRIDE_HOOK$26 = {
+const OVERRIDE_HOOK$27 = {
 	controlBackground: "--ds-checkbox-control-background",
 	controlBorderWidth: "--ds-checkbox-control-border-width",
 	pressedOverlay: "--ds-checkbox-pressed-overlay",
@@ -1104,7 +1110,7 @@ function resolveOverrides$10(overrides) {
 		if (binding === "helperSize") helperOverrides.fontSize = ref;
 		if (binding === "fontFamily") helperOverrides.fontFamily = ref;
 		if (binding === "lineHeight") helperOverrides.lineHeight = ref;
-		const hook = OVERRIDE_HOOK$26[binding];
+		const hook = OVERRIDE_HOOK$27[binding];
 		if (hook) rootStyle[hook] = cssVar(ref);
 	}
 	return {
@@ -1202,11 +1208,12 @@ function Checkbox({ ref, label, hideLabel = false, name, value = "on", checked, 
 			event.preventDefault();
 			return;
 		}
-		const next = event.target.checked;
-		if (isControlled) event.target.checked = isChecked;
-		else setUncontrolledChecked(next);
+		const input = event.target;
+		const next = input.checked;
+		if (!isControlled) setUncontrolledChecked(next);
 		if (isMixed) setMixedCleared(true);
 		onChange?.(next);
+		if (isControlled) input.checked = isChecked;
 		if (form && validatesOnChange) form.validateField(name);
 	};
 	const handleRowClick = (event) => {
@@ -1301,7 +1308,7 @@ function Checkbox({ ref, label, hideLabel = false, name, value = "on", checked, 
 * the description Text through its `fontSize` override alone. fontFamily and lineHeight are both a
 * hook (the label's own rule) and a forward.
 */
-const OVERRIDE_HOOK$25 = {
+const OVERRIDE_HOOK$26 = {
 	trackWidth: "--ds-switch-track-width",
 	trackHeight: "--ds-switch-track-height",
 	thumbSize: "--ds-switch-thumb-size",
@@ -1325,7 +1332,7 @@ function resolveOverrides$9(overrides) {
 		if (binding === "helperSize") helperOverrides.fontSize = ref;
 		if (binding === "fontFamily") helperOverrides.fontFamily = ref;
 		if (binding === "lineHeight") helperOverrides.lineHeight = ref;
-		const hook = OVERRIDE_HOOK$25[binding];
+		const hook = OVERRIDE_HOOK$26[binding];
 		if (hook) rootStyle[hook] = cssVar(ref);
 	}
 	return {
@@ -1366,7 +1373,7 @@ function Switch({ ref, label, name, checked, defaultChecked = false, disabled = 
 		checked: isChecked
 	};
 	useEffect(() => {
-		if (!form || !name || isDisabled) return void 0;
+		if (!form || !name) return void 0;
 		return form.register({
 			name,
 			id,
@@ -1381,8 +1388,7 @@ function Switch({ ref, label, name, checked, defaultChecked = false, disabled = 
 	}, [
 		form,
 		name,
-		id,
-		isDisabled
+		id
 	]);
 	const handleClick = (event) => {
 		if (isDisabled) {
@@ -1450,7 +1456,7 @@ function Switch({ ref, label, name, checked, defaultChecked = false, disabled = 
 						id,
 						type: "checkbox",
 						role: "switch",
-						name,
+						name: isDisabled ? void 0 : name,
 						defaultChecked: isChecked,
 						className: "ds-switch__control",
 						"data-part": "track",
@@ -1482,7 +1488,7 @@ const COPY$28 = {
 	position: "{index} of {total}"
 };
 /** helperSize has no root hook: it reaches the composed Text only through its fontSize override. */
-const OVERRIDE_HOOK$24 = {
+const OVERRIDE_HOOK$25 = {
 	controlBorderWidth: "--ds-radio-group-control-border-width",
 	indicatorInset: "--ds-radio-group-indicator-inset",
 	controlBorderInvalid: "--ds-radio-group-control-border-invalid",
@@ -1511,7 +1517,7 @@ function resolveOverrides$8(overrides) {
 		if (binding === "helperSize") helperOverrides.fontSize = ref;
 		if (binding === "fontFamily") helperOverrides.fontFamily = ref;
 		if (binding === "lineHeight") helperOverrides.lineHeight = ref;
-		const hook = OVERRIDE_HOOK$24[binding];
+		const hook = OVERRIDE_HOOK$25[binding];
 		if (hook) rootStyle[hook] = cssVar(ref);
 	}
 	return {
@@ -1575,10 +1581,11 @@ function RadioGroup({ ref, label, name, options, value, defaultValue, orientatio
 			get label() {
 				return latest.current.label;
 			},
-			getValue: () => latest.current.selected,
+			getValue: () => latest.current.disabled ? void 0 : latest.current.selected,
 			isDisabled: () => latest.current.disabled,
 			validate: () => {
-				const { label: currentLabel, required: isRequired, invalid: isInvalidProp, error: errorProp, selected: current } = latest.current;
+				const { label: currentLabel, required: isRequired, invalid: isInvalidProp, error: errorProp, selected: current, disabled: isDisabledNow } = latest.current;
+				if (isDisabledNow) return null;
 				if (errorProp !== void 0) return errorProp;
 				if (isRequired && current === void 0) return COPY$28.required.replace("{label}", currentLabel);
 				if (isInvalidProp) return COPY$28.invalid.replace("{label}", currentLabel);
@@ -1597,8 +1604,9 @@ function RadioGroup({ ref, label, name, options, value, defaultValue, orientatio
 	]);
 	const describedBy = [description ? descriptionId : null, resolvedError ? errorId : null].filter(Boolean).join(" ");
 	const validateMode = form ? form.validateMode ?? form.validate : void 0;
-	const validatesOnChange = validateMode === "change" || (form?.submitFailed ?? false);
-	const validatesOnBlur = validateMode === "blur" || (form?.submitFailed ?? false);
+	const afterFailedSubmit = form?.submitFailed ?? false;
+	const validatesOnChange = validateMode === "change" || afterFailedSubmit;
+	const validatesOnBlur = validateMode === "blur" || validateMode === "change" || afterFailedSubmit;
 	const handleKeyDown = (event) => {
 		onKeyDown?.(event);
 		if (isDisabled && GUARDED_KEYS.has(event.key)) event.preventDefault();
@@ -1606,13 +1614,11 @@ function RadioGroup({ ref, label, name, options, value, defaultValue, orientatio
 	const handleClick = (event) => {
 		if (isDisabled) event.preventDefault();
 	};
-	const handleChange = (option) => (event) => {
-		if (isDisabled || option.disabled) {
-			event.preventDefault();
-			return;
-		}
+	const handleChange = (option) => (_event) => {
+		if (isDisabled || option.disabled) return;
 		if (!isControlled) setInternalValue(option.value);
 		onChange?.(option.value);
+		latest.current.selected = option.value;
 		if (form && validatesOnChange) form.validateField(name);
 	};
 	const handleBlur = (event) => {
@@ -1654,84 +1660,90 @@ function RadioGroup({ ref, label, name, options, value, defaultValue, orientatio
 		"aria-disabled": isDisabled ? "true" : void 0,
 		onBlur: handleBlur,
 		onKeyDown: handleKeyDown,
-		children: [
-			/* @__PURE__ */ jsxs("legend", {
-				className: "ds-radio-group__legend",
-				"data-part": "legend",
-				children: [label, required ? COPY$28.requiredIndicator : null]
-			}),
-			description ? /* @__PURE__ */ jsx(Text, {
-				element: "p",
-				id: descriptionId,
-				"data-part": "description",
-				size: "sm",
-				tone: "muted",
-				className: "ds-radio-group__description",
-				overrides: helperOverrides,
-				children: description
-			}) : null,
-			/* @__PURE__ */ jsx("div", {
-				className: "ds-radio-group__list",
-				children: options.map((option) => {
-					const optionId = `${id}-${option.value}`;
-					const optionDescriptionId = `${optionId}-description`;
-					const optionClasses = ["ds-radio-group__option", option.disabled ? "ds-radio-group__option--disabled" : null].filter(Boolean).join(" ");
-					return /* @__PURE__ */ jsxs("div", {
-						className: optionClasses,
-						onClick: handleRowClick(option),
-						children: [
-							/* @__PURE__ */ jsx("input", {
-								ref: setRadioRef(option.value),
-								id: optionId,
-								type: "radio",
-								name,
-								value: option.value,
-								"data-part": "radio",
-								checked: selected === option.value,
-								className: "ds-radio-group__control",
-								disabled: option.disabled === true,
-								"aria-describedby": option.description ? optionDescriptionId : void 0,
-								"aria-disabled": isDisabled ? "true" : void 0,
-								onClick: handleClick,
-								onChange: handleChange(option)
-							}),
-							/* @__PURE__ */ jsx("label", {
-								htmlFor: optionId,
-								"data-part": "radioLabel",
-								className: "ds-radio-group__label",
-								children: option.label
-							}),
-							option.description ? /* @__PURE__ */ jsx(Text, {
-								element: "p",
-								id: optionDescriptionId,
-								"data-part": "radioDescription",
-								size: "sm",
-								tone: "muted",
-								className: "ds-radio-group__option-description",
-								overrides: helperOverrides,
-								children: option.description
-							}) : null
-						]
-					}, option.value);
-				})
-			}),
-			resolvedError ? /* @__PURE__ */ jsx(Text, {
-				element: "p",
-				id: errorId,
-				role: "alert",
-				"data-part": "errorMessage",
-				size: "sm",
-				tone: "danger",
-				className: "ds-radio-group__error",
-				overrides: helperOverrides,
-				children: resolvedError
-			}) : null
-		]
+		children: [/* @__PURE__ */ jsxs("legend", {
+			className: "ds-radio-group__legend",
+			"data-part": "legend",
+			children: [label, required ? COPY$28.requiredIndicator : null]
+		}), /* @__PURE__ */ jsxs("div", {
+			className: "ds-radio-group__body",
+			children: [
+				description ? /* @__PURE__ */ jsx(Text, {
+					element: "p",
+					id: descriptionId,
+					"data-part": "description",
+					size: "sm",
+					tone: "muted",
+					overrides: helperOverrides,
+					children: description
+				}) : null,
+				/* @__PURE__ */ jsx("div", {
+					className: "ds-radio-group__list",
+					children: options.map((option) => {
+						const optionId = `${id}-${option.value}`;
+						const optionDescriptionId = `${optionId}-description`;
+						const optionClasses = ["ds-radio-group__option", option.disabled ? "ds-radio-group__option--disabled" : null].filter(Boolean).join(" ");
+						return /* @__PURE__ */ jsxs("div", {
+							className: optionClasses,
+							onClick: handleRowClick(option),
+							children: [
+								/* @__PURE__ */ jsx("input", {
+									ref: setRadioRef(option.value),
+									id: optionId,
+									type: "radio",
+									name,
+									value: option.value,
+									"data-part": "radio",
+									checked: selected === option.value,
+									className: "ds-radio-group__control",
+									disabled: option.disabled === true,
+									"aria-describedby": option.description ? optionDescriptionId : void 0,
+									"aria-disabled": isDisabled ? "true" : void 0,
+									onClick: handleClick,
+									onChange: handleChange(option)
+								}),
+								/* @__PURE__ */ jsxs("label", {
+									htmlFor: optionId,
+									"data-part": "radioLabel",
+									className: "ds-radio-group__label",
+									children: [/* @__PURE__ */ jsx("span", {
+										className: "ds-radio-group__indicator",
+										"data-part": "radioIndicator",
+										"aria-hidden": "true"
+									}), option.label]
+								}),
+								option.description ? /* @__PURE__ */ jsx("div", {
+									className: "ds-radio-group__option-description",
+									children: /* @__PURE__ */ jsx(Text, {
+										element: "p",
+										id: optionDescriptionId,
+										"data-part": "radioDescription",
+										size: "sm",
+										tone: "muted",
+										overrides: helperOverrides,
+										children: option.description
+									})
+								}) : null
+							]
+						}, option.value);
+					})
+				}),
+				resolvedError ? /* @__PURE__ */ jsx(Text, {
+					element: "p",
+					id: errorId,
+					role: "alert",
+					"data-part": "errorMessage",
+					size: "sm",
+					tone: "danger",
+					overrides: helperOverrides,
+					children: resolvedError
+				}) : null
+			]
+		})]
 	});
 }
 //#endregion
 //#region src/Disclosure.tsx
-const OVERRIDE_HOOK$23 = {
+const OVERRIDE_HOOK$24 = {
 	triggerPaddingBlock: "--ds-disclosure-trigger-padding-block",
 	triggerPaddingInline: "--ds-disclosure-trigger-padding-inline",
 	triggerGap: "--ds-disclosure-trigger-gap",
@@ -1745,10 +1757,10 @@ const OVERRIDE_HOOK$23 = {
 	disabledOpacity: "--ds-disclosure-disabled-opacity",
 	transition: "--ds-disclosure-transition"
 };
-function overridesToStyle$20(overrides) {
+function overridesToStyle$21(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
-		const hook = OVERRIDE_HOOK$23[binding];
+		const hook = OVERRIDE_HOOK$24[binding];
 		const ref = overrides[binding];
 		if (hook && ref) style[hook] = cssVar(ref);
 	}
@@ -1766,7 +1778,7 @@ function overridesToStyle$20(overrides) {
 * `ref` resolves to the trigger `<button>` (Accordion moves focus between triggers through it); the wrapping `<div>`
 * carries `data-ds="Disclosure"`.
 */
-function Disclosure({ ref, summary, children, open, defaultOpen = false, disabled = false, keepMounted = false, headingLevel, overrides, onToggle, id: idProp, ...rest }) {
+function Disclosure({ ref, summary, children, open, defaultOpen = false, disabled = false, keepMounted = false, fullWidth = false, headingLevel, overrides, onToggle, id: idProp, ...rest }) {
 	const generatedId = useId();
 	const id = idProp ?? `ds-disclosure${generatedId}`;
 	const panelId = `${id}-panel`;
@@ -1837,10 +1849,15 @@ function Disclosure({ ref, summary, children, open, defaultOpen = false, disable
 		})]
 	});
 	const HeadingTag = headingLevel !== void 0 ? `h${headingLevel}` : null;
+	const rootClass = [
+		"ds-disclosure",
+		isOpen && "ds-disclosure--open",
+		fullWidth && "ds-disclosure--full-width"
+	].filter(Boolean).join(" ");
 	return /* @__PURE__ */ jsxs("div", {
-		className: isOpen ? "ds-disclosure ds-disclosure--open" : "ds-disclosure",
+		className: rootClass,
 		"data-ds": "Disclosure",
-		style: overrides ? overridesToStyle$20(overrides) : void 0,
+		style: overrides ? overridesToStyle$21(overrides) : void 0,
 		children: [HeadingTag ? /* @__PURE__ */ jsx(HeadingTag, {
 			className: "ds-disclosure__heading",
 			children: trigger
@@ -1864,7 +1881,7 @@ function Disclosure({ ref, summary, children, open, defaultOpen = false, disable
 //#endregion
 //#region src/Alert.tsx
 const COPY$27 = { dismissLabel: "Dismiss" };
-const OVERRIDE_HOOK$22 = {
+const OVERRIDE_HOOK$23 = {
 	border: "--ds-alert-border",
 	borderWidth: "--ds-alert-border-width",
 	radius: "--ds-alert-radius",
@@ -1881,10 +1898,10 @@ const OVERRIDE_HOOK$22 = {
 };
 /** Default token for the `iconSize` binding, forwarded to the Icon as `overrides.size`. */
 const ICON_SIZE_TOKEN = "font.size.lg";
-function overridesToStyle$19(overrides) {
+function overridesToStyle$20(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
-		const hook = OVERRIDE_HOOK$22[binding];
+		const hook = OVERRIDE_HOOK$23[binding];
 		const ref = overrides[binding];
 		if (hook === void 0 || !ref) continue;
 		style[hook] = cssVar(ref);
@@ -1940,7 +1957,8 @@ function Alert({ ref, tone = "info", heading, children, live = "status", dismiss
 	const bodyId = useId();
 	const hasHeading = heading !== void 0 && heading !== "";
 	const handleDismiss = () => {
-		if (rootRef.current) focusOutside(rootRef.current);
+		const root = rootRef.current;
+		if (root !== null && root.matches(":focus-within")) focusOutside(root);
 		onDismiss?.();
 	};
 	return /* @__PURE__ */ jsxs("div", {
@@ -1950,7 +1968,7 @@ function Alert({ ref, tone = "info", heading, children, live = "status", dismiss
 		"data-part": "container",
 		className: `ds-alert ds-alert--${tone}`,
 		"data-has-heading": hasHeading ? "" : void 0,
-		style: overrides ? overridesToStyle$19(overrides) : void 0,
+		style: overrides ? overridesToStyle$20(overrides) : void 0,
 		role: live === "off" ? void 0 : live,
 		"aria-labelledby": hasHeading ? headingId : bodyId,
 		children: [
@@ -1999,7 +2017,7 @@ function Alert({ ref, tone = "info", heading, children, live = "status", dismiss
 }
 //#endregion
 //#region src/Landmark.tsx
-const isDev$19 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$18 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 /** Development warnings, verbatim from the doc. */
 const COPY$26 = {
 	duplicateMain: "Landmark: role \"main\" appears more than once in this document.",
@@ -2035,11 +2053,12 @@ const UNLABELLED_ROLES = /* @__PURE__ */ new Set([
 	"main",
 	"contentinfo"
 ]);
-/** Roles whose duplicates must be told apart by label. */
+/** Roles whose duplicates must be told apart by label (`search` takes a name too, so it is checked). */
 const DISTINGUISHED_ROLES = /* @__PURE__ */ new Set([
 	"navigation",
 	"complementary",
 	"region",
+	"search",
 	"form"
 ]);
 /** The role a rendered Landmark carries: its `role` attribute, else the role its tag implies. */
@@ -2093,7 +2112,7 @@ function Landmark({ ref, role, label, children, as, "aria-labelledby": ariaLabel
 	const ariaLabel = takesLabel && hasLabel ? label : void 0;
 	const labelledBy = takesLabel && hasLabelledBy ? ariaLabelledBy : void 0;
 	useEffect(() => {
-		if (!isDev$19 || !nodeRef.current) return;
+		if (!isDev$18 || !nodeRef.current) return;
 		warn(nodeRef.current, role, labelDropped);
 	}, [
 		role,
@@ -2126,18 +2145,18 @@ const COPY$25 = {
 };
 /** With `collapse`, trails longer than this show the first item, an ellipsis, and the last two. */
 const COLLAPSE_ABOVE = 4;
-const OVERRIDE_HOOK$21 = {
+const OVERRIDE_HOOK$22 = {
 	gap: "--ds-breadcrumb-gap",
 	fontFamily: "--ds-breadcrumb-font-family",
 	fontSize: "--ds-breadcrumb-font-size",
 	fontWeight: "--ds-breadcrumb-font-weight",
 	lineHeight: "--ds-breadcrumb-line-height"
 };
-function overridesToStyle$18(overrides) {
+function overridesToStyle$19(overrides) {
 	const style = {};
-	for (const binding of Object.keys(OVERRIDE_HOOK$21)) {
+	for (const binding of Object.keys(OVERRIDE_HOOK$22)) {
 		const ref = overrides[binding];
-		if (ref) style[OVERRIDE_HOOK$21[binding]] = cssVar(ref);
+		if (ref) style[OVERRIDE_HOOK$22[binding]] = cssVar(ref);
 	}
 	return style;
 }
@@ -2193,10 +2212,7 @@ function Breadcrumb({ ref, items, label = COPY$25.navLabel, collapse = true, ove
 			"aria-current": "page",
 			children: item.label
 		});
-		else if (item.href === void 0 || item.href === "") content = /* @__PURE__ */ jsx("span", {
-			className: "ds-breadcrumb__text",
-			children: item.label
-		});
+		else if (item.href === void 0 || item.href === "") content = /* @__PURE__ */ jsx("span", { children: item.label });
 		else content = /* @__PURE__ */ jsx("span", {
 			className: "ds-breadcrumb__link",
 			"data-part": "link",
@@ -2241,7 +2257,7 @@ function Breadcrumb({ ref, items, label = COPY$25.navLabel, collapse = true, ove
 		...items.slice(hiddenEnd).map((item, offset) => renderItem(item, hiddenEnd + offset))
 	] : items.map(renderItem);
 	const style = {
-		...overrides ? overridesToStyle$18(overrides) : void 0,
+		...overrides ? overridesToStyle$19(overrides) : void 0,
 		"--ds-breadcrumb-separator": JSON.stringify(COPY$25.separator)
 	};
 	return /* @__PURE__ */ jsx("nav", {
@@ -2288,7 +2304,7 @@ function compact$1(overrides) {
 	}
 	return Object.keys(out).length > 0 ? out : void 0;
 }
-const isDev$18 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$17 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 const PERCENT$1 = new Intl.NumberFormat(void 0, {
 	style: "percent",
 	maximumFractionDigits: 0
@@ -2311,7 +2327,7 @@ function Meter({ ref, value, min = 0, max = 100, label, valueText, tone = "info"
 	const safeMax = Number.isFinite(max) ? max : 100;
 	const validRange = safeMax > safeMin;
 	useEffect(() => {
-		if (!isDev$18 || validRange) return;
+		if (!isDev$17 || validRange) return;
 		const pair = `${safeMin}:${safeMax}`;
 		if (warnedRanges$1.has(pair)) return;
 		warnedRanges$1.add(pair);
@@ -2345,22 +2361,28 @@ function Meter({ ref, value, min = 0, max = 100, label, valueText, tone = "info"
 		children: [/* @__PURE__ */ jsxs("div", {
 			className: "ds-meter__header",
 			"data-part": "header",
-			children: [/* @__PURE__ */ jsx(Text, {
-				element: "span",
-				size: "sm",
-				weight: "medium",
-				tone: "default",
-				id: labelId,
+			children: [/* @__PURE__ */ jsx("span", {
+				className: "ds-meter__label",
 				"data-part": "label",
-				overrides: labelOverrides,
-				children: label
-			}), hideValue ? null : /* @__PURE__ */ jsx(Text, {
-				element: "span",
-				size: "sm",
-				tone: "muted",
+				children: /* @__PURE__ */ jsx(Text, {
+					element: "span",
+					size: "sm",
+					weight: "medium",
+					tone: "default",
+					id: labelId,
+					overrides: labelOverrides,
+					children: label
+				})
+			}), hideValue ? null : /* @__PURE__ */ jsx("span", {
+				className: "ds-meter__value-text",
 				"data-part": "valueText",
-				overrides: valueOverrides,
-				children: resolvedValueText
+				children: /* @__PURE__ */ jsx(Text, {
+					element: "span",
+					size: "sm",
+					tone: "muted",
+					overrides: valueOverrides,
+					children: resolvedValueText
+				})
 			})]
 		}), /* @__PURE__ */ jsx("div", {
 			className: "ds-meter__track",
@@ -2381,7 +2403,7 @@ function Meter({ ref, value, min = 0, max = 100, label, valueText, tone = "info"
 }
 //#endregion
 //#region src/Card.tsx
-const OVERRIDE_HOOK$20 = {
+const OVERRIDE_HOOK$21 = {
 	paddingBlock: "--ds-card-padding-block",
 	paddingInline: "--ds-card-padding-inline",
 	partGap: "--ds-card-part-gap",
@@ -2393,16 +2415,16 @@ const OVERRIDE_HOOK$20 = {
 	radius: "--ds-card-radius",
 	transition: "--ds-card-transition"
 };
-function overridesToStyle$17(overrides) {
+function overridesToStyle$18(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
-		if (!(binding in OVERRIDE_HOOK$20)) continue;
+		if (!(binding in OVERRIDE_HOOK$21)) continue;
 		const ref = overrides[binding];
-		if (ref) style[OVERRIDE_HOOK$20[binding]] = cssVar(ref);
+		if (ref) style[OVERRIDE_HOOK$21[binding]] = cssVar(ref);
 	}
 	return style;
 }
-const isDev$17 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$16 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 /**
 * Marks the one child an interactive card extends. Link and Button forward data attributes through
 * `...rest` but replace a passed className with their own, so the mark is an attribute.
@@ -2472,8 +2494,8 @@ function Card({ ref, children, heading, headingLevel = "3", headerActions, foote
 	};
 	const warnedNoTarget = useRef(false);
 	const warnedBoth = useRef(false);
-	const warnNoTarget = isDev$17 && interactive && !hasTarget;
-	const warnBoth = isDev$17 && interactive && focusable;
+	const warnNoTarget = isDev$16 && interactive && !hasTarget;
+	const warnBoth = isDev$16 && interactive && focusable;
 	useEffect(() => {
 		if (warnNoTarget && !warnedNoTarget.current) {
 			warnedNoTarget.current = true;
@@ -2504,7 +2526,7 @@ function Card({ ref, children, heading, headingLevel = "3", headerActions, foote
 		"data-ds": "Card",
 		"data-part": "surface",
 		className: classes,
-		style: overrides ? overridesToStyle$17(overrides) : void 0,
+		style: overrides ? overridesToStyle$18(overrides) : void 0,
 		"aria-labelledby": hasHeading ? headingId : void 0,
 		tabIndex: isFocusable ? -1 : rest.tabIndex,
 		onFocus: handleFocus,
@@ -2542,15 +2564,15 @@ function Card({ ref, children, heading, headingLevel = "3", headerActions, foote
 }
 //#endregion
 //#region src/Container.tsx
-const OVERRIDE_HOOK$19 = {
+const OVERRIDE_HOOK$20 = {
 	maxWidth: "--ds-container-max-width",
 	paddingInline: "--ds-container-padding-inline"
 };
-function overridesToStyle$16(overrides, inEffect) {
+function overridesToStyle$17(overrides, inEffect) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
 		const ref = overrides[binding];
-		if (ref && inEffect[binding]) style[OVERRIDE_HOOK$19[binding]] = cssVar(ref);
+		if (ref && inEffect[binding]) style[OVERRIDE_HOOK$20[binding]] = cssVar(ref);
 	}
 	return style;
 }
@@ -2575,7 +2597,7 @@ function Container({ ref, children, width = "content", gutter = "default", align
 		`ds-container--gutter-${gutter}`,
 		`ds-container--align-${align}`
 	].join(" ");
-	const style = overrides ? overridesToStyle$16(overrides, {
+	const style = overrides ? overridesToStyle$17(overrides, {
 		maxWidth: width !== "full",
 		paddingInline: gutter !== "none"
 	}) : void 0;
@@ -2591,7 +2613,7 @@ function Container({ ref, children, width = "content", gutter = "default", align
 }
 //#endregion
 //#region src/FocusScope.tsx
-const FOCUSABLE_SELECTOR$8 = [
+const FOCUSABLE_SELECTOR$7 = [
 	"a[href]",
 	"area[href]",
 	"button",
@@ -2608,7 +2630,7 @@ const FOCUSABLE_SELECTOR$8 = [
 function isFocusable$2(element) {
 	if (!(element instanceof HTMLElement)) return false;
 	if (element.hasAttribute("data-focus-sentinel")) return false;
-	if (!element.matches(FOCUSABLE_SELECTOR$8)) return false;
+	if (!element.matches(FOCUSABLE_SELECTOR$7)) return false;
 	if (element.matches(":disabled")) return false;
 	return element.getAttribute("tabindex") !== "-1" && element.tabIndex >= 0;
 }
@@ -2620,24 +2642,25 @@ function isFocusable$2(element) {
 function isExcludedSubtree$1(element) {
 	return element.hasAttribute("inert") || element.getAttribute("aria-hidden") === "true";
 }
-/** Walks DOM order including open shadow roots and assigned slot nodes. Visibility is not tested. */
+/**
+* Walks the flat tree in DOM order: a shadow host contributes its open shadow root (whose slots
+* bring in the host's assigned light children, so they are visited once, in rendered order), and
+* a slot with nothing assigned contributes its fallback content. Visibility is not tested.
+*/
 function collectFocusable$1(root, results = []) {
-	for (const child of Array.from(root.children)) {
-		if (isExcludedSubtree$1(child)) continue;
-		if (child instanceof HTMLSlotElement) {
-			for (const assigned of child.assignedElements({ flatten: true })) {
-				if (isExcludedSubtree$1(assigned)) continue;
-				if (isFocusable$2(assigned)) results.push(assigned);
-				if (assigned.shadowRoot) collectFocusable$1(assigned.shadowRoot, results);
-				collectFocusable$1(assigned, results);
-			}
-			continue;
-		}
-		if (isFocusable$2(child)) results.push(child);
-		if (child.shadowRoot) collectFocusable$1(child.shadowRoot, results);
-		collectFocusable$1(child, results);
-	}
+	for (const child of Array.from(root.children)) visitFocusable(child, results);
 	return results;
+}
+function visitFocusable(element, results) {
+	if (isExcludedSubtree$1(element)) return;
+	if (element instanceof HTMLSlotElement) {
+		const assigned = element.assignedElements({ flatten: true });
+		if (assigned.length === 0) collectFocusable$1(element, results);
+		else for (const node of assigned) visitFocusable(node, results);
+		return;
+	}
+	if (isFocusable$2(element)) results.push(element);
+	collectFocusable$1(element.shadowRoot ?? element, results);
 }
 /** The focused element, descending into open shadow roots. */
 function deepActiveElement() {
@@ -2888,7 +2911,7 @@ function FocusScope({ ref, children, trapped = true, autoFocus = "first", restor
 }
 //#endregion
 //#region src/Dialog.tsx
-const OVERRIDE_HOOK$18 = {
+const OVERRIDE_HOOK$19 = {
 	scrim: "--ds-dialog-scrim",
 	border: "--ds-dialog-border",
 	borderWidth: "--ds-dialog-border-width",
@@ -2907,18 +2930,18 @@ const OVERRIDE_HOOK$18 = {
 	enter: "--ds-dialog-enter",
 	exit: "--ds-dialog-exit"
 };
-function overridesToStyle$15(overrides) {
+function overridesToStyle$16(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
 		const ref = overrides[binding];
-		const hook = OVERRIDE_HOOK$18[binding];
+		const hook = OVERRIDE_HOOK$19[binding];
 		if (ref && hook) style[hook] = cssVar(ref);
 	}
 	return style;
 }
 /** copy.* — used verbatim. */
 const COPY$24 = { closeLabel: "Close" };
-const FOCUSABLE_SELECTOR$7 = [
+const FOCUSABLE_SELECTOR$6 = [
 	"a[href]",
 	"button:not([disabled])",
 	"input:not([disabled]):not([type=\"hidden\"])",
@@ -2929,7 +2952,7 @@ const FOCUSABLE_SELECTOR$7 = [
 ].join(",");
 function firstFocusableIn$1(root) {
 	if (!root) return null;
-	for (const element of Array.from(root.querySelectorAll(FOCUSABLE_SELECTOR$7))) if (!element.hasAttribute("data-focus-sentinel") && !element.closest("[inert]")) return element;
+	for (const element of Array.from(root.querySelectorAll(FOCUSABLE_SELECTOR$6))) if (!element.hasAttribute("data-focus-sentinel") && !element.closest("[inert]")) return element;
 	return null;
 }
 /** True when the surface has no running transition (reduced motion, or no stylesheet as under jsdom). */
@@ -2939,14 +2962,18 @@ function hasNoTransition$4(element) {
 	return durations.split(",").every((duration) => parseFloat(duration) === 0);
 }
 /** Scroll lock is reference-counted so an overlay opened over the dialog cannot release it early. */
-let scrollLockCount$3 = 0;
-function lockScroll$3() {
-	scrollLockCount$3 += 1;
+let scrollLockCount$4 = 0;
+function lockScroll$4() {
+	scrollLockCount$4 += 1;
 	document.documentElement.classList.add("ds-dialog-lock-scroll");
 	return () => {
-		scrollLockCount$3 -= 1;
-		if (scrollLockCount$3 === 0) document.documentElement.classList.remove("ds-dialog-lock-scroll");
+		scrollLockCount$4 -= 1;
+		if (scrollLockCount$4 === 0) document.documentElement.classList.remove("ds-dialog-lock-scroll");
 	};
+}
+/** False on the server and through hydration, true on a client-only mount and after hydration. */
+function subscribeNothing$14() {
+	return () => {};
 }
 /**
 * Dialog — Design Schema, category: overlay.
@@ -2964,6 +2991,7 @@ function Dialog({ ref, open, heading, description, children, footer, hideHeading
 	const generatedId = useId();
 	const headingId = `ds-dialog${generatedId}-heading`;
 	const descriptionId = `ds-dialog${generatedId}-description`;
+	const hydrated = useSyncExternalStore(subscribeNothing$14, () => true, () => false);
 	const dialogRef = useRef(null);
 	const setDialogNode = useCallback((node) => {
 		dialogRef.current = node;
@@ -3016,7 +3044,7 @@ function Dialog({ ref, open, heading, description, children, footer, hideHeading
 		headingElement.focus();
 	};
 	useLayoutEffect(() => {
-		if (!present || !open) return void 0;
+		if (!hydrated || !present || !open) return void 0;
 		const dialog = dialogRef.current;
 		const surface = surfaceRef.current;
 		if (!dialog || !surface) return void 0;
@@ -3044,7 +3072,11 @@ function Dialog({ ref, open, heading, description, children, footer, hideHeading
 			cancelAnimationFrame(frame);
 			surface.removeEventListener("transitionend", handleEntered);
 		};
-	}, [present, open]);
+	}, [
+		hydrated,
+		present,
+		open
+	]);
 	useEffect(() => {
 		if (open || !present) return void 0;
 		setVisible(false);
@@ -3069,9 +3101,9 @@ function Dialog({ ref, open, heading, description, children, footer, hideHeading
 		return () => surface.removeEventListener("transitionend", handleExited);
 	}, [open, present]);
 	useEffect(() => {
-		if (!present) return void 0;
-		return lockScroll$3();
-	}, [present]);
+		if (!hydrated || !present) return void 0;
+		return lockScroll$4();
+	}, [hydrated, present]);
 	/** Each Escape is reported exactly once, whichever of keydown, `cancel` or `close` reaches us first. */
 	const reportEscape = () => {
 		escapeReportedRef.current = true;
@@ -3110,17 +3142,16 @@ function Dialog({ ref, open, heading, description, children, footer, hideHeading
 		if (!escapeReportedRef.current) reportEscape();
 		reopenAfterNativeClose();
 	};
-	const handleScrimClick = () => {
-		if (!open || !dismissible) return;
+	const handleScrimClick = (event) => {
+		if (event.target !== event.currentTarget || !open || !dismissible) return;
 		onClose?.("scrim");
 	};
-	if (!present) return null;
+	if (!present || !hydrated) return null;
 	const classes = [
 		"ds-dialog",
 		`ds-dialog--${size}`,
 		visible && open ? "ds-dialog--visible" : null
 	].filter(Boolean).join(" ");
-	const insetOverride = overrides?.inset;
 	const footerGapOverride = overrides?.footerGap;
 	const hasFooter = footer !== void 0 && footer !== null && footer !== false;
 	const node = /* @__PURE__ */ jsxs("dialog", {
@@ -3128,7 +3159,7 @@ function Dialog({ ref, open, heading, description, children, footer, hideHeading
 		ref: setDialogNode,
 		"data-ds": "Dialog",
 		className: classes,
-		style: overrides ? overridesToStyle$15(overrides) : void 0,
+		style: overrides ? overridesToStyle$16(overrides) : void 0,
 		"aria-modal": "true",
 		"aria-labelledby": headingId,
 		"aria-describedby": description ? descriptionId : void 0,
@@ -3138,6 +3169,7 @@ function Dialog({ ref, open, heading, description, children, footer, hideHeading
 		children: [/* @__PURE__ */ jsx("div", {
 			className: "ds-dialog__scrim",
 			"data-part": "scrim",
+			"aria-hidden": "true",
 			onClick: handleScrimClick
 		}), /* @__PURE__ */ jsx(FocusScope, {
 			trapped: true,
@@ -3193,10 +3225,7 @@ function Dialog({ ref, open, heading, description, children, footer, hideHeading
 							className: "ds-dialog__body",
 							"data-part": "body",
 							ref: bodyRef,
-							children: /* @__PURE__ */ jsx(Box, {
-								overrides: insetOverride ? { paddingInline: insetOverride } : void 0,
-								children
-							})
+							children: /* @__PURE__ */ jsx(Box, { children })
 						}),
 						hasFooter ? /* @__PURE__ */ jsx("div", {
 							className: "ds-dialog__footer",
@@ -3219,7 +3248,7 @@ function Dialog({ ref, open, heading, description, children, footer, hideHeading
 }
 //#endregion
 //#region src/AlertDialog.tsx
-const OVERRIDE_HOOK$17 = {
+const OVERRIDE_HOOK$18 = {
 	scrim: "--ds-alert-dialog-scrim",
 	border: "--ds-alert-dialog-border",
 	borderWidth: "--ds-alert-dialog-border-width",
@@ -3238,11 +3267,11 @@ const OVERRIDE_HOOK$17 = {
 	enter: "--ds-alert-dialog-enter",
 	exit: "--ds-alert-dialog-exit"
 };
-function overridesToStyle$14(overrides) {
+function overridesToStyle$15(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
 		const ref = overrides[binding];
-		const hook = OVERRIDE_HOOK$17[binding];
+		const hook = OVERRIDE_HOOK$18[binding];
 		if (ref && hook) style[hook] = cssVar(ref);
 	}
 	return style;
@@ -3262,14 +3291,23 @@ function hasNoTransition$3(element) {
 	return durations.split(",").every((duration) => parseFloat(duration) === 0);
 }
 /** Scroll lock is reference-counted so an overlay opened over the alert dialog cannot release it early. */
-let scrollLockCount$2 = 0;
-function lockScroll$2() {
-	scrollLockCount$2 += 1;
+let scrollLockCount$3 = 0;
+function lockScroll$3() {
+	scrollLockCount$3 += 1;
 	document.documentElement.classList.add("ds-alert-dialog-lock-scroll");
 	return () => {
-		scrollLockCount$2 -= 1;
-		if (scrollLockCount$2 === 0) document.documentElement.classList.remove("ds-alert-dialog-lock-scroll");
+		scrollLockCount$3 -= 1;
+		if (scrollLockCount$3 === 0) document.documentElement.classList.remove("ds-alert-dialog-lock-scroll");
 	};
+}
+/** False on the server and through hydration, true on a client-only mount and after hydration. */
+function subscribeNothing$13() {
+	return () => {};
+}
+/** A press that lands on a part wrapper, not on its Button, is forwarded to the Button. */
+function forwardToButton(event) {
+	const button = event.currentTarget.querySelector("button");
+	if (button && !button.contains(event.target)) button.click();
 }
 /**
 * AlertDialog — Design Schema, category: overlay.
@@ -3290,6 +3328,7 @@ function AlertDialog({ ref, open, heading, description, tone = "danger", confirm
 	const generatedId = useId();
 	const headingId = `ds-alert-dialog${generatedId}-heading`;
 	const descriptionId = `ds-alert-dialog${generatedId}-description`;
+	const hydrated = useSyncExternalStore(subscribeNothing$13, () => true, () => false);
 	const dialogRef = useRef(null);
 	const setDialogNode = useCallback((node) => {
 		dialogRef.current = node;
@@ -3307,9 +3346,9 @@ function AlertDialog({ ref, open, heading, description, tone = "danger", confirm
 	const latestOpen = useRef(open);
 	latestOpen.current = open;
 	const warnedRef = useRef(false);
-	if (process.env.NODE_ENV !== "production" && !warnedRef.current && (!heading || !description || !confirmLabel)) {
+	if (process.env.NODE_ENV !== "production" && open && !warnedRef.current && (!heading || !description || !confirmLabel)) {
 		warnedRef.current = true;
-		console.warn("AlertDialog: `heading`, `description` and `confirmLabel` are required; the heading is the accessible name and the description states the consequence.");
+		console.warn("AlertDialog: `heading`, `description` and `confirmLabel` are required and must not be empty; an empty heading removes the accessible name.");
 	}
 	if (open && !present) setPresent(true);
 	/** Focus lands on Cancel, so Enter pressed reflexively cancels rather than destroys (WCAG 3.3.4). */
@@ -3318,7 +3357,7 @@ function AlertDialog({ ref, open, heading, description, tone = "danger", confirm
 		if (cancelButton && document.activeElement !== cancelButton) cancelButton.focus();
 	};
 	useLayoutEffect(() => {
-		if (!present || !open) return void 0;
+		if (!hydrated || !present || !open) return void 0;
 		const dialog = dialogRef.current;
 		const surface = surfaceRef.current;
 		if (!dialog || !surface) return void 0;
@@ -3330,7 +3369,11 @@ function AlertDialog({ ref, open, heading, description, tone = "danger", confirm
 		focusCancel();
 		const frame = requestAnimationFrame(() => setVisible(true));
 		return () => cancelAnimationFrame(frame);
-	}, [present, open]);
+	}, [
+		hydrated,
+		present,
+		open
+	]);
 	useEffect(() => {
 		if (open || !present) return void 0;
 		setVisible(false);
@@ -3355,9 +3398,9 @@ function AlertDialog({ ref, open, heading, description, tone = "danger", confirm
 		return () => surface.removeEventListener("transitionend", handleExited);
 	}, [open, present]);
 	useEffect(() => {
-		if (!present) return void 0;
-		return lockScroll$2();
-	}, [present]);
+		if (!hydrated || !present) return void 0;
+		return lockScroll$3();
+	}, [hydrated, present]);
 	/** Each Escape is reported exactly once, whichever of keydown or `cancel` reaches us first. */
 	const reportEscape = () => {
 		escapeReportedRef.current = true;
@@ -3392,7 +3435,7 @@ function AlertDialog({ ref, open, heading, description, tone = "danger", confirm
 			focusCancel();
 		});
 	};
-	if (!present) return null;
+	if (!present || !hydrated) return null;
 	const classes = [
 		"ds-alert-dialog",
 		`ds-alert-dialog--${tone}`,
@@ -3405,7 +3448,7 @@ function AlertDialog({ ref, open, heading, description, tone = "danger", confirm
 		ref: setDialogNode,
 		"data-ds": "AlertDialog",
 		className: classes,
-		style: overrides ? overridesToStyle$14(overrides) : void 0,
+		style: overrides ? overridesToStyle$15(overrides) : void 0,
 		role: "alertdialog",
 		"aria-modal": "true",
 		"aria-labelledby": headingId,
@@ -3415,11 +3458,13 @@ function AlertDialog({ ref, open, heading, description, tone = "danger", confirm
 		onClose: handleNativeClose,
 		children: [/* @__PURE__ */ jsx("div", {
 			className: "ds-alert-dialog__scrim",
-			"data-part": "scrim"
+			"data-part": "scrim",
+			"aria-hidden": "true"
 		}), /* @__PURE__ */ jsx(FocusScope, {
 			trapped: true,
 			autoFocus: "none",
 			restoreFocus: true,
+			active: open,
 			children: /* @__PURE__ */ jsx("div", {
 				className: "ds-alert-dialog__scope",
 				"data-part": "focusScope",
@@ -3468,6 +3513,7 @@ function AlertDialog({ ref, open, heading, description, tone = "danger", confirm
 							children: [/* @__PURE__ */ jsx("span", {
 								className: "ds-alert-dialog__action",
 								"data-part": "cancelButton",
+								onClick: forwardToButton,
 								children: /* @__PURE__ */ jsx(Button, {
 									ref: cancelButtonRef,
 									variant: "secondary",
@@ -3478,6 +3524,7 @@ function AlertDialog({ ref, open, heading, description, tone = "danger", confirm
 							}), /* @__PURE__ */ jsx("span", {
 								className: "ds-alert-dialog__action",
 								"data-part": "confirmButton",
+								onClick: forwardToButton,
 								children: /* @__PURE__ */ jsx(Button, {
 									variant: CONFIRM_VARIANT[tone],
 									size: "md",
@@ -3496,7 +3543,7 @@ function AlertDialog({ ref, open, heading, description, tone = "danger", confirm
 }
 //#endregion
 //#region src/Menu.tsx
-const OVERRIDE_HOOK$16 = {
+const OVERRIDE_HOOK$17 = {
 	border: "--ds-menu-border",
 	borderWidth: "--ds-menu-border-width",
 	shadow: "--ds-menu-shadow",
@@ -3523,18 +3570,23 @@ const OVERRIDE_HOOK$16 = {
 	enter: "--ds-menu-enter",
 	enterDistance: "--ds-menu-enter-distance"
 };
-function overridesToStyle$13(overrides) {
+function overridesToStyle$14(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
-		const hook = OVERRIDE_HOOK$16[binding];
+		const hook = OVERRIDE_HOOK$17[binding];
 		const ref = overrides[binding];
 		if (hook && ref) style[hook] = cssVar(ref);
 	}
 	return style;
 }
-const isDev$16 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$15 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+/**
+* False on the server and through hydration, true on a client-only mount: the portal needs
+* `document`, so it renders only once hydrated (`typeof document` is true during hydration too).
+*/
+const subscribeNothing$12 = () => () => {};
 /** jsdom (and older browsers) have no `matchMedia`; treat that as "no preference". */
-function prefersReducedMotion$4() {
+function prefersReducedMotion$3() {
 	return typeof window !== "undefined" && typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
 }
 /**
@@ -3624,9 +3676,11 @@ function computePosition$4(anchorRect, popupRect, placement, offset, gutter, rtl
 	else if (vertical === "top" && anchorRect.top - needed < 0 && anchorRect.bottom + needed <= viewportHeight) vertical = "bottom";
 	const preferredLeft = (rtl ? side === "end" : side === "start") ? anchorRect.left : anchorRect.right - popupRect.width;
 	const furthestLeft = Math.max(gutter, viewportWidth - gutter - popupRect.width);
-	const style = { left: Math.min(Math.max(preferredLeft, gutter), furthestLeft) };
-	if (vertical === "bottom") style.top = anchorRect.bottom;
-	else style.bottom = viewportHeight - anchorRect.top;
+	const left = Math.min(Math.max(preferredLeft, gutter), furthestLeft);
+	const clampBlock = (preferred) => Math.max(gutter - offset, Math.min(preferred, viewportHeight - gutter - needed));
+	const style = { left };
+	if (vertical === "bottom") style.top = clampBlock(anchorRect.bottom);
+	else style.bottom = clampBlock(viewportHeight - anchorRect.top);
 	return {
 		style,
 		vertical
@@ -3677,9 +3731,10 @@ function Menu({ ref, label, items, triggerVariant = "ghost", triggerIcon = "chev
 	const [activeId, setActiveId] = useState(null);
 	const [popupStyle, setPopupStyle] = useState(void 0);
 	const [vertical, setVertical] = useState("bottom");
-	const [entered, setEntered] = useState(false);
+	const [visible, setVisible] = useState(false);
+	const hydrated = useSyncExternalStore(subscribeNothing$12, () => true, () => false);
 	useEffect(() => {
-		if (!isDev$16 || warnedRef.current) return;
+		if (!isDev$15 || warnedRef.current) return;
 		if (iconOnly && triggerIcon === "none" && !anchor) {
 			warnedRef.current = true;
 			console.warn("Menu: `iconOnly` with `triggerIcon: none` leaves nothing visible to press; choose `ellipsis` or `chevron-down`.");
@@ -3755,7 +3810,7 @@ function Menu({ ref, label, items, triggerVariant = "ghost", triggerIcon = "chev
 			focusInsideRef.current = false;
 			openerRef.current = null;
 			lastPositionRef.current = "";
-			setEntered(false);
+			setVisible(false);
 			return;
 		}
 		const popup = popupRef.current;
@@ -3767,8 +3822,8 @@ function Menu({ ref, label, items, triggerVariant = "ghost", triggerIcon = "chev
 			if (!target) return;
 			const triggerWidth = anchor ? "0px" : `${target.getBoundingClientRect().width}px`;
 			popup.style.setProperty(TRIGGER_WIDTH_HOOK, triggerWidth);
-			const offset = readLengthVar$1(popup, OVERRIDE_HOOK$16.popupOffset) ?? 0;
-			const gutter = readLengthVar$1(popup, OVERRIDE_HOOK$16.gutter) ?? 0;
+			const offset = readLengthVar$1(popup, OVERRIDE_HOOK$17.popupOffset) ?? 0;
+			const gutter = readLengthVar$1(popup, OVERRIDE_HOOK$17.gutter) ?? 0;
 			const rtl = getComputedStyle(target).direction === "rtl";
 			const result = computePosition$4(target.getBoundingClientRect(), popup.getBoundingClientRect(), latest.current.placement, offset, gutter, rtl);
 			const next = `${result.vertical}|${triggerWidth}|${JSON.stringify(result.style)}`;
@@ -3787,8 +3842,8 @@ function Menu({ ref, label, items, triggerVariant = "ghost", triggerIcon = "chev
 		if (target) focusAction(target.id);
 		else popup.focus();
 		let frame = 0;
-		if (prefersReducedMotion$4() || typeof requestAnimationFrame !== "function") setEntered(true);
-		else frame = requestAnimationFrame(() => setEntered(true));
+		if (prefersReducedMotion$3() || typeof requestAnimationFrame !== "function") setVisible(true);
+		else frame = requestAnimationFrame(() => setVisible(true));
 		window.addEventListener("scroll", reposition, true);
 		window.addEventListener("resize", reposition);
 		return () => {
@@ -3796,7 +3851,11 @@ function Menu({ ref, label, items, triggerVariant = "ghost", triggerIcon = "chev
 			window.removeEventListener("scroll", reposition, true);
 			window.removeEventListener("resize", reposition);
 		};
-	}, [open, anchor]);
+	}, [
+		open,
+		anchor,
+		hydrated
+	]);
 	const dismissRef = useRef(() => void 0);
 	dismissRef.current = (reason) => closeMenu(reason, "none");
 	useEffect(() => {
@@ -3805,6 +3864,7 @@ function Menu({ ref, label, items, triggerVariant = "ghost", triggerIcon = "chev
 			const target = event.target;
 			const from = anchor?.current ?? triggerRef.current;
 			if (target && (popupRef.current?.contains(target) || from?.contains(target))) return;
+			if (!(target instanceof Element ? target.closest(TABBABLE_SELECTOR$1) : null) && focusInsideRef.current) event.preventDefault();
 			dismissRef.current("outside");
 		};
 		const handleWindowBlur = () => dismissRef.current("focus-out");
@@ -3845,7 +3905,7 @@ function Menu({ ref, label, items, triggerVariant = "ghost", triggerIcon = "chev
 	};
 	const typeaheadResetMs = () => {
 		const popup = popupRef.current;
-		return popup ? cssTimeToMs(getComputedStyle(popup).getPropertyValue(OVERRIDE_HOOK$16.typeaheadReset)) : 0;
+		return popup ? cssTimeToMs(getComputedStyle(popup).getPropertyValue(OVERRIDE_HOOK$17.typeaheadReset)) : 0;
 	};
 	const handleTypeahead = (char, enabled, currentIndex) => {
 		const state = typeaheadRef.current;
@@ -3859,7 +3919,7 @@ function Menu({ ref, label, items, triggerVariant = "ghost", triggerIcon = "chev
 		}, resetMs) : null;
 		if (resetMs <= 0) state.buffer = "";
 		const start = Math.max(currentIndex, 0);
-		const firstOffset = buffer.length > 1 ? 0 : 1;
+		const firstOffset = buffer.length > 1 || currentIndex < 0 ? 0 : 1;
 		for (let offset = firstOffset; offset < enabled.length + firstOffset; offset++) {
 			const candidate = enabled[(start + offset) % enabled.length];
 			if (candidate && candidate.label.toLowerCase().startsWith(buffer)) {
@@ -3948,8 +4008,8 @@ function Menu({ ref, label, items, triggerVariant = "ghost", triggerIcon = "chev
 	const handlePopupBlur = (event) => {
 		const next = event.relatedTarget;
 		if (next && popupRef.current?.contains(next)) return;
-		focusInsideRef.current = false;
 		if (!next) return;
+		focusInsideRef.current = false;
 		if (anchorElement()?.contains(next)) return;
 		closeMenu("focus-out", "none");
 	};
@@ -4032,8 +4092,8 @@ function Menu({ ref, label, items, triggerVariant = "ghost", triggerIcon = "chev
 		name: triggerIcon,
 		inline: true
 	});
-	const overrideStyle = overrides ? overridesToStyle$13(overrides) : void 0;
-	const popupClasses = ["ds-menu__popup", entered ? "ds-menu__popup--entered" : null].filter(Boolean).join(" ");
+	const overrideStyle = overrides ? overridesToStyle$14(overrides) : void 0;
+	const popupClasses = ["ds-menu__popup", visible && open ? "ds-menu__popup--visible" : null].filter(Boolean).join(" ");
 	const { className: _className, style: _style, ...rootProps } = rest;
 	return /* @__PURE__ */ jsxs("div", {
 		...rootProps,
@@ -4058,7 +4118,7 @@ function Menu({ ref, label, items, triggerVariant = "ghost", triggerIcon = "chev
 				onKeyDown: handleTriggerKeyDown,
 				onKeyUp: handleTriggerKeyUp
 			})
-		}), open && typeof document !== "undefined" ? createPortal(/* @__PURE__ */ jsx("div", {
+		}), open && hydrated ? createPortal(/* @__PURE__ */ jsx("div", {
 			ref: setPopupRef,
 			role: "menu",
 			id: listId,
@@ -4087,7 +4147,7 @@ const TEXT_DEFAULT = {
 	lineHeight: "font.lineHeight.normal"
 };
 /** Hooks for the bindings the bubble styles itself; the typography three are forwarded instead. */
-const OVERRIDE_HOOK$15 = {
+const OVERRIDE_HOOK$16 = {
 	radius: "--ds-tooltip-radius",
 	paddingBlock: "--ds-tooltip-padding-block",
 	paddingInline: "--ds-tooltip-padding-inline",
@@ -4098,12 +4158,12 @@ const OVERRIDE_HOOK$15 = {
 	enter: "--ds-tooltip-enter",
 	exit: "--ds-tooltip-exit"
 };
-function overridesToStyle$12(overrides) {
+function overridesToStyle$13(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
 		if (binding in TEXT_DEFAULT) continue;
 		const ref = overrides[binding];
-		const hook = OVERRIDE_HOOK$15[binding];
+		const hook = OVERRIDE_HOOK$16[binding];
 		if (ref && hook) style[hook] = cssVar(ref);
 	}
 	return style;
@@ -4114,9 +4174,14 @@ const HOVER_DELAY = "calc(var(--motion-duration-base) * 3)";
 const WARM_WINDOW = "var(--motion-duration-base)";
 /** pointerGrace: motion.duration.fast — the pointer may cross the `offset` gap onto the bubble. */
 const POINTER_GRACE = "var(--motion-duration-fast)";
-const isDev$15 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$14 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 /** Shared "warm until" timestamp: a toolbar's tooltips show instantly while one has just hidden. */
 let warmUntil = 0;
+const subscribeNothing$11 = () => () => {};
+/** False on the server and through hydration, true on a client-only mount: gates the portal. */
+function useHydrated$2() {
+	return useSyncExternalStore(subscribeNothing$11, () => true, () => false);
+}
 function matches(query) {
 	return typeof window !== "undefined" && typeof window.matchMedia === "function" ? window.matchMedia(query).matches : false;
 }
@@ -4201,12 +4266,14 @@ function computePosition$3(triggerRect, popupRect, placement, rtl, gap) {
 */
 function Tooltip({ content, children, placement = "top", describes = true, open, delay = "default", overrides, container }) {
 	const tooltipId = useId();
+	const hydrated = useHydrated$2();
 	const [internalOpen, setInternalOpen] = useState(false);
 	const [dismissed, setDismissed] = useState(false);
 	const isOpen = !dismissed && (open ?? internalOpen);
 	const [present, setPresent] = useState(isOpen);
 	if (isOpen && !present) setPresent(true);
-	const [entered, setEntered] = useState(false);
+	const [visible, setVisible] = useState(false);
+	const shown = visible && isOpen;
 	const [position, setPosition] = useState();
 	const [side, setSide] = useState(placement);
 	const triggerRef = useRef(null);
@@ -4256,7 +4323,7 @@ function Tooltip({ content, children, placement = "top", describes = true, open,
 		clearHide();
 	}, []);
 	useLayoutEffect(() => {
-		if (!present) return void 0;
+		if (!present || !hydrated) return void 0;
 		const trigger = triggerRef.current;
 		const popup = popupRef.current;
 		if (!trigger || !popup) return void 0;
@@ -4276,23 +4343,28 @@ function Tooltip({ content, children, placement = "top", describes = true, open,
 		};
 	}, [
 		present,
+		hydrated,
 		placement,
 		content
 	]);
-	useEffect(() => {
-		if (!present) return void 0;
+	useLayoutEffect(() => {
+		if (!present || !hydrated) return void 0;
 		const popup = popupRef.current;
 		if (isOpen) {
-			const frame = requestAnimationFrame(() => setEntered(true));
+			const frame = requestAnimationFrame(() => setVisible(true));
 			return () => cancelAnimationFrame(frame);
 		}
-		setEntered(false);
+		setVisible(false);
 		const host = popup ?? portalTarget();
 		warmUntil = Date.now() + resolveMs(host, WARM_WINDOW);
 		const exit = matches("(prefers-reduced-motion: reduce)") ? 0 : resolveMs(host, "var(--ds-tooltip-exit)");
 		const timer = setTimeout(() => setPresent(false), exit);
 		return () => clearTimeout(timer);
-	}, [isOpen, present]);
+	}, [
+		isOpen,
+		present,
+		hydrated
+	]);
 	useEffect(() => {
 		if (!isOpen) return void 0;
 		const handleKeyDown = (event) => {
@@ -4306,13 +4378,12 @@ function Tooltip({ content, children, placement = "top", describes = true, open,
 		return () => document.removeEventListener("keydown", handleKeyDown, true);
 	}, [isOpen]);
 	useEffect(() => {
-		if (!isDev$15) return;
+		if (!isDev$14) return;
 		if (!content) console.warn("Tooltip: `content` is required; it is the trigger’s accessible description or name.");
 		const trigger = triggerRef.current;
 		if (!trigger) console.warn("Tooltip: the child must forward `ref` to its focusable element.");
 		else if (trigger.tabIndex < 0) console.warn("Tooltip: the child must be focusable, or keyboard users can never see the tooltip.");
 	}, [content]);
-	if (isDev$15 && Children.count(children) !== 1) console.warn("Tooltip: `children` must be exactly one focusable element.");
 	const child = Children.only(children);
 	const childRef = child.props.ref;
 	const setTriggerRef = useCallback((node) => {
@@ -4348,7 +4419,7 @@ function Tooltip({ content, children, placement = "top", describes = true, open,
 	});
 	const textOverrides = {};
 	for (const binding of Object.keys(TEXT_DEFAULT)) textOverrides[binding] = overrides?.[binding] ?? TEXT_DEFAULT[binding];
-	const classes = ["ds-tooltip", entered ? "ds-tooltip--entered" : null].filter(Boolean).join(" ");
+	const classes = ["ds-tooltip", shown ? "ds-tooltip--visible" : null].filter(Boolean).join(" ");
 	return /* @__PURE__ */ jsxs(Fragment$1, { children: [
 		cloned,
 		/* @__PURE__ */ jsx("span", {
@@ -4358,7 +4429,7 @@ function Tooltip({ content, children, placement = "top", describes = true, open,
 			className: "ds-tooltip__description",
 			children: content
 		}),
-		present ? createPortal(/* @__PURE__ */ jsx("div", {
+		present && hydrated ? createPortal(/* @__PURE__ */ jsx("div", {
 			ref: popupRef,
 			"data-part": "popup",
 			"data-placement": side,
@@ -4366,7 +4437,7 @@ function Tooltip({ content, children, placement = "top", describes = true, open,
 			className: classes,
 			style: {
 				...position,
-				...overrides ? overridesToStyle$12(overrides) : void 0
+				...overrides ? overridesToStyle$13(overrides) : void 0
 			},
 			onPointerEnter: () => {
 				hoveringPopup.current = true;
@@ -4388,7 +4459,7 @@ function Tooltip({ content, children, placement = "top", describes = true, open,
 }
 //#endregion
 //#region src/Divider.tsx
-const isDev$14 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$13 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 const ROOT_OVERRIDE_HOOK$5 = {
 	color: "--ds-divider-color",
 	thickness: "--ds-divider-thickness",
@@ -4409,7 +4480,7 @@ function Divider({ ref, orientation = "horizontal", label, semantic = false, spa
 	const showLabel = Boolean(label) && orientation === "horizontal";
 	const isSemantic = semantic || showLabel;
 	useEffect(() => {
-		if (isDev$14 && Boolean(label) && orientation === "vertical") console.warn("Divider: `label` is ignored on a vertical divider — a vertical line has no room for centered text.");
+		if (isDev$13 && Boolean(label) && orientation === "vertical") console.warn("Divider: `label` is ignored on a vertical divider — a vertical line has no room for centered text.");
 	}, [label, orientation]);
 	const rootStyle = {};
 	const textOverrides = {};
@@ -4486,25 +4557,28 @@ const FIELDS_GAP_TOKEN = {
 * Bindings Fieldset's own CSS reads. legendSize, legendWeight, helperSize, fontFamily and lineHeight
 * reach the composed Texts only through their `overrides`; fieldsGap reaches the Stack only through its `overrides.gap`.
 */
-const OVERRIDE_HOOK$14 = {
+const OVERRIDE_HOOK$15 = {
 	partGap: "--ds-fieldset-part-gap",
 	disabledOpacity: "--ds-fieldset-disabled-opacity"
 };
-function overridesToStyle$11(overrides, disabled) {
+function overridesToStyle$12(overrides, disabled) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
 		if (binding === "disabledOpacity" && !disabled) continue;
-		const hook = OVERRIDE_HOOK$14[binding];
+		const hook = OVERRIDE_HOOK$15[binding];
 		const ref = overrides[binding];
 		if (hook && ref) style[hook] = cssVar(ref);
 	}
 	return Object.keys(style).length > 0 ? style : void 0;
 }
-/** Drops undefined entries so a Text receives only the overrides that were passed. */
-function defined(overrides) {
-	const entries = Object.entries(overrides).filter(([, ref]) => ref !== void 0);
-	return entries.length > 0 ? Object.fromEntries(entries) : void 0;
-}
+/** Default tokens of the bindings forwarded to the composed Texts; always sent, the override winning. */
+const TEXT_DEFAULTS = {
+	legendSize: "font.size.md",
+	legendWeight: "font.weight.medium",
+	helperSize: "font.size.sm",
+	fontFamily: "font.family.body",
+	lineHeight: "font.lineHeight.normal"
+};
 /** Direct children with fragments flattened, so `<>…</>` children count as direct. */
 function directChildren(children) {
 	return Children.toArray(children).flatMap((child) => isValidElement(child) && child.type === Fragment ? directChildren(child.props.children) : [child]);
@@ -4516,9 +4590,29 @@ const NATIVE_FIELDS = /* @__PURE__ */ new Set([
 	"button",
 	"fieldset"
 ]);
+/** Native inputs whose type carries no value (actions), excluded from the required indicator. */
+const ACTION_INPUT_TYPES = /* @__PURE__ */ new Set([
+	"button",
+	"submit",
+	"reset",
+	"image"
+]);
 /** A direct child that can take `disabled`: a component, or a native form control. */
 function isField(child) {
 	return isValidElement(child) && (typeof child.type !== "string" || NATIVE_FIELDS.has(child.type));
+}
+/**
+* The narrower set the required indicator counts: value-bearing fields only. A native button, an
+* action-type input or a nested fieldset is not counted, nor are the package's non-field components
+* (Button, Text, Fieldset), so required Inputs beside a submit Button still show the indicator.
+*/
+function isValueField(child) {
+	const { type } = child;
+	if (typeof type === "string") {
+		if (type === "input") return !ACTION_INPUT_TYPES.has(String(child.props.type ?? "text"));
+		return type === "select" || type === "textarea";
+	}
+	return type !== Button && type !== Text && type !== Fieldset;
 }
 /**
 * Fieldset — Design Schema, category: input.
@@ -4534,22 +4628,25 @@ function Fieldset({ ref, legend, children, description, error, disabled = false,
 	const descriptionId = `${baseId}-description`;
 	const errorId = `${baseId}-error`;
 	const direct = directChildren(children);
-	const fields = direct.filter(isField);
-	const allRequired = fields.length > 0 && fields.every((field) => field.props.required === true);
-	const renderedChildren = disabled ? direct.map((child) => isField(child) ? cloneElement(child, { disabled: true }) : child) : children;
+	const valueFields = direct.filter(isField).filter(isValueField);
+	const allRequired = valueFields.length > 0 && valueFields.every((field) => field.props.required === true);
+	const renderedChildren = disabled ? direct.map((child) => isField(child) ? cloneElement(child, { disabled: true }) : child) : direct;
 	const describedBy = [description ? descriptionId : null, error ? errorId : null].filter(Boolean).join(" ");
 	const classes = ["ds-fieldset", disabled ? "ds-fieldset--disabled" : null].filter(Boolean).join(" ");
-	const legendOverrides = defined({
-		fontSize: overrides?.legendSize,
-		fontWeight: overrides?.legendWeight,
-		fontFamily: overrides?.fontFamily,
-		lineHeight: overrides?.lineHeight
-	});
-	const helperOverrides = defined({
-		fontSize: overrides?.helperSize,
-		fontFamily: overrides?.fontFamily,
-		lineHeight: overrides?.lineHeight
-	});
+	const fontFamily = overrides?.fontFamily ?? TEXT_DEFAULTS.fontFamily;
+	const lineHeight = overrides?.lineHeight ?? TEXT_DEFAULTS.lineHeight;
+	const legendOverrides = {
+		fontSize: overrides?.legendSize ?? TEXT_DEFAULTS.legendSize,
+		fontWeight: overrides?.legendWeight ?? TEXT_DEFAULTS.legendWeight,
+		fontFamily,
+		lineHeight
+	};
+	const helperOverrides = {
+		fontSize: overrides?.helperSize ?? TEXT_DEFAULTS.helperSize,
+		fontFamily,
+		lineHeight
+	};
+	const dimmed = disabled ? "true" : void 0;
 	const fieldsGap = overrides?.fieldsGap ?? FIELDS_GAP_TOKEN[gap];
 	return /* @__PURE__ */ jsxs("fieldset", {
 		...rest,
@@ -4557,7 +4654,7 @@ function Fieldset({ ref, legend, children, description, error, disabled = false,
 		"data-ds": "Fieldset",
 		"data-part": "group",
 		className: classes,
-		style: overrides ? overridesToStyle$11(overrides, disabled) : void 0,
+		style: overrides ? overridesToStyle$12(overrides, disabled) : void 0,
 		"aria-describedby": describedBy || void 0,
 		"aria-disabled": disabled ? "true" : void 0,
 		"aria-invalid": error ? "true" : void 0,
@@ -4565,6 +4662,7 @@ function Fieldset({ ref, legend, children, description, error, disabled = false,
 			/* @__PURE__ */ jsx("legend", {
 				"data-part": "legend",
 				className: "ds-fieldset__legend",
+				"aria-disabled": dimmed,
 				children: /* @__PURE__ */ jsx(Text, {
 					element: "span",
 					tone: "default",
@@ -4578,6 +4676,7 @@ function Fieldset({ ref, legend, children, description, error, disabled = false,
 				id: descriptionId,
 				"data-part": "description",
 				className: "ds-fieldset__description",
+				"aria-disabled": dimmed,
 				children: /* @__PURE__ */ jsx(Text, {
 					element: "span",
 					tone: "muted",
@@ -4613,7 +4712,7 @@ function Fieldset({ ref, legend, children, description, error, disabled = false,
 //#endregion
 //#region src/Toast.tsx
 /** Bindings drawn by the toast itself; `fontFamily`, `fontSize` and `lineHeight` are forwarded to Text. */
-const OVERRIDE_HOOK$13 = {
+const OVERRIDE_HOOK$14 = {
 	radius: "--ds-toast-radius",
 	shadow: "--ds-toast-shadow",
 	paddingBlock: "--ds-toast-padding-block",
@@ -4648,7 +4747,7 @@ const COPY$21 = {
 	dismissLabel: "Dismiss",
 	regionLabel: "Notifications"
 };
-const isDev$13 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$12 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 /** Constants `shortDuration` / `longDuration`: motion.duration.loop × 6 / × 12, in ms. */
 const LOOP_MULTIPLIER = {
 	short: 6,
@@ -4667,12 +4766,12 @@ function resolveLoopMs(el) {
 	return ms !== null && ms > 0 ? ms : null;
 }
 /** jsdom (and older browsers) have no `matchMedia`; treat that as "no preference". */
-function prefersReducedMotion$3() {
+function prefersReducedMotion$2() {
 	return typeof window !== "undefined" && typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
 }
 const REGION_SELECTOR = "[data-ds=\"ToastRegion\"]";
 /** The focusable selector FocusScope walks with, kept in step with it. */
-const FOCUSABLE_SELECTOR$6 = [
+const FOCUSABLE_SELECTOR$5 = [
 	"a[href]",
 	"area[href]",
 	"button",
@@ -4688,7 +4787,7 @@ const FOCUSABLE_SELECTOR$6 = [
 ].join(",");
 function isFocusable(element) {
 	if (!(element instanceof HTMLElement)) return false;
-	if (!element.matches(FOCUSABLE_SELECTOR$6)) return false;
+	if (!element.matches(FOCUSABLE_SELECTOR$5)) return false;
 	if (element.matches(":disabled")) return false;
 	return element.getAttribute("tabindex") !== "-1" && element.tabIndex >= 0;
 }
@@ -4734,8 +4833,10 @@ function returnFocus(root) {
 	(next ?? previous)?.focus();
 }
 const ToastRegionContext = createContext(null);
-/** Set by the region when `dismiss(toastId)` or `dismiss()` asked this toast to leave. */
-const ToastDismissRequestContext = createContext(false);
+const ToastEntryContext = createContext(null);
+function subscribeNothing$10() {
+	return () => {};
+}
 /**
 * Toast — Design Schema, category: feedback.
 *
@@ -4746,13 +4847,16 @@ const ToastDismissRequestContext = createContext(false);
 * there is an action, and for `danger`, so nobody misses the one they needed.
 *
 * Toasts are normally shown with `toast({ message })`, which renders them in the one
-* `ToastRegion`; rendering `<Toast>` directly is for previews and custom hosts.
+* `ToastRegion`; rendering `<Toast>` directly is for previews and custom hosts. Toast exposes no
+* `ref`: toasts are created by `toast()`, not placed by callers.
 */
-function Toast({ ref, message, tone = "neutral", actionLabel, duration, dismissible = true, toastId: _toastId, onAction, onDismiss, overrides, ...rest }) {
+function Toast({ message, tone = "neutral", actionLabel, duration, dismissible = true, toastId: _toastId, onAction, onDismiss, overrides, ...rest }) {
 	const rootRef = useRef(null);
-	useImperativeHandle(ref, () => rootRef.current, []);
 	const regionTiming = useContext(ToastRegionContext);
-	const dismissRequested = useContext(ToastDismissRequestContext);
+	const entry = useContext(ToastEntryContext);
+	const dismissRequested = entry?.dismissRequested ?? false;
+	const onExitedLatest = useRef(entry?.onExited);
+	onExitedLatest.current = entry?.onExited;
 	const [ownLoopMs, setOwnLoopMs] = useState(void 0);
 	const loopMs = regionTiming ? regionTiming.loopMs : ownLoopMs;
 	const [visible, setVisible] = useState(false);
@@ -4767,7 +4871,7 @@ function Toast({ ref, message, tone = "neutral", actionLabel, duration, dismissi
 	const effectiveDuration = forcedPersistent ? "persistent" : duration ?? "short";
 	const showDismiss = dismissible || effectiveDuration === "persistent";
 	useEffect(() => {
-		if (isDev$13 && forcedPersistent && (duration === "short" || duration === "long")) console.warn(`Toast: \`duration: ${duration}\` is ignored — a toast with an action or \`tone: danger\` is persistent until dismissed.`);
+		if (isDev$12 && forcedPersistent && (duration === "short" || duration === "long")) console.warn(`Toast: \`duration: ${duration}\` is ignored — a toast with an action or \`tone: danger\` is persistent until dismissed.`);
 	}, [forcedPersistent, duration]);
 	useEffect(() => {
 		if (regionTiming || !rootRef.current) return;
@@ -4782,17 +4886,18 @@ function Toast({ ref, message, tone = "neutral", actionLabel, duration, dismissi
 			timerRef.current = null;
 		}
 		if (node.contains(node.ownerDocument.activeElement)) returnFocus(node.closest(REGION_SELECTOR) ?? node);
-		const finish = () => {
-			onDismissLatest.current?.(reason);
+		onDismissLatest.current?.(reason);
+		const remove = () => {
 			setGone(true);
+			onExitedLatest.current?.();
 		};
-		const exitMs = prefersReducedMotion$3() ? null : parseTime$3(getComputedStyle(node).getPropertyValue("--ds-toast-exit"));
+		const exitMs = prefersReducedMotion$2() ? null : parseTime$3(getComputedStyle(node).getPropertyValue("--ds-toast-exit"));
 		if (exitMs === null || exitMs <= 0) {
-			finish();
+			remove();
 			return;
 		}
 		setVisible(false);
-		exitTimerRef.current = setTimeout(finish, exitMs);
+		exitTimerRef.current = setTimeout(remove, exitMs);
 	}, []);
 	useEffect(() => () => {
 		if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
@@ -4800,8 +4905,8 @@ function Toast({ ref, message, tone = "neutral", actionLabel, duration, dismissi
 	useEffect(() => {
 		if (dismissRequested) dismiss("programmatic");
 	}, [dismissRequested, dismiss]);
-	useEffect(() => {
-		if (prefersReducedMotion$3() || typeof requestAnimationFrame !== "function") {
+	useLayoutEffect(() => {
+		if (prefersReducedMotion$2() || typeof requestAnimationFrame !== "function") {
 			setVisible(true);
 			return;
 		}
@@ -4850,6 +4955,7 @@ function Toast({ ref, message, tone = "neutral", actionLabel, duration, dismissi
 		start();
 		node.addEventListener("pointerenter", handlePointerEnter);
 		node.addEventListener("pointerleave", handlePointerLeave);
+		node.addEventListener("pointercancel", handlePointerLeave);
 		node.addEventListener("focusin", handleFocusIn);
 		node.addEventListener("focusout", handleFocusOut);
 		document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -4860,6 +4966,7 @@ function Toast({ ref, message, tone = "neutral", actionLabel, duration, dismissi
 			}
 			node.removeEventListener("pointerenter", handlePointerEnter);
 			node.removeEventListener("pointerleave", handlePointerLeave);
+			node.removeEventListener("pointercancel", handlePointerLeave);
 			node.removeEventListener("focusin", handleFocusIn);
 			node.removeEventListener("focusout", handleFocusOut);
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -4916,7 +5023,7 @@ function Toast({ ref, message, tone = "neutral", actionLabel, duration, dismissi
 		"data-ds": "Toast",
 		"data-part": "toast",
 		className: `ds-toast ds-toast--${tone}${visible ? " ds-toast--entered" : ""}`,
-		style: hooksToStyle(OVERRIDE_HOOK$13, overrides),
+		style: hooksToStyle(OVERRIDE_HOOK$14, overrides),
 		role: tone === "danger" ? "alert" : "status",
 		children: [
 			tone !== "neutral" ? /* @__PURE__ */ jsx(Icon, {
@@ -4961,7 +5068,7 @@ function Toast({ ref, message, tone = "neutral", actionLabel, duration, dismissi
 		]
 	});
 }
-/** "Do not stack more than three; the region replaces the oldest." */
+/** "Do not stack more than three; the region replaces the oldest." A fixed count, not a token. */
 const MAX_STACKED = 3;
 let entries = [];
 const listeners = /* @__PURE__ */ new Set();
@@ -4980,25 +5087,42 @@ function subscribe(listener) {
 function getSnapshot() {
 	return entries;
 }
+const NO_ENTRIES = [];
+function getServerSnapshot() {
+	return NO_ENTRIES;
+}
 function settle(entry, reason) {
 	entry.options.onDismiss?.(reason);
 	entry.resolve({ reason });
 }
-/** A toast finished leaving (timeout, button, Escape, action, programmatic): report, then remove. */
-function removeEntry(key, reason) {
+/** A toast began to leave (timeout, button, Escape, action, programmatic): report now, remove on `exitEntry`. */
+function beginExit(key, reason) {
 	const entry = entries.find((item) => item.key === key);
-	if (!entry) return;
+	if (!entry || entry.exiting) return;
 	settle(entry, reason);
+	entries = entries.map((item) => item === entry ? {
+		...item,
+		exiting: true
+	} : item);
+	notify();
+}
+/** A toast's exit transition ended: take it out of the region. */
+function exitEntry(key) {
+	if (!entries.some((item) => item.key === key)) return;
 	entries = entries.filter((item) => item.key !== key);
 	notify();
 }
-/** Adds a toast; one with the same toastId, or the oldest beyond three, leaves immediately as `replaced`. */
+/**
+* Adds a toast; one with the same toastId, or the oldest beyond three, leaves immediately as
+* `replaced`. Toasts already in their exit transition are neither replaced nor counted.
+*/
 function pushEntry(entry) {
 	const id = entry.options.toastId;
-	const replaced = id === void 0 ? void 0 : entries.find((item) => item.options.toastId === id);
+	const replaced = id === void 0 ? void 0 : entries.find((item) => !item.exiting && item.options.toastId === id);
 	let next = replaced ? entries.map((item) => item === replaced ? entry : item) : [...entries, entry];
-	const evicted = next.length > MAX_STACKED ? next.slice(0, next.length - MAX_STACKED) : [];
-	next = next.slice(evicted.length);
+	const active = next.filter((item) => !item.exiting);
+	const evicted = active.length > MAX_STACKED ? active.slice(0, active.length - MAX_STACKED) : [];
+	next = next.filter((item) => !evicted.includes(item));
 	if (replaced) settle(replaced, "replaced");
 	for (const item of evicted) settle(item, "replaced");
 	entries = next;
@@ -5010,10 +5134,10 @@ function pushEntry(entry) {
 * Mount it once at the app root, or let `toast()` create it on first use. It exists before any
 * toast so announcements fire; F6 moves focus into it from anywhere and back again.
 */
-function ToastRegion({ ref, overrides, container }) {
-	const list = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+function ToastRegion({ overrides, container }) {
+	const list = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+	const hydrated = useSyncExternalStore(subscribeNothing$10, () => true, () => false);
 	const regionRef = useRef(null);
-	useImperativeHandle(ref, () => regionRef.current, []);
 	const [timing, setTiming] = useState({ loopMs: void 0 });
 	useEffect(() => {
 		regionMountCount += 1;
@@ -5021,9 +5145,9 @@ function ToastRegion({ ref, overrides, container }) {
 			regionMountCount -= 1;
 		};
 	}, []);
-	useEffect(() => {
-		if (regionRef.current) setTiming({ loopMs: resolveLoopMs(regionRef.current) });
-	}, []);
+	useLayoutEffect(() => {
+		if (hydrated && regionRef.current) setTiming({ loopMs: resolveLoopMs(regionRef.current) });
+	}, [hydrated]);
 	useEffect(() => {
 		if (list.length === 0) return void 0;
 		const handleKeyDown = (event) => {
@@ -5048,7 +5172,7 @@ function ToastRegion({ ref, overrides, container }) {
 		document.addEventListener("keydown", handleKeyDown);
 		return () => document.removeEventListener("keydown", handleKeyDown);
 	}, [list.length]);
-	if (typeof document === "undefined") return null;
+	if (!hydrated) return null;
 	return createPortal(/* @__PURE__ */ jsx("div", {
 		ref: regionRef,
 		role: "region",
@@ -5060,8 +5184,11 @@ function ToastRegion({ ref, overrides, container }) {
 		style: hooksToStyle(REGION_OVERRIDE_HOOK, overrides),
 		children: /* @__PURE__ */ jsx(ToastRegionContext.Provider, {
 			value: timing,
-			children: list.map((entry) => /* @__PURE__ */ jsx(ToastDismissRequestContext.Provider, {
-				value: entry.dismissRequested,
+			children: list.map((entry) => /* @__PURE__ */ jsx(ToastEntryContext.Provider, {
+				value: {
+					dismissRequested: entry.dismissRequested,
+					onExited: () => exitEntry(entry.key)
+				},
 				children: /* @__PURE__ */ jsx(Toast, {
 					message: entry.options.message,
 					tone: entry.options.tone,
@@ -5070,7 +5197,7 @@ function ToastRegion({ ref, overrides, container }) {
 					dismissible: entry.options.dismissible,
 					toastId: entry.options.toastId,
 					onAction: entry.options.onAction,
-					onDismiss: (reason) => removeEntry(entry.key, reason)
+					onDismiss: (reason) => beginExit(entry.key, reason)
 				})
 			}, entry.key))
 		})
@@ -5086,6 +5213,7 @@ function toast(options) {
 			key: ++entryCounter,
 			options,
 			dismissRequested: false,
+			exiting: false,
 			resolve
 		};
 		if (regionMountCount > 0 || autoRoot || typeof document === "undefined") {
@@ -5107,7 +5235,7 @@ function toast(options) {
 */
 function dismiss(toastId) {
 	const matches = (entry) => toastId === void 0 || entry.options.toastId === toastId;
-	const targets = entries.filter((entry) => matches(entry) && !entry.dismissRequested);
+	const targets = entries.filter((entry) => matches(entry) && !entry.dismissRequested && !entry.exiting);
 	if (targets.length === 0) return;
 	if (regionMountCount === 0) {
 		entries = entries.filter((entry) => !targets.includes(entry));
@@ -5123,7 +5251,7 @@ function dismiss(toastId) {
 }
 //#endregion
 //#region src/Popover.tsx
-const OVERRIDE_HOOK$12 = {
+const OVERRIDE_HOOK$13 = {
 	border: "--ds-popover-border",
 	borderWidth: "--ds-popover-border-width",
 	shadow: "--ds-popover-shadow",
@@ -5133,16 +5261,17 @@ const OVERRIDE_HOOK$12 = {
 	offset: "--ds-popover-offset",
 	arrowSize: "--ds-popover-arrow-size",
 	maxWidth: "--ds-popover-max-width",
+	gutter: "--ds-popover-gutter",
 	layer: "--ds-popover-layer",
 	enter: "--ds-popover-enter",
 	enterDistance: "--ds-popover-enter-distance",
 	exit: "--ds-popover-exit"
 };
-function overridesToStyle$10(overrides) {
+function overridesToStyle$11(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
 		const ref = overrides[binding];
-		const hook = OVERRIDE_HOOK$12[binding];
+		const hook = OVERRIDE_HOOK$13[binding];
 		if (ref && hook) style[hook] = cssVar(ref);
 	}
 	return style;
@@ -5161,10 +5290,24 @@ const TABBABLE_SELECTOR = [
 	"[tabindex]"
 ].join(",");
 function tabbablesIn$1(root) {
-	return Array.from(root.querySelectorAll(TABBABLE_SELECTOR)).filter((element) => !element.matches(":disabled") && element.tabIndex >= 0 && !element.hasAttribute("data-focus-sentinel") && !element.closest("[inert]"));
+	return Array.from(root.querySelectorAll(TABBABLE_SELECTOR)).filter((element) => !element.matches(":disabled") && element.tabIndex >= 0 && !element.hasAttribute("data-focus-sentinel") && !element.closest("[inert], [aria-hidden=\"true\"]"));
 }
 function supportsPopoverApi() {
 	return typeof HTMLElement !== "undefined" && typeof HTMLElement.prototype.showPopover === "function";
+}
+/** False on the server and through hydration, true on a client-only mount and after hydration. */
+function subscribeNothing$9() {
+	return () => {};
+}
+/** Modal scroll lock on the root element, reference-counted across open modal popovers. */
+let scrollLockCount$2 = 0;
+function lockScroll$2() {
+	scrollLockCount$2 += 1;
+	document.documentElement.classList.add("ds-popover-lock-scroll");
+	return () => {
+		scrollLockCount$2 -= 1;
+		if (scrollLockCount$2 === 0) document.documentElement.classList.remove("ds-popover-lock-scroll");
+	};
 }
 /** Longest transition on the element in milliseconds; 0 when there is none (reduced motion, jsdom). */
 function transitionMs(element) {
@@ -5177,6 +5320,14 @@ function transitionMs(element) {
 		longest = Math.max(longest, trimmed.endsWith("ms") ? amount : amount * 1e3);
 	}
 	return longest;
+}
+/** A custom-property length read back in pixels (`px`, or `rem` against the root font size). */
+function lengthPx(element, property) {
+	const raw = getComputedStyle(element).getPropertyValue(property).trim();
+	const amount = parseFloat(raw);
+	if (Number.isNaN(amount)) return 0;
+	if (raw.endsWith("rem")) return amount * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 0);
+	return amount;
 }
 function clamp$1(value, min, max) {
 	return Math.min(Math.max(value, min), Math.max(min, max));
@@ -5194,32 +5345,31 @@ const OPPOSITE = {
 	right: "left"
 };
 /**
-* Positions the fixed panel from the trigger rect: flips to the opposite side when the preferred
-* one overflows and the opposite fits, then shifts along the cross axis to stay in the viewport.
-* The offset itself is the panel's margin on the trigger side (CSS, from the `offset` hook).
+* Positions the fixed panel from the trigger rect. It flips to the opposite side only when the
+* preferred one overflows and the opposite fits within the gutter; otherwise it stays, and it
+* shifts along the cross axis alone to keep the gutter, so the main axis may overflow.
 */
 function positionPanel(trigger, panel, placement) {
 	const rtl = getComputedStyle(trigger).direction === "rtl";
 	const t = trigger.getBoundingClientRect();
 	const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
 	const viewportHeight = document.documentElement.clientHeight || window.innerHeight;
+	const gutter = lengthPx(panel, "--ds-popover-gutter");
 	let side = preferredSide(placement, rtl);
 	if (panel.dataset.side !== side) panel.dataset.side = side;
 	const computed = getComputedStyle(panel);
 	const offset = Math.max(parseFloat(computed.marginTop) || 0, parseFloat(computed.marginBottom) || 0, parseFloat(computed.marginLeft) || 0, parseFloat(computed.marginRight) || 0);
 	const p = panel.getBoundingClientRect();
 	const fits = (candidate) => {
-		if (candidate === "bottom") return t.bottom + offset + p.height <= viewportHeight;
-		if (candidate === "top") return t.top - offset - p.height >= 0;
-		if (candidate === "left") return t.left - offset - p.width >= 0;
-		return t.right + offset + p.width <= viewportWidth;
+		if (candidate === "bottom") return t.bottom + offset + p.height <= viewportHeight - gutter;
+		if (candidate === "top") return t.top - offset - p.height >= gutter;
+		if (candidate === "left") return t.left - offset - p.width >= gutter;
+		return t.right + offset + p.width <= viewportWidth - gutter;
 	};
 	if (!fits(side) && fits(OPPOSITE[side])) side = OPPOSITE[side];
 	if (panel.dataset.side !== side) panel.dataset.side = side;
 	const coords = {
 		top: "",
-		right: "",
-		bottom: "",
 		left: ""
 	};
 	if (side === "top" || side === "bottom") {
@@ -5227,18 +5377,25 @@ function positionPanel(trigger, panel, placement) {
 		let x = t.left + (t.width - p.width) / 2;
 		if (align === "start") x = rtl ? t.right - p.width : t.left;
 		if (align === "end") x = rtl ? t.left : t.right - p.width;
-		coords.left = `${clamp$1(x, 0, viewportWidth - p.width)}px`;
+		coords.left = `${clamp$1(x, gutter, viewportWidth - gutter - p.width)}px`;
 		coords.top = side === "bottom" ? `${t.bottom}px` : `${t.top - p.height - offset}px`;
 	} else {
-		coords.top = `${clamp$1(t.top + (t.height - p.height) / 2, 0, viewportHeight - p.height)}px`;
+		coords.top = `${clamp$1(t.top + (t.height - p.height) / 2, gutter, viewportHeight - gutter - p.height)}px`;
 		coords.left = side === "right" ? `${t.right}px` : `${t.left - p.width - offset}px`;
 	}
-	for (const key of [
-		"top",
-		"right",
-		"bottom",
-		"left"
-	]) if (panel.style[key] !== coords[key]) panel.style[key] = coords[key];
+	if (panel.style.top !== coords.top) panel.style.top = coords.top;
+	if (panel.style.left !== coords.left) panel.style.left = coords.left;
+}
+/** The trigger's readable name, as `aria-labelledby` pointing at it would compute it (approximately). */
+function readableName(element) {
+	const label = element.getAttribute("aria-label")?.trim();
+	if (label) return label;
+	const labelledBy = element.getAttribute("aria-labelledby");
+	if (labelledBy) {
+		const text = labelledBy.split(/\s+/).map((id) => document.getElementById(id)?.textContent?.trim() ?? "").join(" ").trim();
+		if (text) return text;
+	}
+	return element.textContent?.trim() || element.getAttribute("title")?.trim() || "";
 }
 function assignRef(ref, value) {
 	if (typeof ref === "function") ref(value);
@@ -5253,13 +5410,15 @@ function assignRef(ref, value) {
 * link. Use `modal` when the panel contains a required step (a short form that must be submitted or
 * cancelled). Use `heading` when the content is not obvious from the trigger.
 *
-* The root (`data-ds="Popover"`, and `ref`) is the panel, which exists only while open or closing;
-* the trigger is rendered in place and the panel through a portal.
+* The root (`data-ds="Popover"`, the override hooks, and `ref`) is the panel, which exists only while
+* open or closing (the ref is null while closed); the trigger is rendered in place and the panel
+* through a portal once hydrated.
 */
-function Popover({ ref, trigger, children, heading, headingLevel = "3", open: openProp, placement = "bottom", modal = false, showArrow = false, dismissible = true, onOpenChange, container, overrides }) {
+function Popover({ ref, trigger, children, heading, headingLevel = "3", open: openProp, placement = "bottom", modal = false, showArrow = false, dismissible = true, initialFocus = "first", onOpenChange, container, overrides, className: _className, style: _style, ...rest }) {
 	const generatedId = useId();
 	const panelId = `ds-popover${generatedId}-panel`;
 	const headingId = `ds-popover${generatedId}-heading`;
+	const hydrated = useSyncExternalStore(subscribeNothing$9, () => true, () => false);
 	const isControlled = openProp !== void 0;
 	const [internalOpen, setInternalOpen] = useState(false);
 	const open = isControlled ? openProp : internalOpen;
@@ -5270,94 +5429,137 @@ function Popover({ ref, trigger, children, heading, headingLevel = "3", open: op
 		setExiting(!open);
 	}
 	const mounted = open || exiting;
+	const [visible, setVisible] = useState(false);
 	const triggerRef = useRef(null);
 	const panelRef = useRef(null);
 	const bodyRef = useRef(null);
 	const headingRef = useRef(null);
 	const closeButtonRef = useRef(null);
-	const restoreFocusRef = useRef(true);
+	/** The reason of the close the popover itself reported; null for a close the consumer made alone. */
+	const closeReasonRef = useRef(null);
 	const escapeHandledRef = useRef(false);
+	const selfClosingRef = useRef(false);
+	const warnedRef = useRef({
+		trigger: false,
+		name: false
+	});
 	const latest = useRef({
+		open,
 		placement,
-		modal
+		initialFocus
 	});
 	latest.current = {
+		open,
 		placement,
-		modal
+		initialFocus
 	};
-	const validTrigger = isValidElement(trigger);
-	if (process.env.NODE_ENV !== "production" && !validTrigger) console.warn("Popover: `trigger` must be exactly one element (usually a Button).");
+	const validTrigger = isValidElement(trigger) && trigger.type !== Fragment;
+	if (process.env.NODE_ENV !== "production" && !validTrigger && !warnedRef.current.trigger) {
+		warnedRef.current.trigger = true;
+		console.warn("Popover: `trigger` must be exactly one element (usually a Button); this one can never open the panel.");
+	}
 	const changeOpen = (next, reason) => {
-		restoreFocusRef.current = next || reason !== "outside" && reason !== "tab-out";
+		closeReasonRef.current = next ? null : reason;
 		if (!isControlled) setInternalOpen(next);
 		onOpenChange?.(next, reason);
 	};
-	const setPanelRef = (node) => {
+	const setPanelRef = useCallback((node) => {
 		panelRef.current = node;
 		assignRef(ref, node);
+	}, [ref]);
+	/** The first control in the body, else the close button, else the heading, else the panel. */
+	const placeInitialFocus = () => {
+		const panel = panelRef.current;
+		if (!panel || latest.current.initialFocus === "none") return;
+		((bodyRef.current ? tabbablesIn$1(bodyRef.current)[0] : void 0) ?? closeButtonRef.current ?? headingRef.current ?? panel).focus();
 	};
 	useLayoutEffect(() => {
-		const panel = panelRef.current;
-		if (!panel) return void 0;
-		if (!open) {
-			if (panel instanceof HTMLDialogElement) {
-				if (typeof panel.close === "function") panel.close();
-				else panel.removeAttribute("open");
-			} else if (supportsPopoverApi() && panel.matches(":popover-open")) panel.hidePopover();
-			document.documentElement.classList.remove("ds-popover-lock-scroll");
-			const focusInside = panel.contains(document.activeElement) || document.activeElement === document.body;
-			if (restoreFocusRef.current && focusInside) triggerRef.current?.focus();
-			let done = false;
-			const finish = () => {
-				if (done) return;
-				done = true;
-				setExiting(false);
-			};
-			const duration = transitionMs(panel);
-			if (duration === 0) {
-				finish();
-				return;
-			}
-			const handleEnd = (event) => {
-				if (event.target === panel) finish();
-			};
-			panel.addEventListener("transitionend", handleEnd);
-			panel.addEventListener("transitioncancel", handleEnd);
-			const timer = window.setTimeout(finish, duration);
-			return () => {
-				panel.removeEventListener("transitionend", handleEnd);
-				panel.removeEventListener("transitioncancel", handleEnd);
-				window.clearTimeout(timer);
-			};
-		}
-		if (panel instanceof HTMLDialogElement) {
-			if (!panel.open) {
-				if (typeof panel.showModal === "function") panel.showModal();
-				else panel.setAttribute("open", "");
-			}
-			document.documentElement.classList.add("ds-popover-lock-scroll");
-		} else if (supportsPopoverApi() && !panel.matches(":popover-open")) panel.showPopover();
+		if (!hydrated || !open) return void 0;
 		const reposition = () => {
 			const anchor = triggerRef.current;
-			if (anchor && panelRef.current) positionPanel(anchor, panelRef.current, latest.current.placement);
+			const panel = panelRef.current;
+			if (anchor && panel) positionPanel(anchor, panel, latest.current.placement);
 		};
 		reposition();
-		((bodyRef.current ? tabbablesIn$1(bodyRef.current)[0] : void 0) ?? closeButtonRef.current ?? headingRef.current ?? panel).focus();
 		window.addEventListener("scroll", reposition, true);
 		window.addEventListener("resize", reposition);
 		return () => {
 			window.removeEventListener("scroll", reposition, true);
 			window.removeEventListener("resize", reposition);
-			document.documentElement.classList.remove("ds-popover-lock-scroll");
 		};
-	}, [open, modal]);
+	}, [
+		hydrated,
+		open,
+		modal,
+		placement
+	]);
 	useLayoutEffect(() => {
-		const anchor = triggerRef.current;
+		if (!hydrated) return void 0;
 		const panel = panelRef.current;
-		if (open && anchor && panel) positionPanel(anchor, panel, placement);
-	}, [placement, open]);
+		if (!panel) return void 0;
+		if (open) {
+			selfClosingRef.current = false;
+			if (panel instanceof HTMLDialogElement) {
+				if (!panel.open) {
+					if (typeof panel.showModal === "function") panel.showModal();
+					else panel.setAttribute("open", "");
+				}
+			} else if (supportsPopoverApi() && !panel.matches(":popover-open")) panel.showPopover();
+			placeInitialFocus();
+			const frame = requestAnimationFrame(() => setVisible(true));
+			return () => cancelAnimationFrame(frame);
+		}
+		setVisible(false);
+		const reason = closeReasonRef.current;
+		closeReasonRef.current = null;
+		const active = document.activeElement;
+		const focusInside = active === null || active === document.body || panel.contains(active);
+		const restore = reason === "trigger" || reason === "escape" || reason === "close-button" ? true : reason === null && focusInside;
+		if (panel instanceof HTMLDialogElement) {
+			if (panel.open) {
+				selfClosingRef.current = true;
+				if (typeof panel.close === "function") panel.close();
+				else panel.removeAttribute("open");
+			}
+		} else if (supportsPopoverApi() && panel.matches(":popover-open")) panel.hidePopover();
+		if (restore) triggerRef.current?.focus();
+		let done = false;
+		const finish = () => {
+			if (done) return;
+			done = true;
+			setExiting(false);
+		};
+		const duration = transitionMs(panel);
+		if (duration === 0) {
+			finish();
+			return;
+		}
+		const handleEnd = (event) => {
+			if (event.target === panel) finish();
+		};
+		panel.addEventListener("transitionend", handleEnd);
+		panel.addEventListener("transitioncancel", handleEnd);
+		const timer = window.setTimeout(finish, duration);
+		return () => {
+			panel.removeEventListener("transitionend", handleEnd);
+			panel.removeEventListener("transitioncancel", handleEnd);
+			window.clearTimeout(timer);
+		};
+	}, [
+		hydrated,
+		open,
+		modal
+	]);
+	useLayoutEffect(() => {
+		if (!hydrated || !open || !modal) return void 0;
+		return lockScroll$2();
+	}, [
+		hydrated,
+		open,
+		modal
+	]);
 	useEffect(() => {
-		if (!open || modal) return void 0;
+		if (!hydrated || !open || modal) return void 0;
 		const handlePointerDown = (event) => {
 			const target = event.target;
 			if (!(target instanceof Node)) return;
@@ -5367,16 +5569,31 @@ function Popover({ ref, trigger, children, heading, headingLevel = "3", open: op
 		document.addEventListener("pointerdown", handlePointerDown);
 		return () => document.removeEventListener("pointerdown", handlePointerDown);
 	});
+	useEffect(() => {
+		if (process.env.NODE_ENV === "production" || !hydrated || !open || heading || warnedRef.current.name) return;
+		const anchor = triggerRef.current;
+		if (anchor && readableName(anchor)) return;
+		warnedRef.current.name = true;
+		console.warn("Popover: the panel has no accessible name — give it a `heading`, or give the trigger a readable name.");
+	}, [
+		hydrated,
+		open,
+		heading
+	]);
+	const reportEscape = () => {
+		escapeHandledRef.current = true;
+		setTimeout(() => {
+			escapeHandledRef.current = false;
+		}, 0);
+		changeOpen(false, "escape");
+	};
 	const handlePanelKeyDown = (event) => {
+		rest.onKeyDown?.(event);
 		if (!open || event.defaultPrevented) return;
 		if (event.key === "Escape") {
 			event.preventDefault();
 			event.stopPropagation();
-			escapeHandledRef.current = true;
-			setTimeout(() => {
-				escapeHandledRef.current = false;
-			}, 0);
-			changeOpen(false, "escape");
+			if (!escapeHandledRef.current) reportEscape();
 			return;
 		}
 		if (event.key !== "Tab" || modal || event.altKey || event.ctrlKey || event.metaKey) return;
@@ -5403,26 +5620,51 @@ function Popover({ ref, trigger, children, heading, headingLevel = "3", open: op
 	const handleCancel = (event) => {
 		event.preventDefault();
 		if (escapeHandledRef.current || !open) return;
-		changeOpen(false, "escape");
+		reportEscape();
+	};
+	const handleNativeClose = () => {
+		if (selfClosingRef.current) {
+			selfClosingRef.current = false;
+			return;
+		}
+		if (!open) return;
+		if (!escapeHandledRef.current) reportEscape();
+		requestAnimationFrame(() => {
+			const panel = panelRef.current;
+			if (!(panel instanceof HTMLDialogElement) || panel.open || !latest.current.open) return;
+			if (typeof panel.showModal === "function") panel.showModal();
+			else panel.setAttribute("open", "");
+			placeInitialFocus();
+		});
 	};
 	const triggerElement = validTrigger ? trigger : null;
 	const triggerProps = triggerElement?.props ?? {};
 	const triggerId = triggerProps.id ?? `ds-popover${generatedId}-trigger`;
+	const consumerTriggerRef = triggerProps.ref;
+	const setTriggerRef = useCallback((node) => {
+		triggerRef.current = node;
+		assignRef(consumerTriggerRef, node);
+	}, [consumerTriggerRef]);
+	const panelShown = hydrated && mounted;
 	const clonedTrigger = triggerElement ? cloneElement(triggerElement, {
 		id: triggerId,
-		ref: (node) => {
-			triggerRef.current = node;
-			assignRef(triggerProps.ref, node);
-		},
+		ref: setTriggerRef,
 		"aria-expanded": open ? "true" : "false",
-		"aria-controls": mounted ? panelId : void 0,
+		"aria-controls": panelShown ? panelId : void 0,
 		onClick: (event) => {
 			triggerProps.onClick?.(event);
 			changeOpen(!open, "trigger");
 		}
 	}) : trigger;
+	const classes = ["ds-popover", visible && open ? "ds-popover--visible" : null].filter(Boolean).join(" ");
 	const PanelTag = modal ? "dialog" : "div";
-	const panelAttributes = {
+	const hasHeader = Boolean(heading) || dismissible;
+	const panelNode = panelShown ? /* @__PURE__ */ jsxs(PanelTag, {
+		...rest,
+		...modal ? {
+			onCancel: handleCancel,
+			onClose: handleNativeClose
+		} : { popover: supportsPopoverApi() ? "manual" : void 0 },
 		ref: setPanelRef,
 		id: panelId,
 		role: "dialog",
@@ -5430,15 +5672,10 @@ function Popover({ ref, trigger, children, heading, headingLevel = "3", open: op
 		"aria-labelledby": heading ? headingId : triggerId,
 		"data-ds": "Popover",
 		"data-part": "panel",
-		"data-state": open ? "open" : "closed",
-		className: "ds-popover",
-		style: overrides ? overridesToStyle$10(overrides) : void 0,
+		className: classes,
+		style: overrides ? overridesToStyle$11(overrides) : void 0,
 		tabIndex: -1,
-		onKeyDown: handlePanelKeyDown
-	};
-	const panelNode = mounted ? /* @__PURE__ */ jsxs(PanelTag, {
-		...panelAttributes,
-		...modal ? { onCancel: handleCancel } : { popover: supportsPopoverApi() ? "manual" : void 0 },
+		onKeyDown: handlePanelKeyDown,
 		children: [showArrow ? /* @__PURE__ */ jsx("span", {
 			"aria-hidden": "true",
 			className: "ds-popover__arrow",
@@ -5448,10 +5685,10 @@ function Popover({ ref, trigger, children, heading, headingLevel = "3", open: op
 			autoFocus: "none",
 			restoreFocus: false,
 			active: open,
-			"data-part": "focusScope",
 			children: /* @__PURE__ */ jsxs("div", {
 				className: "ds-popover__content",
-				children: [heading || dismissible ? /* @__PURE__ */ jsxs("div", {
+				"data-part": "focusScope",
+				children: [hasHeader ? /* @__PURE__ */ jsxs("div", {
 					className: "ds-popover__header",
 					children: [heading ? /* @__PURE__ */ jsx("div", {
 						className: "ds-popover__heading",
@@ -5492,7 +5729,7 @@ function Popover({ ref, trigger, children, heading, headingLevel = "3", open: op
 }
 //#endregion
 //#region src/BottomSheet.tsx
-const OVERRIDE_HOOK$11 = {
+const OVERRIDE_HOOK$12 = {
 	scrim: "--ds-bottom-sheet-scrim",
 	shadow: "--ds-bottom-sheet-shadow",
 	radius: "--ds-bottom-sheet-radius",
@@ -5509,29 +5746,11 @@ const OVERRIDE_HOOK$11 = {
 	enter: "--ds-bottom-sheet-enter",
 	exit: "--ds-bottom-sheet-exit"
 };
-/**
-* Bindings sharing a name with a Dialog binding; the wide presentation forwards those the caller set
-* to Dialog's `overrides`, so Dialog keeps its own tokens (its `layer.dialog` included) otherwise.
-* The handle bindings, `headerPaddingTop` and `handleGap` have no counterpart there, and a locked
-* binding (`surface`, `maxWidth`, `minTarget`, the focus ring) is never forwarded.
-*/
-const DIALOG_FORWARDED = [
-	"scrim",
-	"shadow",
-	"radius",
-	"inset",
-	"partGap",
-	"headerGap",
-	"footerGap",
-	"layer",
-	"enter",
-	"exit"
-];
-function overridesToStyle$9(overrides) {
+function overridesToStyle$10(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
 		const ref = overrides[binding];
-		const hook = OVERRIDE_HOOK$11[binding];
+		const hook = OVERRIDE_HOOK$12[binding];
 		if (ref && hook) style[hook] = cssVar(ref);
 	}
 	return style;
@@ -5556,7 +5775,7 @@ function resolveDragSlop$1(element) {
 	const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
 	return Number.isFinite(rootFontSize) ? length * rootFontSize : 0;
 }
-const FOCUSABLE_SELECTOR$5 = [
+const FOCUSABLE_SELECTOR$4 = [
 	"a[href]",
 	"button:not([disabled])",
 	"input:not([disabled]):not([type=\"hidden\"])",
@@ -5567,7 +5786,7 @@ const FOCUSABLE_SELECTOR$5 = [
 ].join(",");
 function firstFocusableIn(root) {
 	if (!root) return null;
-	for (const element of Array.from(root.querySelectorAll(FOCUSABLE_SELECTOR$5))) if (!element.hasAttribute("data-focus-sentinel") && !element.closest("[inert]")) return element;
+	for (const element of Array.from(root.querySelectorAll(FOCUSABLE_SELECTOR$4))) if (!element.hasAttribute("data-focus-sentinel") && !element.closest("[inert]")) return element;
 	return null;
 }
 /** True when the surface has no running transition (reduced motion, or no stylesheet as under jsdom). */
@@ -5586,28 +5805,9 @@ function lockScroll$1() {
 		if (scrollLockCount$1 === 0) document.documentElement.classList.remove("ds-bottom-sheet-lock-scroll");
 	};
 }
-/**
-* maxWidth — `layout.maxWidth.prose`, read from the loaded theme, since a media query cannot read a
-* custom property. Wide is `(width > token)`; exactly the token width is still a sheet. When the token
-* does not resolve (no theme stylesheet, jsdom, SSR) the sheet presentation renders.
-*/
-function wideQuery$1() {
-	if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
-	const breakpoint = getComputedStyle(document.documentElement).getPropertyValue("--layout-max-width-prose").trim();
-	if (!breakpoint) return null;
-	return window.matchMedia(`(width > ${breakpoint})`);
-}
-function useIsWideViewport() {
-	const [isWide, setIsWide] = useState(() => wideQuery$1()?.matches ?? false);
-	useEffect(() => {
-		const query = wideQuery$1();
-		if (!query) return void 0;
-		const update = () => setIsWide(query.matches);
-		update();
-		query.addEventListener("change", update);
-		return () => query.removeEventListener("change", update);
-	}, []);
-	return isWide;
+/** False on the server and through hydration, true on a client-only mount and after hydration. */
+function subscribeNothing$8() {
+	return () => {};
 }
 /**
 * BottomSheet — Design Schema, category: overlay.
@@ -5619,13 +5819,13 @@ function useIsWideViewport() {
 * for a browsable list where seeing the page behind matters (a map with results). For a flat list of
 * actions, ActionSheet is the lighter component.
 *
-* Above the `layout.maxWidth.prose` breakpoint the same props render `Dialog` of size md directly, so
-* the root and `ref` are Dialog's `<dialog>` and `drag` never fires. Below it `ref` resolves to the
-* sheet's `<dialog>`, null while closed. The sheet never closes itself: Escape, the close button, a
-* scrim tap and the drag gesture all call `onClose` with a reason and the consumer flips `open`.
+* One presentation at every width: the surface sits at the bottom edge, capped at
+* `layout.maxWidth.prose` and centred. `ref` resolves to the sheet's `<dialog>`, null while closed.
+* The sheet never closes itself: Escape, the close button, a scrim tap and the drag gesture all call
+* `onClose` with a reason and the consumer flips `open`.
 */
 function BottomSheet({ ref, open, heading, hideHeading = false, children, footer, height = "content", dismissible = true, dragToDismiss = true, onClose, onDragDismiss, container, overrides, className: _className, style: _style, ...rest }) {
-	const isWide = useIsWideViewport();
+	const hydrated = useSyncExternalStore(subscribeNothing$8, () => true, () => false);
 	const headingId = `ds-bottom-sheet${useId()}-heading`;
 	const dialogRef = useRef(null);
 	const setDialogNode = useCallback((node) => {
@@ -5653,7 +5853,7 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 		warnedRef.current = true;
 		console.warn("BottomSheet: `heading` is required and becomes the accessible name; it must not be empty.");
 	}
-	if (isWide ? present !== open : open && !present) setPresent(open);
+	if (open && !present) setPresent(true);
 	/** Initial focus: the body, then the footer, then the close button, then the heading (tabindex -1). */
 	const placeInitialFocus = () => {
 		const target = firstFocusableIn(bodyRef.current) ?? firstFocusableIn(footerRef.current) ?? closeButtonRef.current;
@@ -5667,9 +5867,9 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 		headingElement.focus();
 	};
 	useLayoutEffect(() => {
-		if (!present || isWide) return void 0;
+		if (!hydrated || !present || !open) return void 0;
 		const dialog = dialogRef.current;
-		if (!dialog) return void 0;
+		if (!dialog || !surfaceRef.current) return void 0;
 		selfClosingRef.current = false;
 		if (!dialog.open) {
 			if (typeof dialog.showModal === "function") dialog.showModal();
@@ -5678,9 +5878,13 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 		placeInitialFocus();
 		const frame = requestAnimationFrame(() => setVisible(true));
 		return () => cancelAnimationFrame(frame);
-	}, [present, isWide]);
+	}, [
+		hydrated,
+		present,
+		open
+	]);
 	useEffect(() => {
-		if (open || !present || isWide) return void 0;
+		if (open || !present || !hydrated) return void 0;
 		setVisible(false);
 		const dialog = dialogRef.current;
 		const surface = surfaceRef.current;
@@ -5704,7 +5908,7 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 	}, [
 		open,
 		present,
-		isWide
+		hydrated
 	]);
 	useLayoutEffect(() => {
 		const surface = surfaceRef.current;
@@ -5738,9 +5942,9 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 		return () => surface.removeEventListener("transitionend", handleSettled);
 	}, [dragPhase, open]);
 	useEffect(() => {
-		if (!present || isWide) return void 0;
+		if (!present || !hydrated) return void 0;
 		return lockScroll$1();
-	}, [present, isWide]);
+	}, [present, hydrated]);
 	/** Each Escape is reported exactly once, whichever of keydown, `cancel` or `close` reaches us first. */
 	const reportEscape = () => {
 		escapeReportedRef.current = true;
@@ -5779,8 +5983,8 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 		if (!escapeReportedRef.current) reportEscape();
 		reopenAfterNativeClose();
 	};
-	const handleScrimClick = () => {
-		if (!open || !dismissible) return;
+	const handleScrimClick = (event) => {
+		if (event.target !== event.currentTarget || !open || !dismissible) return;
 		onClose?.("scrim");
 	};
 	const handleCloseTargetClick = (event) => {
@@ -5792,10 +5996,13 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 	const canDrag = dragToDismiss && dismissible;
 	const handleHeaderPointerDown = (event) => {
 		if (!canDrag || !open || dragRef.current) return;
-		if (event.pointerType === "mouse" && event.button !== 0) return;
+		if (!event.isPrimary || event.pointerType === "mouse" && event.button !== 0) return;
 		if (!Number.isFinite(event.clientY)) return;
+		const surface = surfaceRef.current;
+		if (!surface) return;
 		dragRef.current = {
 			pointerId: event.pointerId,
+			slop: resolveDragSlop$1(surface),
 			startY: event.clientY,
 			originY: event.clientY,
 			claimed: false,
@@ -5810,7 +6017,7 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 		if (!Number.isFinite(event.clientY)) return;
 		if (!drag.claimed) {
 			const moved = event.clientY - drag.startY;
-			if (moved <= 0 || moved < resolveDragSlop$1(surface)) return;
+			if (moved <= 0 || moved < drag.slop) return;
 			drag.claimed = true;
 			drag.originY = event.clientY;
 			if (typeof event.currentTarget.setPointerCapture === "function") event.currentTarget.setPointerCapture(event.pointerId);
@@ -5834,7 +6041,8 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 		const pastDistance = sheetHeight > 0 && travelled > sheetHeight * DISMISS_DISTANCE$1;
 		let velocity = 0;
 		if (drag.previous && drag.last && drag.last.time > drag.previous.time) velocity = (drag.last.y - drag.previous.y) / (drag.last.time - drag.previous.time);
-		if (cancelled || !open || !(pastDistance || velocity > DISMISS_VELOCITY$1)) {
+		const fastEnough = velocity > DISMISS_VELOCITY$1;
+		if (cancelled || !latest.current.open || !(pastDistance || fastEnough)) {
 			setDragPhase("settling");
 			return;
 		}
@@ -5842,31 +6050,7 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 		onDragDismiss?.();
 		onClose?.("drag");
 	};
-	if (isWide) {
-		let dialogOverrides;
-		for (const binding of DIALOG_FORWARDED) {
-			const value = overrides?.[binding];
-			if (value) dialogOverrides = {
-				...dialogOverrides,
-				[binding]: value
-			};
-		}
-		return /* @__PURE__ */ jsx(Dialog, {
-			...rest,
-			ref,
-			open,
-			heading,
-			hideHeading,
-			footer,
-			size: "md",
-			dismissible,
-			onClose,
-			container,
-			overrides: dialogOverrides,
-			children
-		});
-	}
-	if (!present) return null;
+	if (!present || !hydrated) return null;
 	const classes = [
 		"ds-bottom-sheet",
 		`ds-bottom-sheet--${height}`,
@@ -5897,7 +6081,7 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 		ref: setDialogNode,
 		"data-ds": "BottomSheet",
 		className: classes,
-		style: overrides ? overridesToStyle$9(overrides) : void 0,
+		style: overrides ? overridesToStyle$10(overrides) : void 0,
 		"aria-modal": "true",
 		"aria-labelledby": headingId,
 		onKeyDown: handleKeyDown,
@@ -5906,6 +6090,7 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 		children: [/* @__PURE__ */ jsx("div", {
 			className: "ds-bottom-sheet__scrim",
 			"data-part": "scrim",
+			"aria-hidden": "true",
 			onClick: handleScrimClick
 		}), /* @__PURE__ */ jsx(FocusScope, {
 			trapped: true,
@@ -5967,6 +6152,7 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 							children: /* @__PURE__ */ jsx(Stack, {
 								direction: "horizontal",
 								justify: "end",
+								wrap: true,
 								overrides: footerGapOverride ? { gap: footerGapOverride } : void 0,
 								children: footer
 							})
@@ -5981,7 +6167,7 @@ function BottomSheet({ ref, open, heading, hideHeading = false, children, footer
 //#endregion
 //#region src/ActionSheet.tsx
 /** Host hooks; the sheet's stylesheet reads each one. */
-const OVERRIDE_HOOK$10 = {
+const OVERRIDE_HOOK$11 = {
 	scrim: "--ds-action-sheet-scrim",
 	shadow: "--ds-action-sheet-shadow",
 	radius: "--ds-action-sheet-radius",
@@ -5996,6 +6182,7 @@ const OVERRIDE_HOOK$10 = {
 	titleSize: "--ds-action-sheet-title-size",
 	fontFamily: "--ds-action-sheet-font-family",
 	fontSize: "--ds-action-sheet-font-size",
+	itemIconSize: "--ds-action-sheet-item-icon-size",
 	lineHeight: "--ds-action-sheet-line-height",
 	divider: "--ds-action-sheet-divider",
 	dividerWidth: "--ds-action-sheet-divider-width",
@@ -6014,6 +6201,11 @@ const TEXT_FORWARD = {
 	fontFamily: "fontFamily",
 	lineHeight: "lineHeight"
 };
+/**
+* Bindings forwarded to each row's composed Icon, delivered as TEXT_FORWARD is: the stylesheet points
+* `--ds-icon-size` at the sheet's hook, and `overrides` carries only what the caller set.
+*/
+const ICON_FORWARD = { itemIconSize: "size" };
 /**
 * Bindings forwarded to the wide Menu: the overridable ones it shares by name, plus divider →
 * separator. Locked bindings are never forwarded, and the rest (scrim, header, handle, title,
@@ -6057,13 +6249,14 @@ function resolveDragSlop(element) {
 function hasNoTransition$1(element) {
 	return !(getComputedStyle(element).transitionDuration || "").split(",").some((part) => Number.parseFloat(part) > 0);
 }
-function prefersReducedMotion$2() {
+function prefersReducedMotion$1() {
 	return typeof window !== "undefined" && typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
 }
-/** Wide when the viewport is strictly wider than `layout.maxWidth.prose`, read from the theme stylesheet. */
+/** Wide when the viewport is strictly wider than the maxWidth hook (`layout.maxWidth.prose` by default). */
 function wideQuery() {
 	if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
-	const breakpoint = getComputedStyle(document.documentElement).getPropertyValue("--layout-max-width-prose").trim();
+	const rootStyle = getComputedStyle(document.documentElement);
+	const breakpoint = rootStyle.getPropertyValue("--ds-action-sheet-max-width").trim() || rootStyle.getPropertyValue("--layout-max-width-prose").trim();
 	return breakpoint ? window.matchMedia(`(width > ${breakpoint})`) : null;
 }
 /**
@@ -6071,9 +6264,9 @@ function wideQuery() {
 * client-only mount). The portaled sheet and the wide Menu both need `document`, so neither may be in
 * the tree before this is true, or the server and client trees differ.
 */
-const subscribeNothing$1 = () => () => {};
+const subscribeNothing$7 = () => () => {};
 function useHydrated$1() {
-	return useSyncExternalStore(subscribeNothing$1, () => true, () => false);
+	return useSyncExternalStore(subscribeNothing$7, () => true, () => false);
 }
 /**
 * Starts narrow on the server and during hydration — the viewport is never read during render — and
@@ -6157,6 +6350,8 @@ function ActionSheet({ ref, open, heading, actions, dismissible = true, cancelLa
 	const [visible, setVisible] = useState(false);
 	const [dragPhase, setDragPhase] = useState("idle");
 	const [activeId, setActiveId] = useState(null);
+	const visibleRef = useRef(false);
+	visibleRef.current = visible;
 	if (open && !present) setPresent(true);
 	useImperativeHandle(ref, () => dialogRef.current, [
 		isWide,
@@ -6169,7 +6364,7 @@ function ActionSheet({ ref, open, heading, actions, dismissible = true, cancelLa
 	useLayoutEffect(() => {
 		if (!present || isWide || !open || !hydrated) return void 0;
 		const dialog = dialogRef.current;
-		if (!dialog) return void 0;
+		if (!dialog || !surfaceRef.current) return void 0;
 		if (!dialog.open) {
 			let shown = false;
 			if (typeof dialog.showModal === "function") try {
@@ -6185,7 +6380,7 @@ function ActionSheet({ ref, open, heading, actions, dismissible = true, cancelLa
 			setActiveId(first.id);
 			itemRefs.current.get(first.id)?.focus();
 		}
-		if (prefersReducedMotion$2()) {
+		if (prefersReducedMotion$1()) {
 			setVisible(true);
 			return;
 		}
@@ -6211,7 +6406,7 @@ function ActionSheet({ ref, open, heading, actions, dismissible = true, cancelLa
 			}
 			setPresent(false);
 		};
-		if (isWide || !surface || hasNoTransition$1(surface)) {
+		if (isWide || !surface || !visibleRef.current || hasNoTransition$1(surface)) {
 			finish();
 			return;
 		}
@@ -6265,6 +6460,10 @@ function ActionSheet({ ref, open, heading, actions, dismissible = true, cancelLa
 		if (reason !== "escape" && !dismissible) return;
 		onClose?.(reason);
 	};
+	const handleScrimClick = (event) => {
+		if (event.target !== event.currentTarget || !open) return;
+		requestClose("scrim");
+	};
 	const handleKeyDown = (event) => {
 		if (event.key !== "Escape") return;
 		event.preventDefault();
@@ -6277,10 +6476,13 @@ function ActionSheet({ ref, open, heading, actions, dismissible = true, cancelLa
 	};
 	const handlePointerDown = (event) => {
 		if (!dismissible || !open || dragRef.current) return;
-		if (event.pointerType === "mouse" && event.button !== 0) return;
+		if (!event.isPrimary || event.pointerType === "mouse" && event.button !== 0) return;
 		if (!Number.isFinite(event.clientY)) return;
+		const surface = surfaceRef.current;
+		if (!surface) return;
 		dragRef.current = {
 			pointerId: event.pointerId,
+			slop: resolveDragSlop(surface),
 			startY: event.clientY,
 			originY: event.clientY,
 			claimed: false,
@@ -6295,7 +6497,7 @@ function ActionSheet({ ref, open, heading, actions, dismissible = true, cancelLa
 		if (!Number.isFinite(event.clientY)) return;
 		if (!drag.claimed) {
 			const moved = event.clientY - drag.startY;
-			if (moved <= 0 || moved < resolveDragSlop(surface)) return;
+			if (moved <= 0 || moved < drag.slop) return;
 			drag.claimed = true;
 			drag.originY = event.clientY;
 			if (typeof event.currentTarget.setPointerCapture === "function") event.currentTarget.setPointerCapture(event.pointerId);
@@ -6367,7 +6569,8 @@ function ActionSheet({ ref, open, heading, actions, dismissible = true, cancelLa
 		}
 		if (choseRef.current) return;
 		if (reason === "escape") onClose?.("escape");
-		else if (reason === "outside" || reason === "tab-out" || reason === "focus-out") onClose?.("scrim");
+		else if (reason === "outside" || reason === "tab-out") onClose?.("scrim");
+		else if (reason === "focus-out" && document.hasFocus()) onClose?.("scrim");
 	};
 	const handleCancelRowClick = (event) => {
 		const button = cancelButtonRef.current;
@@ -6400,12 +6603,17 @@ function ActionSheet({ ref, open, heading, actions, dismissible = true, cancelLa
 	if (!present) return null;
 	const rootStyle = {};
 	const textOverrides = {};
+	const iconOverrides = {};
 	for (const [binding, token] of Object.entries(overrides ?? {})) {
-		if (!token) continue;
-		rootStyle[OVERRIDE_HOOK$10[binding]] = cssVar(token);
-		const forward = TEXT_FORWARD[binding];
-		if (forward) textOverrides[forward] = token;
+		const hook = OVERRIDE_HOOK$11[binding];
+		if (!token || !hook) continue;
+		rootStyle[hook] = cssVar(token);
+		const textForward = TEXT_FORWARD[binding];
+		if (textForward) textOverrides[textForward] = token;
+		const iconForward = ICON_FORWARD[binding];
+		if (iconForward) iconOverrides[iconForward] = token;
 	}
+	const hasIconOverrides = Object.keys(iconOverrides).length > 0;
 	const renderItem = (action) => /* @__PURE__ */ jsxs("button", {
 		ref: (element) => {
 			if (element) itemRefs.current.set(action.id, element);
@@ -6431,7 +6639,7 @@ function ActionSheet({ ref, open, heading, actions, dismissible = true, cancelLa
 			"aria-hidden": "true",
 			children: /* @__PURE__ */ jsx(Icon, {
 				name: action.icon,
-				inline: true
+				overrides: hasIconOverrides ? iconOverrides : void 0
 			})
 		}) : null, /* @__PURE__ */ jsx("span", {
 			className: "ds-action-sheet__label",
@@ -6440,7 +6648,7 @@ function ActionSheet({ ref, open, heading, actions, dismissible = true, cancelLa
 	}, action.id);
 	const className = [
 		"ds-action-sheet",
-		visible ? "ds-action-sheet--visible" : "",
+		visible && open ? "ds-action-sheet--visible" : "",
 		dragPhase === "dragging" ? "ds-action-sheet--dragging" : "",
 		dragPhase === "settling" ? "ds-action-sheet--settling" : ""
 	].filter(Boolean).join(" ");
@@ -6458,78 +6666,81 @@ function ActionSheet({ ref, open, heading, actions, dismissible = true, cancelLa
 			className: "ds-action-sheet__scrim",
 			"data-part": "scrim",
 			"aria-hidden": "true",
-			onClick: () => requestClose("scrim")
+			onClick: handleScrimClick
 		}), /* @__PURE__ */ jsx(FocusScope, {
 			trapped: true,
 			autoFocus: "none",
 			restoreFocus: true,
 			active: open,
 			returnFocusTo: openerRef,
-			"data-part": "focusScope",
-			children: /* @__PURE__ */ jsxs("div", {
-				ref: surfaceRef,
-				className: "ds-action-sheet__surface",
-				"data-part": "surface",
-				children: [
-					dismissible || heading ? /* @__PURE__ */ jsxs("div", {
-						className: "ds-action-sheet__header",
-						"data-part": "header",
-						onPointerDown: handlePointerDown,
-						onPointerMove: handlePointerMove,
-						onPointerUp: (event) => endDrag(event, false),
-						onPointerCancel: (event) => endDrag(event, true),
-						children: [dismissible ? /* @__PURE__ */ jsx("span", {
-							className: "ds-action-sheet__handle",
-							"data-part": "handle",
+			children: /* @__PURE__ */ jsx("div", {
+				className: "ds-action-sheet__scope",
+				"data-part": "focusScope",
+				children: /* @__PURE__ */ jsxs("div", {
+					ref: surfaceRef,
+					className: "ds-action-sheet__surface",
+					"data-part": "surface",
+					children: [
+						dismissible || heading ? /* @__PURE__ */ jsxs("div", {
+							className: "ds-action-sheet__header",
+							"data-part": "header",
+							onPointerDown: handlePointerDown,
+							onPointerMove: handlePointerMove,
+							onPointerUp: (event) => endDrag(event, false),
+							onPointerCancel: (event) => endDrag(event, true),
+							children: [dismissible ? /* @__PURE__ */ jsx("span", {
+								className: "ds-action-sheet__handle",
+								"data-part": "handle",
+								"aria-hidden": "true"
+							}) : null, heading ? /* @__PURE__ */ jsx(Text, {
+								element: "p",
+								size: "sm",
+								tone: "muted",
+								"data-part": "heading",
+								overrides: Object.keys(textOverrides).length > 0 ? textOverrides : void 0,
+								children: heading
+							}) : null]
+						}) : null,
+						/* @__PURE__ */ jsxs("div", {
+							role: "menu",
+							"aria-label": accessibleLabel,
+							"data-part": "list",
+							className: "ds-action-sheet__list",
+							onKeyDown: handleListKeyDown,
+							children: [
+								normal.map(renderItem),
+								normal.length > 0 && danger.length > 0 ? /* @__PURE__ */ jsx("div", {
+									role: "separator",
+									className: "ds-action-sheet__divider",
+									"data-part": "divider"
+								}) : null,
+								danger.map(renderItem)
+							]
+						}),
+						dismissible ? /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("div", {
+							className: "ds-action-sheet__divider",
+							"data-part": "divider",
 							"aria-hidden": "true"
-						}) : null, heading ? /* @__PURE__ */ jsx(Text, {
-							element: "p",
-							size: "sm",
-							tone: "muted",
-							"data-part": "heading",
-							overrides: Object.keys(textOverrides).length > 0 ? textOverrides : void 0,
-							children: heading
-						}) : null]
-					}) : null,
-					/* @__PURE__ */ jsxs("div", {
-						role: "menu",
-						"aria-label": accessibleLabel,
-						"data-part": "list",
-						className: "ds-action-sheet__list",
-						onKeyDown: handleListKeyDown,
-						children: [
-							normal.map(renderItem),
-							normal.length > 0 && danger.length > 0 ? /* @__PURE__ */ jsx("div", {
-								role: "separator",
-								className: "ds-action-sheet__divider",
-								"data-part": "divider"
-							}) : null,
-							danger.map(renderItem)
-						]
-					}),
-					dismissible ? /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("div", {
-						className: "ds-action-sheet__divider",
-						"data-part": "divider",
-						"aria-hidden": "true"
-					}), /* @__PURE__ */ jsx("div", {
-						className: "ds-action-sheet__cancel-row",
-						"data-part": "cancelButton",
-						onClick: handleCancelRowClick,
-						children: /* @__PURE__ */ jsx(Button, {
-							ref: cancelButtonRef,
-							variant: "secondary",
-							label: cancelLabel || COPY$18.cancelLabel,
-							onClick: () => requestClose("cancel")
-						})
-					})] }) : null
-				]
+						}), /* @__PURE__ */ jsx("div", {
+							className: "ds-action-sheet__cancel-row",
+							"data-part": "cancelButton",
+							onClick: handleCancelRowClick,
+							children: /* @__PURE__ */ jsx(Button, {
+								ref: cancelButtonRef,
+								variant: "secondary",
+								label: cancelLabel || COPY$18.cancelLabel,
+								onClick: () => requestClose("cancel")
+							})
+						})] }) : null
+					]
+				})
 			})
 		})]
 	}), container ?? document.body);
 }
 //#endregion
 //#region src/SidePanel.tsx
-const OVERRIDE_HOOK$9 = {
+const OVERRIDE_HOOK$10 = {
 	scrim: "--ds-side-panel-scrim",
 	shadow: "--ds-side-panel-shadow",
 	border: "--ds-side-panel-border",
@@ -6547,11 +6758,11 @@ const OVERRIDE_HOOK$9 = {
 	enter: "--ds-side-panel-enter",
 	exit: "--ds-side-panel-exit"
 };
-function overridesToStyle$8(overrides) {
+function overridesToStyle$9(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
 		const ref = overrides[binding];
-		const hook = OVERRIDE_HOOK$9[binding];
+		const hook = OVERRIDE_HOOK$10[binding];
 		if (ref && hook) style[hook] = cssVar(ref);
 	}
 	return style;
@@ -6568,7 +6779,7 @@ const DISMISS_REASONS = /* @__PURE__ */ new Set([
 	"outside",
 	"swipe"
 ]);
-const FOCUSABLE_SELECTOR$4 = [
+const FOCUSABLE_SELECTOR$3 = [
 	"a[href]",
 	"button:not([disabled])",
 	"input:not([disabled]):not([type=\"hidden\"])",
@@ -6585,7 +6796,7 @@ function isTabbable(element) {
 }
 function tabbablesIn(root) {
 	if (!root) return [];
-	return Array.from(root.querySelectorAll(FOCUSABLE_SELECTOR$4)).filter(isTabbable);
+	return Array.from(root.querySelectorAll(FOCUSABLE_SELECTOR$3)).filter(isTabbable);
 }
 /** The next tabbable element after `anchor` in document order, skipping the portaled panel. */
 function nextTabbableAfter(anchor, exclude) {
@@ -6646,9 +6857,9 @@ function persistentQuery(persistent) {
 * client-only mount). Nothing that exists only in the browser — the portal host, a media query —
 * may shape the markup before this is true, or the server and client trees differ.
 */
-const subscribeNothing = () => () => {};
+const subscribeNothing$6 = () => () => {};
 function useHydrated() {
-	return useSyncExternalStore(subscribeNothing, () => true, () => false);
+	return useSyncExternalStore(subscribeNothing$6, () => true, () => false);
 }
 function useIsPersistent(persistent) {
 	const [matches, setMatches] = useState(false);
@@ -6697,6 +6908,7 @@ function SidePanel({ ref, trigger, open: openProp, heading, hideHeading = false,
 	const triggerRef = useRef(null);
 	const slotRef = useRef(null);
 	const escapeHandledRef = useRef(false);
+	const closeReasonRef = useRef(null);
 	const [host] = useState(() => typeof document === "undefined" ? null : document.createElement("div"));
 	const isControlled = openProp !== void 0;
 	const [internalOpen, setInternalOpen] = useState(false);
@@ -6708,12 +6920,21 @@ function SidePanel({ ref, trigger, open: openProp, heading, hideHeading = false,
 	if (open && !present) setPresent(true);
 	const rootShown = isPersistent || present;
 	useImperativeHandle(ref, () => rootShown ? rootRef.current : null, [rootShown, modalActive]);
+	const triggerCloneable = isValidElement(trigger) && trigger.type !== Fragment;
 	const warnedRef = useRef(false);
-	if (process.env.NODE_ENV !== "production" && !heading && !warnedRef.current) {
-		warnedRef.current = true;
-		console.warn("SidePanel: `heading` is required and becomes the accessible name; it must not be empty.");
+	const warnedTriggerRef = useRef(false);
+	if (process.env.NODE_ENV !== "production") {
+		if (!heading && !warnedRef.current) {
+			warnedRef.current = true;
+			console.warn("SidePanel: `heading` is required and becomes the accessible name; it must not be empty.");
+		}
+		if (trigger != null && !triggerCloneable && !warnedTriggerRef.current) {
+			warnedTriggerRef.current = true;
+			console.warn("SidePanel: `trigger` must be exactly one element (a Button); a fragment or a bare string cannot carry aria-expanded, aria-controls and the toggle, so it never opens the panel.");
+		}
 	}
 	const changeOpen = (next, reason) => {
+		closeReasonRef.current = next ? null : reason;
 		if (!isControlled) setInternalOpen(next);
 		onOpenChange?.(next, reason);
 	};
@@ -6721,6 +6942,7 @@ function SidePanel({ ref, trigger, open: openProp, heading, hideHeading = false,
 		if (!open || isPersistent) return;
 		if (DISMISS_REASONS.has(reason) && !dismissible) return;
 		if (reason === "escape" && !dismissible) {
+			closeReasonRef.current = "escape";
 			onOpenChange?.(false, "escape");
 			return;
 		}
@@ -6770,15 +6992,20 @@ function SidePanel({ ref, trigger, open: openProp, heading, hideHeading = false,
 		present,
 		open,
 		isPersistent,
+		modalActive,
 		hydrated
 	]);
+	useEffect(() => {
+		if (open) closeReasonRef.current = null;
+	}, [open]);
 	const wasOpenRef = useRef(open);
 	useEffect(() => {
 		const wasOpen = wasOpenRef.current;
 		wasOpenRef.current = open;
 		if (!wasOpen || open || isPersistent || modalActive || !host) return;
+		if (closeReasonRef.current === "navigation") return;
 		const active = document.activeElement;
-		if (active && host.contains(active)) triggerRef.current?.focus();
+		if (active === null || active === document.body || active && host.contains(active)) triggerRef.current?.focus();
 	}, [
 		open,
 		isPersistent,
@@ -6896,6 +7123,7 @@ function SidePanel({ ref, trigger, open: openProp, heading, hideHeading = false,
 		button.click();
 	};
 	const handleContentClick = (event) => {
+		if (event.isDefaultPrevented() || event.nativeEvent.defaultPrevented) return;
 		if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 		const anchor = event.target.closest("a[href]");
 		if (!(anchor instanceof HTMLAnchorElement) || !event.currentTarget.contains(anchor)) return;
@@ -6903,11 +7131,11 @@ function SidePanel({ ref, trigger, open: openProp, heading, hideHeading = false,
 		if (!open || isPersistent) return;
 		changeOpen(false, "navigation");
 	};
-	const clonedTrigger = trigger ? cloneElement(trigger, {
+	const clonedTrigger = triggerCloneable ? cloneElement(trigger, {
 		"aria-expanded": open,
-		"aria-controls": panelId,
+		"aria-controls": hydrated && (isPersistent || !modalActive || present) ? panelId : void 0,
 		onClick: handleTriggerClick
-	}) : null;
+	}) : trigger ?? null;
 	const hasFooter = footer !== void 0 && footer !== null && footer !== false;
 	const closeShown = dismissible && !isPersistent;
 	const headerShown = !hideHeading || closeShown;
@@ -6974,7 +7202,7 @@ function SidePanel({ ref, trigger, open: openProp, heading, hideHeading = false,
 		]
 	});
 	const shown = visible && open && !isPersistent;
-	const hookStyle = overrides ? overridesToStyle$8(overrides) : void 0;
+	const hookStyle = overrides ? overridesToStyle$9(overrides) : void 0;
 	const rootClasses = [
 		"ds-side-panel",
 		modalActive ? "ds-side-panel--modal" : null,
@@ -7017,7 +7245,7 @@ function SidePanel({ ref, trigger, open: openProp, heading, hideHeading = false,
 			children: /* @__PURE__ */ jsx(FocusScope, {
 				trapped: true,
 				autoFocus: "none",
-				restoreFocus: true,
+				restoreFocus: closeReasonRef.current !== "navigation",
 				returnFocusTo: triggerRef,
 				children: parts
 			})
@@ -7043,14 +7271,14 @@ function SidePanel({ ref, trigger, open: openProp, heading, hideHeading = false,
 		style: hookStyle,
 		hidden: !rootShown,
 		onKeyDown: handleRootKeyDown,
-		children: /* @__PURE__ */ jsx(FocusScope, {
-			trapped: false,
-			autoFocus: "none",
-			restoreFocus: false,
-			children: /* @__PURE__ */ jsx(Landmark, {
-				role,
-				as: role === "navigation" ? "nav" : "aside",
-				"aria-labelledby": headingId,
+		children: /* @__PURE__ */ jsx(Landmark, {
+			role,
+			as: role === "navigation" ? "nav" : "aside",
+			"aria-labelledby": headingId,
+			children: /* @__PURE__ */ jsx(FocusScope, {
+				trapped: false,
+				autoFocus: "none",
+				restoreFocus: false,
 				children: parts
 			})
 		})
@@ -7060,6 +7288,7 @@ function SidePanel({ ref, trigger, open: openProp, heading, hideHeading = false,
 			ref: triggerWrapRef,
 			className: isPersistent ? "ds-side-panel__trigger ds-side-panel__trigger--hidden" : "ds-side-panel__trigger",
 			"data-part": "trigger",
+			hidden: isPersistent,
 			onKeyDown: handleTriggerKeyDown,
 			children: clonedTrigger
 		}) : null,
@@ -7072,7 +7301,7 @@ function SidePanel({ ref, trigger, open: openProp, heading, hideHeading = false,
 }
 //#endregion
 //#region src/Tabs.tsx
-const OVERRIDE_HOOK$8 = {
+const OVERRIDE_HOOK$9 = {
 	tabPaddingBlock: "--ds-tabs-tab-padding-block",
 	tabPaddingInline: "--ds-tabs-tab-padding-inline",
 	tabGap: "--ds-tabs-tab-gap",
@@ -7090,10 +7319,10 @@ const OVERRIDE_HOOK$8 = {
 	transition: "--ds-tabs-transition",
 	disabledOpacity: "--ds-tabs-disabled-opacity"
 };
-function overridesToStyle$7(overrides) {
+function overridesToStyle$8(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
-		const hook = OVERRIDE_HOOK$8[binding];
+		const hook = OVERRIDE_HOOK$9[binding];
 		const ref = overrides[binding];
 		if (hook && ref) style[hook] = cssVar(ref);
 	}
@@ -7107,7 +7336,7 @@ function isRtl(el) {
 	if (!el || typeof getComputedStyle !== "function") return false;
 	return getComputedStyle(el).direction === "rtl";
 }
-const isDev$12 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$11 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 /** Gives each TabPanel its prefixed DOM id, its labelling tab and its hidden state. */
 const TabsPanelContext = createContext(null);
 /** The wrapper for one tab's content — a child of `Tabs`, one per tab, in the same order. */
@@ -7148,7 +7377,7 @@ function Tabs({ ref, tabs, children, label, value, defaultValue, activation = "a
 	const panels = allPanels.filter((panel) => tabIds.has(panel.props.id));
 	const orphanKey = [...tabs.filter((tab) => !panelIds.has(tab.id)).map((tab) => `tab:${tab.id}`), ...allPanels.filter((panel) => !tabIds.has(panel.props.id)).map((panel) => `panel:${panel.props.id}`)].join("|");
 	useEffect(() => {
-		if (!isDev$12 || !orphanKey) return;
+		if (!isDev$11 || !orphanKey) return;
 		for (const entry of orphanKey.split("|")) {
 			const kind = entry.slice(0, entry.indexOf(":"));
 			const id = entry.slice(entry.indexOf(":") + 1);
@@ -7161,6 +7390,7 @@ function Tabs({ ref, tabs, children, label, value, defaultValue, activation = "a
 	const [activeId, setActiveId] = useState(selected);
 	const [indicator, setIndicator] = useState(void 0);
 	const placedFor = useRef(void 0);
+	const keySelectedId = useRef(void 0);
 	useEffect(() => {
 		setActiveId(selected);
 	}, [selected]);
@@ -7181,14 +7411,27 @@ function Tabs({ ref, tabs, children, label, value, defaultValue, activation = "a
 		}
 		const moved = placedFor.current !== void 0 && placedFor.current !== selected;
 		placedFor.current = selected;
+		const clientBox = () => {
+			const listRect = list.getBoundingClientRect();
+			const tabRect = tabEl.getBoundingClientRect();
+			const left = tabRect.left - listRect.left - list.clientLeft;
+			const top = tabRect.top - listRect.top - list.clientTop;
+			return {
+				left,
+				right: left + tabRect.width,
+				top,
+				bottom: top + tabRect.height
+			};
+		};
 		let last = "";
 		const measure = () => {
-			const inlineStart = isRtl(list) ? list.clientWidth - tabEl.offsetLeft - tabEl.offsetWidth + list.scrollLeft : tabEl.offsetLeft;
+			const box = clientBox();
+			const inlineStart = isRtl(list) ? list.clientWidth - box.right - list.scrollLeft : box.left + list.scrollLeft;
 			const next = orientation === "horizontal" ? {
 				insetInlineStart: inlineStart,
 				inlineSize: tabEl.offsetWidth
 			} : {
-				insetBlockStart: tabEl.offsetTop,
+				insetBlockStart: box.top + list.scrollTop,
 				blockSize: tabEl.offsetHeight
 			};
 			const key = JSON.stringify(next);
@@ -7200,18 +7443,24 @@ function Tabs({ ref, tabs, children, label, value, defaultValue, activation = "a
 				animate: moved && isFirst
 			});
 		};
-		if (orientation === "horizontal") {
-			const start = tabEl.offsetLeft;
-			const end = start + tabEl.offsetWidth;
-			if (start < list.scrollLeft) list.scrollLeft = start;
-			else if (end > list.scrollLeft + list.clientWidth) list.scrollLeft = end - list.clientWidth;
-		} else {
-			const start = tabEl.offsetTop;
-			const end = start + tabEl.offsetHeight;
-			if (start < list.scrollTop) list.scrollTop = start;
-			else if (end > list.scrollTop + list.clientHeight) list.scrollTop = end - list.clientHeight;
-		}
 		measure();
+		const box = clientBox();
+		const size = orientation === "horizontal" ? list.clientWidth : list.clientHeight;
+		const start = orientation === "horizontal" ? box.left : box.top;
+		const end = orientation === "horizontal" ? box.right : box.bottom;
+		const delta = start < 0 ? start : end > size ? Math.min(end - size, start) : 0;
+		if (delta !== 0) {
+			const behavior = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+			if (typeof list.scrollBy === "function") list.scrollBy(orientation === "horizontal" ? {
+				left: delta,
+				behavior
+			} : {
+				top: delta,
+				behavior
+			});
+			else if (orientation === "horizontal") list.scrollLeft += delta;
+			else list.scrollTop += delta;
+		}
 		if (typeof ResizeObserver === "undefined") return void 0;
 		const observer = new ResizeObserver(measure);
 		observer.observe(list);
@@ -7223,6 +7472,7 @@ function Tabs({ ref, tabs, children, label, value, defaultValue, activation = "a
 		tabs.length
 	]);
 	const handleListKeyDown = (event) => {
+		keySelectedId.current = void 0;
 		if (enabled.length === 0) return;
 		const focusedId = event.target.closest("[role=\"tab\"]")?.dataset.tabId ?? tabStopId;
 		const currentIndex = enabled.findIndex((tab) => tab.id === focusedId);
@@ -7255,13 +7505,19 @@ function Tabs({ ref, tabs, children, label, value, defaultValue, activation = "a
 			case "Enter":
 			case " ": if (activation === "manual" && focusedId && currentIndex >= 0) {
 				event.preventDefault();
+				keySelectedId.current = focusedId;
 				selectTab(focusedId);
 			}
 		}
 	};
+	const handleListFocus = (event) => {
+		const id = event.target.closest("[role=\"tab\"]")?.dataset.tabId;
+		if (id !== void 0 && id !== activeId && enabled.some((tab) => tab.id === id)) setActiveId(id);
+	};
 	const handleListBlur = (event) => {
 		const next = event.relatedTarget;
 		if (!next || !listRef.current?.contains(next)) {
+			keySelectedId.current = void 0;
 			if (activeId !== selected) setActiveId(selected);
 		}
 	};
@@ -7271,7 +7527,7 @@ function Tabs({ ref, tabs, children, label, value, defaultValue, activation = "a
 		ref,
 		"data-ds": "Tabs",
 		className: `ds-tabs ds-tabs--${orientation} ds-tabs--fit-${fit}`,
-		style: overrides ? overridesToStyle$7(overrides) : void 0,
+		style: overrides ? overridesToStyle$8(overrides) : void 0,
 		children: [/* @__PURE__ */ jsxs("div", {
 			ref: listRef,
 			role: "tablist",
@@ -7280,6 +7536,7 @@ function Tabs({ ref, tabs, children, label, value, defaultValue, activation = "a
 			"data-part": "tablist",
 			className: "ds-tabs__tablist",
 			onKeyDown: handleListKeyDown,
+			onFocus: handleListFocus,
 			onBlur: handleListBlur,
 			children: [tabs.map((tab) => {
 				const isSelected = tab.id === selected;
@@ -7302,8 +7559,12 @@ function Tabs({ ref, tabs, children, label, value, defaultValue, activation = "a
 						isSelected ? "ds-tabs__tab--selected" : null,
 						tab.disabled ? "ds-tabs__tab--disabled" : null
 					].filter(Boolean).join(" "),
-					onClick: () => {
+					onClick: (event) => {
 						if (tab.disabled) return;
+						if (event.detail === 0 && keySelectedId.current === tab.id) {
+							keySelectedId.current = void 0;
+							return;
+						}
 						setActiveId(tab.id);
 						selectTab(tab.id);
 					},
@@ -7350,7 +7611,7 @@ function Tabs({ ref, tabs, children, label, value, defaultValue, activation = "a
 }
 //#endregion
 //#region src/SegmentedControl.tsx
-const OVERRIDE_HOOK$7 = {
+const OVERRIDE_HOOK$8 = {
 	groupPadding: "--ds-segmented-control-group-padding",
 	groupRadius: "--ds-segmented-control-group-radius",
 	segmentShadow: "--ds-segmented-control-segment-shadow",
@@ -7368,19 +7629,21 @@ const OVERRIDE_HOOK$7 = {
 	transition: "--ds-segmented-control-transition",
 	disabledOpacity: "--ds-segmented-control-disabled-opacity"
 };
-function overridesToStyle$6(overrides) {
+function overridesToStyle$7(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
-		const hook = OVERRIDE_HOOK$7[binding];
+		const hook = OVERRIDE_HOOK$8[binding];
 		const ref = overrides[binding];
 		if (hook && ref) style[hook] = cssVar(ref);
 	}
 	return style;
 }
+const SEGMENT_COLOR = "color.foreground.muted";
+const SELECTED_COLOR = "color.foreground.strong";
 function firstEnabledValue(options) {
 	return options.find((option) => !option.disabled)?.value;
 }
-const isDev$11 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$10 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 /**
 * SegmentedControl — Design Schema, category: input.
 *
@@ -7398,7 +7661,7 @@ function SegmentedControl({ ref, label, options, value, defaultValue, iconOnly =
 	const [indicator, setIndicator] = useState(void 0);
 	const lastRect = useRef(void 0);
 	const warnedMissingIcon = useRef(false);
-	const missingIcons = isDev$11 && iconOnly ? options.filter((option) => !option.icon).map((option) => option.value) : [];
+	const missingIcons = isDev$10 && iconOnly ? options.filter((option) => !option.icon).map((option) => option.value) : [];
 	useEffect(() => {
 		if (missingIcons.length === 0 || warnedMissingIcon.current) return;
 		warnedMissingIcon.current = true;
@@ -7446,7 +7709,8 @@ function SegmentedControl({ ref, label, options, value, defaultValue, iconOnly =
 		const group = event.currentTarget;
 		const focusedIndex = options.findIndex((_, index) => getSegmentElement(index) === event.target);
 		const tabStopIndex = options.findIndex((option) => option.value === tabStop);
-		const current = enabled.indexOf(focusedIndex >= 0 ? focusedIndex : tabStopIndex);
+		const focusedPosition = enabled.indexOf(focusedIndex);
+		const current = focusedIndex >= 0 ? focusedPosition : enabled.indexOf(tabStopIndex);
 		const rtl = typeof getComputedStyle === "function" && getComputedStyle(group).direction === "rtl";
 		const inToolbar = group.parentElement?.closest("[role=\"toolbar\"]") != null;
 		let step;
@@ -7479,7 +7743,7 @@ function SegmentedControl({ ref, label, options, value, defaultValue, iconOnly =
 		else {
 			targetPosition = current + step;
 			if (targetPosition < 0 || targetPosition >= enabled.length) {
-				if (inToolbar) return;
+				if (inToolbar && focusedPosition >= 0) return;
 				targetPosition = (targetPosition + enabled.length) % enabled.length;
 			}
 		}
@@ -7508,7 +7772,7 @@ function SegmentedControl({ ref, label, options, value, defaultValue, iconOnly =
 		"data-ds": "SegmentedControl",
 		"data-part": "group",
 		className: classes,
-		style: overrides ? overridesToStyle$6(overrides) : void 0,
+		style: overrides ? overridesToStyle$7(overrides) : void 0,
 		onKeyDown: handleKeyDown,
 		children: [options.map((option, index) => {
 			const isSelected = index === selectedIndex;
@@ -7531,7 +7795,8 @@ function SegmentedControl({ ref, label, options, value, defaultValue, iconOnly =
 					"data-part": "segmentIcon",
 					children: /* @__PURE__ */ jsx(Icon, {
 						name: option.icon,
-						size
+						size,
+						overrides: { color: isSelected ? SELECTED_COLOR : SEGMENT_COLOR }
 					})
 				}) : null, showsIconOnly ? null : /* @__PURE__ */ jsx("span", {
 					className: "ds-segmented-control__segment-label",
@@ -7554,15 +7819,19 @@ function SegmentedControl({ ref, label, options, value, defaultValue, iconOnly =
 }
 //#endregion
 //#region src/Listbox.tsx
-/** copy.* — used verbatim; `{label}` is replaced by the `label` prop. */
-const COPY$16 = {
+/**
+* copy.* — used verbatim; `{label}` is replaced by the `label` prop. `selectedCount` is not rendered
+* by the list: it is exported for a host (Select, Combobox) or the surrounding UI to show.
+*/
+const LISTBOX_COPY = {
 	empty: "No options",
 	required: "{label} is required.",
 	invalid: "{label} is not valid.",
 	selectedCount: "{count} selected",
 	loading: "Loading…"
 };
-const OVERRIDE_HOOK$6 = {
+const COPY$16 = LISTBOX_COPY;
+const OVERRIDE_HOOK$7 = {
 	border: "--ds-listbox-border",
 	borderInvalid: "--ds-listbox-border-invalid",
 	partGap: "--ds-listbox-part-gap",
@@ -7592,11 +7861,11 @@ const EMBEDDED_NO_OP = /* @__PURE__ */ new Set([
 	"borderWidth",
 	"radius"
 ]);
-function overridesToStyle$5(overrides, embedded) {
+function overridesToStyle$6(overrides, embedded) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
 		const ref = overrides[binding];
-		const hook = OVERRIDE_HOOK$6[binding];
+		const hook = OVERRIDE_HOOK$7[binding];
 		if (!ref || !hook || embedded && EMBEDDED_NO_OP.has(binding)) continue;
 		style[hook] = cssVar(ref);
 	}
@@ -7612,9 +7881,16 @@ function flattenRows$2(items) {
 	else result.push(item);
 	return result;
 }
-function toArray$2(value) {
-	if (Array.isArray(value)) return value;
-	return value === void 0 ? [] : [value];
+/**
+* The selection as a list, normalised to the mode rather than warned about: a single-select list
+* takes an array's first entry, a multi-select list reads a bare string as a one-entry array.
+*/
+function normalise(value, multiple) {
+	if (value === void 0) return [];
+	if (!Array.isArray(value)) return [value];
+	if (multiple) return value;
+	const first = value[0];
+	return first === void 0 ? [] : [first];
 }
 /** A CSS time (`120ms`, `1.2s`) in milliseconds; 0 when it cannot be read (no stylesheet loaded). */
 function parseDuration(raw) {
@@ -7631,9 +7907,9 @@ function parseDuration(raw) {
 *
 * The root is a wrapper `div` (data-ds, data-ds-field) holding the `role="listbox"` list and the
 * error message. `id` names the list, and option ids are `${id}-option-${value}`. Keyboard and focus
-* handlers sit on the wrapper, so a host (Select) may dispatch `keydown`/`focusin` on the ref.
+* handlers sit on the wrapper, so a host may dispatch `keydown`/`focusin` on the ref.
 */
-function Listbox({ ref, label, labelledBy, options, multiple = false, value, defaultValue, selectionFollowsFocus = true, required = false, invalid = false, error, embedded = false, initialActiveValue, loading = false, disabled = false, name, emptyMessage, maxVisible = "8", overrides, onChange, onActiveChange, onBlur, onFocus, onKeyDown, id: idProp, ...rest }) {
+function Listbox({ ref, label, labelledBy, options, multiple = false, value, defaultValue, selectionFollowsFocus = true, required = false, invalid = false, error, embedded = false, initialActiveValue, activeValue: activeValueProp, loading = false, disabled = false, name, emptyMessage, maxVisible = "8", overrides, onChange, onActiveChange, onBlur, onFocus, onKeyDown, id: idProp, ...rest }) {
 	const form = useFormContext();
 	const generatedId = useId();
 	const id = idProp ?? (form?.idBase && name ? `${form.idBase}-${name}` : `ds-listbox${generatedId}`);
@@ -7653,18 +7929,24 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 	}, [label]);
 	const isControlled = value !== void 0;
 	const [internalValue, setInternalValue] = useState(defaultValue);
-	const selected = isControlled ? value : internalValue;
-	const selectedValues = toArray$2(selected);
-	const [activeValue, setActiveValueState] = useState(null);
+	const selectedValues = normalise(isControlled ? value : internalValue, multiple);
+	const activeControlled = activeValueProp !== void 0;
+	const [internalActive, setInternalActive] = useState(null);
+	const ownActive = activeControlled ? activeValueProp : internalActive;
 	const isDisabled = disabled || (form?.disabled ?? false);
 	const nothingSelected = selectedValues.length === 0;
 	const formError = name ? form?.errors[name] : void 0;
-	const isInvalid = invalid || error !== void 0 && error !== "";
-	const resolvedError = (error !== void 0 && error !== "" ? error : void 0) ?? formError ?? (isInvalid ? (required && nothingSelected ? COPY$16.required : COPY$16.invalid).replace("{label}", label) : void 0);
-	const showsInvalid = isInvalid || resolvedError !== void 0;
+	const hasError = error !== void 0 && error !== "";
+	const resolvedError = (hasError ? error : void 0) ?? formError ?? (invalid ? (required && nothingSelected ? COPY$16.required : COPY$16.invalid).replace("{label}", label) : void 0);
+	const showsInvalid = invalid || hasError || resolvedError !== void 0;
 	const rows = useMemo(() => flattenRows$2(options), [options]);
 	const enabledRows = useMemo(() => rows.filter((row) => !row.disabled), [rows]);
 	const maxVisibleKey = String(maxVisible);
+	const renderedActive = !isDisabled && ownActive !== null && rows.some((row) => row.value === ownActive) ? ownActive : null;
+	useEffect(() => {
+		if (renderedActive === null) return;
+		optionRefs.current.get(renderedActive)?.scrollIntoView?.({ block: "nearest" });
+	}, [renderedActive]);
 	const lastInitialActive = useRef(initialActiveValue);
 	useEffect(() => {
 		if (lastInitialActive.current === initialActiveValue) return;
@@ -7672,7 +7954,7 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 		const list = listRef.current;
 		if (initialActiveValue === void 0 || list !== null && list.contains(document.activeElement)) return;
 		if (!enabledRows.some((row) => row.value === initialActiveValue)) return;
-		setActiveValueState((current) => current === initialActiveValue ? current : initialActiveValue);
+		setInternalActive((current) => current === initialActiveValue ? current : initialActiveValue);
 	}, [initialActiveValue, enabledRows]);
 	const latest = useRef({
 		label,
@@ -7680,7 +7962,7 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 		invalid,
 		error,
 		disabled: isDisabled,
-		selected,
+		selectedValues,
 		multiple
 	});
 	latest.current = {
@@ -7689,7 +7971,7 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 		invalid,
 		error,
 		disabled: isDisabled,
-		selected,
+		selectedValues,
 		multiple
 	};
 	useEffect(() => {
@@ -7701,16 +7983,16 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 				return latest.current.label;
 			},
 			getValue: () => {
-				const values = toArray$2(latest.current.selected);
+				const values = latest.current.selectedValues;
 				if (values.length === 0) return void 0;
 				return latest.current.multiple ? values : values[0];
 			},
 			isDisabled: () => latest.current.disabled,
 			validate: () => {
-				const { label: currentLabel, required: isRequired, invalid: isInvalidProp, error: errorProp, selected: current } = latest.current;
-				if (errorProp !== void 0 && errorProp !== "") return errorProp;
-				if (isRequired && toArray$2(current).length === 0) return COPY$16.required.replace("{label}", currentLabel);
-				if (isInvalidProp) return COPY$16.invalid.replace("{label}", currentLabel);
+				const current = latest.current;
+				if (current.error !== void 0 && current.error !== "") return current.error;
+				if (current.required && current.selectedValues.length === 0) return COPY$16.required.replace("{label}", current.label);
+				if (current.invalid) return COPY$16.invalid.replace("{label}", current.label);
 				return null;
 			},
 			focus: () => listRef.current?.focus()
@@ -7720,33 +8002,50 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 		name,
 		id
 	]);
+	const validateMode = form ? form.validateMode ?? form.validate : void 0;
+	const afterFailedSubmit = form?.submitFailed ?? false;
+	const validatesOnChange = validateMode === "change" || afterFailedSubmit;
+	const validatesOnBlur = validateMode === "blur" || validateMode === "change" || afterFailedSubmit;
 	const isSelected = (optionValue) => selectedValues.includes(optionValue);
-	const commitValue = (next) => {
-		if (!Array.isArray(next) && next === selected) return;
-		if (!isControlled) setInternalValue(next);
-		onChange?.(next);
-		if (form && name && form.validate === "change") form.validateField(name);
-	};
 	/** onChange receives the array in option order. */
 	const inOptionOrder = (values) => rows.map((row) => row.value).filter((v) => values.includes(v));
-	const setActiveValue = (next) => {
-		if (next !== null) optionRefs.current.get(next)?.scrollIntoView?.({ block: "nearest" });
-		if (next === activeValue) return;
-		setActiveValueState(next);
+	const commitValues = (next) => {
+		if (multiple) {
+			if (next.length === selectedValues.length && next.every((v, i) => v === selectedValues[i])) return;
+			if (!isControlled) setInternalValue(next);
+			onChange?.(next);
+		} else {
+			const single = next[0];
+			if (single === void 0 || single === selectedValues[0]) return;
+			if (!isControlled) setInternalValue(single);
+			onChange?.(single);
+		}
+		latest.current = {
+			...latest.current,
+			selectedValues: multiple ? next : next.slice(0, 1)
+		};
+		if (form && name && validatesOnChange) form.validateField(name);
+	};
+	/**
+	* Reports a new active option. Owned: it moves; driven by `activeValue`: it only reports, and the
+	* host passes the value back.
+	*/
+	const reportActive = (next) => {
+		if (!activeControlled) setInternalActive(next);
 		onActiveChange?.(next);
 	};
 	/** Arrows, Home/End, PageUp/PageDown and typeahead all move this way: select too when selection follows focus. */
 	const moveActive = (optionValue) => {
-		setActiveValue(optionValue);
-		if (!multiple && selectionFollowsFocus) commitValue(optionValue);
-	};
-	const toggle = (optionValue) => {
-		commitValue(inOptionOrder(selectedValues.includes(optionValue) ? selectedValues.filter((v) => v !== optionValue) : [...selectedValues, optionValue]));
+		reportActive(optionValue);
+		if (!multiple && selectionFollowsFocus) commitValues([optionValue]);
 	};
 	const selectRow = (row) => {
 		if (isDisabled || row.disabled) return;
-		if (multiple) toggle(row.value);
-		else commitValue(row.value);
+		if (!multiple) {
+			commitValues([row.value]);
+			return;
+		}
+		commitValues(inOptionOrder(isSelected(row.value) ? selectedValues.filter((v) => v !== row.value) : [...selectedValues, row.value]));
 	};
 	/** Where focus lands first: `initialActiveValue` when enabled, else the first selected, else the first enabled. */
 	const resolveInitialActive = () => {
@@ -7762,12 +8061,15 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 		state.timer = setTimeout(() => {
 			state.buffer = "";
 		}, reset);
-		const count = enabledRows.length;
-		const startOffset = state.buffer.length > 1 || currentIndex === -1 ? 0 : 1;
+		const first = state.buffer[0];
+		const repeated = [...state.buffer].every((c) => c === first);
+		const search = repeated ? first : state.buffer;
 		const start = currentIndex === -1 ? 0 : currentIndex;
+		const startOffset = currentIndex !== -1 && repeated ? 1 : 0;
+		const count = enabledRows.length;
 		for (let offset = startOffset; offset < count + startOffset; offset++) {
 			const candidate = enabledRows[(start + offset) % count];
-			if (candidate && candidate.label.toLowerCase().startsWith(state.buffer)) {
+			if (candidate && candidate.label.toLowerCase().startsWith(search)) {
 				moveActive(candidate.value);
 				return;
 			}
@@ -7776,7 +8078,7 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 	const handleKeyDown = (event) => {
 		onKeyDown?.(event);
 		if (event.defaultPrevented || isDisabled || enabledRows.length === 0) return;
-		const currentIndex = activeValue === null ? -1 : enabledRows.findIndex((row) => row.value === activeValue);
+		const currentIndex = ownActive === null ? -1 : enabledRows.findIndex((row) => row.value === ownActive);
 		const last = enabledRows.length - 1;
 		switch (event.key) {
 			case "ArrowDown":
@@ -7786,8 +8088,8 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 				const targetIndex = currentIndex === -1 ? down ? 0 : last : Math.min(Math.max(currentIndex + (down ? 1 : -1), 0), last);
 				const target = enabledRows[targetIndex];
 				if (multiple && event.shiftKey) {
-					setActiveValue(target.value);
-					if (!selectedValues.includes(target.value)) commitValue(inOptionOrder([...selectedValues, target.value]));
+					reportActive(target.value);
+					if (!isSelected(target.value)) commitValues(inOptionOrder([...selectedValues, target.value]));
 				} else moveActive(target.value);
 				break;
 			}
@@ -7815,7 +8117,7 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 				const target = currentIndex === -1 ? resolveInitialActive() : enabledRows[currentIndex].value;
 				const row = enabledRows.find((candidate) => candidate.value === target);
 				if (!row) break;
-				setActiveValue(row.value);
+				if (currentIndex === -1) reportActive(row.value);
 				selectRow(row);
 				break;
 			}
@@ -7824,47 +8126,54 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 				const target = currentIndex === -1 ? resolveInitialActive() : enabledRows[currentIndex].value;
 				if (target === void 0) break;
 				event.preventDefault();
-				setActiveValue(target);
-				commitValue(target);
+				if (currentIndex === -1) reportActive(target);
+				commitValues([target]);
 				break;
 			}
-			default: if (multiple && event.ctrlKey && !event.altKey && !event.metaKey && event.key.toLowerCase() === "a") {
+			default: if (multiple && (event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "a") {
 				event.preventDefault();
 				const all = enabledRows.map((row) => row.value);
-				const allSelected = all.every((v) => selectedValues.includes(v));
+				const allSelected = all.every((v) => isSelected(v));
 				const keep = selectedValues.filter((v) => !all.includes(v));
-				commitValue(inOptionOrder(allSelected ? keep : [...keep, ...all]));
+				commitValues(inOptionOrder(allSelected ? keep : [...keep, ...all]));
 			} else if (/^[a-z]$/i.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) handleTypeahead(event.key, currentIndex);
 		}
 	};
 	const handleFocus = (event) => {
 		onFocus?.(event);
-		if (isDisabled) return;
-		if (event.target !== listRef.current && event.target !== event.currentTarget || activeValue !== null) return;
-		const initial = resolveInitialActive();
-		if (initial !== void 0) setActiveValue(initial);
+		if (event.target !== listRef.current && event.target !== event.currentTarget) return;
+		const next = ownActive ?? resolveInitialActive();
+		if (isDisabled) {
+			if (!activeControlled && internalActive === null && next !== void 0) setInternalActive(next);
+			return;
+		}
+		if (next !== void 0) reportActive(next);
 	};
 	const handleBlur = (event) => {
 		onBlur?.(event);
 		if (event.target !== listRef.current) return;
-		setActiveValue(null);
-		if (form && name && (form.validate === "blur" || form.validate === "change")) form.validateField(name);
+		if (!isDisabled) reportActive(null);
+		if (form && name && validatesOnBlur) form.validateField(name);
 	};
 	const handleRowPointerMove = (row) => {
-		if (isDisabled || row.disabled) return;
-		setActiveValue(row.value);
+		if (isDisabled || row.disabled || row.value === ownActive) return;
+		reportActive(row.value);
 	};
 	const handleRowClick = (row) => (event) => {
 		if (isDisabled || row.disabled) {
 			event.preventDefault();
 			return;
 		}
-		setActiveValue(row.value);
+		if (row.value !== ownActive) reportActive(row.value);
 		selectRow(row);
 	};
 	const setRowRef = (rowValue) => (element) => {
 		if (element) optionRefs.current.set(rowValue, element);
 		else optionRefs.current.delete(rowValue);
+	};
+	const textOverrides = {
+		fontFamily: overrides?.fontFamily ?? "font.family.body",
+		lineHeight: overrides?.lineHeight ?? "font.lineHeight.normal"
 	};
 	const renderRow = (row) => {
 		const optionId = `${id}-option-${row.value}`;
@@ -7873,7 +8182,7 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 		const rowDisabled = isDisabled || row.disabled === true;
 		const classes = [
 			"ds-listbox__option",
-			row.value === activeValue ? "ds-listbox__option--active" : null,
+			row.value === renderedActive ? "ds-listbox__option--active" : null,
 			rowSelected ? "ds-listbox__option--selected" : null,
 			row.disabled ? "ds-listbox__option--disabled" : null
 		].filter(Boolean).join(" ");
@@ -7882,6 +8191,7 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 			id: optionId,
 			role: "option",
 			"data-part": "option",
+			"data-value": row.value,
 			"aria-selected": rowSelected ? "true" : "false",
 			"aria-disabled": rowDisabled ? "true" : void 0,
 			"aria-describedby": descriptionId,
@@ -7905,7 +8215,8 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 					"aria-hidden": "true",
 					children: /* @__PURE__ */ jsx(Icon, {
 						name: row.icon,
-						size: "sm"
+						size: "sm",
+						overrides: { color: "color.foreground" }
 					})
 				}) : null,
 				/* @__PURE__ */ jsxs("span", {
@@ -7956,7 +8267,7 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 		"data-ds": "Listbox",
 		"data-ds-field": "",
 		className: classes,
-		style: overrides ? overridesToStyle$5(overrides, embedded) : void 0,
+		style: overrides ? overridesToStyle$6(overrides, embedded) : void 0,
 		onKeyDown: handleKeyDown,
 		onFocus: handleFocus,
 		onBlur: handleBlur,
@@ -7970,7 +8281,7 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 			"aria-label": label,
 			"aria-labelledby": labelledBy,
 			"aria-multiselectable": multiple ? "true" : void 0,
-			"aria-activedescendant": activeValue !== null ? `${id}-option-${activeValue}` : void 0,
+			"aria-activedescendant": renderedActive !== null ? `${id}-option-${renderedActive}` : void 0,
 			"aria-invalid": showsInvalid ? "true" : void 0,
 			"aria-required": required ? "true" : void 0,
 			"aria-describedby": describedBy,
@@ -7982,22 +8293,29 @@ function Listbox({ ref, label, labelledBy, options, multiple = false, value, def
 				"aria-hidden": "true",
 				children: /* @__PURE__ */ jsx(Text, {
 					"data-part": "emptyState",
+					element: "p",
 					tone: "muted",
+					overrides: textOverrides,
 					children: loading ? COPY$16.loading : emptyMessage ?? COPY$16.empty
 				})
 			}) : options.map(renderItem)
-		}), resolvedError !== void 0 ? /* @__PURE__ */ jsx(Text, {
-			id: errorId,
-			"data-part": "errorMessage",
-			size: "sm",
-			tone: "danger",
-			children: resolvedError
+		}), resolvedError !== void 0 ? /* @__PURE__ */ jsx("div", {
+			className: "ds-listbox__error",
+			children: /* @__PURE__ */ jsx(Text, {
+				id: errorId,
+				"data-part": "errorMessage",
+				element: "p",
+				size: "sm",
+				tone: "danger",
+				overrides: textOverrides,
+				children: resolvedError
+			})
 		}) : null]
 	});
 }
 //#endregion
 //#region src/Select.tsx
-/** copy.* — used verbatim; `{label}` is replaced by the visible label, `{count}` by the selection count. */
+/** copy.* — used verbatim; `{label}` is replaced by the visible label, `{count}` by the formatted selection count. */
 const COPY$15 = {
 	placeholder: "Select…",
 	selectedCount: "{count} selected",
@@ -8045,7 +8363,7 @@ function resolveOverrides$7(overrides, size) {
 		const popupHook = POPUP_OVERRIDE_HOOK[binding];
 		if (popupHook) popupStyle[popupHook] = cssVar(ref);
 	}
-	const fontSize = given.fontSize ?? `font.size.${size}`;
+	const fontSize = given.fontSize ?? (size === "sm" ? "font.size.sm" : "font.size.md");
 	const shared = {
 		fontFamily: given.fontFamily ?? "font.family.body",
 		lineHeight: given.lineHeight ?? "font.lineHeight.normal"
@@ -8070,19 +8388,15 @@ function resolveOverrides$7(overrides, size) {
 		listbox: shared
 	};
 }
-/** The locked `chevron` binding, realised through the composed Icon's color. */
+/** The locked `chevron` binding, always forwarded as the composed Icon's `overrides.color`. */
 const CHEVRON_OVERRIDES = { color: "color.foreground.muted" };
-/** jsdom (and older browsers) have no `matchMedia`; treat that as "no preference". */
-function prefersReducedMotion$1() {
-	return typeof window !== "undefined" && typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false;
-}
 function isGroup$1(option) {
 	return "group" in option;
 }
-/** Depth-first rows, dropping group wrappers — used to resolve a value to its label. */
+/** Rows in document order, dropping group wrappers (groups do not nest). */
 function flattenRows$1(options) {
 	const result = [];
-	for (const option of options) if (isGroup$1(option)) result.push(...flattenRows$1(option.options));
+	for (const option of options) if (isGroup$1(option)) result.push(...option.options);
 	else result.push(option);
 	return result;
 }
@@ -8090,6 +8404,12 @@ function toArray$1(value) {
 	if (Array.isArray(value)) return value;
 	return value === void 0 || value === "" ? [] : [value];
 }
+/** Listbox's own order: option order, with values that match no option appended. */
+function inListboxOrder(values, rows) {
+	const known = rows.map((row) => row.value);
+	return [...known.filter((v) => values.includes(v)), ...values.filter((v) => !known.includes(v))];
+}
+const subscribeNothing$5 = () => () => {};
 /** Below the trigger (above when it would overflow), start-aligned, kept inside the viewport, at least as wide as the trigger. */
 function computePosition$2(triggerRect, popupRect) {
 	const viewportHeight = window.innerHeight;
@@ -8107,9 +8427,8 @@ function computePosition$2(triggerRect, popupRect) {
 		vertical
 	};
 }
-function displayText(selected, rows, multiple, placeholder) {
+function displayText(values, rows, multiple, placeholder) {
 	const labelFor = (v) => rows.find((row) => row.value === v)?.label ?? v;
-	const values = toArray$1(selected);
 	if (values.length === 0) return {
 		text: placeholder,
 		isPlaceholder: true
@@ -8123,7 +8442,7 @@ function displayText(selected, rows, multiple, placeholder) {
 		isPlaceholder: false
 	};
 	return {
-		text: COPY$15.selectedCount.replace("{count}", String(values.length)),
+		text: COPY$15.selectedCount.replace("{count}", new Intl.NumberFormat().format(values.length)),
 		isPlaceholder: false
 	};
 }
@@ -8139,6 +8458,9 @@ const OPEN_KEYS = /* @__PURE__ */ new Set([
 *
 * When to use:
 * Use a Select for a form field with about seven to fifty options that people recognise on sight — country, role, status, time zone from a short list, a category. Use `multiple` for tags or memberships when a set of Checkboxes would be too long. Use `native: always` on web for forms that must work without JavaScript. Use Combobox instead when the list is long enough that typing to filter is faster than scrolling, or when free text is allowed.
+*
+* The root is the field group (`data-ds="Select"`, `data-ds-field`); `ref` reaches the control —
+* the trigger button, or the native <select> with `native: always`.
 */
 function Select({ ref, label, name, options, value, defaultValue, placeholder, hideLabel = false, size = "md", open: openProp, multiple = false, description, required = false, disabled = false, invalid = false, error, native = "auto", container, overrides, onChange, onOpenChange, id: idProp, onClick: onClickProp, onKeyDown: onKeyDownProp, onFocus, onBlur, ...rest }) {
 	const form = useFormContext();
@@ -8154,26 +8476,34 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 	const listboxRef = useRef(null);
 	const isNativeSelect = native === "always";
 	useImperativeHandle(ref, () => isNativeSelect ? selectRef.current : triggerRef.current, [isNativeSelect]);
+	const hydrated = useSyncExternalStore(subscribeNothing$5, () => true, () => false);
 	const isControlled = value !== void 0;
 	const [internalValue, setInternalValue] = useState(defaultValue);
 	const selected = isControlled ? value : internalValue;
-	const selectedValues = toArray$1(selected);
+	const selectedValues = multiple ? toArray$1(selected) : toArray$1(selected).slice(0, 1);
+	const isDisabled = disabled || (form?.disabled ?? false);
 	const isOpenControlled = openProp !== void 0;
 	const [internalOpen, setInternalOpen] = useState(false);
-	const open = !isNativeSelect && (isOpenControlled ? openProp : internalOpen);
-	const openRef = useRef(open);
-	openRef.current = open;
-	const forwarding = useRef(false);
+	const isOpen = !isNativeSelect && !isDisabled && (isOpenControlled ? openProp : internalOpen);
+	const openRef = useRef(isOpen);
+	openRef.current = isOpen;
+	useEffect(() => {
+		if (isDisabled && internalOpen) setInternalOpen(false);
+	}, [isDisabled, internalOpen]);
 	const [activeValue, setActiveValue] = useState(null);
 	const [popupPosition, setPopupPosition] = useState();
 	const [vertical, setVertical] = useState("bottom");
-	const [entered, setEntered] = useState(false);
-	const isDisabled = disabled || (form?.disabled ?? false);
+	const [visible, setVisible] = useState(false);
 	const resolvedError = (error !== void 0 && error !== "" ? error : void 0) ?? form?.errors[name] ?? (invalid ? COPY$15.invalid.replace("{label}", label) : void 0);
 	const isInvalid = invalid || resolvedError !== void 0;
+	const validateMode = form ? form.validateMode ?? form.validate : void 0;
+	const afterFailedSubmit = form?.submitFailed ?? false;
+	const validatesOnChange = validateMode === "change" || afterFailedSubmit;
+	const validatesOnBlur = validateMode === "blur" || validateMode === "change" || afterFailedSubmit;
 	const rows = flattenRows$1(options);
+	const enabledRows = rows.filter((row) => !row.disabled);
 	const resolvedPlaceholder = placeholder ?? COPY$15.placeholder;
-	const { text: triggerText, isPlaceholder } = displayText(selected, rows, multiple, resolvedPlaceholder);
+	const { text: triggerText, isPlaceholder } = displayText(selectedValues, rows, multiple, resolvedPlaceholder);
 	useEffect(() => {
 		if (process.env.NODE_ENV !== "production" && !label) console.warn("Select: `label` is required; it is the trigger’s accessible name.");
 	}, [label]);
@@ -8181,7 +8511,7 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 		label,
 		required,
 		disabled: isDisabled,
-		selected,
+		selectedValues,
 		multiple,
 		invalid,
 		error
@@ -8190,7 +8520,7 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 		label,
 		required,
 		disabled: isDisabled,
-		selected,
+		selectedValues,
 		multiple,
 		invalid,
 		error
@@ -8204,16 +8534,16 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 				return latest.current.label;
 			},
 			getValue: () => {
-				const values = toArray$1(latest.current.selected);
+				const values = latest.current.selectedValues;
 				if (values.length === 0) return void 0;
 				return latest.current.multiple ? values : values[0];
 			},
 			isDisabled: () => latest.current.disabled,
 			validate: () => {
-				const { label: currentLabel, required: isRequired, selected: current, invalid: isInvalidProp, error: errorProp } = latest.current;
-				if (errorProp !== void 0) return errorProp;
-				if (isRequired && toArray$1(current).length === 0) return COPY$15.required.replace("{label}", currentLabel);
-				if (isInvalidProp) return COPY$15.invalid.replace("{label}", currentLabel);
+				const current = latest.current;
+				if (current.error !== void 0 && current.error !== "") return current.error;
+				if (current.required && current.selectedValues.length === 0) return COPY$15.required.replace("{label}", current.label);
+				if (current.invalid) return COPY$15.invalid.replace("{label}", current.label);
 				return null;
 			},
 			focus: () => isNativeSelect ? selectRef.current?.focus() : triggerRef.current?.focus()
@@ -8225,10 +8555,15 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 		isNativeSelect
 	]);
 	const commitValue = (next) => {
-		if (!Array.isArray(next) && next === selected) return;
+		if (Array.isArray(next)) {
+			if (next.length === selectedValues.length && next.every((v, i) => v === selectedValues[i])) return;
+		} else if (next === selectedValues[0]) return;
 		if (!isControlled) setInternalValue(next);
 		onChange?.(next);
-		if (form && form.validate === "change") form.validateField(name);
+		if (form && validatesOnChange) {
+			latest.current.selectedValues = toArray$1(next);
+			form.validateField(name);
+		}
 	};
 	const changeOpen = (next) => {
 		openRef.current = next;
@@ -8241,15 +8576,19 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 	};
 	const closeSelect = (focusTrigger) => {
 		if (!openRef.current) return;
-		setActiveValue(null);
 		if (focusTrigger) triggerRef.current?.focus();
 		changeOpen(false);
 	};
-	/** The option Enter and Tab commit: the active one, else the selected, else the first enabled. */
-	const resolveActive = () => activeValue ?? rows.find((row) => !row.disabled && selectedValues.includes(row.value))?.value ?? rows.find((row) => !row.disabled)?.value;
+	/** The option the popup opens on: the selection (the array's first with `multiple`), else the first enabled. */
+	const openingActive = () => selectedValues.find((v) => enabledRows.some((row) => row.value === v)) ?? enabledRows[0]?.value ?? null;
+	const openingActiveRef = useRef(openingActive);
+	openingActiveRef.current = openingActive;
 	useLayoutEffect(() => {
-		if (!open) {
-			setEntered(false);
+		setActiveValue(isOpen ? openingActiveRef.current() : null);
+	}, [isOpen]);
+	useLayoutEffect(() => {
+		if (!isOpen || !hydrated) {
+			setVisible(false);
 			return;
 		}
 		const trigger = triggerRef.current;
@@ -8261,21 +8600,19 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 			setVertical(result.vertical);
 		};
 		reposition();
-		listboxRef.current?.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
-		if (document.activeElement !== trigger) trigger.focus();
-		if (prefersReducedMotion$1()) setEntered(true);
-		else requestAnimationFrame(() => setEntered(true));
+		const frame = requestAnimationFrame(() => setVisible(true));
 		window.addEventListener("scroll", reposition, true);
 		window.addEventListener("resize", reposition);
 		return () => {
+			cancelAnimationFrame(frame);
 			window.removeEventListener("scroll", reposition, true);
 			window.removeEventListener("resize", reposition);
 		};
-	}, [open]);
+	}, [isOpen, hydrated]);
 	const closeRef = useRef(closeSelect);
 	closeRef.current = closeSelect;
 	useEffect(() => {
-		if (!open) return void 0;
+		if (!isOpen) return void 0;
 		const isOutside = (target) => !target || !popupRef.current?.contains(target) && !triggerRef.current?.contains(target);
 		const handlePointerDown = (event) => {
 			if (isOutside(event.target)) closeRef.current(false);
@@ -8289,53 +8626,16 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 			document.removeEventListener("pointerdown", handlePointerDown);
 			document.removeEventListener("focusout", handleFocusOut);
 		};
-	}, [open]);
-	/** Select's own keys while open; returns true when the key was handled here. */
-	const handleOpenKey = (event) => {
-		switch (event.key) {
-			case "Escape":
-				event.preventDefault();
-				closeSelect(true);
-				return true;
-			case "Tab":
-				if (!multiple) {
-					const target = resolveActive();
-					if (target !== void 0) commitValue(target);
-				}
-				if (triggerRef.current && document.activeElement !== triggerRef.current) triggerRef.current.focus();
-				closeSelect(false);
-				return true;
-			case "Enter": {
-				event.preventDefault();
-				const target = resolveActive();
-				if (multiple) {
-					if (target !== void 0) commitValue(rows.map((row) => row.value).filter((v) => v === target ? !selectedValues.includes(v) : selectedValues.includes(v)));
-				} else {
-					if (target !== void 0) commitValue(target);
-					closeSelect(true);
-				}
-				return true;
-			}
-			default: return false;
-		}
+	}, [isOpen]);
+	const currentActive = () => activeValue ?? openingActive();
+	const toggleActive = () => {
+		const target = currentActive();
+		if (target === null) return;
+		const next = selectedValues.includes(target) ? selectedValues.filter((v) => v !== target) : inListboxOrder([...selectedValues, target], rows);
+		commitValue(next);
 	};
-	const handleTriggerClick = (event) => {
-		onClickProp?.(event);
-		if (event.defaultPrevented || isDisabled) return;
-		if (openRef.current) closeSelect(false);
-		else openSelect();
-	};
-	const handleTriggerKeyDown = (event) => {
-		onKeyDownProp?.(event);
-		if (event.defaultPrevented) return;
-		if (!open) {
-			if (!isDisabled && OPEN_KEYS.has(event.key)) {
-				event.preventDefault();
-				openSelect();
-			}
-			return;
-		}
-		if (handleOpenKey(event)) return;
+	/** Replays a trigger key on the Listbox wrapper (where Listbox handles keys) and copies defaultPrevented back. */
+	const forwardKey = (event) => {
 		const list = listboxRef.current;
 		if (!list) return;
 		const forwarded = new KeyboardEvent("keydown", {
@@ -8348,26 +8648,65 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 			bubbles: true,
 			cancelable: true
 		});
-		forwarding.current = true;
-		try {
-			list.dispatchEvent(forwarded);
-		} finally {
-			forwarding.current = false;
-		}
+		list.dispatchEvent(forwarded);
 		if (forwarded.defaultPrevented) event.preventDefault();
-		if (event.key === " " && !multiple) closeSelect(true);
 	};
-	const handlePopupKeyDown = (event) => {
-		if (forwarding.current || event.target === triggerRef.current) return;
-		if (event.key === "Enter" && !multiple) {
-			closeSelect(true);
+	const handleTriggerClick = (event) => {
+		onClickProp?.(event);
+		if (event.defaultPrevented || isDisabled) return;
+		if (openRef.current) closeSelect(false);
+		else openSelect();
+	};
+	const handleTriggerKeyDown = (event) => {
+		onKeyDownProp?.(event);
+		if (event.defaultPrevented) return;
+		if (!isOpen) {
+			if (!isDisabled && OPEN_KEYS.has(event.key)) {
+				event.preventDefault();
+				openSelect();
+			}
 			return;
 		}
-		if (event.key === "Escape" || event.key === "Tab" || event.key === "Enter" && multiple) handleOpenKey(event);
+		switch (event.key) {
+			case "Escape":
+				event.preventDefault();
+				closeSelect(true);
+				return;
+			case "Tab":
+				if (!multiple) {
+					const target = currentActive();
+					if (target !== null) commitValue(target);
+				}
+				closeSelect(false);
+				return;
+			case "Enter":
+				if (multiple) {
+					event.preventDefault();
+					toggleActive();
+					return;
+				}
+				forwardKey(event);
+				event.preventDefault();
+				closeSelect(true);
+				return;
+			case " ":
+				forwardKey(event);
+				event.preventDefault();
+				if (!multiple) closeSelect(true);
+				return;
+			default: forwardKey(event);
+		}
+	};
+	const handleTriggerBlur = (event) => {
+		onBlur?.(event);
+		if (form && validatesOnBlur && !openRef.current) form.validateField(name);
 	};
 	const handleListboxChange = (next) => {
 		commitValue(next);
 		if (!multiple) closeSelect(true);
+	};
+	const handleListboxActiveChange = (next) => {
+		if (openRef.current) setActiveValue(next);
 	};
 	const handlePopupClick = (event) => {
 		if (multiple) return;
@@ -8409,18 +8748,15 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 		overrides: resolved.helper,
 		children: description
 	}) : null;
-	const errorNode = resolvedError ? /* @__PURE__ */ jsx("span", {
-		className: "ds-select__error",
+	const errorNode = resolvedError ? /* @__PURE__ */ jsx(Text, {
+		element: "span",
 		id: errorId,
 		role: "alert",
-		children: /* @__PURE__ */ jsx(Text, {
-			element: "span",
-			size: "sm",
-			tone: "danger",
-			"data-part": "errorMessage",
-			overrides: resolved.helper,
-			children: resolvedError
-		})
+		size: "sm",
+		tone: "danger",
+		"data-part": "errorMessage",
+		overrides: resolved.helper,
+		children: resolvedError
 	}) : null;
 	const chevronNode = /* @__PURE__ */ jsx("span", {
 		className: "ds-select__chevron",
@@ -8438,20 +8774,23 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 		};
 		const handleNativeBlur = (event) => {
 			onBlur?.(event);
-			if (form && (form.validate === "blur" || form.validate === "change")) form.validateField(name);
+			if (form && validatesOnBlur) form.validateField(name);
 		};
-		const renderNativeNode = (node, path) => {
+		const renderNativeNode = (node, index) => {
 			if (isGroup$1(node)) return /* @__PURE__ */ jsx("optgroup", {
 				label: node.group,
-				children: node.options.map((child, index) => renderNativeNode(child, `${path}-${index}`))
-			}, `${path}-group`);
+				children: node.options.map((child) => /* @__PURE__ */ jsx("option", {
+					value: child.value,
+					disabled: child.disabled,
+					children: child.label
+				}, child.value))
+			}, `group-${index}`);
 			return /* @__PURE__ */ jsx("option", {
 				value: node.value,
 				disabled: node.disabled,
 				children: node.label
 			}, node.value);
 		};
-		const nativeValue = multiple ? selectedValues : selectedValues[0] ?? "";
 		return /* @__PURE__ */ jsxs("div", {
 			"data-ds": "Select",
 			"data-ds-field": "",
@@ -8468,10 +8807,10 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 						id,
 						name,
 						multiple,
-						value: nativeValue,
+						value: multiple ? selectedValues : selectedValues[0] ?? "",
 						required,
 						disabled: isDisabled,
-						className: "ds-select__native",
+						className: !multiple && selectedValues.length === 0 ? "ds-select__native ds-select__native--placeholder" : "ds-select__native",
 						"data-part": "trigger",
 						"aria-describedby": describedBy || void 0,
 						"aria-invalid": isInvalid ? "true" : void 0,
@@ -8483,14 +8822,16 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 							value: "",
 							disabled: true,
 							children: resolvedPlaceholder
-						}) : null, options.map((node, index) => renderNativeNode(node, String(index)))]
+						}) : null, options.map(renderNativeNode)]
 					}), !multiple ? chevronNode : null]
 				}),
 				errorNode
 			]
 		});
 	}
-	const initialActive = selectedValues[0];
+	const popupPresent = isOpen && hydrated;
+	const shown = visible && isOpen;
+	const host = hydrated ? container ?? document.body : null;
 	return /* @__PURE__ */ jsxs("div", {
 		"data-ds": "Select",
 		"data-ds-field": "",
@@ -8506,9 +8847,9 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 				id,
 				role: "combobox",
 				"aria-haspopup": "listbox",
-				"aria-expanded": open ? "true" : "false",
-				"aria-controls": open ? listboxId : void 0,
-				"aria-activedescendant": open && activeValue !== null ? `${listboxId}-option-${activeValue}` : void 0,
+				"aria-expanded": isOpen ? "true" : "false",
+				"aria-controls": popupPresent ? listboxId : void 0,
+				"aria-activedescendant": popupPresent && activeValue !== null ? `${listboxId}-option-${activeValue}` : void 0,
 				"aria-labelledby": labelId,
 				"aria-describedby": describedBy || void 0,
 				"aria-invalid": isInvalid ? "true" : void 0,
@@ -8519,7 +8860,7 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 				onClick: handleTriggerClick,
 				onKeyDown: handleTriggerKeyDown,
 				onFocus,
-				onBlur,
+				onBlur: handleTriggerBlur,
 				children: [/* @__PURE__ */ jsx("span", {
 					className: "ds-select__value",
 					children: /* @__PURE__ */ jsx(Text, {
@@ -8537,18 +8878,17 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 				value: v
 			}, v)),
 			errorNode,
-			open ? createPortal(/* @__PURE__ */ jsx("div", {
+			popupPresent && host ? createPortal(/* @__PURE__ */ jsx("div", {
 				ref: popupRef,
 				"data-part": "popup",
 				"data-vertical": vertical,
-				className: ["ds-select__popup", entered ? "ds-select__popup--entered" : null].filter(Boolean).join(" "),
+				className: ["ds-select__popup", shown ? "ds-select__popup--visible" : null].filter(Boolean).join(" "),
 				style: {
 					...popupPosition,
 					...resolved.popupStyle
 				},
 				onMouseDown: (event) => event.preventDefault(),
 				onClick: handlePopupClick,
-				onKeyDown: handlePopupKeyDown,
 				children: /* @__PURE__ */ jsx(Listbox, {
 					ref: listboxRef,
 					id: listboxId,
@@ -8560,12 +8900,13 @@ function Select({ ref, label, name, options, value, defaultValue, placeholder, h
 					value: multiple ? selectedValues : selectedValues[0] ?? [],
 					selectionFollowsFocus: false,
 					embedded: true,
-					initialActiveValue: initialActive,
+					initialActiveValue: selectedValues[0],
+					activeValue,
 					overrides: resolved.listbox,
 					onChange: handleListboxChange,
-					onActiveChange: setActiveValue
+					onActiveChange: handleListboxActiveChange
 				})
-			}), container ?? document.body) : null
+			}), host) : null
 		]
 	});
 }
@@ -8588,7 +8929,7 @@ const COPY$14 = {
 	requiredIndicator: " (required)"
 };
 /** constant `statusDebounce`: motion.duration.base × 2, read from the token at run time. */
-const STATUS_DEBOUNCE = {
+const STATUS_DEBOUNCE$1 = {
 	token: "--motion-duration-base",
 	multiply: 2
 };
@@ -8681,6 +9022,8 @@ function parseTime$2(value) {
 	const amount = Number(match[1]);
 	return match[2] === "s" ? amount * 1e3 : amount;
 }
+/** The hydration gate: false on the server and through hydration, true on a client-only mount. */
+const subscribeNothing$4 = () => () => {};
 /** Below the field, flipped above when it would overflow and there is more room there; never past the inline edge. */
 function computePosition$1(field, popup) {
 	const viewportHeight = window.innerHeight;
@@ -8738,40 +9081,33 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 	const isDisabled = disabled || (form?.disabled ?? false);
 	const [internalOpen, setInternalOpen] = useState(false);
 	const isOpen = (openProp ?? internalOpen) && !isDisabled;
+	const hydrated = useSyncExternalStore(subscribeNothing$4, () => true, () => false);
 	const [showAll, setShowAll] = useState(false);
-	const [activeValue, setActiveValue] = useState(null);
+	const [activeIntent, setActiveIntent] = useState(isOpen ? "selectedOrFirst" : "none");
 	const [openIntent, setOpenIntent] = useState("selectedOrFirst");
-	const [activeRequest, setActiveRequest] = useState({
-		generation: 0,
-		intent: "selectedOrFirst"
-	});
 	const [seenOpen, setSeenOpen] = useState(isOpen);
 	const [position, setPosition] = useState(null);
+	const [visible, setVisible] = useState(false);
 	const [statusText, setStatusText] = useState("");
-	/** Remounts the Listbox with a new starting active option: the only way to reset its internal state. */
-	const requestActive = (intent) => {
-		setActiveValue(null);
-		setActiveRequest((request) => ({
-			generation: request.generation + 1,
-			intent
-		}));
-	};
 	if (isOpen !== seenOpen) {
 		setSeenOpen(isOpen);
-		setActiveValue(null);
 		if (isOpen) {
-			setActiveRequest((request) => ({
-				generation: request.generation + 1,
-				intent: openIntent
-			}));
+			setActiveIntent(openIntent);
 			setOpenIntent("selectedOrFirst");
-		} else setShowAll(false);
+		} else {
+			setActiveIntent("none");
+			setShowAll(false);
+		}
 	}
 	const formError = form?.errors[name];
 	const markedInvalid = invalid || formError !== void 0;
 	const resolvedError = error !== void 0 && error !== "" ? error : formError !== void 0 && formError !== "" ? formError : markedInvalid ? COPY$14.invalid.replace("{label}", label) : void 0;
 	const isInvalid = markedInvalid || resolvedError !== void 0;
 	const isLoading = filter === "async" && loading;
+	const validateMode = form ? form.validateMode ?? form.validate : void 0;
+	const afterFailedSubmit = form?.submitFailed ?? false;
+	const validatesOnChange = validateMode === "change" || afterFailedSubmit;
+	const validatesOnBlur = validateMode === "blur" || validateMode === "change" || afterFailedSubmit;
 	const query = showAll || filter === "none" || filter === "async" ? "" : normalize(trimmedText);
 	const filteredOptions = useMemo(() => {
 		if (query === "") return options;
@@ -8806,11 +9142,7 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 		if (intent === "typeahead") return normalizedText === "" ? void 0 : enabledRows.find((row) => normalize(row.label).startsWith(normalizedText))?.value;
 		return enabledRows.some((row) => row.value === intent.value) ? intent.value : void 0;
 	};
-	const requestedActive = resolveIntent(activeRequest.intent);
-	useLayoutEffect(() => {
-		if (!isOpen || requestedActive === void 0) return;
-		listboxRef.current?.dispatchEvent(new FocusEvent("focusin", { bubbles: true }));
-	}, [isOpen, activeRequest.generation]);
+	const activeValue = isOpen ? resolveIntent(activeIntent) ?? null : null;
 	useLayoutEffect(() => {
 		if (!isOpen) return;
 		const input = inputRef.current;
@@ -8821,7 +9153,7 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 	useEffect(() => {
 		if (lastRowSignature.current === rowSignature) return;
 		lastRowSignature.current = rowSignature;
-		if (isOpen) requestActive("none");
+		setActiveIntent("none");
 	}, [rowSignature]);
 	useEffect(() => {
 		if (multiple || isTextControlled || singleValue === void 0) return;
@@ -8861,7 +9193,7 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 			isDisabled: () => latest.current.disabled,
 			validate: () => {
 				const current = latest.current;
-				if (current.error !== void 0) return current.error;
+				if (current.error !== void 0 && current.error !== "") return current.error;
 				if (current.required && toArray(current.selected).length === 0) return COPY$14.required.replace("{label}", current.label);
 				if (current.invalid) return COPY$14.invalid.replace("{label}", current.label);
 				return null;
@@ -8891,8 +9223,8 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 			}
 			message = (rules.select(resultCount) === "one" ? COPY$14.resultCount.one : COPY$14.resultCount.other).replace("{count}", String(resultCount));
 		}
-		const base = rootRef.current ? parseTime$2(getComputedStyle(rootRef.current).getPropertyValue(STATUS_DEBOUNCE.token)) : null;
-		const timer = setTimeout(() => setStatusText(message), base === null ? 0 : base * STATUS_DEBOUNCE.multiply);
+		const base = rootRef.current ? parseTime$2(getComputedStyle(rootRef.current).getPropertyValue(STATUS_DEBOUNCE$1.token)) : null;
+		const timer = setTimeout(() => setStatusText(message), base === null ? 0 : base * STATUS_DEBOUNCE$1.multiply);
 		return () => clearTimeout(timer);
 	}, [
 		isOpen,
@@ -8900,7 +9232,15 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 		resultCount
 	]);
 	useLayoutEffect(() => {
-		if (!isOpen) return void 0;
+		if (!isOpen || !hydrated) {
+			setVisible(false);
+			return;
+		}
+		const frame = requestAnimationFrame(() => setVisible(true));
+		return () => cancelAnimationFrame(frame);
+	}, [isOpen, hydrated]);
+	useLayoutEffect(() => {
+		if (!isOpen || !hydrated) return void 0;
 		const reposition = () => {
 			const field = fieldRef.current;
 			const popup = popupRef.current;
@@ -8915,7 +9255,11 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 			window.removeEventListener("scroll", reposition, true);
 			window.removeEventListener("resize", reposition);
 		};
-	}, [isOpen, listOptions]);
+	}, [
+		isOpen,
+		hydrated,
+		listOptions
+	]);
 	const setOpenState = (next) => {
 		if (next === isOpen || next && isDisabled) return;
 		if (openProp === void 0) setInternalOpen(next);
@@ -8923,7 +9267,7 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 	};
 	const openWith = (intent) => {
 		if (isOpen) {
-			requestActive(intent);
+			setActiveIntent(intent);
 			return;
 		}
 		setOpenIntent(intent);
@@ -8951,7 +9295,8 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 	const commitValue = (next) => {
 		if (!isValueControlled) setInternalValue(next);
 		onChange?.(next);
-		if (form && form.validate === "change") form.validateField(name);
+		latest.current.selected = next;
+		if (form && validatesOnChange) form.validateField(name);
 	};
 	const updateText = (next) => {
 		if (next === text) return;
@@ -8968,7 +9313,7 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 		if (multiple) {
 			if (!selectedValues.includes(committed)) commitValue([...selectedValues, committed]);
 			updateText("");
-			requestActive("none");
+			setActiveIntent("none");
 		} else {
 			if (committed !== singleValue) commitValue(committed);
 			updateText(match?.label ?? raw);
@@ -8984,7 +9329,7 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 		if (multiple) {
 			commitValue(selectedValues.includes(rowValue) ? selectedValues.filter((v) => v !== rowValue) : [...selectedValues, rowValue]);
 			updateText("");
-			requestActive({ value: rowValue });
+			setActiveIntent({ value: rowValue });
 		} else {
 			if (rowValue !== singleValue) commitValue(rowValue);
 			updateText(labelFor(rowValue));
@@ -9021,7 +9366,7 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 	};
 	const handleInputBlur = (event) => {
 		onBlur?.(event);
-		if (form && (form.validate === "blur" || form.validate === "change")) form.validateField(name);
+		if (form && validatesOnBlur) form.validateField(name);
 	};
 	const forwardToListbox = (key) => {
 		listboxRef.current?.dispatchEvent(new KeyboardEvent("keydown", {
@@ -9267,9 +9612,9 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 				value: hiddenValue,
 				disabled: isDisabled
 			}, hiddenValue)),
-			isOpen && typeof document !== "undefined" ? createPortal(/* @__PURE__ */ jsx("div", {
+			isOpen && hydrated ? createPortal(/* @__PURE__ */ jsx("div", {
 				ref: popupRef,
-				className: "ds-combobox__popup",
+				className: visible ? "ds-combobox__popup ds-combobox__popup--visible" : "ds-combobox__popup",
 				"data-part": "popup",
 				"data-vertical": position?.vertical ?? "bottom",
 				style: popupStyle,
@@ -9288,17 +9633,17 @@ function Combobox({ ref, label, name, options, value, defaultValue, open: openPr
 					loading: isLoading,
 					disabled: isDisabled,
 					emptyMessage: COPY$14.empty,
-					initialActiveValue: requestedActive,
+					activeValue,
 					onChange: handleListboxChange,
-					onActiveChange: setActiveValue
-				}, activeRequest.generation)
+					onActiveChange: (next) => setActiveIntent(next === null ? "none" : { value: next })
+				})
 			}), container ?? document.body) : null
 		]
 	});
 }
 //#endregion
 //#region src/Accordion.tsx
-const isDev$10 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$9 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 /** An empty array or an empty string means nothing is open. */
 function toIdArray(value) {
 	if (value === void 0) return void 0;
@@ -9335,12 +9680,12 @@ function Accordion({ ref, items, headingLevel = "3", exclusive = false, value, d
 	const openIds = limitExclusive(isControlled ? toIdArray(value) ?? [] : internalOpenIds, exclusive);
 	const valueKey = isControlled ? JSON.stringify(toIdArray(value) ?? []) : null;
 	const requestedIds = toIdArray(isControlled ? value : defaultValue) ?? [];
-	const warnedRef = useRef(null);
+	const warnedRef = useRef(/* @__PURE__ */ new Set());
 	useEffect(() => {
-		if (!isDev$10 || !exclusive || requestedIds.length <= 1) return;
-		const key = requestedIds.join(" ");
-		if (warnedRef.current === key) return;
-		warnedRef.current = key;
+		if (!isDev$9 || !exclusive || requestedIds.length <= 1) return;
+		const key = JSON.stringify(requestedIds);
+		if (warnedRef.current.has(key)) return;
+		warnedRef.current.add(key);
 		console.warn(`Accordion: \`exclusive\` opens one section, but \`${isControlled ? "value" : "defaultValue"}\` has ${requestedIds.length} ids. Opening "${requestedIds[0]}"; ignoring ${requestedIds.slice(1).join(", ")}.`);
 	});
 	const previousRef = useRef({
@@ -9361,7 +9706,7 @@ function Accordion({ ref, items, headingLevel = "3", exclusive = false, value, d
 		if (previous.valueKey === valueKey) return;
 		const emitted = lastEmittedRef.current;
 		lastEmittedRef.current = null;
-		if (emitted !== null && sameSet(emitted, openIds)) return;
+		if (emitted !== null && sameSet(emitted, requestedIds)) return;
 		for (const item of items) {
 			const was = previous.openIds.includes(item.id);
 			const is = openIds.includes(item.id);
@@ -9423,6 +9768,7 @@ function Accordion({ ref, items, headingLevel = "3", exclusive = false, value, d
 		children.push(/* @__PURE__ */ jsx(Disclosure, {
 			ref: setTriggerRef(item.id),
 			summary: item.summary,
+			fullWidth: true,
 			headingLevel,
 			open: openIds.includes(item.id),
 			disabled: item.disabled,
@@ -9528,7 +9874,7 @@ function resolveOverrides$5(overrides) {
 		helper
 	};
 }
-const isDev$9 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$8 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 function decimalsOf(n) {
 	const text = String(n);
 	const dot = text.indexOf(".");
@@ -9554,7 +9900,7 @@ function Slider({ ref, label, name, min = 0, max = 100, step = 1, snapToMarks = 
 	const errorId = `${controlId}-error`;
 	const validBounds = max > min;
 	useEffect(() => {
-		if (isDev$9 && !validBounds) console.warn(`Slider: \`max\` (${max}) must be greater than \`min\` (${min}).`);
+		if (isDev$8 && !validBounds) console.warn(`Slider: \`max\` (${max}) must be greater than \`min\` (${min}).`);
 	}, [
 		validBounds,
 		min,
@@ -9573,7 +9919,8 @@ function Slider({ ref, label, name, min = 0, max = 100, step = 1, snapToMarks = 
 	const [internalValue, setInternalValue] = useState(fallback);
 	const current = normalize(value !== void 0 ? value : internalValue);
 	const latestValue = useRef(current);
-	latestValue.current = current;
+	const interacting = useRef(false);
+	if (!interacting.current) latestValue.current = current;
 	const isDisabled = disabled || (form?.disabled ?? false);
 	const errorMessage = error ?? form?.errors[name] ?? (invalid ? COPY$13.invalid.replace("{label}", label) : void 0);
 	const isInvalid = invalid || errorMessage !== void 0;
@@ -9590,6 +9937,7 @@ function Slider({ ref, label, name, min = 0, max = 100, step = 1, snapToMarks = 
 	const [activeKey, setActiveKey] = useState(null);
 	const [focusedKey, setFocusedKey] = useState(null);
 	const dragIndex = useRef(void 0);
+	const grabOffset = useRef(0);
 	const changedInInteraction = useRef(false);
 	const format = formatValue ?? ((v) => String(v));
 	const latest = useRef({
@@ -9675,7 +10023,14 @@ function Slider({ ref, label, name, min = 0, max = 100, step = 1, snapToMarks = 
 		onChange?.(nextValue);
 		if (form && validatesOnChange) form.validateField(name);
 	}
+	function beginInteraction() {
+		if (interacting.current) return;
+		interacting.current = true;
+		latestValue.current = current;
+		changedInInteraction.current = false;
+	}
 	function endInteraction() {
+		interacting.current = false;
 		if (!changedInInteraction.current) return;
 		changedInInteraction.current = false;
 		onChangeEnd?.(latestValue.current);
@@ -9697,18 +10052,27 @@ function Slider({ ref, label, name, min = 0, max = 100, step = 1, snapToMarks = 
 		if (isDisabled || event.button !== 0) return;
 		event.preventDefault();
 		const raw = valueAt(event.clientX);
-		const index = range ? raw > high || raw > low && raw - low > high - raw ? 1 : 0 : null;
+		beginInteraction();
+		const target = event.target;
+		const grabbed = thumbs.find((t) => thumbRefs.current[t.key]?.contains(target));
+		let index;
+		if (grabbed) {
+			index = grabbed.index;
+			grabOffset.current = grabbed.value - raw;
+		} else {
+			index = range ? raw > high || raw > low && raw - low > high - raw ? 1 : 0 : null;
+			grabOffset.current = 0;
+			commit(index, snapPointer(raw));
+		}
 		dragIndex.current = index;
-		changedInInteraction.current = false;
 		setActiveKey(keyFor(index));
-		commit(index, snapPointer(raw));
-		const target = event.currentTarget;
-		if (typeof target.setPointerCapture === "function") target.setPointerCapture(event.pointerId);
+		const area = event.currentTarget;
+		if (typeof area.setPointerCapture === "function") area.setPointerCapture(event.pointerId);
 		thumbRefs.current[keyFor(index)]?.focus();
 	};
 	const handlePointerMove = (event) => {
 		if (dragIndex.current === void 0) return;
-		commit(dragIndex.current, snapPointer(valueAt(event.clientX)));
+		commit(dragIndex.current, snapPointer(valueAt(event.clientX) + grabOffset.current));
 	};
 	const handlePointerUp = (event) => {
 		if (dragIndex.current === void 0) return;
@@ -9750,7 +10114,12 @@ function Slider({ ref, label, name, min = 0, max = 100, step = 1, snapToMarks = 
 			default: return;
 		}
 		event.preventDefault();
+		beginInteraction();
 		commit(thumb.index, next);
+	};
+	const handleBlur = () => {
+		setFocusedKey(null);
+		if (interacting.current && dragIndex.current === void 0) endInteraction();
 	};
 	const thumbs = range ? [{
 		key: "min",
@@ -9802,13 +10171,16 @@ function Slider({ ref, label, name, min = 0, max = 100, step = 1, snapToMarks = 
 					tone: "default",
 					overrides: resolved.label,
 					children: label
-				}), showValue === "always" ? /* @__PURE__ */ jsx(Text, {
-					element: "span",
-					"data-part": "valueText",
-					size: "sm",
-					tone: "default",
-					overrides: resolved.value,
-					children: range ? COPY$13.rangeText.replace("{low}", format(low)).replace("{high}", format(high)) : format(single)
+				}), showValue === "always" ? /* @__PURE__ */ jsx("span", {
+					className: "ds-slider__value",
+					children: /* @__PURE__ */ jsx(Text, {
+						element: "span",
+						"data-part": "valueText",
+						size: "sm",
+						tone: "default",
+						overrides: resolved.value,
+						children: range ? COPY$13.rangeText.replace("{low}", format(low)).replace("{high}", format(high)) : format(single)
+					})
 				}) : null]
 			}),
 			/* @__PURE__ */ jsxs("div", {
@@ -9870,7 +10242,7 @@ function Slider({ ref, label, name, min = 0, max = 100, step = 1, snapToMarks = 
 									onKeyDown: handleKeyDown(thumb),
 									onKeyUp: endInteraction,
 									onFocus: () => setFocusedKey(thumb.key),
-									onBlur: () => setFocusedKey(null),
+									onBlur: handleBlur,
 									children: [/* @__PURE__ */ jsx("span", {
 										className: "ds-slider__knob",
 										"aria-hidden": "true"
@@ -9922,17 +10294,21 @@ function Slider({ ref, label, name, min = 0, max = 100, step = 1, snapToMarks = 
 				value: String(single),
 				disabled: isDisabled
 			}),
-			description ? /* @__PURE__ */ jsx(Text, {
-				element: "span",
-				id: descriptionId,
-				"data-part": "description",
-				size: "sm",
-				tone: "muted",
-				overrides: resolved.helper,
-				children: description
+			description ? /* @__PURE__ */ jsx("div", {
+				className: "ds-slider__description",
+				children: /* @__PURE__ */ jsx(Text, {
+					element: "span",
+					id: descriptionId,
+					"data-part": "description",
+					size: "sm",
+					tone: "muted",
+					overrides: resolved.helper,
+					children: description
+				})
 			}) : null,
 			errorMessage ? /* @__PURE__ */ jsx("div", {
 				role: "alert",
+				className: "ds-slider__error",
 				children: /* @__PURE__ */ jsx(Text, {
 					element: "span",
 					id: errorId,
@@ -9960,7 +10336,7 @@ const COPY$12 = {
 	currencyMissing: "format \"currency\" needs a currency code.",
 	requiredIndicator: " (required)"
 };
-const isDev$8 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$7 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 /** Hooks on the root. `helperSize` has none: it is forwarded to the description and error Text
 * elements' `fontSize`. `fontFamily`/`lineHeight` are forwarded to those Text elements *and* kept
 * here for the label and the `<input>`, which are not Text. */
@@ -10119,7 +10495,7 @@ function NumberInput({ ref, label, name, value, defaultValue, min, max, step = 1
 	useImperativeHandle(ref, () => inputRef.current, []);
 	const digits = Math.max(0, Math.trunc(precision ?? decimalsInStep(step)));
 	const unitKnown = format === "unit" && unit !== void 0 && unit !== "" && isIntlUnit(unit);
-	const resolvedTrailing = trailingText ?? (format === "unit" && unit && !unitKnown ? unit : void 0);
+	const resolvedTrailing = format === "percent" ? void 0 : trailingText ?? (format === "unit" && unit && !unitKnown ? unit : void 0);
 	const resolvedLeading = format === "currency" ? void 0 : leadingText;
 	const display = (num) => num === void 0 ? "" : formatNumber(num, format, digits, currency, unit);
 	const isControlled = value !== void 0;
@@ -10147,9 +10523,10 @@ function NumberInput({ ref, label, name, value, defaultValue, min, max, step = 1
 			value: committedValue,
 			formatKey
 		};
-		if (typingRef.current && prev.formatKey === formatKey) {
+		if (prev.formatKey === formatKey) {
 			const typed = parseTyped$1(inputRef.current?.value ?? "");
-			if (Object.is(typed.kind === "number" ? typed.value : void 0, committedValue)) return;
+			if (committedValue === void 0 && (typingRef.current || typed.kind === "invalid")) return;
+			if (typingRef.current && Object.is(typed.kind === "number" ? typed.value : void 0, committedValue)) return;
 		}
 		typingRef.current = false;
 		setText(committedValue === void 0 ? "" : formatNumber(committedValue, format, digits, currency, unit));
@@ -10157,7 +10534,7 @@ function NumberInput({ ref, label, name, value, defaultValue, min, max, step = 1
 	}, [committedValue, formatKey]);
 	const warnedCurrency = useRef(false);
 	useEffect(() => {
-		if (isDev$8 && format === "currency" && !currency && !warnedCurrency.current) {
+		if (isDev$7 && format === "currency" && !currency && !warnedCurrency.current) {
 			warnedCurrency.current = true;
 			console.warn(`NumberInput: ${COPY$12.currencyMissing}`);
 		}
@@ -10374,9 +10751,11 @@ function NumberInput({ ref, label, name, value, defaultValue, min, max, step = 1
 	}
 	const withLabel = (message) => message.replace("{label}", label);
 	const formError = form?.errors[name];
-	const slotMessage = error !== void 0 && error !== "" ? error : formError !== void 0 && formError !== "" ? formError : invalid || formError !== void 0 ? withLabel(required && committedValue === void 0 && !textInvalid ? COPY$12.required : COPY$12.invalid) : textInvalid ? withLabel(COPY$12.invalid) : rangeMessage;
-	const isInvalid = slotMessage !== void 0;
-	const describedBy = [description ? descriptionId : null, isInvalid ? errorId : null].filter(Boolean).join(" ");
+	const markedInvalid = invalid || formError !== void 0;
+	const derivedMessage = required && committedValue === void 0 && !textInvalid ? withLabel(COPY$12.required) : textInvalid ? withLabel(COPY$12.invalid) : void 0;
+	const slotMessage = error !== void 0 && error !== "" ? error : formError !== void 0 && formError !== "" ? formError : markedInvalid && derivedMessage !== void 0 ? derivedMessage : textInvalid ? withLabel(COPY$12.invalid) : rangeMessage;
+	const isInvalid = markedInvalid || slotMessage !== void 0;
+	const describedBy = [description ? descriptionId : null, slotMessage !== void 0 ? errorId : null].filter(Boolean).join(" ");
 	const valueText = committedValue === void 0 ? void 0 : `${resolvedLeading ?? ""}${display(committedValue)}${resolvedTrailing ? ` ${resolvedTrailing}` : ""}`;
 	const classes = [
 		"ds-number-input",
@@ -10391,6 +10770,8 @@ function NumberInput({ ref, label, name, value, defaultValue, min, max, step = 1
 	};
 	return /* @__PURE__ */ jsxs("div", {
 		className: classes,
+		role: "group",
+		"aria-disabled": isDisabled ? "true" : void 0,
 		"data-ds": "NumberInput",
 		"data-ds-field": true,
 		style: rootStyle,
@@ -10501,7 +10882,7 @@ function NumberInput({ ref, label, name, value, defaultValue, min, max, step = 1
 					})
 				]
 			}),
-			isInvalid ? /* @__PURE__ */ jsx(Text, {
+			slotMessage !== void 0 ? /* @__PURE__ */ jsx(Text, {
 				element: "p",
 				id: errorId,
 				role: "alert",
@@ -10531,6 +10912,7 @@ const ROOT_OVERRIDE_HOOK$1 = {
 	labelGap: "--ds-progress-bar-label-gap",
 	transition: "--ds-progress-bar-transition",
 	indeterminateLoop: "--ds-progress-bar-indeterminate-loop",
+	indeterminateReducedOpacity: "--ds-progress-bar-indeterminate-reduced-opacity",
 	sweepEasing: "--ds-progress-bar-sweep-easing"
 };
 function rootStyle(overrides) {
@@ -10552,7 +10934,7 @@ function compact(overrides) {
 	}
 	return Object.keys(out).length > 0 ? out : void 0;
 }
-const isDev$7 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$6 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 const PERCENT = new Intl.NumberFormat(void 0, {
 	style: "percent",
 	maximumFractionDigits: 0
@@ -10561,7 +10943,7 @@ const PERCENT = new Intl.NumberFormat(void 0, {
 function defaultFormatValue(value, min, max) {
 	return PERCENT.format(max > min ? (value - min) / (max - min) : 0);
 }
-function interpolate$4(template, params) {
+function interpolate$3(template, params) {
 	return template.replace(/\{(\w+)\}/g, (match, key) => params[key] ?? match);
 }
 /** The invalid `min`/`max` pairs already reported, so each distinct one warns once. */
@@ -10583,7 +10965,7 @@ function ProgressBar({ ref, label, value, min = 0, max = 100, formatValue, showV
 	const safeMax = Number.isFinite(max) ? max : 100;
 	const validRange = safeMax > safeMin;
 	useEffect(() => {
-		if (!isDev$7 || validRange) return;
+		if (!isDev$6 || validRange) return;
 		const pair = `${safeMin}:${safeMax}`;
 		if (warnedRanges.has(pair)) return;
 		warnedRanges.add(pair);
@@ -10596,7 +10978,7 @@ function ProgressBar({ ref, label, value, min = 0, max = 100, formatValue, showV
 	const indeterminate = value === void 0 || value === null;
 	const clamped = validRange ? Math.min(Math.max(!indeterminate && Number.isFinite(value) ? value : safeMin, safeMin), safeMax) : safeMin;
 	const fraction = validRange ? (clamped - safeMin) / (safeMax - safeMin) : 0;
-	const valueText = indeterminate ? void 0 : (formatValue ?? defaultFormatValue)(clamped, safeMin, safeMax);
+	const valueText = indeterminate ? void 0 : validRange ? (formatValue ?? defaultFormatValue)(clamped, safeMin, safeMax) : defaultFormatValue(clamped, safeMin, safeMax);
 	const tier = Math.floor(fraction * 4);
 	const complete = validRange && clamped >= safeMax;
 	const [message, setMessage] = useState({
@@ -10623,7 +11005,7 @@ function ProgressBar({ ref, label, value, min = 0, max = 100, formatValue, showV
 	useEffect(() => {
 		const r = record.current;
 		const say = (template, defer) => {
-			const text = interpolate$4(template, {
+			const text = interpolate$3(template, {
 				label: latest.current.label,
 				value: latest.current.valueText ?? ""
 			});
@@ -10708,16 +11090,19 @@ function ProgressBar({ ref, label, value, min = 0, max = 100, formatValue, showV
 			/* @__PURE__ */ jsxs("div", {
 				className: headerClass,
 				"data-part": "header",
-				children: [hideLabel && showValueText ? /* @__PURE__ */ jsx("span", {
-					className: "ds-progress-bar__visually-hidden",
+				children: [/* @__PURE__ */ jsx("span", {
+					className: hideLabel && showValueText ? "ds-progress-bar__label ds-progress-bar__visually-hidden" : "ds-progress-bar__label",
 					children: labelText
-				}) : labelText, showValueText ? /* @__PURE__ */ jsx(Text, {
-					element: "span",
-					size: "sm",
-					tone: "muted",
-					"data-part": "valueText",
-					overrides: valueOverrides,
-					children: valueText
+				}), showValueText ? /* @__PURE__ */ jsx("span", {
+					className: "ds-progress-bar__value",
+					children: /* @__PURE__ */ jsx(Text, {
+						element: "span",
+						size: "sm",
+						tone: "muted",
+						"data-part": "valueText",
+						overrides: valueOverrides,
+						children: valueText
+					})
 				}) : null]
 			}),
 			/* @__PURE__ */ jsx("div", {
@@ -10756,7 +11141,7 @@ const COPY$10 = {
 	error: "has an error",
 	stepLabel: "Step {n}: {label}"
 };
-const isDev$6 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$5 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 /** Hooks owned by the root. Label, description and count typography is forwarded to the composed Text's `overrides`. */
 const ROOT_OVERRIDE_HOOK = {
 	indicatorSize: "--ds-stepper-indicator-size",
@@ -10870,14 +11255,17 @@ const STATUS_WORD = {
 function Stepper({ ref, label, steps, current, orientation = "horizontal", navigable = "completed", compact = false, overrides, onStepSelect, ...rest }) {
 	const baseId = useId();
 	const currentIndex = steps.findIndex((step) => step.id === current);
+	const revealIndex = Math.max(currentIndex, 0);
 	const resolved = resolveOverrides$3(overrides);
-	if (isDev$6 && current !== "" && currentIndex === -1) console.warn(`Stepper: current "${current}" matches no step id — nothing is selected.`);
+	useEffect(() => {
+		if (isDev$5 && current !== "" && currentIndex === -1) console.warn(`Stepper: current "${current}" matches no step id; nothing is selected.`);
+	}, [current, currentIndex]);
 	const classes = [
 		"ds-stepper",
 		`ds-stepper--${orientation}`,
 		compact && orientation === "horizontal" ? "ds-stepper--compact" : null
 	].filter(Boolean).join(" ");
-	const stepOf = COPY$10.stepOf.replace("{current}", String(Math.max(currentIndex, 0) + 1)).replace("{total}", String(steps.length));
+	const stepOf = COPY$10.stepOf.replace("{current}", String(revealIndex + 1)).replace("{total}", String(steps.length));
 	return /* @__PURE__ */ jsxs("nav", {
 		...rest,
 		ref,
@@ -10946,7 +11334,8 @@ function Stepper({ ref, label, steps, current, orientation = "horizontal", navig
 					className: [
 						"ds-stepper__step",
 						`ds-stepper__step--${status}`,
-						isCurrent ? "ds-stepper__step--selected" : null
+						isCurrent ? "ds-stepper__step--selected" : null,
+						index === revealIndex ? "ds-stepper__step--revealed" : null
 					].filter(Boolean).join(" "),
 					"data-part": "step",
 					children: [isNavigable ? /* @__PURE__ */ jsx("button", {
@@ -10991,7 +11380,12 @@ const COPY$9 = {
 	},
 	noSuggestions: "No suggestions"
 };
-/** Hooks on the root. `labelWeight` has none: it is forwarded to the label Text. */
+/** constant `statusDebounce`: motion.duration.base × 2, read from the theme at run time. */
+const STATUS_DEBOUNCE = {
+	token: "--motion-duration-base",
+	multiply: 2
+};
+/** Hooks on the root. `labelWeight` has none: it is forwarded to the label Text (as `fontSize` also is). */
 const ROOT_HOOK$1 = {
 	borderWidth: "--ds-search-border-width",
 	radius: "--ds-search-radius",
@@ -11030,18 +11424,15 @@ function resolveOverrides$2(overrides) {
 		popup: Object.keys(popup).length ? popup : void 0
 	};
 }
-/** A CSS time (`200ms`, `0.2s`) in milliseconds; 0 when it cannot be read (no stylesheet loaded). */
+/** A resolved CSS time (`200ms`, `0.2s`) in ms; `null` when it cannot be read (no theme loaded, jsdom). */
 function parseTime(raw) {
-	const match = /^(-?[\d.]+)(ms|s)$/.exec(raw.trim());
-	if (!match) return 0;
+	const match = /^(-?\d*\.?\d+)(ms|s)$/.exec(raw.trim());
+	if (!match) return null;
 	const amount = Number(match[1]);
 	return match[2] === "s" ? amount * 1e3 : amount;
 }
-/** Constant `statusDebounce`: motion.duration.base × 2, in ms, read from the theme on `el`. */
-function statusDebounce(el) {
-	if (!el || typeof getComputedStyle === "undefined") return 0;
-	return parseTime(getComputedStyle(el).getPropertyValue("--motion-duration-base")) * 2;
-}
+/** The hydration gate: false on the server and through hydration, true on a client-only mount. */
+const subscribeNothing$3 = () => () => {};
 /** Below the field, flipped above when it would overflow and there is more room there; never past the inline edge. */
 function computePosition(field, popup) {
 	const viewportHeight = window.innerHeight;
@@ -11050,13 +11441,12 @@ function computePosition(field, popup) {
 	return {
 		vertical,
 		left: Math.max(0, Math.min(field.left, window.innerWidth - width)),
-		top: vertical === "bottom" ? field.bottom : void 0,
-		bottom: vertical === "top" ? viewportHeight - field.top : void 0,
+		anchor: vertical === "bottom" ? field.bottom : viewportHeight - field.top,
 		minInlineSize: field.width
 	};
 }
 function samePosition(a, b) {
-	return a !== null && a.vertical === b.vertical && a.left === b.left && a.top === b.top && a.bottom === b.bottom && a.minInlineSize === b.minInlineSize;
+	return a !== null && a.vertical === b.vertical && a.left === b.left && a.anchor === b.anchor && a.minInlineSize === b.minInlineSize;
 }
 /**
 * Search — Design Schema, category: input.
@@ -11094,11 +11484,13 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 	const text = isControlled ? value : internalValue;
 	const isDisabled = disabled || (form?.disabled ?? false);
 	const hasSuggestions = suggestions !== void 0;
+	const hydrated = useSyncExternalStore(subscribeNothing$3, () => true, () => false);
 	const [open, setOpen] = useState(false);
 	const [activeValue, setActiveValue] = useState(null);
 	const [generation, setGeneration] = useState(0);
 	const [position, setPosition] = useState(null);
 	const showPopup = open && hasSuggestions && !isDisabled;
+	if (open && isDisabled) setOpen(false);
 	/** Remounts the Listbox with no highlight: the only way to reset its internal active option. */
 	const resetHighlight = () => {
 		setActiveValue(null);
@@ -11139,7 +11531,7 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 		isDisabled
 	]);
 	useLayoutEffect(() => {
-		if (!showPopup) {
+		if (!showPopup || !hydrated) {
 			setPosition(null);
 			return;
 		}
@@ -11168,6 +11560,7 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 		};
 	}, [
 		showPopup,
+		hydrated,
 		generation,
 		signature
 	]);
@@ -11180,13 +11573,13 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 	closeRef.current = closeList;
 	useEffect(() => {
 		if (!showPopup) return void 0;
-		const outsideOf = (root, target) => !(target instanceof Node) || !root?.contains(target) && !popupRef.current?.contains(target);
+		const isOutside = (target) => !(target instanceof Node) || !rootRef.current?.contains(target) && !popupRef.current?.contains(target);
 		const handlePointerDown = (event) => {
-			if (outsideOf(fieldRef.current, event.target)) closeRef.current();
+			if (isOutside(event.target)) closeRef.current();
 		};
 		const handleFocusOut = (event) => {
 			if (event.relatedTarget === null) return;
-			if (rootRef.current?.contains(event.target) && outsideOf(rootRef.current, event.relatedTarget)) closeRef.current();
+			if (rootRef.current?.contains(event.target) && isOutside(event.relatedTarget)) closeRef.current();
 		};
 		document.addEventListener("pointerdown", handlePointerDown);
 		document.addEventListener("focusout", handleFocusOut);
@@ -11196,16 +11589,34 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 		};
 	}, [showPopup]);
 	const count = loading ? 0 : suggestions?.length ?? 0;
-	const statusText = !showPopup ? "" : loading ? COPY$9.loading : count === 0 ? COPY$9.noSuggestions : COPY$9.suggestionsCount[new Intl.PluralRules(void 0).select(count) === "one" ? "one" : "other"].replace("{count}", String(count));
+	const statusKind = hasSuggestions && loading && !isDisabled ? "loading" : !showPopup ? "none" : count === 0 ? "empty" : "count";
 	const [announced, setAnnounced] = useState("");
 	useEffect(() => {
-		if (statusText === "") {
+		if (statusKind === "none") {
 			setAnnounced("");
 			return;
 		}
-		const timer = setTimeout(() => setAnnounced(statusText), statusDebounce(rootRef.current));
+		let message;
+		if (statusKind === "loading") message = COPY$9.loading;
+		else if (statusKind === "empty") message = COPY$9.noSuggestions;
+		else {
+			const locale = rootRef.current?.closest("[lang]")?.getAttribute("lang") || (typeof navigator === "undefined" ? void 0 : navigator.language);
+			let rules;
+			try {
+				rules = new Intl.PluralRules(locale);
+			} catch {
+				rules = new Intl.PluralRules();
+			}
+			message = (rules.select(count) === "one" ? COPY$9.suggestionsCount.one : COPY$9.suggestionsCount.other).replace("{count}", String(count));
+		}
+		const base = rootRef.current ? parseTime(getComputedStyle(rootRef.current).getPropertyValue(STATUS_DEBOUNCE.token)) : null;
+		if (base === null) {
+			setAnnounced(message);
+			return;
+		}
+		const timer = setTimeout(() => setAnnounced(message), base * STATUS_DEBOUNCE.multiply);
 		return () => clearTimeout(timer);
-	}, [statusText]);
+	}, [statusKind, count]);
 	const updateText = (next) => {
 		if (!isControlled) setInternalValue(next);
 		onChange?.(next);
@@ -11213,14 +11624,14 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 	/**
 	* Submits `raw`. Outside a Form every route goes through the native form, so with `action` it is a
 	* GET submit; inside a Form Search fires `onSubmit` itself and never submits the enclosing Form.
+	* Every attempt closes the list, including one an empty query refuses to send.
 	*/
 	const submit = (raw) => {
 		if (isDisabled) return;
+		closeList();
 		if (inForm) {
 			const query = raw.trim();
-			if (query === "") return;
-			closeList();
-			onSubmit?.(query);
+			if (query !== "") onSubmit?.(query);
 			return;
 		}
 		pendingQuery.current = raw;
@@ -11229,11 +11640,11 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 	const handleFormSubmit = (event) => {
 		const query = (pendingQuery.current ?? text).trim();
 		pendingQuery.current = null;
+		closeList();
 		if (isDisabled || query === "") {
 			event.preventDefault();
 			return;
 		}
-		closeList();
 		onSubmit?.(query);
 		if (action && queryRef.current) queryRef.current.value = query;
 		else event.preventDefault();
@@ -11245,12 +11656,11 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 		onClear?.();
 		inputRef.current?.focus();
 	};
+	/** Fills the query with the suggestion's label and submits it; focus stays where it is. */
 	const choose = (rowValue) => {
 		const row = suggestions?.find((candidate) => candidate.value === rowValue);
 		if (!row || isDisabled) return;
 		updateText(row.label);
-		closeList();
-		inputRef.current?.focus();
 		submit(row.label);
 	};
 	const handleListboxChange = (next) => {
@@ -11264,18 +11674,6 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 			if (open) resetHighlight();
 			else setOpen(true);
 		}
-	};
-	const forwardToListbox = (key) => {
-		const target = listboxRef.current;
-		if (!target) {
-			pendingForward.current = key;
-			return;
-		}
-		target.dispatchEvent(new KeyboardEvent("keydown", {
-			key,
-			bubbles: true,
-			cancelable: true
-		}));
 	};
 	const handleKeyDown = (event) => {
 		onKeyDown?.(event);
@@ -11299,29 +11697,42 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 					clear();
 				}
 				break;
-			case "ArrowDown":
+			case "ArrowDown": {
 				if (!hasSuggestions) break;
 				event.preventDefault();
-				if (!showPopup) {
+				const target = listboxRef.current;
+				if (!showPopup || !target) {
 					pendingForward.current = "ArrowDown";
 					setOpen(true);
-				} else forwardToListbox("ArrowDown");
+				} else target.dispatchEvent(new KeyboardEvent("keydown", {
+					key: "ArrowDown",
+					bubbles: true,
+					cancelable: true
+				}));
 				break;
+			}
 			case "ArrowUp":
 				if (!showPopup || activeValue === null) break;
 				event.preventDefault();
 				if (activeValue === (loading ? void 0 : suggestions?.[0]?.value)) resetHighlight();
-				else forwardToListbox("ArrowUp");
+				else listboxRef.current?.dispatchEvent(new KeyboardEvent("keydown", {
+					key: "ArrowUp",
+					bubbles: true,
+					cancelable: true
+				}));
 				break;
 			case "Tab": closeList();
 		}
 	};
 	const resolved = resolveOverrides$2(overrides);
-	const listOptions = loading ? [] : (suggestions ?? []).map((row) => ({
+	const listOptions = loading ? [] : (suggestions ?? []).map((row) => row.description === void 0 ? {
+		value: row.value,
+		label: row.label
+	} : {
 		value: row.value,
 		label: row.label,
 		description: row.description
-	}));
+	});
 	const classes = [
 		"ds-search",
 		`ds-search--${size}`,
@@ -11332,9 +11743,8 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 		...resolved.popup,
 		...position ? {
 			left: position.left,
-			top: position.top,
-			bottom: position.bottom,
-			minInlineSize: position.minInlineSize
+			minInlineSize: position.minInlineSize,
+			"--ds-search-anchor": `${position.anchor}px`
 		} : null
 	};
 	const content = /* @__PURE__ */ jsxs(Fragment$1, { children: [
@@ -11378,11 +11788,11 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 					value: text,
 					placeholder,
 					readOnly: isDisabled,
-					role: hasSuggestions ? "combobox" : void 0,
+					role: hasSuggestions ? "combobox" : "searchbox",
 					"aria-autocomplete": hasSuggestions ? "list" : void 0,
 					"aria-expanded": hasSuggestions ? showPopup ? "true" : "false" : void 0,
-					"aria-controls": hasSuggestions ? listboxId : void 0,
-					"aria-activedescendant": showPopup && activeValue !== null ? `${listboxId}-option-${activeValue}` : void 0,
+					"aria-controls": showPopup && hydrated ? listboxId : void 0,
+					"aria-activedescendant": showPopup && hydrated && activeValue !== null ? `${listboxId}-option-${activeValue}` : void 0,
 					"aria-disabled": isDisabled ? "true" : void 0,
 					onChange: handleInputChange,
 					onKeyDown: handleKeyDown
@@ -11434,7 +11844,7 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 			className: "ds-search__status",
 			children: announced
 		}),
-		showPopup && typeof document !== "undefined" ? createPortal(/* @__PURE__ */ jsx("div", {
+		showPopup && hydrated ? createPortal(/* @__PURE__ */ jsx("div", {
 			ref: popupRef,
 			className: "ds-search__suggestions",
 			"data-part": "suggestions",
@@ -11449,7 +11859,7 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 				value: "",
 				options: listOptions,
 				selectionFollowsFocus: false,
-				emptyMessage: listOptions.length === 0 ? loading ? COPY$9.loading : COPY$9.noSuggestions : void 0,
+				emptyMessage: loading ? COPY$9.loading : COPY$9.noSuggestions,
 				onChange: handleListboxChange,
 				onActiveChange: setActiveValue
 			}, generation)
@@ -11461,6 +11871,7 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 		"data-ds-field": "",
 		"data-part": "form",
 		role: landmark ? "search" : void 0,
+		"aria-disabled": isDisabled ? "true" : void 0,
 		className: classes,
 		style: resolved.root,
 		children: content
@@ -11471,6 +11882,7 @@ function Search({ ref, label, showLabel = false, name = "q", value, defaultValue
 		"data-ds-field": "",
 		"data-part": "form",
 		role: landmark ? "search" : void 0,
+		"aria-disabled": isDisabled ? "true" : void 0,
 		className: classes,
 		style: resolved.root,
 		method: action ? "get" : void 0,
@@ -11505,17 +11917,17 @@ const COPY$8 = {
 	rangeOrder: "End date must be on or after the start date.",
 	requiredIndicator: " (required)"
 };
-function interpolate$3(template, params) {
+function interpolate$2(template, params) {
 	return template.replace(/\{(\w+)\}/g, (match, key) => params[key] ?? match);
 }
-const isDev$5 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+const isDev$4 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
 /**
 * Hooks set inline on the root and on the portaled calendar (which the root's custom properties
 * cannot reach). Not here: `helperSize` (the description and error Text `fontSize`),
 * `monthTitleSize`/`monthTitleWeight` (the month and year Selects' `fontSize`/`fontWeight`) and
 * `calendarInset` (the composed Popover's `inset`, which pads the calendar panel).
 */
-const OVERRIDE_HOOK$5 = {
+const OVERRIDE_HOOK$6 = {
 	borderInvalid: "--ds-date-picker-border-invalid",
 	borderWidth: "--ds-date-picker-border-width",
 	radius: "--ds-date-picker-radius",
@@ -11554,7 +11966,7 @@ function resolveOverrides$1(overrides) {
 		if (binding === "monthTitleSize") selectOverrides.fontSize = ref;
 		if (binding === "monthTitleWeight") selectOverrides.fontWeight = ref;
 		if (binding === "calendarInset") popoverOverrides = { inset: ref };
-		const hook = OVERRIDE_HOOK$5[binding];
+		const hook = OVERRIDE_HOOK$6[binding];
 		if (hook) style[hook] = cssVar(ref);
 	}
 	return {
@@ -11714,7 +12126,12 @@ function DatePicker({ ref, label, name, value, defaultValue, open: openProp, ran
 	const descriptionId = `${id}-description`;
 	const errorId = `${id}-error`;
 	const gridLabelId = `${id}-grid-label`;
-	const locale = localeProp ?? (typeof document !== "undefined" && document.documentElement.lang ? document.documentElement.lang : void 0);
+	const [documentLang, setDocumentLang] = useState(void 0);
+	useLayoutEffect(() => {
+		const lang = document.documentElement.lang;
+		setDocumentLang(lang ? lang : void 0);
+	}, []);
+	const locale = localeProp ?? documentLang;
 	const pattern = localePattern(locale);
 	const isDisabled = disabled || (form?.disabled ?? false);
 	const isValueControlled = value !== void 0;
@@ -11756,11 +12173,15 @@ function DatePicker({ ref, label, name, value, defaultValue, open: openProp, ran
 		committedEnd,
 		locale
 	]);
+	const validateMode = form ? form.validateMode ?? form.validate : void 0;
+	const afterFailedSubmit = form?.submitFailed ?? false;
+	const validatesOnChange = validateMode === "change" || afterFailedSubmit;
+	const validatesOnBlur = validateMode === "blur" || validateMode === "change" || afterFailedSubmit;
 	function report(next) {
 		valueRef.current = next;
 		if (!isValueControlled) setInternalValue(next);
 		onChange?.(next);
-		if (form && form.validate === "change") form.validateField(name);
+		if (form && validatesOnChange) form.validateField(name);
 	}
 	const dayDisabled = (iso) => min !== void 0 && iso < min || max !== void 0 && iso > max || (isDateDisabled?.(iso) ?? false);
 	const isOpenControlled = openProp !== void 0;
@@ -11794,9 +12215,15 @@ function DatePicker({ ref, label, name, value, defaultValue, open: openProp, ran
 	useEffect(() => {
 		if (open && !wasOpen.current) focusDayPending.current = true;
 		wasOpen.current = open;
-		if (!open || !focusDayPending.current) return;
+		if (!open) {
+			focusDayPending.current = false;
+			return;
+		}
+		if (!focusDayPending.current) return;
+		const day = calendarRef.current?.querySelector("[data-part=\"day\"][tabindex=\"0\"]");
+		if (!day) return;
 		focusDayPending.current = false;
-		calendarRef.current?.querySelector("[data-part=\"day\"][tabindex=\"0\"]")?.focus();
+		day.focus();
 	});
 	function showDate(iso) {
 		const p = partsOf(iso);
@@ -11906,18 +12333,33 @@ function DatePicker({ ref, label, name, value, defaultValue, open: openProp, ran
 		openedFrom.current = which;
 		requestOpen(true);
 	}
+	/**
+	* On blur the inputs show the formatted committed value, so a controlled owner that did not take
+	* the typed date sees the text revert. Text that does not parse, and one end of an incomplete
+	* range, are kept: they are what `copy.invalid` and `copy.required` report.
+	*/
 	function handleInputBlur(event) {
 		onBlur?.(event);
-		if (form && (form.validate === "blur" || form.validate === "change")) form.validateField(name);
+		const texts = textsRef.current;
+		const current = valueRef.current;
+		if (!range) {
+			if (parseTyped(texts.start, pattern) !== void 0) setStartText(formatField(startOf(current), locale));
+		} else if (parseTyped(texts.start, pattern) !== void 0 && parseTyped(texts.end, pattern) !== void 0) {
+			setStartText(formatField(startOf(current), locale));
+			setEndText(formatField(endOf(current), locale));
+		}
+		if (form && validatesOnBlur) form.validateField(name);
 	}
 	const weekStart = firstDayOfWeek(locale);
 	/**
 	* Arrow movement: steps by `delta` days until an enabled day, turning pages as needed. `undefined`
-	* (stay put) once the step passes min or max; without bounds, after ten years of disabled days.
+	* (stay put) once the step passes min or max; with no bound in that direction, after 3660 days
+	* (about ten years) of disabled days.
 	*/
 	function stepEnabled(from, delta) {
+		const bound = delta < 0 ? min : max;
 		let candidate = from;
-		for (let i = 0; i < 3660; i += 1) {
+		for (let travelled = 0; bound !== void 0 || travelled < 3660; travelled += Math.abs(delta)) {
 			candidate = addDays(candidate, delta);
 			if (min !== void 0 && candidate < min || max !== void 0 && candidate > max) return void 0;
 			if (!dayDisabled(candidate)) return candidate;
@@ -11973,17 +12415,17 @@ function DatePicker({ ref, label, name, value, defaultValue, open: openProp, ran
 		next?.focus();
 	}
 	/**
-	* Escape closes the calendar wherever the focus is, and returns it to the calendar button. The
-	* Popover only hears the key when focus is inside its portaled panel — from the field itself (the
-	* input, or the calendar button, which is the trigger and so never inside the panel) the keydown
-	* reaches this root instead. Popover stops propagation on the Escape it handles, so exactly one of
-	* the two runs.
+	* Escape closes the calendar wherever the focus is. The Popover only hears the key when focus is
+	* inside its portaled panel (and then returns focus to the calendar button itself, once the state
+	* changes); from the field — an input, or the calendar button, which is the trigger and so never
+	* inside the panel — the keydown reaches this root instead, and focus stays where it is, since
+	* Escape only takes back focus the calendar took. Popover stops propagation on the Escape it
+	* handles, so exactly one of the two runs.
 	*/
 	function handleRootKeyDown(event) {
 		if (event.key !== "Escape" || !open || event.defaultPrevented) return;
 		event.preventDefault();
 		requestOpen(false);
-		calendarButtonRef.current?.focus();
 	}
 	const latest = useRef({
 		label,
@@ -12022,22 +12464,22 @@ function DatePicker({ ref, label, name, value, defaultValue, open: openProp, ran
 				if (c.error !== void 0 && c.error !== "") return c.error;
 				const texts = c.range ? [textsRef.current.start, textsRef.current.end] : [textsRef.current.start];
 				const empty = texts.map((text) => text.trim() === "");
-				if (empty.every(Boolean)) return c.required ? interpolate$3(COPY$8.required, { label: c.label }) : null;
-				if (texts.some((text, i) => !empty[i] && parseTyped(text, c.pattern) === void 0)) return interpolate$3(COPY$8.invalid, {
+				if (empty.every(Boolean)) return c.required ? interpolate$2(COPY$8.required, { label: c.label }) : null;
+				if (texts.some((text, i) => !empty[i] && parseTyped(text, c.pattern) === void 0)) return interpolate$2(COPY$8.invalid, {
 					label: c.label,
 					pattern: c.pattern.text
 				});
-				if (empty.some(Boolean)) return c.required ? interpolate$3(COPY$8.required, { label: c.label }) : null;
+				if (empty.some(Boolean)) return c.required ? interpolate$2(COPY$8.required, { label: c.label }) : null;
 				const current = valueRef.current;
 				const start = startOf(current);
 				const end = endOf(current);
-				if (c.min !== void 0 && (start !== void 0 && start < c.min || end !== void 0 && end < c.min)) return interpolate$3(COPY$8.tooEarly, {
+				if (c.min !== void 0 && (start !== void 0 && start < c.min || end !== void 0 && end < c.min)) return interpolate$2(COPY$8.tooEarly, {
 					label: c.label,
-					min: formatField(c.min, c.locale)
+					min: formatField(c.min, c.locale) || c.min
 				});
-				if (c.max !== void 0 && (start !== void 0 && start > c.max || end !== void 0 && end > c.max)) return interpolate$3(COPY$8.tooLate, {
+				if (c.max !== void 0 && (start !== void 0 && start > c.max || end !== void 0 && end > c.max)) return interpolate$2(COPY$8.tooLate, {
 					label: c.label,
-					max: formatField(c.max, c.locale)
+					max: formatField(c.max, c.locale) || c.max
 				});
 				if (start !== void 0 && end !== void 0 && end < start) return COPY$8.rangeOrder;
 				return null;
@@ -12068,7 +12510,7 @@ function DatePicker({ ref, label, name, value, defaultValue, open: openProp, ran
 	]);
 	const warnedLabel = useRef(false);
 	useEffect(() => {
-		if (isDev$5 && !label && !warnedLabel.current) {
+		if (isDev$4 && !label && !warnedLabel.current) {
 			warnedLabel.current = true;
 			console.warn("DatePicker: `label` is required; it is the field’s accessible name.");
 		}
@@ -12125,7 +12567,7 @@ function DatePicker({ ref, label, name, value, defaultValue, open: openProp, ran
 	const rovingDate = gridDays.includes(focusedDate) ? focusedDate : firstOfMonth;
 	const selectionStart = range ? pendingStart ?? committedStart : committedStart;
 	const selectionEnd = range ? pendingStart !== void 0 ? void 0 : committedEnd : void 0;
-	const gridLabel = interpolate$3(COPY$8.gridLabel, {
+	const gridLabel = interpolate$2(COPY$8.gridLabel, {
 		label,
 		month: monthNames[view.month] ?? "",
 		year: String(view.year)
@@ -12233,6 +12675,7 @@ function DatePicker({ ref, label, name, value, defaultValue, open: openProp, ran
 						trigger: calendarButton,
 						open,
 						placement: "bottom-start",
+						initialFocus: "none",
 						dismissible: false,
 						container,
 						overrides: resolved?.popoverOverrides,
@@ -12422,7 +12865,7 @@ function DatePicker({ ref, label, name, value, defaultValue, open: openProp, ran
 }
 //#endregion
 //#region src/Toolbar.tsx
-const OVERRIDE_HOOK$4 = {
+const OVERRIDE_HOOK$5 = {
 	border: "--ds-toolbar-border",
 	borderWidth: "--ds-toolbar-border-width",
 	radius: "--ds-toolbar-radius",
@@ -12433,17 +12876,17 @@ const OVERRIDE_HOOK$4 = {
 	separatorLength: "--ds-toolbar-separator-length",
 	fadeWidth: "--ds-toolbar-fade-width"
 };
-function overridesToStyle$4(overrides) {
+function overridesToStyle$5(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
-		const hook = OVERRIDE_HOOK$4[binding];
+		const hook = OVERRIDE_HOOK$5[binding];
 		const ref = overrides[binding];
 		if (hook && ref) style[hook] = cssVar(ref);
 	}
 	return style;
 }
 const COPY$7 = { more: "More" };
-const FOCUSABLE_SELECTOR$3 = [
+const FOCUSABLE_SELECTOR$2 = [
 	"button:not([role=\"radio\"]):not(:disabled)",
 	"[role=\"radio\"][aria-checked=\"true\"]:not(:disabled)",
 	"select:not(:disabled)",
@@ -12455,8 +12898,29 @@ const FOCUSABLE_SELECTOR$3 = [
 function isControlDisabled(element) {
 	return element.getAttribute("aria-disabled") === "true";
 }
-function getControls(container) {
-	return Array.from(container.querySelectorAll(FOCUSABLE_SELECTOR$3));
+function firstFocusable$1(item) {
+	if (item instanceof HTMLElement && item.matches(FOCUSABLE_SELECTOR$2)) return item;
+	return item.querySelector(FOCUSABLE_SELECTOR$2) ?? void 0;
+}
+/**
+* One roving stop per control: each top-level entry, and each child of a top-level ToolbarGroup, gives
+* its first focusable descendant — so a SegmentedControl is one stop (its checked radio) and any other
+* wrapper is one bare control. The overflow Menu's root is an entry like any other (its trigger); its
+* popup is portaled, so nothing inside it is ever matched here.
+*/
+function getControls(row) {
+	const controls = [];
+	const visit = (item) => {
+		const control = firstFocusable$1(item);
+		if (control) controls.push(control);
+	};
+	for (const child of Array.from(row.children)) {
+		if (child.classList.contains("ds-toolbar__separator") || child.classList.contains("ds-toolbar__reserve")) continue;
+		const items = child.classList.contains("ds-toolbar__entry") ? Array.from(child.children) : [child];
+		for (const item of items) if (item.getAttribute("data-ds") === "ToolbarGroup") Array.from(item.children).forEach(visit);
+		else visit(item);
+	}
+	return controls;
 }
 function applyRovingTabIndex(controls, current) {
 	for (const control of controls) {
@@ -12492,10 +12956,12 @@ function withSize(element, size, key) {
 function buildEntries(children) {
 	return flattenChildren(children).map((element, index) => {
 		const key = element.key !== null ? String(element.key) : `ds-toolbar-entry-${index}`;
+		const id = `entry-${index}`;
 		if (element.type === ToolbarGroup) {
 			const groupChildren = flattenChildren(element.props.children);
 			return {
 				key,
+				id,
 				kind: "group",
 				element,
 				collapsible: groupChildren.length > 0 && groupChildren.every((child) => child.type === Button)
@@ -12503,6 +12969,7 @@ function buildEntries(children) {
 		}
 		return {
 			key,
+			id,
 			kind: "control",
 			element,
 			collapsible: element.type === Button
@@ -12530,6 +12997,7 @@ function isTextEntry(element) {
 		"checkbox",
 		"color",
 		"file",
+		"hidden",
 		"image",
 		"radio",
 		"range",
@@ -12565,7 +13033,7 @@ function ToolbarGroup({ ref, label, children, ...rest }) {
 * menu item.
 */
 function Toolbar({ ref, label, children, orientation = "horizontal", overflow = "menu", size = "md", density = "comfortable", overrides, onFocus, onKeyDown, ...rest }) {
-	const containerRef = useRef(null);
+	const rowRef = useRef(null);
 	const currentRef = useRef(null);
 	const entryNodesRef = useRef(/* @__PURE__ */ new Map());
 	const probeRef = useRef(null);
@@ -12578,11 +13046,6 @@ function Toolbar({ ref, label, children, orientation = "horizontal", overflow = 
 	const effectiveOverflow = overflow === "menu" && orientation === "vertical" ? "scroll" : overflow;
 	const isMenuOverflow = effectiveOverflow === "menu";
 	const [hiddenKeys, setHiddenKeys] = useState(null);
-	const setContainerRef = (node) => {
-		containerRef.current = node;
-		if (typeof ref === "function") ref(node);
-		else if (ref) ref.current = node;
-	};
 	const entries = buildEntries(children);
 	const entriesKey = entries.map((entry) => `${entry.kind}:${entry.key}:${entry.collapsible ? 1 : 0}`).join("|");
 	useLayoutEffect(() => {
@@ -12595,12 +13058,11 @@ function Toolbar({ ref, label, children, orientation = "horizontal", overflow = 
 	]);
 	useLayoutEffect(() => {
 		if (!isMenuOverflow) return void 0;
-		const container = containerRef.current;
+		const container = rowRef.current;
 		if (!container) return void 0;
 		if (hiddenKeys === null) {
-			const computed = getComputedStyle(container);
-			const available = container.clientWidth - readPx(computed.paddingInlineStart || computed.paddingLeft) - readPx(computed.paddingInlineEnd || computed.paddingRight);
-			const itemGap = readPx(computed.columnGap);
+			const available = container.clientWidth;
+			const itemGap = readPx(getComputedStyle(container).columnGap);
 			const widths = /* @__PURE__ */ new Map();
 			for (const entry of entries) widths.set(entry.key, entryNodesRef.current.get(entry.key)?.offsetWidth ?? 0);
 			const separatorWidth = container.querySelector(":scope > [data-part=\"separator\"]")?.offsetWidth ?? 0;
@@ -12640,7 +13102,7 @@ function Toolbar({ ref, label, children, orientation = "horizontal", overflow = 
 	}, [isMenuOverflow, hiddenKeys]);
 	const isScrollOverflow = effectiveOverflow === "scroll";
 	useLayoutEffect(() => {
-		const container = containerRef.current;
+		const container = rowRef.current;
 		if (!isScrollOverflow || !container) return void 0;
 		const vertical = orientation === "vertical";
 		const check = () => {
@@ -12668,7 +13130,7 @@ function Toolbar({ ref, label, children, orientation = "horizontal", overflow = 
 		entriesKey
 	]);
 	useLayoutEffect(() => {
-		const container = containerRef.current;
+		const container = rowRef.current;
 		if (!container) return void 0;
 		const sync = () => {
 			const controls = getControls(container);
@@ -12698,7 +13160,7 @@ function Toolbar({ ref, label, children, orientation = "horizontal", overflow = 
 	const indexOfTarget = (controls, target) => controls.findIndex((control) => control === target || control.contains(target));
 	const handleFocus = (event) => {
 		onFocus?.(event);
-		const container = containerRef.current;
+		const container = rowRef.current;
 		if (!container) return;
 		const controls = getControls(container);
 		const index = indexOfTarget(controls, event.target);
@@ -12712,7 +13174,7 @@ function Toolbar({ ref, label, children, orientation = "horizontal", overflow = 
 		const nextKey = orientation === "vertical" ? "ArrowDown" : "ArrowRight";
 		const prevKey = orientation === "vertical" ? "ArrowUp" : "ArrowLeft";
 		if (event.key !== nextKey && event.key !== prevKey && event.key !== "Home" && event.key !== "End") return;
-		const container = containerRef.current;
+		const container = rowRef.current;
 		if (!container) return;
 		const controls = getControls(container);
 		const currentIndex = indexOfTarget(controls, event.target);
@@ -12739,7 +13201,7 @@ function Toolbar({ ref, label, children, orientation = "horizontal", overflow = 
 	for (const entry of hiddenEntries) if (entry.kind === "group") {
 		const groupProps = entry.element.props;
 		const actions = flattenChildren(groupProps.children).map((child, index) => {
-			const id = `${entry.key}-${index}`;
+			const id = `${entry.id}-${index}`;
 			overflowButtons.set(id, child);
 			return actionFromButton(child, id, warnedRef.current);
 		});
@@ -12752,12 +13214,12 @@ function Toolbar({ ref, label, children, orientation = "horizontal", overflow = 
 			menuItems.push(...actions);
 		}
 	} else {
-		overflowButtons.set(entry.key, entry.element);
-		menuItems.push(actionFromButton(entry.element, entry.key, warnedRef.current));
+		overflowButtons.set(entry.id, entry.element);
+		menuItems.push(actionFromButton(entry.element, entry.id, warnedRef.current));
 	}
 	const handleOverflowAction = (id) => {
 		const onClick = (overflowButtons.get(id)?.props)?.onClick;
-		onClick?.(void 0);
+		onClick?.();
 	};
 	const separatorOrientation = orientation === "vertical" ? "horizontal" : "vertical";
 	const renderEntry = (entry) => {
@@ -12796,35 +13258,39 @@ function Toolbar({ ref, label, children, orientation = "horizontal", overflow = 
 		isScrollOverflow && fade.start ? "ds-toolbar--fade-start" : "",
 		isScrollOverflow && fade.end ? "ds-toolbar--fade-end" : ""
 	].filter(Boolean).join(" ");
-	return /* @__PURE__ */ jsxs("div", {
+	return /* @__PURE__ */ jsx("div", {
 		...rest,
-		ref: setContainerRef,
+		ref,
 		role: "toolbar",
 		"aria-label": label,
 		"aria-orientation": orientation,
 		"data-ds": "Toolbar",
 		"data-part": "container",
 		className: classes,
-		style: overrides ? overridesToStyle$4(overrides) : void 0,
+		style: overrides ? overridesToStyle$5(overrides) : void 0,
 		onFocus: handleFocus,
 		onKeyDown: handleKeyDown,
-		children: [
-			content,
-			isMenuOverflow ? /* @__PURE__ */ jsx("span", {
-				ref: probeRef,
-				className: "ds-toolbar__reserve",
-				"aria-hidden": "true"
-			}) : null,
-			isMenuOverflow && menuItems.length > 0 ? /* @__PURE__ */ jsx(Menu, {
-				label: COPY$7.more,
-				items: menuItems,
-				triggerVariant: "ghost",
-				triggerIcon: "ellipsis",
-				iconOnly: true,
-				"data-part": "overflowMenu",
-				onAction: handleOverflowAction
-			}) : null
-		]
+		children: /* @__PURE__ */ jsxs("div", {
+			ref: rowRef,
+			className: "ds-toolbar__row",
+			children: [
+				content,
+				isMenuOverflow ? /* @__PURE__ */ jsx("span", {
+					ref: probeRef,
+					className: "ds-toolbar__reserve",
+					"aria-hidden": "true"
+				}) : null,
+				isMenuOverflow && menuItems.length > 0 ? /* @__PURE__ */ jsx(Menu, {
+					label: COPY$7.more,
+					items: menuItems,
+					triggerVariant: "ghost",
+					triggerIcon: "ellipsis",
+					iconOnly: true,
+					"data-part": "overflowMenu",
+					onAction: handleOverflowAction
+				}) : null
+			]
+		})
 	});
 }
 //#endregion
@@ -12846,7 +13312,7 @@ const MIN_INTERVAL = 5e3;
 const VISIBLE_THRESHOLD = .6;
 /** layout.maxWidth.prose, read from the token at measurement time rather than its value today. */
 const PROSE_WIDTH_VAR = "--layout-max-width-prose";
-const OVERRIDE_HOOK$3 = {
+const OVERRIDE_HOOK$4 = {
 	slideGap: "--ds-carousel-slide-gap",
 	controlOffset: "--ds-carousel-control-offset",
 	controlRadius: "--ds-carousel-control-radius",
@@ -12864,17 +13330,17 @@ const OVERRIDE_HOOK$3 = {
 	fontFamily: "--ds-carousel-font-family",
 	transition: "--ds-carousel-transition"
 };
-function overridesToStyle$3(overrides) {
+function overridesToStyle$4(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
-		if (!(binding in OVERRIDE_HOOK$3)) continue;
+		if (!(binding in OVERRIDE_HOOK$4)) continue;
 		const ref = overrides[binding];
-		if (ref) style[OVERRIDE_HOOK$3[binding]] = cssVar(ref);
+		if (ref) style[OVERRIDE_HOOK$4[binding]] = cssVar(ref);
 	}
 	return style;
 }
-const isDev$4 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
-function fill(template, params) {
+const isDev$3 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+function fill$1(template, params) {
 	return template.replace(/\{(\w+)\}/g, (match, key) => key in params ? String(params[key]) : match);
 }
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -12964,8 +13430,16 @@ function Carousel({ ref, label, children, perView = 1, loop = false, autoplay = 
 	const [focused, setFocused] = useState(false);
 	const [touched, setTouched] = useState(false);
 	const canRotate = autoplay && !reducedMotion;
-	const playing = canRotate && !stopped && !(total <= pageSize || !loop && current >= lastStart);
-	const rotating = playing && !hovered && !focused && !touched;
+	const playing = canRotate && !stopped;
+	const rotating = playing && total > pageSize && !hovered && !focused && !touched;
+	useEffect(() => {
+		if (playing && !loop && current >= lastStart) setStopped(true);
+	}, [
+		playing,
+		loop,
+		current,
+		lastStart
+	]);
 	const [announcement, setAnnouncement] = useState("");
 	const [pickerFocus, setPickerFocus] = useState(null);
 	const [swipeTick, setSwipeTick] = useState(0);
@@ -12982,14 +13456,14 @@ function Carousel({ ref, label, children, perView = 1, loop = false, autoplay = 
 	const warnedInterval = useRef(false);
 	const warnedLabel = useRef(false);
 	useEffect(() => {
-		if (isDev$4 && autoplay && interval < MIN_INTERVAL && !warnedInterval.current) {
+		if (isDev$3 && autoplay && interval < MIN_INTERVAL && !warnedInterval.current) {
 			warnedInterval.current = true;
 			console.warn(`Carousel: \`interval\` ${interval}ms is below the ${MIN_INTERVAL}ms minimum; using ${MIN_INTERVAL}ms.`);
 		}
 	}, [autoplay, interval]);
 	const missingLabel = picker === "tabs" && slides.some((slide) => !slide.props.label);
 	useEffect(() => {
-		if (isDev$4 && missingLabel && !warnedLabel.current) {
+		if (isDev$3 && missingLabel && !warnedLabel.current) {
 			warnedLabel.current = true;
 			console.warn("Carousel: every CarouselSlide needs a `label`; the tab falls back to \"Go to slide {n}\".");
 		}
@@ -13000,7 +13474,7 @@ function Carousel({ ref, label, children, perView = 1, loop = false, autoplay = 
 		if (next === current) return;
 		if (!isControlled) setInternalIndex(next);
 		onChange?.(next, reason);
-		if (reason !== "autoplay") setAnnouncement(fill(COPY$6.announce, {
+		if (reason !== "autoplay") setAnnouncement(fill$1(COPY$6.announce, {
 			n: next + 1,
 			total
 		}));
@@ -13166,7 +13640,7 @@ function Carousel({ ref, label, children, perView = 1, loop = false, autoplay = 
 	const classes = ["ds-carousel", snap ? null : "ds-carousel--no-snap"].filter(Boolean).join(" ");
 	const rootStyle = {
 		"--ds-carousel-per-view": requestedPerView,
-		...overrides ? overridesToStyle$3(overrides) : null
+		...overrides ? overridesToStyle$4(overrides) : null
 	};
 	const slideId = (index) => `${baseId}-slide-${index}`;
 	const tabStop = pickerFocus !== null && pickerFocus >= current && pickerFocus < current + pageSize ? pickerFocus : current;
@@ -13277,7 +13751,7 @@ function Carousel({ ref, label, children, perView = 1, loop = false, autoplay = 
 						children: slides.map((slide, index) => /* @__PURE__ */ jsx("button", {
 							ref: pickerItemRef(index),
 							type: "button",
-							"aria-label": fill(COPY$6.goTo, { n: index + 1 }),
+							"aria-label": fill$1(COPY$6.goTo, { n: index + 1 }),
 							"aria-current": onCurrentPage(index) ? "true" : void 0,
 							"aria-controls": slideId(index),
 							tabIndex: index === tabStop ? 0 : -1,
@@ -13308,7 +13782,7 @@ function Carousel({ ref, label, children, perView = 1, loop = false, autoplay = 
 							"data-part": "pickerItem",
 							onFocus: () => setPickerFocus(index),
 							onClick: () => goTo(index, "picker"),
-							children: slide.props.label || fill(COPY$6.goTo, { n: index + 1 })
+							children: slide.props.label || fill$1(COPY$6.goTo, { n: index + 1 })
 						}, slide.key ?? index))
 					}) : null,
 					/* @__PURE__ */ jsx("div", {
@@ -13327,7 +13801,7 @@ function Carousel({ ref, label, children, perView = 1, loop = false, autoplay = 
 								value: {
 									id: slideId(index),
 									role: picker === "tabs" ? "tabpanel" : "group",
-									label: fill(COPY$6.slideLabel, {
+									label: fill$1(COPY$6.slideLabel, {
 										n: index + 1,
 										total
 									}),
@@ -13372,7 +13846,7 @@ const COPY$5 = {
 	}
 };
 /** Root CSS hooks. The caption bindings are forwarded to the composed Heading's own overrides instead. */
-const OVERRIDE_HOOK$2 = {
+const OVERRIDE_HOOK$3 = {
 	headerWeight: "--ds-table-header-weight",
 	headerSize: "--ds-table-header-size",
 	headerBorder: "--ds-table-header-border",
@@ -13398,19 +13872,19 @@ const OVERRIDE_HOOK$2 = {
 	numericFont: "--ds-table-numeric-font",
 	transition: "--ds-table-transition"
 };
-function overridesToStyle$2(overrides) {
+function overridesToStyle$3(overrides) {
 	const style = {};
 	for (const binding of Object.keys(overrides)) {
-		const hook = OVERRIDE_HOOK$2[binding];
+		const hook = OVERRIDE_HOOK$3[binding];
 		const ref = overrides[binding];
 		if (hook && ref) style[hook] = cssVar(ref);
 	}
 	return style;
 }
-const warned = /* @__PURE__ */ new Set();
-function warnOnce(message) {
-	if (process.env.NODE_ENV !== "production" && !warned.has(message)) {
-		warned.add(message);
+const warned$1 = /* @__PURE__ */ new Set();
+function warnOnce$1(message) {
+	if (process.env.NODE_ENV !== "production" && !warned$1.has(message)) {
+		warned$1.add(message);
 		console.warn(message);
 	}
 }
@@ -13427,9 +13901,30 @@ function textOf$2(value) {
 function joinClasses$2(...names) {
 	return names.filter(Boolean).join(" ");
 }
-/** The document language for plural selection; the runtime default when the page declares none. */
-function pageLocale() {
-	return typeof document !== "undefined" && document.documentElement.lang ? document.documentElement.lang : void 0;
+/**
+* The document language for plural selection; the runtime default when the page declares none.
+* Read through useSyncExternalStore so the server and the hydrating client both start from the
+* runtime default and the page's language is applied after mount.
+*/
+function subscribeNothing$2() {
+	return () => void 0;
+}
+function readPageLocale$2() {
+	return document.documentElement.lang;
+}
+function serverPageLocale$2() {
+	return "";
+}
+/**
+* A press on a part wrapper that misses its composed control runs the control's own action, so the
+* part is the thing a test or assistive technology can press. A click on the control, or on a
+* label that already activates it, is left alone.
+*/
+function forwardPress$1(event, selector) {
+	const control = event.currentTarget.querySelector(selector);
+	const target = event.target;
+	if (!control || control.contains(target) || target.closest("label")) return;
+	control.click();
 }
 /**
 * A built length token in pixels. The arrow-key scroll step reads `space.10` from the stylesheet,
@@ -13459,8 +13954,8 @@ function Table({ ref, caption, captionLevel = "2", footer, hideCaption = false, 
 	const frameRef = useRef(null);
 	const sentinelRef = useRef(null);
 	const rowHeaderColumn = columns.find((column) => column.isRowHeader);
-	if (columns.filter((column) => column.isRowHeader).length > 1) warnOnce("Table: exactly one column may set `isRowHeader`; the first is used.");
-	if (onRowPress && !rowHeaderColumn) warnOnce("Table: `onRowPress` needs an `isRowHeader` column; rows stay inert.");
+	if (columns.filter((column) => column.isRowHeader).length > 1) warnOnce$1("Table: exactly one column may set `isRowHeader`; the first is used.");
+	if (onRowPress && !rowHeaderColumn) warnOnce$1("Table: `onRowPress` needs an `isRowHeader` column; rows stay inert.");
 	const rowsInteractive = Boolean(onRowPress && rowHeaderColumn && !rowHeaderColumn.render);
 	const [internalSort, setInternalSort] = useState(defaultSort);
 	const sortControlled = sort !== void 0;
@@ -13553,12 +14048,13 @@ function Table({ ref, caption, captionLevel = "2", footer, hideCaption = false, 
 	};
 	const onRowClick = (event, rowId) => {
 		if (!rowsInteractive) return;
-		const control = event.target.closest("button, a, input, select, textarea, label, [tabindex]");
+		const control = event.target.closest("button, a, input, select, textarea, label, [tabindex], [data-part=\"selectCell\"]");
 		if (control && event.currentTarget.contains(control)) return;
 		onRowPress?.(rowId);
 	};
 	const columnCount = (selectable !== "none" ? 1 : 0) + columns.length + (rowActions ? 1 : 0);
-	const pluralForm = new Intl.PluralRules(pageLocale()).select(data.length) === "one" ? "one" : "other";
+	const pageLocale = useSyncExternalStore(subscribeNothing$2, readPageLocale$2, serverPageLocale$2);
+	const pluralForm = new Intl.PluralRules(pageLocale || void 0).select(data.length) === "one" ? "one" : "other";
 	const rowCountText = COPY$5.rowCount[pluralForm].replace("{count}", String(data.length));
 	const cellClasses = (base, column) => joinClasses$2(base, column.align && column.align !== "start" && `ds-table__cell--align-${column.align}`, column.width && column.width !== "auto" && `ds-table__cell--width-${column.width}`, column.hideBelow && `ds-table__cell--hide-below-${column.hideBelow}`, column.isRowHeader && "ds-table__cell--row-header");
 	const headerCell = (column) => {
@@ -13571,20 +14067,25 @@ function Table({ ref, caption, captionLevel = "2", footer, hideCaption = false, 
 			"aria-sort": sorted,
 			"data-part": "columnHeader",
 			className: cellClasses("ds-table__column-header", column),
-			children: column.sortable ? /* @__PURE__ */ jsx(Button, {
-				variant: "ghost",
-				size: "sm",
-				label: column.header,
-				accessibleName: (nextDirection === "ascending" ? COPY$5.sortAscending : COPY$5.sortDescending).replace("{column}", column.header),
-				trailingIcon: sorted ? /* @__PURE__ */ jsx(Icon, {
-					name: sorted === "ascending" ? "chevron-up" : "chevron-down",
-					inline: true
-				}) : void 0,
-				overrides: {
-					fontWeight: overrides?.headerWeight ?? "font.weight.semibold",
-					iconGap: overrides?.cellGap ?? "layout.gap.tight"
-				},
-				onClick: () => activateSort(column)
+			children: column.sortable ? /* @__PURE__ */ jsx("span", {
+				"data-part": "sortButton",
+				className: "ds-table__sort",
+				onClick: (event) => forwardPress$1(event, "button"),
+				children: /* @__PURE__ */ jsx(Button, {
+					variant: "ghost",
+					size: "sm",
+					label: column.header,
+					accessibleName: (nextDirection === "ascending" ? COPY$5.sortAscending : COPY$5.sortDescending).replace("{column}", column.header),
+					trailingIcon: sorted ? /* @__PURE__ */ jsx(Icon, {
+						name: sorted === "ascending" ? "chevron-up" : "chevron-down",
+						inline: true
+					}) : void 0,
+					overrides: {
+						fontWeight: overrides?.headerWeight ?? "font.weight.semibold",
+						iconGap: overrides?.cellGap ?? "layout.gap.tight"
+					},
+					onClick: () => activateSort(column)
+				})
 			}) : column.header
 		}, column.key);
 	};
@@ -13602,13 +14103,17 @@ function Table({ ref, caption, captionLevel = "2", footer, hideCaption = false, 
 					role: "cell",
 					"data-part": "selectCell",
 					className: "ds-table__select",
-					children: /* @__PURE__ */ jsx(Checkbox, {
-						label: COPY$5.selectRow.replace("{rowName}", name),
-						hideLabel: true,
-						name: `${id}-select`,
-						value: row.id,
-						checked: isSelected,
-						onChange: (checked) => toggleRow(row.id, checked)
+					onClick: (event) => forwardPress$1(event, "input"),
+					children: /* @__PURE__ */ jsx(FormContext, {
+						value: null,
+						children: /* @__PURE__ */ jsx(Checkbox, {
+							label: COPY$5.selectRow.replace("{rowName}", name),
+							hideLabel: true,
+							name: `${id}-select`,
+							value: row.id,
+							checked: isSelected,
+							onChange: (checked) => toggleRow(row.id, checked)
+						})
 					})
 				}) : null,
 				columns.map((column) => {
@@ -13668,13 +14173,17 @@ function Table({ ref, caption, captionLevel = "2", footer, hideCaption = false, 
 						scope: "col",
 						"data-part": "selectAllCell",
 						className: "ds-table__select",
-						children: /* @__PURE__ */ jsx(Checkbox, {
-							label: COPY$5.selectAll,
-							hideLabel: true,
-							name: `${id}-select-all`,
-							checked: allSelected,
-							indeterminate: someSelected,
-							onChange: toggleAll
+						onClick: (event) => forwardPress$1(event, "input"),
+						children: /* @__PURE__ */ jsx(FormContext, {
+							value: null,
+							children: /* @__PURE__ */ jsx(Checkbox, {
+								label: COPY$5.selectAll,
+								hideLabel: true,
+								name: `${id}-select-all`,
+								checked: allSelected,
+								indeterminate: someSelected,
+								onChange: toggleAll
+							})
 						})
 					}) : selectable === "single" ? /* @__PURE__ */ jsx("td", {
 						role: "cell",
@@ -13726,7 +14235,7 @@ function Table({ ref, caption, captionLevel = "2", footer, hideCaption = false, 
 		"data-ds": "Table",
 		"data-part": "container",
 		className: joinClasses$2("ds-table", `ds-table--${responsive}`, `ds-table--${density}`, `ds-table--max-height-${maxHeight}`, stickyHeader && "ds-table--sticky-header", striped && "ds-table--striped", scrolledUnder && "ds-table--scrolled-under", hideCaption && "ds-table--hide-caption"),
-		style: overrides ? overridesToStyle$2(overrides) : void 0,
+		style: overrides ? overridesToStyle$3(overrides) : void 0,
 		children: [
 			/* @__PURE__ */ jsx(Heading, {
 				id: captionId,
@@ -13803,38 +14312,7 @@ function Table({ ref, caption, captionLevel = "2", footer, hideCaption = false, 
 }
 //#endregion
 //#region src/DataGrid.tsx
-/** Root CSS hooks, one per overridable binding. The bindings a composed child draws are also
-* forwarded to its own `overrides`: `captionSize`/`captionWeight` to the caption Heading,
-* `statusBarSize` to the status bar Texts, `headerSize`/`headerWeight` to the sort Button. */
-const OVERRIDE_HOOKS$1 = {
-	headerWeight: "--ds-data-grid-header-weight",
-	headerSize: "--ds-data-grid-header-size",
-	headerBorder: "--ds-data-grid-header-border",
-	headerBorderWidth: "--ds-data-grid-header-border-width",
-	headerShadow: "--ds-data-grid-header-shadow",
-	gridLine: "--ds-data-grid-grid-line",
-	gridLineWidth: "--ds-data-grid-grid-line-width",
-	rowHover: "--ds-data-grid-row-hover",
-	cellPaddingInline: "--ds-data-grid-cell-padding-inline",
-	columnWidth: "--ds-data-grid-column-width",
-	pinnedShadow: "--ds-data-grid-pinned-shadow",
-	resizeHandle: "--ds-data-grid-resize-handle",
-	resizeHandleWidth: "--ds-data-grid-resize-handle-width",
-	resizeStep: "--ds-data-grid-resize-step",
-	statusBarSize: "--ds-data-grid-status-bar-size",
-	statusBarPadding: "--ds-data-grid-status-bar-padding",
-	statusBarGap: "--ds-data-grid-status-bar-gap",
-	captionSize: "--ds-data-grid-caption-size",
-	captionWeight: "--ds-data-grid-caption-weight",
-	captionGap: "--ds-data-grid-caption-gap",
-	fixedHeight: "--ds-data-grid-fixed-height",
-	fontFamily: "--ds-data-grid-font-family",
-	fontSize: "--ds-data-grid-font-size",
-	lineHeight: "--ds-data-grid-line-height",
-	numericFont: "--ds-data-grid-numeric-font",
-	transition: "--ds-data-grid-transition"
-};
-/** copy.* — verbatim. */
+/** copy.* — used verbatim. */
 const COPY$4 = {
 	sortAscending: "Sort by {column}, ascending",
 	sortDescending: "Sort by {column}, descending",
@@ -13859,127 +14337,136 @@ const COPY$4 = {
 	empty: "Nothing to show.",
 	scrollHint: "Scroll sideways to see more columns"
 };
-/** The width of a column that sets no `width`: the columnWidth binding, `calc(hook * 2)` in the rule. */
-const DEFAULT_COLUMN_SIZE$1 = "var(--ds-data-grid-column-size)";
-/** Rows rendered before one row has been measured (a row count, not a size). */
-const UNMEASURED_ROW_LIMIT$1 = 50;
-/** The selection column: a minimum target plus the cell's own inline padding on both sides. */
-const SELECT_COLUMN_SIZE$1 = "calc(var(--size-target-min) + 2 * var(--ds-data-grid-cell-padding-inline))";
-/** The row block size, from the locked rowHeight / rowHeightComfortable bindings (set per density in CSS). */
-const ROW_SIZE$1 = "var(--ds-data-grid-row-size)";
-const FOCUSABLE_SELECTOR$2 = "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])";
-/** Interactive content a cell's `render` may hold, whatever its tabindex. */
-const CONTROL_SELECTOR$1 = "a[href], button, input, select, textarea, [contenteditable=\"true\"]";
-const NAVIGATION_KEYS$1 = /* @__PURE__ */ new Set([
-	"ArrowRight",
-	"ArrowLeft",
-	"ArrowDown",
-	"ArrowUp",
-	"Home",
-	"End",
-	"PageDown",
-	"PageUp"
-]);
-const isDev$3 = typeof process !== "undefined" && process.env.NODE_ENV !== "production";
-function interpolate$2(template, values) {
-	let text = template;
-	for (const [key, value] of Object.entries(values)) text = text.replaceAll(`{${key}}`, String(value));
-	return text;
+/**
+* Root CSS hooks. captionSize/captionWeight (Heading) and statusBarSize (the status Texts) are
+* forwarded to the composed children's overrides instead and declare no hook; headerWeight and
+* headerSize are forwarded to the sort Button and also style the plain header text, so they keep one.
+*/
+const OVERRIDE_HOOK$2 = {
+	headerWeight: "--ds-data-grid-header-weight",
+	headerSize: "--ds-data-grid-header-size",
+	headerBorder: "--ds-data-grid-header-border",
+	headerBorderWidth: "--ds-data-grid-header-border-width",
+	headerShadow: "--ds-data-grid-header-shadow",
+	gridLine: "--ds-data-grid-grid-line",
+	gridLineWidth: "--ds-data-grid-grid-line-width",
+	rowHover: "--ds-data-grid-row-hover",
+	cellPaddingInline: "--ds-data-grid-cell-padding-inline",
+	columnWidth: "--ds-data-grid-column-width",
+	pinnedShadow: "--ds-data-grid-pinned-shadow",
+	resizeHandle: "--ds-data-grid-resize-handle",
+	resizeHandleWidth: "--ds-data-grid-resize-handle-width",
+	resizeStep: "--ds-data-grid-resize-step",
+	statusBarPadding: "--ds-data-grid-status-bar-padding",
+	statusBarGap: "--ds-data-grid-status-bar-gap",
+	captionGap: "--ds-data-grid-caption-gap",
+	fixedHeight: "--ds-data-grid-fixed-height",
+	fontFamily: "--ds-data-grid-font-family",
+	fontSize: "--ds-data-grid-font-size",
+	lineHeight: "--ds-data-grid-line-height",
+	numericFont: "--ds-data-grid-numeric-font",
+	transition: "--ds-data-grid-transition"
+};
+function overridesToStyle$2(overrides) {
+	const style = {};
+	if (!overrides) return style;
+	for (const binding of Object.keys(overrides)) {
+		const hook = OVERRIDE_HOOK$2[binding];
+		const ref = overrides[binding];
+		if (hook && ref) style[hook] = cssVar(ref);
+	}
+	return style;
 }
-function pluralForm$1(forms, count) {
-	const locale = typeof document !== "undefined" ? document.documentElement.lang || void 0 : void 0;
-	return new Intl.PluralRules(locale).select(count) === "one" ? forms.one : forms.other;
+const warned = /* @__PURE__ */ new Set();
+function warnOnce(message) {
+	if (process.env.NODE_ENV !== "production" && !warned.has(message)) {
+		warned.add(message);
+		console.warn(message);
+	}
 }
+/** Until a row has been measured (and always in jsdom) at most this many rows render. */
+const MAX_UNMEASURED_ROWS = 50;
+/** What Enter reaches and what is demoted to tabindex=-1 inside a cell. */
+const CONTROL_SELECTOR$1 = "a[href], button, input, select, textarea, [tabindex]";
+/** localeCompare (numeric) for strings, subtraction for numbers; missing values sort last. */
 function compareValues$1(a, b) {
+	if (a === void 0 || a === null) return b === void 0 || b === null ? 0 : 1;
+	if (b === void 0 || b === null) return -1;
 	if (typeof a === "number" && typeof b === "number") return a - b;
-	return String(a ?? "").localeCompare(String(b ?? ""), void 0, { numeric: true });
+	return String(a).localeCompare(String(b), void 0, { numeric: true });
 }
 function textOf$1(value) {
 	return value === void 0 || value === null ? "" : String(value);
 }
-function toCellValue$1(value) {
-	if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;
-	return value === void 0 || value === null ? void 0 : String(value);
+function joinClasses$1(...names) {
+	return names.filter(Boolean).join(" ");
 }
-function joinClasses$1(...parts) {
-	return parts.filter(Boolean).join(" ");
+function fill(template, params) {
+	return template.replace(/\{(\w+)\}/g, (match, name) => name in params ? String(params[name]) : match);
+}
+function subscribeNothing$1() {
+	return () => void 0;
+}
+function readPageLocale$1() {
+	return document.documentElement.lang;
+}
+function serverPageLocale$1() {
+	return "";
+}
+/** A press on a part wrapper that misses its composed control runs the control's own action. */
+function forwardPress(event, selector) {
+	const control = event.currentTarget.querySelector(selector);
+	const target = event.target;
+	if (!control || control.contains(target) || target.closest("label")) return;
+	control.click();
 }
 /**
-* DataGrid — Design Schema, category: data. APG grid built from `<div>`s with explicit roles.
+* DataGrid — Design Schema, category: data.
 *
-* When to use: Use a DataGrid when people navigate cell by cell, edit values in place, select ranges,
-* or scroll through more rows than fit in memory as DOM: price lists, inventory counts, timesheets,
-* admin views over large sets, anything a spreadsheet would otherwise be used for. Set `editable` and
-* mark the columns that may change; give every editable column a `validate`. Use `height: viewport`
-* (the default) so the grid, not the page, scrolls.
+* When to use:
+* Use a DataGrid when people navigate cell by cell, edit values in place, select ranges, or scroll through more rows than fit in memory as DOM: price lists, inventory counts, timesheets, admin views over large sets, anything a spreadsheet would otherwise be used for. Set `editable` and mark the columns that may change; give every editable column a `validate`. Use `height: viewport` (the default) so the grid, not the page, scrolls.
 */
 function DataGrid({ ref, caption, captionLevel = "2", hideCaption = false, columns, data, rowCount, sort, defaultSort, selectable = "none", selected, editable = false, density = "compact", stickyHeader = true, height = "viewport", loading = false, emptyMessage, showStatusBar = true, container, overrides, onSortChange, onSelectionChange, onCellChange, onEditStart, onRangeNeeded, onColumnResize, ...rest }) {
-	const baseId = `ds-data-grid-${useId()}`;
-	const captionId = `${baseId}-caption`;
-	const statusId = `${baseId}-status`;
-	const cellPrefix = `${baseId}-cell-`;
-	const cellId = (row, col) => `${cellPrefix}${row < 0 ? "h" : row}_${col}`;
-	const scrollRef = useRef(null);
+	const id = useId();
+	const captionId = `${id}-caption`;
+	const liveId = `${id}-live`;
+	const cellId = (pos) => `${id}-r${pos.row}-c${pos.col}`;
+	const regionRef = useRef(null);
 	const gridRef = useRef(null);
-	const stepSizerRef = useRef(null);
-	const targetSizerRef = useRef(null);
+	const headerRef = useRef(null);
+	const bodyRef = useRef(null);
 	const editorRef = useRef(null);
-	const warnedRef = useRef(false);
-	if (isDev$3 && !warnedRef.current) {
-		warnedRef.current = true;
-		if (!caption) console.warn("DataGrid: `caption` is required; the grid falls back to an empty caption.");
-		const rowHeaders = columns.filter((column) => column.isRowHeader).length;
-		if (rowHeaders !== 1) console.warn(`DataGrid: exactly one column may be \`isRowHeader\`; found ${rowHeaders}.`);
-		const pins = columns.map((column) => column.pinned);
-		if (pins.some((pin, i) => pin === "start" && pins.slice(0, i).some((p) => p !== "start") || pin === "end" && pins.slice(i + 1).some((p) => p !== "end"))) console.warn("DataGrid: pinned columns must be contiguous at the start or end of `columns`.");
+	const stepProbeRef = useRef(null);
+	const minProbeRef = useRef(null);
+	if (!caption) warnOnce("DataGrid: `caption` is required; it is the grid's accessible name.");
+	if (columns.filter((column) => column.isRowHeader).length !== 1) warnOnce("DataGrid: exactly one column must set `isRowHeader`.");
+	{
+		const startPins = columns.map((c, i) => c.pinned === "start" ? i : -1).filter((i) => i >= 0);
+		const endPins = columns.map((c, i) => c.pinned === "end" ? i : -1).filter((i) => i >= 0);
+		const startOk = startPins.every((index, n) => index === n);
+		const endOk = endPins.every((index, n) => index === columns.length - endPins.length + n);
+		if (!startOk || !endOk) warnOnce("DataGrid: pinned columns must be contiguous at the start or end of `columns`.");
 	}
-	const hasSelectColumn = selectable === "row";
-	const colOffset = hasSelectColumn ? 1 : 0;
-	const colCount = colOffset + columns.length;
-	const dataColumnAt = (col) => col < colOffset ? void 0 : columns[col - colOffset];
 	const rowHeaderColumn = columns.find((column) => column.isRowHeader);
-	const [resizedWidths, setResizedWidths] = useState({});
-	/** The column's width in pixels, or undefined while it takes the columnWidth binding. */
-	const widthOf = (column) => resizedWidths[column.key] ?? column.width;
-	const widthCss = (column) => {
-		const width = widthOf(column);
-		return width === void 0 ? DEFAULT_COLUMN_SIZE$1 : `${width}px`;
-	};
-	/** The width of `columns[from..to)` as one CSS length: the pixel widths plus the default columns. */
-	const widthSpan = (from, to) => {
-		let pixels = 0;
-		let defaults = 0;
-		for (let i = from; i < to; i += 1) {
-			const width = widthOf(columns[i]);
-			if (width === void 0) defaults += 1;
-			else pixels += width;
-		}
-		return defaults === 0 ? `${pixels}px` : `calc(${pixels}px + ${defaults} * ${DEFAULT_COLUMN_SIZE$1})`;
-	};
-	const gridTemplateColumns = [hasSelectColumn ? SELECT_COLUMN_SIZE$1 : null, ...columns.map(widthCss)].filter(Boolean).join(" ");
-	const pinnedStyle = (column, index) => {
-		if (column.pinned === "start") {
-			const before = widthSpan(0, index);
-			return { insetInlineStart: hasSelectColumn ? `calc(${SELECT_COLUMN_SIZE$1} + ${before})` : before };
-		}
-		if (column.pinned === "end") return { insetInlineEnd: widthSpan(index + 1, columns.length) };
-	};
-	const sortControlled = sort !== void 0;
+	const hasSelectColumn = selectable === "row";
+	const selectOffset = hasSelectColumn ? 1 : 0;
+	const colCount = columns.length + selectOffset;
+	const colAt = (col) => columns[col - selectOffset];
 	const [internalSort, setInternalSort] = useState(defaultSort);
+	const sortControlled = sort !== void 0;
 	const activeSort = sortControlled ? sort : internalSort;
 	const rows = useMemo(() => {
-		if (sortControlled || !activeSort || rowCount !== void 0) return data;
+		if (sortControlled || rowCount !== void 0 || !activeSort) return data;
 		const factor = activeSort.direction === "ascending" ? 1 : -1;
 		return [...data].sort((a, b) => compareValues$1(a[activeSort.column], b[activeSort.column]) * factor);
 	}, [
 		data,
 		sortControlled,
-		activeSort,
-		rowCount
+		rowCount,
+		activeSort
 	]);
-	const loaded = rows.length;
-	const total = rowCount !== void 0 ? Math.max(rowCount, loaded) : loaded;
-	const rowIndexById = useMemo(() => new Map(rows.map((row, i) => [row.id, i])), [rows]);
+	const lastRow = rows.length - 1;
+	const totalRows = rowCount ?? data.length;
 	const [announcement, setAnnouncement] = useState("");
 	const activateSort = (column) => {
 		const direction = activeSort?.column === column.key && activeSort.direction === "ascending" ? "descending" : "ascending";
@@ -13988,741 +14475,857 @@ function DataGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 			direction
 		});
 		onSortChange?.(column.key, direction);
-		setAnnouncement(interpolate$2(COPY$4.sortedAnnouncement, {
+		setAnnouncement(fill(COPY$4.sortedAnnouncement, {
 			column: column.header,
 			direction
 		}));
-	};
-	const selectedControlled = selected !== void 0;
-	const [internalSelected, setInternalSelected] = useState([]);
-	const selectedIds = selectedControlled ? selected : internalSelected;
-	const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
-	const [range, setRange] = useState(null);
-	const anchorRef = useRef(null);
-	const rowAnchorRef = useRef(null);
-	const commitRows = (ids) => {
-		if (!selectedControlled) setInternalSelected(ids);
-		onSelectionChange?.(ids);
-		setAnnouncement(interpolate$2(COPY$4.selectedRows, {
-			count: ids.length,
-			total
-		}));
-	};
-	const toggleRow = (id) => {
-		rowAnchorRef.current = id;
-		commitRows(selectedSet.has(id) ? selectedIds.filter((existing) => existing !== id) : [...selectedIds, id]);
-	};
-	const extendRows = (id) => {
-		const anchor = rowAnchorRef.current !== null ? rowIndexById.get(rowAnchorRef.current) : void 0;
-		const target = rowIndexById.get(id);
-		if (anchor === void 0 || target === void 0) return toggleRow(id);
-		const span = rows.slice(Math.min(anchor, target), Math.max(anchor, target) + 1).map((row) => row.id);
-		commitRows([...selectedIds.filter((existing) => !span.includes(existing)), ...span]);
-	};
-	const allIds = rows.map((row) => row.id);
-	const allSelected = loaded > 0 && allIds.every((id) => selectedSet.has(id));
-	const someSelected = !allSelected && allIds.some((id) => selectedSet.has(id));
-	const toggleAll = () => commitRows(allSelected ? [] : allIds);
-	/** Row/column index bounds of a range, or null when an endpoint is no longer loaded. */
-	const rangeBounds = (value) => {
-		if (!value) return null;
-		const r1 = rowIndexById.get(value.from.rowId);
-		const r2 = rowIndexById.get(value.to.rowId);
-		const c1 = columns.findIndex((column) => column.key === value.from.column);
-		const c2 = columns.findIndex((column) => column.key === value.to.column);
-		if (r1 === void 0 || r2 === void 0 || c1 < 0 || c2 < 0) return null;
-		return {
-			top: Math.min(r1, r2),
-			bottom: Math.max(r1, r2),
-			left: Math.min(c1, c2),
-			right: Math.max(c1, c2)
-		};
-	};
-	const bounds = selectable === "range" ? rangeBounds(range) : null;
-	const commitRange = (next) => {
-		const b = rangeBounds(next);
-		setRange(next);
-		onSelectionChange?.(next);
-		if (b) setAnnouncement(interpolate$2(COPY$4.selectedRange, {
-			rows: b.bottom - b.top + 1,
-			columns: b.right - b.left + 1
-		}));
-	};
-	const rowRange = (fromRow, toRow) => {
-		const first = columns[0];
-		const last = columns[columns.length - 1];
-		const a = rows[fromRow];
-		const b = rows[toRow];
-		if (!first || !last || !a || !b) return null;
-		return {
-			from: {
-				rowId: a.id,
-				column: first.key
-			},
-			to: {
-				rowId: b.id,
-				column: last.key
-			}
-		};
-	};
-	const [rowHeightPx, setRowHeightPx] = useState(0);
-	const [viewportHeight, setViewportHeight] = useState(0);
-	const [scrollTop, setScrollTop] = useState(0);
-	const [scrolledX, setScrolledX] = useState(false);
-	const [overflowX, setOverflowX] = useState(false);
-	const virtualize = height !== "content";
-	const measured = rowHeightPx > 0 && viewportHeight > 0;
-	const pageSize = measured ? Math.max(1, Math.floor(viewportHeight / rowHeightPx) - 1) : 1;
-	let windowStart = 0;
-	let windowEnd = loaded - 1;
-	if (virtualize) {
-		if (measured) {
-			const first = Math.floor(scrollTop / rowHeightPx);
-			windowStart = Math.max(0, Math.min(first, loaded) - pageSize);
-			windowEnd = Math.min(loaded - 1, first + 2 * pageSize + 1);
-		} else windowEnd = Math.min(loaded, UNMEASURED_ROW_LIMIT$1) - 1;
-	}
-	useLayoutEffect(() => {
-		const region = scrollRef.current;
-		if (!region) return void 0;
-		const measure = () => {
-			const viewport = region.clientHeight;
-			setViewportHeight((prev) => prev === viewport ? prev : viewport);
-			const rowEl = region.querySelector("[data-part=\"body\"] > [data-part=\"row\"]");
-			const rowHeight = rowEl ? rowEl.getBoundingClientRect().height : 0;
-			if (rowHeight > 0) setRowHeightPx((prev) => prev === rowHeight ? prev : rowHeight);
-			const overflow = region.scrollWidth > region.clientWidth;
-			setOverflowX((prev) => prev === overflow ? prev : overflow);
-		};
-		measure();
-		if (typeof ResizeObserver === "undefined") return void 0;
-		const observer = new ResizeObserver(measure);
-		observer.observe(region);
-		const rowEl = region.querySelector("[data-part=\"body\"] > [data-part=\"row\"]");
-		if (rowEl) observer.observe(rowEl);
-		return () => observer.disconnect();
-	}, [
-		density,
-		windowStart,
-		loaded === 0,
-		height,
-		colCount
-	]);
-	const requestedEndRef = useRef(-1);
-	const checkRangeNeeded = (lastVisibleRow) => {
-		if (!onRangeNeeded || rowCount === void 0 || rowCount <= loaded) return;
-		if (lastVisibleRow < loaded - pageSize) return;
-		const end = Math.min(rowCount - 1, loaded + pageSize - 1);
-		if (requestedEndRef.current === end) return;
-		requestedEndRef.current = end;
-		onRangeNeeded(loaded, end);
-	};
-	const handleScroll = () => {
-		const region = scrollRef.current;
-		if (!region) return;
-		setScrollTop((prev) => prev === region.scrollTop ? prev : region.scrollTop);
-		const x = region.scrollLeft !== 0;
-		setScrolledX((prev) => prev === x ? prev : x);
-		if (measured) checkRangeNeeded(Math.floor((region.scrollTop + viewportHeight) / rowHeightPx));
 	};
 	const [active, setActive] = useState({
 		row: -1,
 		col: 0
 	});
-	const activeRow = Math.min(active.row, loaded - 1);
-	const activeCol = Math.min(active.col, colCount - 1);
-	const activeRendered = activeRow === -1 || activeRow >= windowStart && activeRow <= windowEnd;
-	const keyboardMoveRef = useRef(false);
-	useLayoutEffect(() => {
-		if (!keyboardMoveRef.current) return;
-		keyboardMoveRef.current = false;
-		(typeof document !== "undefined" ? document.getElementById(cellId(activeRow, activeCol)) : null)?.scrollIntoView?.({
-			block: "nearest",
-			inline: "nearest"
-		});
+	const scrollPendingRef = useRef(false);
+	const [internalSelected, setInternalSelected] = useState([]);
+	const selectedIds = selected ?? internalSelected;
+	const selectedSet = new Set(selectedIds);
+	const rowAnchorRef = useRef(null);
+	const selectedRowsText = (count) => fill(COPY$4.selectedRows, {
+		count,
+		total: totalRows
 	});
-	const focusGrid = () => gridRef.current?.focus();
-	const moveTo = (row, col, extend = false) => {
-		const r = Math.max(-1, Math.min(row, loaded - 1));
-		const c = Math.max(0, Math.min(col, colCount - 1));
-		const extending = extend && selectable === "range" && activeRow >= 0 && r >= 0 && anchorRef.current !== null;
-		keyboardMoveRef.current = true;
-		setActive({
-			row: r,
-			col: c
-		});
-		setAnnouncement("");
-		const region = scrollRef.current;
-		if (region && virtualize && rowHeightPx > 0 && r >= 0) {
-			const top = r * rowHeightPx;
-			if (top < region.scrollTop) region.scrollTop = top;
-			else if (top + rowHeightPx > region.scrollTop + viewportHeight - rowHeightPx) region.scrollTop = top + 2 * rowHeightPx - viewportHeight;
-		}
-		if (r >= 0) checkRangeNeeded(r);
-		const column = dataColumnAt(c);
-		const rowData = r >= 0 ? rows[r] : void 0;
-		if (!column || !rowData) return;
-		const ref = {
-			rowId: rowData.id,
-			column: column.key
-		};
-		if (selectable === "cell") onSelectionChange?.(ref);
-		if (selectable === "range") {
-			if (extending) commitRange({
-				from: anchorRef.current,
-				to: ref
-			});
-			else {
-				anchorRef.current = ref;
-				if (range) commitRange({
-					from: ref,
-					to: ref
-				});
-			}
-		}
+	const commitRows = (next) => {
+		if (next.length === selectedIds.length && next.every((rowId) => selectedSet.has(rowId))) return;
+		if (selected === void 0) setInternalSelected(next);
+		onSelectionChange?.(next);
+		setAnnouncement(selectedRowsText(next.length));
 	};
-	const [editing, setEditingState] = useState(null);
-	const editingRef = useRef(null);
-	const setEditing = (next) => {
-		editingRef.current = next;
-		setEditingState(next);
-	};
-	const editValueRef = useRef(void 0);
-	const pickerOpenRef = useRef(false);
-	const [editError, setEditError] = useState(void 0);
-	const openEditor = (rowIndex, col, seed) => {
-		const column = dataColumnAt(col);
+	const toggleRow = (rowIndex) => {
 		const row = rows[rowIndex];
-		if (!editable || !column?.editable || !row) return false;
-		if (onEditStart?.(row.id, column.key) === false) return false;
-		const kind = column.editor ?? "text";
-		const seeded = seed !== void 0 && (kind === "text" || kind === "number");
-		editValueRef.current = seeded ? kind === "number" ? Number.isFinite(Number(seed)) ? Number(seed) : void 0 : seed : row[column.key];
-		pickerOpenRef.current = false;
-		setActive({
-			row: rowIndex,
-			col
+		if (!row) return;
+		rowAnchorRef.current = rowIndex;
+		commitRows(selectedSet.has(row.id) ? selectedIds.filter((x) => x !== row.id) : [...selectedIds, row.id]);
+	};
+	const addRowsThrough = (rowIndex) => {
+		const anchor = rowAnchorRef.current ?? rowIndex;
+		const from = Math.min(anchor, rowIndex);
+		const to = Math.max(anchor, rowIndex);
+		const next = [...selectedIds];
+		for (let i = from; i <= to; i += 1) {
+			const row = rows[i];
+			if (row && !selectedSet.has(row.id)) next.push(row.id);
+		}
+		commitRows(next);
+	};
+	const allSelected = rows.length > 0 && rows.every((row) => selectedSet.has(row.id));
+	const someSelected = !allSelected && rows.some((row) => selectedSet.has(row.id));
+	const toggleAll = () => commitRows(allSelected ? [] : rows.map((row) => row.id));
+	const lastCellRef = useRef(null);
+	const selectCell = (pos) => {
+		const row = rows[pos.row];
+		const column = colAt(pos.col);
+		if (pos.row < 0 || !row || !column) return;
+		const key = `${row.id}\u0000${column.key}`;
+		if (lastCellRef.current === key) return;
+		lastCellRef.current = key;
+		onSelectionChange?.({
+			rowId: row.id,
+			column: column.key
 		});
+	};
+	const [range, setRange] = useState(null);
+	const rangeAnchorRef = useRef(null);
+	const lastRangeRef = useRef(null);
+	const rangeRef = (pos) => {
+		const row = rows[pos.row];
+		const column = colAt(pos.col);
+		return row && column ? {
+			rowId: row.id,
+			column: column.key
+		} : null;
+	};
+	const emitRange = (next) => {
+		setRange(next);
+		const from = rangeRef(next.anchor);
+		const to = rangeRef(next.focus);
+		if (!from || !to) return;
+		const key = `${from.rowId}\u0000${from.column}\u0000${to.rowId}\u0000${to.column}`;
+		if (lastRangeRef.current === key) return;
+		lastRangeRef.current = key;
+		onSelectionChange?.({
+			from,
+			to
+		});
+		setAnnouncement(fill(COPY$4.selectedRange, {
+			rows: Math.abs(next.focus.row - next.anchor.row) + 1,
+			columns: Math.abs(next.focus.col - next.anchor.col) + 1
+		}));
+	};
+	const clearRange = () => {
+		setRange(null);
+		lastRangeRef.current = null;
+	};
+	const [rowPx, setRowPx] = useState(0);
+	const [regionPx, setRegionPx] = useState(0);
+	const [minTargetPx, setMinTargetPx] = useState(0);
+	const [firstIndex, setFirstIndex] = useState(0);
+	const [scrolledX, setScrolledX] = useState(false);
+	const [scrolledY, setScrolledY] = useState(false);
+	const [everScrolledX, setEverScrolledX] = useState(false);
+	const [overflowX, setOverflowX] = useState(false);
+	const rowsPerPage = rowPx > 0 && regionPx > 0 ? Math.max(1, Math.floor(regionPx / rowPx) - 1) : 1;
+	const requestedEndRef = useRef(null);
+	useEffect(() => {
+		requestedEndRef.current = null;
+	}, [data.length]);
+	const requestMore = (lastVisible) => {
+		if (rowCount === void 0 || data.length >= rowCount) return;
+		if (lastVisible < data.length - 1 - rowsPerPage) return;
+		const end = Math.min(rowCount - 1, data.length + rowsPerPage - 1);
+		if (requestedEndRef.current === end) return;
+		requestedEndRef.current = end;
+		onRangeNeeded?.(data.length, end);
+	};
+	const [widths, setWidths] = useState({});
+	const pixelWidth = (column) => widths[column.key] ?? column.width;
+	const colVar = (col) => `var(--ds-data-grid-col-${col})`;
+	const sumVars = (from, to) => {
+		const parts = [];
+		for (let c = from; c < to; c += 1) parts.push(colVar(c));
+		return parts.length ? `calc(${parts.join(" + ")})` : "0";
+	};
+	const gridStyle = {};
+	if (hasSelectColumn) gridStyle["--ds-data-grid-col-0"] = "calc(var(--ds-data-grid-select-column-width) + 2 * var(--ds-data-grid-cell-padding-inline))";
+	columns.forEach((column, index) => {
+		const px = pixelWidth(column);
+		gridStyle[`--ds-data-grid-col-${index + selectOffset}`] = px !== void 0 ? `${px}px` : "var(--ds-data-grid-column-width-computed)";
+	});
+	const pinStyle = (col) => {
+		if (hasSelectColumn && col === 0) return { insetInlineStart: "0" };
+		const column = colAt(col);
+		if (column?.pinned === "start") return { insetInlineStart: sumVars(0, col) };
+		if (column?.pinned === "end") return { insetInlineEnd: sumVars(col + 1, colCount) };
+	};
+	const lastStartPin = (() => {
+		let last = hasSelectColumn ? 0 : -1;
+		columns.forEach((column, index) => {
+			if (column.pinned === "start") last = index + selectOffset;
+		});
+		return last;
+	})();
+	const firstEndPin = columns.findIndex((column) => column.pinned === "end");
+	const probePx = (probe) => probe ? probe.getBoundingClientRect().width : 0;
+	const floorFor = (column) => Math.max(column.minWidth ?? 0, probePx(minProbeRef.current));
+	const virtualized = height !== "content";
+	let windowFirst = 0;
+	let windowLast = lastRow;
+	if (virtualized) {
+		if (rowPx > 0 && regionPx > 0) {
+			const visible = Math.ceil(regionPx / rowPx);
+			windowFirst = Math.max(0, firstIndex - rowsPerPage);
+			windowLast = Math.min(lastRow, firstIndex + visible + rowsPerPage);
+		} else {
+			windowFirst = Math.min(Math.max(0, firstIndex), Math.max(0, lastRow));
+			windowLast = Math.min(lastRow, windowFirst + MAX_UNMEASURED_ROWS - 1);
+		}
+	}
+	const [editing, setEditing] = useState(null);
+	const [editError, setEditError] = useState(void 0);
+	const draftRef = useRef(void 0);
+	const editorClosedRef = useRef(true);
+	const sessionRef = useRef(0);
+	const unmountedRef = useRef(false);
+	useEffect(() => {
+		unmountedRef.current = false;
+		return () => {
+			unmountedRef.current = true;
+		};
+	}, []);
+	const editingRowIndex = editing ? rows.findIndex((row) => row.id === editing.rowId) : -1;
+	const editingColIndex = editing ? columns.findIndex((column) => column.key === editing.column) + selectOffset : -1;
+	useEffect(() => {
+		if (editing && editingRowIndex < 0) {
+			editorClosedRef.current = true;
+			setEditing(null);
+			setEditError(void 0);
+		}
+	}, [editing, editingRowIndex]);
+	const editorKind = (column, row) => column.editor ?? (typeof row[column.key] === "number" ? "number" : "text");
+	const canEdit = (pos) => {
+		const column = colAt(pos.col);
+		return editable && pos.row >= 0 && Boolean(rows[pos.row]) && Boolean(column?.editable);
+	};
+	const openEditor = (pos, initial) => {
+		const row = rows[pos.row];
+		const column = colAt(pos.col);
+		if (!row || !column || !canEdit(pos)) return false;
+		if (onEditStart?.(row.id, column.key) === false) return false;
+		sessionRef.current += 1;
+		editorClosedRef.current = false;
+		const kind = editorKind(column, row);
+		const current = row[column.key];
+		if (initial !== void 0 && kind === "text") draftRef.current = initial;
+		else if (initial !== void 0 && kind === "number") {
+			const typed = Number(initial);
+			draftRef.current = Number.isFinite(typed) ? typed : void 0;
+		} else draftRef.current = current;
+		setActive(pos);
+		setEditError(void 0);
 		setEditing({
 			rowId: row.id,
 			column: column.key,
-			seed: seeded ? seed : void 0
+			initial,
+			session: sessionRef.current
 		});
-		setEditError(void 0);
-		setAnnouncement(interpolate$2(COPY$4.editing, { column: column.header }));
+		setAnnouncement(fill(COPY$4.editing, { column: column.header }));
 		return true;
 	};
-	const closeEditor = () => {
+	const focusGrid = () => gridRef.current?.focus({ preventScroll: true });
+	const closeEditor = (refocus) => {
+		editorClosedRef.current = true;
 		setEditing(null);
 		setEditError(void 0);
-		setAnnouncement("");
+		if (refocus) focusGrid();
 	};
-	const cancelEdit = () => {
-		closeEditor();
-		focusGrid();
+	const cancelEdit = (refocus = true) => {
+		if (editorClosedRef.current) return;
+		closeEditor(refocus);
 	};
-	/** Validates and commits the open editor; false when validation kept it open. */
-	const commitEdit = () => {
-		const current = editingRef.current;
-		if (!current) return true;
-		const rowIndex = rowIndexById.get(current.rowId);
-		const row = rowIndex !== void 0 ? rows[rowIndex] : void 0;
-		const column = columns.find((entry) => entry.key === current.column);
+	/** Validate and commit the draft; false (editor stays open) when `validate` rejects it. */
+	const commitEdit = (value, refocus) => {
+		if (!editing || editorClosedRef.current) return false;
+		const row = rows.find((r) => r.id === editing.rowId);
+		const column = columns.find((c) => c.key === editing.column);
 		if (!row || !column) {
-			closeEditor();
+			closeEditor(refocus);
 			return true;
 		}
-		const value = editValueRef.current;
 		const message = column.validate?.(value, row);
 		if (message) {
 			setEditError(message);
-			setAnnouncement(interpolate$2(COPY$4.invalid, { message }));
+			setAnnouncement(fill(COPY$4.invalid, { message }));
 			return false;
 		}
 		const previous = row[column.key];
-		closeEditor();
-		if (!Object.is(value, previous)) onCellChange?.(row.id, column.key, toCellValue$1(value), toCellValue$1(previous));
+		closeEditor(refocus);
+		if (!Object.is(value, previous)) onCellChange?.(row.id, column.key, value, previous);
 		return true;
 	};
-	const editableCols = () => columns.flatMap((column, i) => column.editable ? [i + colOffset] : []);
-	const handleEditorKeyDown = (event, column) => {
-		const kind = column.editor ?? "text";
+	const editableColsInRow = () => {
+		const list = [];
+		columns.forEach((column, index) => {
+			if (column.editable) list.push(index + selectOffset);
+		});
+		return list;
+	};
+	const onEditorKeyDown = (event) => {
 		event.stopPropagation();
+		const wrapper = event.currentTarget;
+		if (!(event.target instanceof Node) || !wrapper.contains(event.target)) return;
+		if (!editing) return;
+		const column = columns.find((c) => c.key === editing.column);
+		const row = rows.find((r) => r.id === editing.rowId);
+		if (!column || !row) return;
+		const kind = editorKind(column, row);
+		const pos = {
+			row: editingRowIndex,
+			col: editingColIndex
+		};
 		if (event.key === "Escape") {
-			if (pickerOpenRef.current) return;
 			event.preventDefault();
 			cancelEdit();
-		} else if (event.key === "Enter") {
-			if (kind === "select" || kind === "date" && pickerOpenRef.current) return;
+			return;
+		}
+		if (event.key === "F2") {
 			event.preventDefault();
-			if (commitEdit()) {
-				focusGrid();
-				moveTo(activeRow + 1, activeCol);
+			commitEdit(draftRef.current, true);
+			return;
+		}
+		if (event.key === "Enter" && (kind === "text" || kind === "number" || kind === "date")) {
+			event.preventDefault();
+			if (commitEdit(draftRef.current, true)) {
+				const next = {
+					row: Math.min(pos.row + 1, lastRow),
+					col: pos.col
+				};
+				setActive(next);
+				scrollPendingRef.current = true;
 			}
-		} else if (event.key === "F2") {
-			event.preventDefault();
-			if (commitEdit()) focusGrid();
-		} else if (event.key === "Tab") {
-			const row = activeRow;
-			const cols = editableCols();
-			const next = event.shiftKey ? [...cols].reverse().find((c) => c < activeCol) : cols.find((c) => c > activeCol);
-			if (!commitEdit()) {
+			return;
+		}
+		if (event.key === "Tab") {
+			const list = editableColsInRow();
+			const at = list.indexOf(pos.col);
+			const target = list[event.shiftKey ? at - 1 : at + 1];
+			let ok = false;
+			flushSync(() => {
+				ok = commitEdit(draftRef.current, true);
+			});
+			if (!ok) {
 				event.preventDefault();
 				return;
 			}
-			focusGrid();
-			if (next !== void 0) {
+			if (target !== void 0) {
 				event.preventDefault();
-				if (!openEditor(row, next)) setActive({
-					row,
-					col: next
+				const nextPos = {
+					row: pos.row,
+					col: target
+				};
+				if (!openEditor(nextPos)) setActive(nextPos);
+				scrollPendingRef.current = true;
+			}
+		}
+	};
+	const onEditorBlur = (event) => {
+		if (unmountedRef.current || editorClosedRef.current || !editing) return;
+		const next = event.relatedTarget;
+		if (next && event.currentTarget.contains(next)) return;
+		const column = columns.find((c) => c.key === editing.column);
+		const row = rows.find((r) => r.id === editing.rowId);
+		if (!column || !row) return;
+		const kind = editorKind(column, row);
+		if (kind === "select" || kind === "checkbox") return;
+		if (next && !gridRef.current?.contains(next) && next.closest("[role=\"dialog\"], [role=\"listbox\"], [popover]")) return;
+		commitEdit(draftRef.current, false);
+	};
+	useLayoutEffect(() => {
+		if (!editing) return;
+		const control = editorRef.current?.querySelector("input, select, textarea, button");
+		if (!control) return;
+		control.focus();
+		if (editing.initial !== void 0 && control instanceof HTMLInputElement) try {
+			const end = control.value.length;
+			control.setSelectionRange(end, end);
+		} catch {}
+	}, [editing]);
+	useLayoutEffect(() => {
+		const grid = gridRef.current;
+		if (!grid) return;
+		for (const control of grid.querySelectorAll(`.ds-data-grid__cell :is(${CONTROL_SELECTOR$1})`)) {
+			if (control.closest(".ds-data-grid__editor")) continue;
+			if (control.tabIndex !== -1) control.tabIndex = -1;
+		}
+	});
+	useLayoutEffect(() => {
+		if (!scrollPendingRef.current) return;
+		scrollPendingRef.current = false;
+		const region = regionRef.current;
+		const cell = region?.ownerDocument.getElementById(cellId(active));
+		if (!region || !cell) return;
+		const regionRect = region.getBoundingClientRect();
+		const rect = cell.getBoundingClientRect();
+		const headerHeight = active.row >= 0 ? headerRef.current?.getBoundingClientRect().height ?? 0 : 0;
+		const top = regionRect.top + region.clientTop + headerHeight;
+		const bottom = regionRect.top + region.clientTop + region.clientHeight;
+		if (rect.top < top) region.scrollTop -= top - rect.top;
+		else if (rect.bottom > bottom) region.scrollTop += rect.bottom - bottom;
+		if (cell.classList.contains("ds-data-grid__cell--pinned")) return;
+		const left = regionRect.left + region.clientLeft;
+		const right = left + region.clientWidth;
+		if (rect.left < left) region.scrollLeft -= left - rect.left;
+		else if (rect.right > right) region.scrollLeft += rect.right - right;
+	});
+	const rowsEmpty = rows.length === 0;
+	const widthsKey = columns.map((column) => pixelWidth(column) ?? "").join(",");
+	useLayoutEffect(() => {
+		const region = regionRef.current;
+		const grid = gridRef.current;
+		if (!region || !grid) return void 0;
+		const measure = () => {
+			const row = bodyRef.current?.querySelector("[role=\"row\"]");
+			const nextRow = row ? row.getBoundingClientRect().height : 0;
+			setRowPx((current) => current === nextRow ? current : nextRow);
+			const nextRegion = region.clientHeight;
+			setRegionPx((current) => current === nextRegion ? current : nextRegion);
+			const nextOverflow = region.scrollWidth - region.clientWidth >= 1;
+			setOverflowX((current) => current === nextOverflow ? current : nextOverflow);
+			const nextMin = probePx(minProbeRef.current);
+			setMinTargetPx((current) => current === nextMin ? current : nextMin);
+		};
+		measure();
+		if (typeof ResizeObserver === "undefined") return void 0;
+		const observer = new ResizeObserver(measure);
+		observer.observe(region);
+		observer.observe(grid);
+		const row = bodyRef.current?.querySelector("[role=\"row\"]");
+		if (row) observer.observe(row);
+		return () => observer.disconnect();
+	}, [
+		rowsEmpty,
+		density,
+		selectable,
+		height,
+		widthsKey,
+		windowFirst
+	]);
+	const onRegionScroll = (event) => {
+		const region = event.currentTarget;
+		const nextX = Math.abs(region.scrollLeft) >= 1;
+		setScrolledX((current) => current === nextX ? current : nextX);
+		if (nextX) setEverScrolledX(true);
+		const nextY = region.scrollTop >= 1;
+		setScrolledY((current) => current === nextY ? current : nextY);
+		if (rowPx > 0) {
+			const next = Math.floor(region.scrollTop / rowPx);
+			setFirstIndex((current) => current === next ? current : next);
+			requestMore(Math.min(lastRow, next + Math.ceil(region.clientHeight / rowPx)));
+		}
+	};
+	const navigate = (target, extend) => {
+		setActive(target);
+		scrollPendingRef.current = true;
+		if (selectable === "cell") selectCell(target);
+		if (selectable === "range" && target.row >= 0) {
+			if (extend) {
+				const anchor = rangeAnchorRef.current ?? (active.row >= 0 ? active : target);
+				rangeAnchorRef.current = anchor;
+				emitRange({
+					anchor,
+					focus: target
+				});
+			} else {
+				rangeAnchorRef.current = target;
+				if (range) emitRange({
+					anchor: target,
+					focus: target
 				});
 			}
 		}
+		if (target.row >= 0) requestMore(target.row);
 	};
-	const handleEditorBlur = (event, cell) => {
-		if (event.currentTarget.contains(event.relatedTarget) || pickerOpenRef.current) return;
-		const current = editingRef.current;
-		if (!current || current.rowId !== cell.rowId || current.column !== cell.column) return;
-		const kind = columns.find((column) => column.key === cell.column)?.editor ?? "text";
-		if (kind === "text" || kind === "number" || kind === "date") commitEdit();
-	};
-	useEffect(() => {
-		if (!editing) return;
-		const target = editorRef.current?.querySelector("input, button, select, textarea, [tabindex]");
-		target?.focus();
-		if (target instanceof HTMLInputElement && editing.seed !== void 0) try {
-			target.setSelectionRange(target.value.length, target.value.length);
-		} catch {}
-	}, [editing]);
-	useEffect(() => {
-		const grid = gridRef.current;
-		if (!grid) return;
-		for (const el of grid.querySelectorAll(FOCUSABLE_SELECTOR$2)) {
-			if (el === grid || el.closest("[data-part=\"editor\"]")) continue;
-			if (el.tabIndex !== -1) el.tabIndex = -1;
-		}
-	});
 	const pendingResizeRef = useRef(null);
-	/** The floor for both resize paths: the column's own `minWidth`, never below size.target.min. */
-	const minWidthOf = (column) => Math.max(column.minWidth ?? 0, targetSizerRef.current?.getBoundingClientRect().width ?? 0);
-	/** Where a resize starts from: the set width, or the rendered width of a default-width column. */
-	const currentWidth = (column, index) => {
-		const width = widthOf(column);
-		if (width !== void 0) return width;
-		const header = typeof document !== "undefined" ? document.getElementById(cellId(-1, index + colOffset)) : null;
-		return header ? header.getBoundingClientRect().width : 0;
-	};
-	const resizeTo = (column, width) => {
-		const next = Math.round(Math.max(minWidthOf(column), width));
-		setResizedWidths((prev) => prev[column.key] === next ? prev : {
+	const resizeBy = (column, col, direction) => {
+		const step = probePx(stepProbeRef.current);
+		const cell = regionRef.current?.ownerDocument.getElementById(cellId({
+			row: -1,
+			col
+		}));
+		const current = pixelWidth(column) ?? (cell ? cell.getBoundingClientRect().width : 0);
+		const width = Math.round(Math.max(floorFor(column), current + step * direction));
+		setWidths((prev) => ({
 			...prev,
-			[column.key]: next
-		});
-		return next;
-	};
-	const startPointerResize = (event, column, index) => {
-		event.preventDefault();
-		event.stopPropagation();
-		const handle = event.currentTarget;
-		const startX = event.clientX;
-		const startWidth = currentWidth(column, index);
-		const rtl = typeof getComputedStyle === "function" && getComputedStyle(handle).direction === "rtl";
-		let width = startWidth;
-		handle.setPointerCapture?.(event.pointerId);
-		const move = (e) => {
-			width = resizeTo(column, startWidth + (rtl ? startX - e.clientX : e.clientX - startX));
+			[column.key]: width
+		}));
+		pendingResizeRef.current = {
+			column: column.key,
+			width
 		};
-		const up = (e) => {
-			handle.releasePointerCapture?.(e.pointerId);
-			handle.removeEventListener("pointermove", move);
-			handle.removeEventListener("pointerup", up);
-			handle.removeEventListener("pointercancel", up);
-			onColumnResize?.(column.key, width);
-		};
-		handle.addEventListener("pointermove", move);
-		handle.addEventListener("pointerup", up);
-		handle.addEventListener("pointercancel", up);
 	};
+	const rangeBounds = (r) => ({
+		r0: Math.min(r.anchor.row, r.focus.row),
+		r1: Math.max(r.anchor.row, r.focus.row),
+		c0: Math.min(r.anchor.col, r.focus.col),
+		c1: Math.max(r.anchor.col, r.focus.col)
+	});
+	const pageLocale = useSyncExternalStore(subscribeNothing$1, readPageLocale$1, serverPageLocale$1);
+	const plural = (count) => new Intl.PluralRules(pageLocale || void 0).select(count) === "one" ? "one" : "other";
 	const copyRange = () => {
-		if (!bounds) return;
-		const span = columns.slice(bounds.left, bounds.right + 1);
+		if (!range) return;
+		const { r0, r1, c0, c1 } = rangeBounds(range);
 		const lines = [];
-		if (bounds.top === 0 && bounds.bottom === loaded - 1) lines.push(span.map((column) => column.header).join("	"));
-		for (let r = bounds.top; r <= bounds.bottom; r += 1) {
-			const row = rows[r];
-			if (row) lines.push(span.map((column) => textOf$1(row[column.key])).join("	"));
+		if (r0 === 0 && r1 === lastRow) {
+			const headers = [];
+			for (let c = c0; c <= c1; c += 1) headers.push(colAt(c)?.header ?? "");
+			lines.push(headers.join("	"));
 		}
-		const cells = (bounds.bottom - bounds.top + 1) * span.length;
-		navigator.clipboard?.writeText(lines.join("\n")).then(() => setAnnouncement(interpolate$2(pluralForm$1(COPY$4.copied, cells), { cells }))).catch(() => void 0);
+		for (let r = r0; r <= r1; r += 1) {
+			const row = rows[r];
+			const cells = [];
+			for (let c = c0; c <= c1; c += 1) {
+				const column = colAt(c);
+				cells.push(row && column ? textOf$1(row[column.key]) : "");
+			}
+			lines.push(cells.join("	"));
+		}
+		const cells = (r1 - r0 + 1) * (c1 - c0 + 1);
+		const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : void 0;
+		if (!clipboard) return;
+		clipboard.writeText(lines.join("\n")).then(() => setAnnouncement(fill(COPY$4.copied[plural(cells)], { cells })), () => void 0);
 	};
-	const clearSelection = () => {
+	const clearCells = () => {
+		if (!editable) return;
 		const targets = [];
-		if (selectable === "row") {
-			for (const row of rows) if (selectedSet.has(row.id)) {
-				for (const column of columns) if (column.editable) targets.push([row, column]);
-			}
-		} else if (selectable === "cell") {
-			const row = rows[activeRow];
-			const column = dataColumnAt(activeCol);
-			if (row && column?.editable) targets.push([row, column]);
-		} else if (selectable === "range" && bounds) for (let r = bounds.top; r <= bounds.bottom; r += 1) for (let c = bounds.left; c <= bounds.right; c += 1) {
-			const row = rows[r];
-			const column = columns[c];
-			if (row && column?.editable) targets.push([row, column]);
+		const editableCols = editableColsInRow();
+		if (selectable === "row") rows.forEach((row, index) => {
+			if (selectedSet.has(row.id)) for (const col of editableCols) targets.push({
+				row: index,
+				col
+			});
+		});
+		else if (selectable === "range" && range) {
+			const { r0, r1, c0, c1 } = rangeBounds(range);
+			for (let r = r0; r <= r1; r += 1) for (const col of editableCols) if (col >= c0 && col <= c1) targets.push({
+				row: r,
+				col
+			});
+		} else if (selectable === "cell" && canEdit(active)) targets.push(active);
+		for (const pos of targets) {
+			const row = rows[pos.row];
+			const column = colAt(pos.col);
+			if (!row || !column) continue;
+			const previous = row[column.key];
+			if (!Object.is(previous, void 0)) onCellChange?.(row.id, column.key, void 0, previous);
 		}
-		for (const [row, column] of targets) onCellChange?.(row.id, column.key, void 0, toCellValue$1(row[column.key]));
-		return targets.length > 0;
 	};
-	const handleKeyDown = (event) => {
-		if (editingRef.current) return;
-		const grid = gridRef.current;
-		if (!grid) return;
+	const onGridKeyDown = (event) => {
+		const grid = event.currentTarget;
 		if (event.target !== grid) {
-			if (event.key === "Escape" || event.key === "F2") {
+			if (event.key === "Escape") {
 				event.preventDefault();
-				focusGrid();
-				return;
+				grid.focus();
 			}
-			if (event.key === "Tab" && event.shiftKey) {
-				focusGrid();
-				return;
-			}
-			if (!NAVIGATION_KEYS$1.has(event.key)) return;
-			focusGrid();
+			return;
 		}
-		const row = activeRow;
-		const col = activeCol;
-		const column = dataColumnAt(col);
 		const ctrl = event.ctrlKey || event.metaKey;
-		switch (event.key) {
-			case "ArrowRight":
-			case "ArrowLeft": {
-				event.preventDefault();
-				const delta = event.key === "ArrowRight" ? 1 : -1;
-				if (event.shiftKey && row === -1 && column?.resizable) {
-					const step = stepSizerRef.current?.getBoundingClientRect().width ?? 0;
-					const rtl = getComputedStyle(grid).direction === "rtl";
-					const width = resizeTo(column, currentWidth(column, col - colOffset) + (rtl ? -delta : delta) * step);
-					pendingResizeRef.current = {
-						column: column.key,
-						width
-					};
-					return;
-				}
-				moveTo(row, col + delta, event.shiftKey);
-				return;
-			}
+		const { key, shiftKey } = event;
+		const rtl = getComputedStyle(grid).direction === "rtl";
+		const column = colAt(active.col);
+		const inBody = active.row >= 0;
+		const lastCol = colCount - 1;
+		const forward = rtl ? "ArrowLeft" : "ArrowRight";
+		const backward = rtl ? "ArrowRight" : "ArrowLeft";
+		if (shiftKey && !inBody && column?.resizable && (key === "ArrowLeft" || key === "ArrowRight")) {
+			event.preventDefault();
+			resizeBy(column, active.col, key === forward ? 1 : -1);
+			return;
+		}
+		let target = null;
+		switch (key) {
+			case forward:
+				target = {
+					row: active.row,
+					col: Math.min(active.col + 1, lastCol)
+				};
+				break;
+			case backward:
+				target = {
+					row: active.row,
+					col: Math.max(active.col - 1, 0)
+				};
+				break;
 			case "ArrowDown":
-				event.preventDefault();
-				moveTo(row + 1, col, event.shiftKey);
-				return;
+				target = {
+					row: Math.min(active.row + 1, lastRow),
+					col: active.col
+				};
+				break;
 			case "ArrowUp":
-				event.preventDefault();
-				moveTo(row - 1, col, event.shiftKey);
-				return;
+				target = {
+					row: Math.max(active.row - 1, selectable === "range" && shiftKey ? 0 : -1),
+					col: active.col
+				};
+				break;
 			case "Home":
-				event.preventDefault();
-				moveTo(ctrl ? -1 : row, 0);
-				return;
+				target = ctrl ? {
+					row: -1,
+					col: 0
+				} : {
+					row: active.row,
+					col: 0
+				};
+				break;
 			case "End":
-				event.preventDefault();
-				moveTo(ctrl ? loaded - 1 : row, colCount - 1);
-				return;
+				target = ctrl ? {
+					row: lastRow,
+					col: lastCol
+				} : {
+					row: active.row,
+					col: lastCol
+				};
+				break;
 			case "PageDown":
-				event.preventDefault();
-				moveTo(row + pageSize, col);
-				return;
-			case "PageUp":
-				event.preventDefault();
-				moveTo(row < 0 ? row : Math.max(0, row - pageSize), col);
-				return;
-			case "Enter": {
-				event.preventDefault();
-				if (row === -1) {
-					if (hasSelectColumn && col === 0) toggleAll();
-					else if (column?.sortable) activateSort(column);
-					return;
-				}
-				const rowData = rows[row];
-				if (!rowData) return;
-				if (hasSelectColumn && col === 0) {
-					toggleRow(rowData.id);
-					return;
-				}
-				if (openEditor(row, col)) return;
-				const control = document.getElementById(cellId(row, col))?.querySelector(CONTROL_SELECTOR$1);
-				if (control) {
-					control.focus();
-					control.click();
-				}
-				return;
-			}
-			case "F2":
-				event.preventDefault();
-				if (row >= 0) openEditor(row, col);
-				return;
-			case "Escape":
-				if (selectable === "range" && range) {
+				target = {
+					row: Math.min(active.row + rowsPerPage, lastRow),
+					col: active.col
+				};
+				break;
+			case "PageUp": target = {
+				row: inBody ? Math.max(active.row - rowsPerPage, 0) : -1,
+				col: active.col
+			};
+		}
+		if (target) {
+			event.preventDefault();
+			const extend = shiftKey && selectable === "range" && inBody && target.row >= 0 && key.startsWith("Arrow");
+			if (ctrl && key === "End") requestMore(lastRow);
+			navigate(target, extend);
+			return;
+		}
+		if (key === "Enter") {
+			if (!inBody) {
+				if (hasSelectColumn && active.col === 0) {
 					event.preventDefault();
-					setRange(null);
+					toggleAll();
+				} else if (column?.sortable) {
+					event.preventDefault();
+					activateSort(column);
 				}
 				return;
-			case " ": {
-				if (selectable !== "row" && selectable !== "range") break;
+			}
+			if (hasSelectColumn && active.col === 0) {
 				event.preventDefault();
-				const rowData = rows[row];
-				if (!rowData) return;
-				if (selectable === "row") {
-					if (event.shiftKey) extendRows(rowData.id);
-					else toggleRow(rowData.id);
-					return;
-				}
-				if (ctrl && column && rows[0]) {
-					const last = rows[loaded - 1];
-					anchorRef.current = {
-						rowId: rows[0].id,
-						column: column.key
-					};
-					commitRange({
-						from: anchorRef.current,
-						to: {
-							rowId: last.id,
-							column: column.key
-						}
-					});
-					return;
-				}
-				const anchorRow = event.shiftKey && rowAnchorRef.current !== null ? rowIndexById.get(rowAnchorRef.current) : void 0;
-				if (anchorRow === void 0) rowAnchorRef.current = rowData.id;
-				const next = rowRange(anchorRow ?? row, row);
-				if (next) {
-					anchorRef.current = next.from;
-					commitRange(next);
-				}
+				toggleRow(active.row);
 				return;
 			}
-			case "Delete":
-			case "Backspace":
-				if (editable && clearSelection()) event.preventDefault();
+			if (canEdit(active)) {
+				event.preventDefault();
+				openEditor(active);
 				return;
-		}
-		if (ctrl && event.code === "KeyA" && (selectable === "row" || selectable === "range")) {
-			event.preventDefault();
-			if (selectable === "row") commitRows(allIds);
-			else {
-				const all = rowRange(0, loaded - 1);
-				if (all) {
-					anchorRef.current = all.from;
-					commitRange(all);
-				}
+			}
+			const control = grid.ownerDocument.getElementById(cellId(active))?.querySelector(CONTROL_SELECTOR$1);
+			if (control) {
+				event.preventDefault();
+				control.focus();
+				control.click();
 			}
 			return;
 		}
-		if (ctrl && event.code === "KeyC" && selectable === "range") {
-			event.preventDefault();
-			copyRange();
+		if (key === "F2") {
+			if (canEdit(active)) {
+				event.preventDefault();
+				openEditor(active);
+			}
 			return;
 		}
-		if (event.key.length === 1 && event.key !== " " && !ctrl && !event.altKey && row >= 0 && openEditor(row, col, event.key)) event.preventDefault();
+		if (key === "Escape") {
+			if (range) {
+				event.preventDefault();
+				clearRange();
+			}
+			return;
+		}
+		if (key === " " && inBody && (selectable === "row" || selectable === "range")) {
+			event.preventDefault();
+			if (selectable === "row") {
+				if (shiftKey) addRowsThrough(active.row);
+				else toggleRow(active.row);
+				return;
+			}
+			if (ctrl) {
+				if (lastRow < 0) return;
+				rangeAnchorRef.current = {
+					row: 0,
+					col: active.col
+				};
+				emitRange({
+					anchor: {
+						row: 0,
+						col: active.col
+					},
+					focus: {
+						row: lastRow,
+						col: active.col
+					}
+				});
+				return;
+			}
+			const anchorRow = shiftKey && range ? range.anchor.row : active.row;
+			rangeAnchorRef.current = {
+				row: anchorRow,
+				col: 0
+			};
+			emitRange({
+				anchor: {
+					row: anchorRow,
+					col: 0
+				},
+				focus: {
+					row: active.row,
+					col: lastCol
+				}
+			});
+			return;
+		}
+		if (ctrl && (event.code === "KeyA" || key === "a") && (selectable === "row" || selectable === "range")) {
+			event.preventDefault();
+			if (selectable === "row") commitRows(rows.map((row) => row.id));
+			else if (lastRow >= 0) {
+				rangeAnchorRef.current = {
+					row: 0,
+					col: 0
+				};
+				emitRange({
+					anchor: {
+						row: 0,
+						col: 0
+					},
+					focus: {
+						row: lastRow,
+						col: lastCol
+					}
+				});
+			}
+			return;
+		}
+		if (ctrl && (event.code === "KeyC" || key === "c") && selectable === "range") {
+			if (range) {
+				event.preventDefault();
+				copyRange();
+			}
+			return;
+		}
+		if ((key === "Delete" || key === "Backspace") && editable && selectable !== "none") {
+			event.preventDefault();
+			clearCells();
+			return;
+		}
+		if (key.length === 1 && key !== " " && !ctrl && !event.altKey && canEdit(active)) {
+			const row = rows[active.row];
+			const kind = row && column ? editorKind(column, row) : "text";
+			event.preventDefault();
+			openEditor(active, kind === "text" || kind === "number" ? key : void 0);
+		}
 	};
-	const handleKeyUp = (event) => {
+	const onGridKeyUp = (event) => {
 		if (event.key !== "Shift" || !pendingResizeRef.current) return;
 		const { column, width } = pendingResizeRef.current;
 		pendingResizeRef.current = null;
 		onColumnResize?.(column, width);
 	};
-	const positionOf = (target) => {
-		const cell = target instanceof Element ? target.closest("[role=\"gridcell\"], [role=\"rowheader\"], [role=\"columnheader\"]") : null;
-		if (!cell || !cell.id.startsWith(cellPrefix) || !gridRef.current?.contains(cell)) return null;
-		const [r, c] = cell.id.slice(cellPrefix.length).split("_");
+	const cellFromTarget = (target) => {
+		const cell = target instanceof Element ? target.closest("[data-grid-row]") : null;
+		if (!cell || !gridRef.current?.contains(cell)) return null;
 		return {
-			row: r === "h" ? -1 : Number(r),
-			col: Number(c)
+			row: Number(cell.dataset.gridRow),
+			col: Number(cell.dataset.gridCol)
 		};
 	};
 	const draggingRef = useRef(false);
-	/** The cell the drag last extended to, so a move within one cell does not re-fire the selection. */
-	const lastDragRef = useRef(null);
-	const handleMouseDown = (event) => {
-		const target = event.target;
-		if (target.closest("[data-part=\"editor\"]") || target.closest(CONTROL_SELECTOR$1)) return;
-		if (!positionOf(target)) return;
-		event.preventDefault();
-		focusGrid();
-	};
-	const handlePointerDown = (event) => {
-		if (event.button !== 0) return;
-		const target = event.target;
-		if (target.closest("[data-part=\"editor\"]")) return;
-		const pos = positionOf(target);
-		if (!pos) return;
-		setActive(pos);
-		setAnnouncement("");
-		const column = dataColumnAt(pos.col);
-		const row = pos.row >= 0 ? rows[pos.row] : void 0;
-		if (!row || !column) return;
-		const ref = {
-			rowId: row.id,
-			column: column.key
-		};
-		const ctrl = event.ctrlKey || event.metaKey;
-		if (selectable === "cell") onSelectionChange?.(ref);
-		else if (selectable === "row") {
-			if (event.shiftKey) extendRows(row.id);
-			else if (ctrl) toggleRow(row.id);
-		} else if (selectable === "range") {
-			if (!(event.shiftKey && anchorRef.current)) anchorRef.current = ref;
-			commitRange({
-				from: anchorRef.current,
-				to: ref
+	const onGridPointerDown = (event) => {
+		if (selectable !== "range" || event.button !== 0) return;
+		if (event.target.closest(".ds-data-grid__editor, [data-part=\"resizeHandle\"]")) return;
+		const pos = cellFromTarget(event.target);
+		if (!pos || pos.row < 0) return;
+		if (event.shiftKey && rangeAnchorRef.current) emitRange({
+			anchor: rangeAnchorRef.current,
+			focus: pos
+		});
+		else {
+			rangeAnchorRef.current = pos;
+			emitRange({
+				anchor: pos,
+				focus: pos
 			});
-			draggingRef.current = true;
-			lastDragRef.current = ref;
-			gridRef.current?.setPointerCapture?.(event.pointerId);
 		}
+		draggingRef.current = true;
+		event.currentTarget.setPointerCapture?.(event.pointerId);
 	};
-	const handlePointerMove = (event) => {
-		if (!draggingRef.current || !anchorRef.current || typeof document.elementFromPoint !== "function") return;
-		const pos = positionOf(document.elementFromPoint(event.clientX, event.clientY));
-		const column = pos ? dataColumnAt(pos.col) : void 0;
-		const row = pos && pos.row >= 0 ? rows[pos.row] : void 0;
-		if (!pos || !row || !column) return;
-		const last = lastDragRef.current;
-		if (last && last.rowId === row.id && last.column === column.key) return;
-		lastDragRef.current = {
-			rowId: row.id,
-			column: column.key
-		};
+	const onGridPointerMove = (event) => {
+		if (!draggingRef.current || !rangeAnchorRef.current) return;
+		const doc = event.currentTarget.ownerDocument;
+		const under = typeof doc.elementFromPoint === "function" ? doc.elementFromPoint(event.clientX, event.clientY) : null;
+		const pos = cellFromTarget(under);
+		if (!pos || pos.row < 0) return;
+		if (pos.row === active.row && pos.col === active.col) return;
 		setActive(pos);
-		commitRange({
-			from: anchorRef.current,
-			to: {
-				rowId: row.id,
-				column: column.key
-			}
+		emitRange({
+			anchor: rangeAnchorRef.current,
+			focus: pos
 		});
 	};
-	const endDrag = (event) => {
+	const onGridPointerUp = (event) => {
 		if (!draggingRef.current) return;
 		draggingRef.current = false;
-		gridRef.current?.releasePointerCapture?.(event.pointerId);
+		event.currentTarget.releasePointerCapture?.(event.pointerId);
 	};
-	const handleDoubleClick = (event) => {
-		const pos = positionOf(event.target);
-		if (pos && pos.row >= 0 && !editingRef.current) openEditor(pos.row, pos.col);
-	};
-	const rootStyle = {};
-	for (const [binding, hook] of Object.entries(OVERRIDE_HOOKS$1)) {
-		const token = overrides?.[binding];
-		if (token) rootStyle[hook] = cssVar(token);
-	}
-	const headerTextOverrides = {
-		paddingInline: "space.0",
-		fontSize: overrides?.headerSize ?? "font.size.sm",
-		fontWeight: overrides?.headerWeight ?? "font.weight.semibold"
-	};
-	const renderEditor = (column, row, cell) => {
-		const name = `${baseId}-editor`;
-		const current = row[column.key];
-		const setValue = (value) => {
-			editValueRef.current = value;
-		};
-		const commitOnChange = (value) => {
-			setValue(value);
-			if (commitEdit()) focusGrid();
-		};
-		const zeroInset = {
-			paddingInline: "space.0",
-			paddingBlock: "space.0"
-		};
-		switch (column.editor ?? "text") {
-			case "number": return /* @__PURE__ */ jsx(NumberInput, {
-				label: column.header,
-				hideLabel: true,
-				size: "sm",
-				name,
-				defaultValue: cell.seed !== void 0 ? editValueRef.current : typeof current === "number" ? current : void 0,
-				overrides: zeroInset,
-				onChange: setValue
-			});
-			case "select": return /* @__PURE__ */ jsx(Select, {
-				label: column.header,
-				hideLabel: true,
-				size: "sm",
-				name,
-				options: column.options ?? [],
-				defaultValue: textOf$1(current),
-				container,
-				overrides: {
-					triggerPaddingInline: "space.0",
-					triggerPaddingBlock: "space.0"
-				},
-				onOpenChange: (open) => {
-					pickerOpenRef.current = open;
-				},
-				onChange: (value) => commitOnChange(Array.isArray(value) ? value[0] : value)
-			});
-			case "date": return /* @__PURE__ */ jsx(DatePicker, {
-				label: column.header,
-				hideLabel: true,
-				size: "sm",
-				name,
-				defaultValue: typeof current === "string" ? current : void 0,
-				container,
-				overrides: zeroInset,
-				onOpenChange: (open) => {
-					pickerOpenRef.current = open;
-				},
-				onChange: (value) => setValue(typeof value === "string" ? value : void 0)
-			});
-			case "checkbox": return /* @__PURE__ */ jsx(Checkbox, {
-				label: column.header,
-				hideLabel: true,
-				name,
-				checked: Boolean(current),
-				onChange: commitOnChange
-			});
-			default: return /* @__PURE__ */ jsx(Input, {
-				label: column.header,
-				hideLabel: true,
-				size: "sm",
-				name,
-				defaultValue: cell.seed ?? textOf$1(current),
-				overrides: zeroInset,
-				onChange: setValue
-			});
+	const onGridClick = (event) => {
+		const target = event.target;
+		if (target.closest(".ds-data-grid__editor")) return;
+		const pos = cellFromTarget(target);
+		if (!pos) return;
+		setActive(pos);
+		if (editing) cancelEdit(false);
+		if (pos.row >= 0) {
+			if (selectable === "cell") selectCell(pos);
+			if (selectable === "row" && !(hasSelectColumn && pos.col === 0)) {
+				if (event.shiftKey) addRowsThrough(pos.row);
+				else if (event.ctrlKey || event.metaKey) toggleRow(pos.row);
+			}
 		}
+		const control = target.closest(CONTROL_SELECTOR$1);
+		if (!(control && !control.classList.contains("ds-data-grid__cell") && !target.closest("[data-part=\"selectCell\"], [data-part=\"selectAllCell\"], [data-part=\"sortButton\"]"))) focusGrid();
 	};
+	const onGridDoubleClick = (event) => {
+		const pos = cellFromTarget(event.target);
+		if (pos && canEdit(pos)) openEditor(pos);
+	};
+	const onResizePointerDown = (event, column) => {
+		if (event.button !== 0) return;
+		event.preventDefault();
+		event.stopPropagation();
+		const handle = event.currentTarget;
+		const cell = handle.parentElement;
+		const startWidth = pixelWidth(column) ?? (cell ? cell.getBoundingClientRect().width : 0);
+		const startX = event.clientX;
+		const sign = getComputedStyle(handle).direction === "rtl" ? -1 : 1;
+		let width = startWidth;
+		handle.setPointerCapture?.(event.pointerId);
+		const onMove = (move) => {
+			width = Math.round(Math.max(floorFor(column), startWidth + (move.clientX - startX) * sign));
+			setWidths((prev) => prev[column.key] === width ? prev : {
+				...prev,
+				[column.key]: width
+			});
+		};
+		const onUp = () => {
+			handle.removeEventListener("pointermove", onMove);
+			handle.removeEventListener("pointerup", onUp);
+			handle.removeEventListener("pointercancel", onUp);
+			onColumnResize?.(column.key, width);
+		};
+		handle.addEventListener("pointermove", onMove);
+		handle.addEventListener("pointerup", onUp);
+		handle.addEventListener("pointercancel", onUp);
+	};
+	const rowNameOf = (row) => rowHeaderColumn ? textOf$1(row[rowHeaderColumn.key]) || row.id : row.id;
+	const cellClasses = (base, col, extra) => {
+		const column = colAt(col);
+		const pinned = hasSelectColumn && col === 0 || column?.pinned !== void 0;
+		return joinClasses$1("ds-data-grid__cell", base, column?.align && column.align !== "start" && `ds-data-grid__cell--align-${column.align}`, pinned && "ds-data-grid__cell--pinned", col === lastStartPin && "ds-data-grid__cell--pinned-start-edge", firstEndPin >= 0 && col === firstEndPin + selectOffset && "ds-data-grid__cell--pinned-end-edge", extra);
+	};
+	const isActive = (pos) => pos.row === active.row && pos.col === active.col;
 	const headerCell = (column, index) => {
-		const col = index + colOffset;
+		const col = index + selectOffset;
+		const pos = {
+			row: -1,
+			col
+		};
 		const sorted = activeSort?.column === column.key ? activeSort.direction : void 0;
-		const next = sorted === "ascending" ? "descending" : "ascending";
-		const width = widthOf(column);
+		const nextDirection = sorted === "ascending" ? "descending" : "ascending";
+		const px = pixelWidth(column);
+		const minWidth = column.minWidth ?? (minTargetPx > 0 ? Math.round(minTargetPx) : void 0);
 		return /* @__PURE__ */ jsxs("div", {
-			id: cellId(-1, col),
+			id: cellId(pos),
 			role: "columnheader",
 			"aria-colindex": col + 1,
-			"aria-sort": column.sortable ? sorted : void 0,
+			"aria-sort": sorted,
 			tabIndex: -1,
 			"data-part": "columnHeader",
-			className: joinClasses$1("ds-data-grid__cell", "ds-data-grid__cell--header", column.align && column.align !== "start" && `ds-data-grid__cell--align-${column.align}`, column.pinned && "ds-data-grid__cell--pinned", activeRow === -1 && activeCol === col && "ds-data-grid__cell--active"),
-			style: pinnedStyle(column, index),
+			"data-grid-row": -1,
+			"data-grid-col": col,
+			className: cellClasses("ds-data-grid__column-header", col, isActive(pos) && "ds-data-grid__cell--active"),
+			style: {
+				inlineSize: colVar(col),
+				...pinStyle(col)
+			},
 			children: [column.sortable ? /* @__PURE__ */ jsx("span", {
-				className: "ds-data-grid__sort",
 				"data-part": "sortButton",
-				onClick: () => activateSort(column),
+				className: "ds-data-grid__sort",
+				onClick: (event) => forwardPress(event, "button"),
 				children: /* @__PURE__ */ jsx(Button, {
 					variant: "ghost",
 					size: "sm",
 					label: column.header,
-					accessibleName: interpolate$2(next === "ascending" ? COPY$4.sortAscending : COPY$4.sortDescending, { column: column.header }),
+					accessibleName: fill(nextDirection === "ascending" ? COPY$4.sortAscending : COPY$4.sortDescending, { column: column.header }),
 					trailingIcon: sorted ? /* @__PURE__ */ jsx(Icon, {
 						name: sorted === "ascending" ? "chevron-up" : "chevron-down",
 						inline: true
 					}) : void 0,
-					overrides: headerTextOverrides,
-					tabIndex: -1
+					overrides: {
+						paddingInline: "space.0",
+						fontWeight: overrides?.headerWeight ?? "font.weight.semibold",
+						fontSize: overrides?.headerSize ?? "font.size.sm"
+					},
+					onClick: () => activateSort(column)
 				})
 			}) : column.abbr ? /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("span", {
 				"aria-hidden": "true",
@@ -14730,196 +15333,282 @@ function DataGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 			}), /* @__PURE__ */ jsx("span", {
 				className: "ds-data-grid__visually-hidden",
 				children: column.abbr
-			})] }) : column.header, column.resizable ? /* @__PURE__ */ jsx("div", {
+			})] }) : /* @__PURE__ */ jsx("span", {
+				className: "ds-data-grid__header-text",
+				children: column.header
+			}), column.resizable ? /* @__PURE__ */ jsx("div", {
 				role: "separator",
 				"aria-orientation": "vertical",
-				"aria-valuenow": width,
-				"aria-valuemin": column.minWidth,
-				"aria-label": interpolate$2(COPY$4.resize, { column: column.header }),
+				"aria-label": fill(COPY$4.resize, { column: column.header }),
+				"aria-valuenow": px,
+				"aria-valuemin": minWidth,
 				"data-part": "resizeHandle",
 				className: "ds-data-grid__resize-handle",
-				onPointerDown: (event) => startPointerResize(event, column, index)
+				onPointerDown: (event) => onResizePointerDown(event, column)
 			}) : null]
 		}, column.key);
 	};
-	const bodyCell = (row, rowIndex, column, index) => {
-		const col = index + colOffset;
-		const isEditing = editing?.rowId === row.id && editing.column === column.key;
-		const inRange = bounds !== null && rowIndex >= bounds.top && rowIndex <= bounds.bottom && index >= bounds.left && index <= bounds.right;
-		const cellSelected = selectable === "cell" ? activeRow === rowIndex && activeCol === col : selectable === "range" ? inRange : void 0;
-		/** numericFont: cells whose raw value is a number and that have no `render`. */
-		const numeric = !column.render && typeof row[column.key] === "number";
+	const renderEditor = (column, row) => {
+		const kind = editorKind(column, row);
+		const current = row[column.key];
+		const name = `${id}-edit-${column.key}`;
+		const initial = editing?.initial;
+		const setDraft = (value) => {
+			draftRef.current = value;
+		};
+		const inset = {
+			paddingInline: "space.0",
+			paddingBlock: "space.0"
+		};
+		let control;
+		if (kind === "number") control = /* @__PURE__ */ jsx(NumberInput, {
+			label: column.header,
+			hideLabel: true,
+			name,
+			size: "sm",
+			defaultValue: typeof draftRef.current === "number" ? draftRef.current : void 0,
+			overrides: inset,
+			onChange: (value) => setDraft(value)
+		});
+		else if (kind === "select") control = /* @__PURE__ */ jsx(Select, {
+			label: column.header,
+			hideLabel: true,
+			name,
+			size: "sm",
+			options: column.options ?? [],
+			defaultValue: textOf$1(current) || void 0,
+			open: true,
+			container,
+			overrides: {
+				triggerPaddingInline: "space.0",
+				triggerPaddingBlock: "space.0"
+			},
+			onChange: (value) => {
+				commitEdit(Array.isArray(value) ? value[0] : value, true);
+			},
+			onOpenChange: (open) => {
+				if (!open) cancelEdit();
+			}
+		});
+		else if (kind === "date") control = /* @__PURE__ */ jsx(DatePicker, {
+			label: column.header,
+			hideLabel: true,
+			name,
+			size: "sm",
+			defaultValue: textOf$1(current) || void 0,
+			container,
+			overrides: inset,
+			onChange: (value) => setDraft(typeof value === "string" ? value : void 0)
+		});
+		else if (kind === "checkbox") control = /* @__PURE__ */ jsx(Checkbox, {
+			label: column.header,
+			hideLabel: true,
+			name,
+			defaultChecked: Boolean(current),
+			onChange: (checked) => {
+				commitEdit(checked, true);
+			}
+		});
+		else control = /* @__PURE__ */ jsx(Input, {
+			label: column.header,
+			hideLabel: true,
+			name,
+			size: "sm",
+			defaultValue: initial ?? textOf$1(current),
+			overrides: inset,
+			onChange: (value) => setDraft(value)
+		});
 		return /* @__PURE__ */ jsx("div", {
-			id: cellId(rowIndex, col),
-			role: column.isRowHeader ? "rowheader" : "gridcell",
-			"aria-colindex": col + 1,
-			"aria-selected": cellSelected,
-			"aria-readonly": editable && !column.editable ? true : void 0,
-			"aria-describedby": isEditing && editError ? statusId : void 0,
-			tabIndex: -1,
-			"data-part": column.isRowHeader ? "rowHeader" : "cell",
-			className: joinClasses$1("ds-data-grid__cell", column.align && column.align !== "start" && `ds-data-grid__cell--align-${column.align}`, numeric && "ds-data-grid__cell--numeric", column.pinned && "ds-data-grid__cell--pinned", activeRow === rowIndex && activeCol === col && "ds-data-grid__cell--active", isEditing && "ds-data-grid__cell--editing", isEditing && editError && "ds-data-grid__cell--invalid"),
-			style: pinnedStyle(column, index),
-			children: isEditing && editing ? /* @__PURE__ */ jsx("div", {
-				ref: editorRef,
-				className: "ds-data-grid__editor",
-				"data-part": "editor",
-				onKeyDown: (event) => handleEditorKeyDown(event, column),
-				onBlur: (event) => handleEditorBlur(event, editing),
-				children: renderEditor(column, row, editing)
-			}) : /* @__PURE__ */ jsx("span", {
-				className: "ds-data-grid__cell-content",
-				"data-part": "cellContent",
-				children: column.render ? column.render(row) : textOf$1(row[column.key])
+			ref: editorRef,
+			"data-part": "editor",
+			className: "ds-data-grid__editor",
+			onKeyDown: onEditorKeyDown,
+			onBlur: onEditorBlur,
+			children: /* @__PURE__ */ jsx(FormContext, {
+				value: null,
+				children: control
 			})
-		}, column.key);
+		});
 	};
 	const bodyRow = (row, rowIndex) => {
 		const isSelected = selectedSet.has(row.id);
-		const name = rowHeaderColumn ? textOf$1(row[rowHeaderColumn.key]) || row.id : row.id;
-		const style = { gridTemplateColumns };
-		if (virtualize) style.transform = `translateY(calc(${rowIndex} * ${ROW_SIZE$1}))`;
+		const rowSelected = selectable === "row" ? isSelected : void 0;
+		const bounds = selectable === "range" && range ? rangeBounds(range) : null;
 		return /* @__PURE__ */ jsxs("div", {
 			role: "row",
 			"aria-rowindex": rowIndex + 2,
-			"aria-selected": hasSelectColumn ? isSelected : void 0,
+			"aria-selected": rowSelected,
 			"data-part": "row",
-			className: "ds-data-grid__row",
-			style,
+			className: joinClasses$1("ds-data-grid__row", selectable === "row" && isSelected && "ds-data-grid__row--selected"),
+			style: { "--ds-data-grid-row-index": rowIndex },
 			children: [hasSelectColumn ? /* @__PURE__ */ jsx("div", {
-				id: cellId(rowIndex, 0),
+				id: cellId({
+					row: rowIndex,
+					col: 0
+				}),
 				role: "gridcell",
 				"aria-colindex": 1,
 				tabIndex: -1,
 				"data-part": "selectCell",
-				className: joinClasses$1("ds-data-grid__cell", "ds-data-grid__cell--select", "ds-data-grid__cell--pinned", activeRow === rowIndex && activeCol === 0 && "ds-data-grid__cell--active"),
-				style: { insetInlineStart: 0 },
-				onClick: (event) => {
-					if (!event.target.closest("[data-ds=\"Checkbox\"]")) toggleRow(row.id);
+				"data-grid-row": rowIndex,
+				"data-grid-col": 0,
+				className: cellClasses("ds-data-grid__select", 0, isActive({
+					row: rowIndex,
+					col: 0
+				}) && "ds-data-grid__cell--active"),
+				style: {
+					inlineSize: colVar(0),
+					...pinStyle(0)
 				},
-				children: /* @__PURE__ */ jsx(Checkbox, {
-					label: interpolate$2(COPY$4.selectRow, { rowName: name }),
-					hideLabel: true,
-					name: `${baseId}-select`,
-					value: row.id,
-					checked: isSelected,
-					tabIndex: -1,
-					onChange: () => toggleRow(row.id)
+				onClick: (event) => forwardPress(event, "input"),
+				children: /* @__PURE__ */ jsx(FormContext, {
+					value: null,
+					children: /* @__PURE__ */ jsx(Checkbox, {
+						label: fill(COPY$4.selectRow, { rowName: rowNameOf(row) }),
+						hideLabel: true,
+						name: `${id}-select`,
+						value: row.id,
+						checked: isSelected,
+						overrides: { controlSize: "size.target.min" },
+						onChange: () => toggleRow(rowIndex)
+					})
 				})
-			}) : null, columns.map((column, index) => bodyCell(row, rowIndex, column, index))]
+			}) : null, columns.map((column, index) => {
+				const col = index + selectOffset;
+				const pos = {
+					row: rowIndex,
+					col
+				};
+				const value = row[column.key];
+				const isRowHeader = column === rowHeaderColumn;
+				const isEditing = editing !== null && editing.rowId === row.id && editing.column === column.key;
+				const numeric = typeof value === "number" && !column.render;
+				const inRange = bounds ? rowIndex >= bounds.r0 && rowIndex <= bounds.r1 && col >= bounds.c0 && col <= bounds.c1 : false;
+				const ariaSelected = selectable === "range" ? inRange : selectable === "cell" ? lastCellRef.current === `${row.id}\u0000${column.key}` : void 0;
+				return /* @__PURE__ */ jsx("div", {
+					id: cellId(pos),
+					role: isRowHeader ? "rowheader" : "gridcell",
+					"aria-colindex": col + 1,
+					"aria-selected": ariaSelected,
+					"aria-describedby": isEditing && editError ? liveId : void 0,
+					tabIndex: -1,
+					"data-part": isRowHeader ? "rowHeader" : "cell",
+					"data-grid-row": rowIndex,
+					"data-grid-col": col,
+					className: cellClasses("ds-data-grid__body-cell", col, joinClasses$1(isActive(pos) && "ds-data-grid__cell--active", numeric && "ds-data-grid__cell--numeric", isEditing && "ds-data-grid__cell--editing", isEditing && editError !== void 0 && "ds-data-grid__cell--invalid")),
+					style: {
+						inlineSize: colVar(col),
+						...pinStyle(col)
+					},
+					children: isEditing ? renderEditor(column, row) : /* @__PURE__ */ jsx("span", {
+						"data-part": "cellContent",
+						className: "ds-data-grid__cell-content",
+						children: column.render ? column.render(row) : textOf$1(value)
+					})
+				}, column.key);
+			})]
 		}, row.id);
 	};
-	const visibleRows = [];
-	for (let i = Math.max(0, windowStart); i <= windowEnd; i += 1) {
-		const row = rows[i];
-		if (row) visibleRows.push(bodyRow(row, i));
+	const rendered = [];
+	for (let i = windowFirst; i <= windowLast; i += 1) rendered.push(i);
+	for (const extra of [active.row, editingRowIndex]) if (extra >= 0 && extra <= lastRow && !rendered.includes(extra)) rendered.push(extra);
+	rendered.sort((a, b) => a - b);
+	let rangeOverlay = null;
+	if (selectable === "range" && range && rows.length > 0) {
+		const { r0, r1, c0, c1 } = rangeBounds(range);
+		const top = Math.max(r0, windowFirst);
+		const bottom = Math.min(r1, windowLast);
+		if (top <= bottom) rangeOverlay = /* @__PURE__ */ jsx("div", {
+			"aria-hidden": "true",
+			"data-part": "rangeOverlay",
+			className: "ds-data-grid__range",
+			style: {
+				"--ds-data-grid-range-first": top,
+				"--ds-data-grid-range-rows": bottom - top + 1,
+				insetInlineStart: sumVars(0, c0),
+				inlineSize: sumVars(c0, c1 + 1)
+			}
+		});
 	}
-	let overlay = null;
-	if (bounds) {
-		const top = Math.max(bounds.top, windowStart);
-		const bottom = Math.min(bounds.bottom, windowEnd);
-		if (top <= bottom) {
-			const rect = {
-				insetBlockStart: `calc(${top} * ${ROW_SIZE$1})`,
-				blockSize: `calc(${bottom - top + 1} * ${ROW_SIZE$1})`,
-				insetInlineStart: widthSpan(0, bounds.left),
-				inlineSize: widthSpan(bounds.left, bounds.right + 1)
-			};
-			overlay = /* @__PURE__ */ jsxs("div", {
-				"aria-hidden": "true",
-				className: "ds-data-grid__range-overlay",
-				"data-part": "rangeOverlay",
-				children: [/* @__PURE__ */ jsx("div", {
-					className: "ds-data-grid__range-fill",
-					style: rect
-				}), /* @__PURE__ */ jsx("div", {
-					className: "ds-data-grid__range-border",
-					style: rect
-				})]
-			});
-		}
+	const rowCountText = fill(COPY$4.rowCount[plural(totalRows)], { count: totalRows });
+	let selectionText;
+	if (selectable === "row" && selectedIds.length > 0) selectionText = selectedRowsText(selectedIds.length);
+	if (selectable === "range" && range) {
+		const { r0, r1, c0, c1 } = rangeBounds(range);
+		selectionText = fill(COPY$4.selectedRange, {
+			rows: r1 - r0 + 1,
+			columns: c1 - c0 + 1
+		});
 	}
-	const liveText = loading ? COPY$4.loading : editError ? interpolate$2(COPY$4.invalid, { message: editError }) : announcement;
-	const activeColumn = dataColumnAt(activeCol);
-	const position = activeRow >= 0 && activeColumn ? interpolate$2(COPY$4.position, {
-		row: activeRow + 1,
+	const activeColumn = colAt(active.col);
+	const positionText = active.row >= 0 && rows[active.row] && activeColumn ? fill(COPY$4.position, {
+		row: active.row + 1,
 		column: activeColumn.header
-	}) : "";
-	const statusTextOverrides = { fontSize: overrides?.statusBarSize ?? "font.size.xs" };
-	/** Beside the live span, in this order and no other: row count, selection count, scroll hint, position. */
-	const statusItems = [interpolate$2(pluralForm$1(COPY$4.rowCount, total), { count: total })];
-	if (selectable === "row" && selectedIds.length > 0) statusItems.push(interpolate$2(COPY$4.selectedRows, {
-		count: selectedIds.length,
-		total
-	}));
-	if (bounds) statusItems.push(interpolate$2(COPY$4.selectedRange, {
-		rows: bounds.bottom - bounds.top + 1,
-		columns: bounds.right - bounds.left + 1
-	}));
-	if (overflowX && !scrolledX) statusItems.push(COPY$4.scrollHint);
-	if (position) statusItems.push(position);
-	const empty = loaded === 0 && !loading;
+	}) : void 0;
+	const showScrollHint = overflowX && !everScrolledX;
+	const statusOverrides = { fontSize: overrides?.statusBarSize ?? "font.size.xs" };
+	const liveContent = editError !== void 0 ? /* @__PURE__ */ jsx("span", {
+		className: "ds-data-grid__invalid",
+		children: /* @__PURE__ */ jsx(Text, {
+			element: "span",
+			size: "xs",
+			overrides: statusOverrides,
+			children: fill(COPY$4.invalid, { message: editError })
+		})
+	}) : loading ? COPY$4.loading : announcement;
+	const isEmpty = rows.length === 0 && !loading;
+	const rowSize = hasSelectColumn || density === "comfortable" ? "comfortable" : "compact";
 	return /* @__PURE__ */ jsxs("div", {
 		...rest,
 		ref,
 		"data-ds": "DataGrid",
 		"data-part": "container",
-		className: joinClasses$1("ds-data-grid", `ds-data-grid--density-${density}`, `ds-data-grid--height-${height}`, virtualize && "ds-data-grid--virtual", (stickyHeader || virtualize) && "ds-data-grid--sticky-header", scrollTop > 0 && "ds-data-grid--scrolled-y", scrolledX && "ds-data-grid--scrolled-x", loading && "ds-data-grid--loading"),
-		style: rootStyle,
+		className: joinClasses$1("ds-data-grid", `ds-data-grid--height-${height}`, `ds-data-grid--rows-${rowSize}`, stickyHeader && "ds-data-grid--sticky-header", hideCaption && "ds-data-grid--hide-caption", loading && "ds-data-grid--loading", scrolledX && "ds-data-grid--scrolled-x", scrolledY && "ds-data-grid--scrolled-y"),
+		style: overridesToStyle$2(overrides),
 		children: [
 			/* @__PURE__ */ jsx("span", {
-				ref: stepSizerRef,
-				"aria-hidden": "true",
-				className: "ds-data-grid__sizer ds-data-grid__sizer--step"
-			}),
-			/* @__PURE__ */ jsx("span", {
-				ref: targetSizerRef,
-				"aria-hidden": "true",
-				className: "ds-data-grid__sizer ds-data-grid__sizer--target"
-			}),
-			/* @__PURE__ */ jsx("div", {
 				"data-part": "caption",
-				className: hideCaption ? "ds-data-grid__visually-hidden" : "ds-data-grid__caption",
+				className: "ds-data-grid__caption",
 				children: /* @__PURE__ */ jsx(Heading, {
 					id: captionId,
 					level: captionLevel,
 					size: "md",
 					overrides: {
-						marginBlockEnd: "space.0",
 						fontSize: overrides?.captionSize ?? "font.size.md",
-						fontWeight: overrides?.captionWeight ?? "font.weight.semibold"
+						fontWeight: overrides?.captionWeight ?? "font.weight.semibold",
+						marginBlockEnd: "space.0"
 					},
-					children: caption
+					children: caption ?? ""
 				})
 			}),
-			/* @__PURE__ */ jsx("div", {
-				ref: scrollRef,
+			/* @__PURE__ */ jsxs("div", {
+				ref: regionRef,
 				"data-part": "scrollRegion",
 				className: "ds-data-grid__scroll-region",
-				onScroll: handleScroll,
-				children: /* @__PURE__ */ jsxs("div", {
+				onScroll: onRegionScroll,
+				children: [/* @__PURE__ */ jsxs("div", {
 					ref: gridRef,
 					role: "grid",
+					"aria-labelledby": captionId,
+					"aria-rowcount": totalRows + 1,
+					"aria-colcount": colCount,
+					"aria-multiselectable": selectable === "row" || selectable === "range" ? true : selectable === "cell" ? false : void 0,
+					"aria-readonly": editable ? void 0 : true,
+					"aria-busy": loading ? true : void 0,
+					"aria-activedescendant": cellId(active),
+					tabIndex: 0,
 					"data-part": "grid",
 					className: "ds-data-grid__grid",
-					tabIndex: 0,
-					"aria-labelledby": captionId,
-					"aria-describedby": showStatusBar ? statusId : void 0,
-					"aria-rowcount": total + 1,
-					"aria-colcount": colCount,
-					"aria-multiselectable": selectable === "none" ? void 0 : selectable !== "cell",
-					"aria-readonly": !editable,
-					"aria-busy": loading ? true : void 0,
-					"aria-activedescendant": activeRendered && colCount > 0 ? cellId(activeRow, activeCol) : void 0,
-					onKeyDown: handleKeyDown,
-					onKeyUp: handleKeyUp,
-					onMouseDown: handleMouseDown,
-					onPointerDown: handlePointerDown,
-					onPointerMove: handlePointerMove,
-					onPointerUp: endDrag,
-					onPointerCancel: endDrag,
-					onDoubleClick: handleDoubleClick,
+					style: gridStyle,
+					onKeyDown: onGridKeyDown,
+					onKeyUp: onGridKeyUp,
+					onClick: onGridClick,
+					onDoubleClick: onGridDoubleClick,
+					onPointerDown: onGridPointerDown,
+					onPointerMove: onGridPointerMove,
+					onPointerUp: onGridPointerUp,
 					children: [/* @__PURE__ */ jsx("div", {
+						ref: headerRef,
 						role: "rowgroup",
 						"data-part": "header",
 						className: "ds-data-grid__header",
@@ -14927,74 +15616,113 @@ function DataGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 							role: "row",
 							"aria-rowindex": 1,
 							"data-part": "headerRow",
-							className: "ds-data-grid__row",
-							style: { gridTemplateColumns },
+							className: "ds-data-grid__header-row",
 							children: [hasSelectColumn ? /* @__PURE__ */ jsx("div", {
-								id: cellId(-1, 0),
+								id: cellId({
+									row: -1,
+									col: 0
+								}),
 								role: "columnheader",
 								"aria-colindex": 1,
 								tabIndex: -1,
 								"data-part": "selectAllCell",
-								className: joinClasses$1("ds-data-grid__cell", "ds-data-grid__cell--header", "ds-data-grid__cell--select", "ds-data-grid__cell--pinned", activeRow === -1 && activeCol === 0 && "ds-data-grid__cell--active"),
-								style: { insetInlineStart: 0 },
-								onClick: (event) => {
-									if (!event.target.closest("[data-ds=\"Checkbox\"]")) toggleAll();
+								"data-grid-row": -1,
+								"data-grid-col": 0,
+								className: cellClasses("ds-data-grid__column-header ds-data-grid__select", 0, isActive({
+									row: -1,
+									col: 0
+								}) && "ds-data-grid__cell--active"),
+								style: {
+									inlineSize: colVar(0),
+									...pinStyle(0)
 								},
-								children: /* @__PURE__ */ jsx(Checkbox, {
-									label: COPY$4.selectAll,
-									hideLabel: true,
-									name: `${baseId}-select-all`,
-									checked: allSelected,
-									indeterminate: someSelected,
-									tabIndex: -1,
-									onChange: toggleAll
+								onClick: (event) => forwardPress(event, "input"),
+								children: /* @__PURE__ */ jsx(FormContext, {
+									value: null,
+									children: /* @__PURE__ */ jsx(Checkbox, {
+										label: COPY$4.selectAll,
+										hideLabel: true,
+										name: `${id}-select-all`,
+										checked: allSelected,
+										indeterminate: someSelected,
+										overrides: { controlSize: "size.target.min" },
+										onChange: toggleAll
+									})
 								})
 							}) : null, columns.map(headerCell)]
 						})
 					}), /* @__PURE__ */ jsxs("div", {
+						ref: bodyRef,
 						role: "rowgroup",
 						"data-part": "body",
 						className: "ds-data-grid__body",
-						style: virtualize ? { blockSize: `calc(${empty ? 0 : total} * ${ROW_SIZE$1})` } : void 0,
-						children: [overlay, empty ? /* @__PURE__ */ jsx("div", {
-							role: "row",
-							"aria-rowindex": 2,
-							className: "ds-data-grid__empty-row",
-							children: /* @__PURE__ */ jsx("div", {
-								role: "gridcell",
-								"aria-colindex": 1,
-								className: "ds-data-grid__empty",
-								style: { gridColumn: "1 / -1" },
-								children: /* @__PURE__ */ jsx(Text, {
-									element: "p",
-									tone: "muted",
-									"data-part": "emptyState",
-									children: emptyMessage ?? COPY$4.empty
-								})
-							})
-						}) : visibleRows]
+						style: { "--ds-data-grid-row-total": rows.length > 0 ? totalRows : 0 },
+						children: [rangeOverlay, rendered.map((index) => {
+							const row = rows[index];
+							return row ? bodyRow(row, index) : null;
+						})]
 					})]
-				})
+				}), isEmpty ? /* @__PURE__ */ jsx("div", {
+					className: "ds-data-grid__empty",
+					children: /* @__PURE__ */ jsx(Text, {
+						element: "p",
+						tone: "muted",
+						"data-part": "emptyState",
+						children: emptyMessage ?? COPY$4.empty
+					})
+				}) : null]
 			}),
 			/* @__PURE__ */ jsxs("div", {
-				className: showStatusBar ? "ds-data-grid__status-bar" : "ds-data-grid__visually-hidden",
+				className: joinClasses$1("ds-data-grid__status", !showStatusBar && "ds-data-grid__visually-hidden"),
 				children: [/* @__PURE__ */ jsx(Text, {
-					id: statusId,
-					"data-part": "statusBar",
+					id: liveId,
 					element: "span",
-					size: "xs",
 					tone: "muted",
+					size: "xs",
 					role: "status",
-					"aria-live": "polite",
-					overrides: statusTextOverrides,
-					children: liveText
-				}), showStatusBar ? statusItems.map((text) => /* @__PURE__ */ jsx(Text, {
-					element: "span",
-					size: "xs",
-					tone: "muted",
-					overrides: statusTextOverrides,
-					children: text
-				}, text)) : null]
+					"data-part": "statusBar",
+					overrides: statusOverrides,
+					children: liveContent
+				}), showStatusBar ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+					/* @__PURE__ */ jsx(Text, {
+						element: "span",
+						tone: "muted",
+						size: "xs",
+						overrides: statusOverrides,
+						children: rowCountText
+					}),
+					selectionText !== void 0 ? /* @__PURE__ */ jsx(Text, {
+						element: "span",
+						tone: "muted",
+						size: "xs",
+						overrides: statusOverrides,
+						children: selectionText
+					}) : null,
+					showScrollHint ? /* @__PURE__ */ jsx(Text, {
+						element: "span",
+						tone: "muted",
+						size: "xs",
+						overrides: statusOverrides,
+						children: COPY$4.scrollHint
+					}) : null,
+					positionText !== void 0 ? /* @__PURE__ */ jsx(Text, {
+						element: "span",
+						tone: "muted",
+						size: "xs",
+						overrides: statusOverrides,
+						children: positionText
+					}) : null
+				] }) : null]
+			}),
+			/* @__PURE__ */ jsx("span", {
+				ref: stepProbeRef,
+				"aria-hidden": "true",
+				className: "ds-data-grid__probe ds-data-grid__probe--step"
+			}),
+			/* @__PURE__ */ jsx("span", {
+				ref: minProbeRef,
+				"aria-hidden": "true",
+				className: "ds-data-grid__probe ds-data-grid__probe--min"
 			})
 		]
 	});
@@ -15042,7 +15770,7 @@ const DEFAULT_COLUMN_SIZE = "var(--ds-tree-grid-column-size)";
 /** Rows rendered before one row has been measured (a row count, not a size). */
 const UNMEASURED_ROW_LIMIT = 50;
 /** The selection column: a minimum target plus the cell's own inline padding on both sides. */
-const SELECT_COLUMN_SIZE = "calc(var(--size-target-min) + 2 * var(--ds-tree-grid-cell-padding-inline))";
+const SELECT_COLUMN_SIZE = "calc(var(--ds-tree-grid-min-target) + 2 * var(--ds-tree-grid-cell-padding-inline))";
 /** The row block size for the density (set in CSS from size.target.min / size.target.comfortable). */
 const ROW_SIZE = "var(--ds-tree-grid-row-size)";
 const FOCUSABLE_SELECTOR$1 = "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex=\"-1\"])";
@@ -15068,13 +15796,24 @@ function interpolate$1(template, values) {
 	for (const [key, value] of Object.entries(values)) text = text.replaceAll(`{${key}}`, String(value));
 	return text;
 }
-function pluralForm(forms, count) {
-	const locale = typeof document !== "undefined" ? document.documentElement.lang || void 0 : void 0;
-	return new Intl.PluralRules(locale).select(count) === "one" ? forms.one : forms.other;
+function pluralForm(forms, count, locale) {
+	return new Intl.PluralRules(locale || void 0).select(count) === "one" ? forms.one : forms.other;
 }
+function subscribeNothing() {
+	return () => {};
+}
+function readPageLocale() {
+	return document.documentElement.lang;
+}
+function serverPageLocale() {
+	return "";
+}
+/** localeCompare (numeric) for strings, subtraction for numbers; missing values sort last, as DataGrid. */
 function compareValues(a, b) {
+	if (a === void 0 || a === null) return b === void 0 || b === null ? 0 : 1;
+	if (b === void 0 || b === null) return -1;
 	if (typeof a === "number" && typeof b === "number") return a - b;
-	return String(a ?? "").localeCompare(String(b ?? ""), void 0, { numeric: true });
+	return String(a).localeCompare(String(b), void 0, { numeric: true });
 }
 function textOf(value) {
 	return value === void 0 || value === null ? "" : String(value);
@@ -15128,7 +15867,9 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 		const rowHeaders = columns.filter((column) => column.isRowHeader).length;
 		if (rowHeaders !== 1) console.warn(`TreeGrid: exactly one column must be \`isRowHeader\`; found ${rowHeaders}.`);
 		else if (!columns[0]?.isRowHeader) console.warn("TreeGrid: the `isRowHeader` column must come first.");
+		else if (columns[0]?.pinned) console.warn("TreeGrid: the `isRowHeader` column is never pinned; the guide lines are measured from its start.");
 	}
+	const pageLocale = useSyncExternalStore(subscribeNothing, readPageLocale, serverPageLocale);
 	const hasSelectColumn = selectable === "row";
 	const colOffset = hasSelectColumn ? 1 : 0;
 	const colCount = colOffset + columns.length;
@@ -15188,8 +15929,10 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 	/** Lazy rows a user has opened: a lazy id listed in `expanded` alone never opens on its own. */
 	const [openedLazy, setOpenedLazy] = useState([]);
 	const rawExpanded = expandedControlled ? expanded : internalExpanded;
-	const expandedIds = useMemo(() => {
-		const opened = new Set(openedLazy);
+	/** The expanded ids with `"*"` resolved to concrete ids: what the next onExpandChange builds on. A lazy
+	* id listed here but not yet opened by the user stays in this list (it is the caller's) while held
+	* collapsed on screen. */
+	const reportedIds = useMemo(() => {
 		const seen = /* @__PURE__ */ new Set();
 		const out = [];
 		const add = (id) => {
@@ -15197,11 +15940,7 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 			seen.add(id);
 			out.push(id);
 		};
-		for (const id of rawExpanded) {
-			if (id === EXPAND_ALL$1) continue;
-			if (rowById.get(id)?.children === "lazy" && !opened.has(id)) continue;
-			add(id);
-		}
+		for (const id of rawExpanded) if (id !== EXPAND_ALL$1) add(id);
 		if (rawExpanded.includes(EXPAND_ALL$1)) {
 			const walk = (list) => {
 				for (const row of list) {
@@ -15213,11 +15952,15 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 			walk(data);
 		}
 		return out;
+	}, [rawExpanded, data]);
+	/** What is shown open: the reported ids less the lazy rows the user has not opened. */
+	const expandedIds = useMemo(() => {
+		const opened = new Set(openedLazy);
+		return reportedIds.filter((id) => rowById.get(id)?.children !== "lazy" || opened.has(id));
 	}, [
-		rawExpanded,
+		reportedIds,
 		openedLazy,
-		rowById,
-		data
+		rowById
 	]);
 	const expandedSet = useMemo(() => new Set(expandedIds), [expandedIds]);
 	const sortControlled = sort !== void 0;
@@ -15302,7 +16045,7 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 	};
 	const toggleExpand = (id) => {
 		if (!expandedSet.has(id)) {
-			commitExpanded([...expandedIds, id], [id]);
+			commitExpanded(reportedIds.includes(id) ? reportedIds : [...reportedIds, id], [id]);
 			return;
 		}
 		let current = active.key;
@@ -15311,14 +16054,15 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 			key: id,
 			col: active.col
 		});
-		commitExpanded(expandedIds.filter((existing) => existing !== id), []);
+		if (openedLazy.includes(id)) setOpenedLazy((prev) => prev.filter((existing) => existing !== id));
+		commitExpanded(reportedIds.filter((existing) => existing !== id), []);
 	};
 	/** `*`: every row at the focused row's level under the same parent, the focused row included. */
 	const expandLevel = (entry) => {
 		const siblings = entry.parentId === null ? data : rowById.get(entry.parentId)?.children;
 		if (!Array.isArray(siblings)) return;
 		const opened = siblings.filter((row) => hasChildren$1(row) && !expandedSet.has(row.id)).map((row) => row.id);
-		if (opened.length > 0) commitExpanded([...expandedIds, ...opened], opened);
+		if (opened.length > 0) commitExpanded([...reportedIds, ...opened.filter((id) => !reportedIds.includes(id))], opened);
 	};
 	const selectedControlled = selected !== void 0;
 	const [internalSelected, setInternalSelected] = useState(defaultSelected ?? []);
@@ -15424,7 +16168,7 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 	useLayoutEffect(() => {
 		if (!keyboardMoveRef.current) return;
 		keyboardMoveRef.current = false;
-		(typeof document !== "undefined" ? document.getElementById(cellId(activeRow, activeEntry?.placeholder ? 0 : activeCol)) : null)?.scrollIntoView?.({
+		(typeof document !== "undefined" ? document.getElementById(cellId(activeRow, activeCol)) : null)?.scrollIntoView?.({
 			block: "nearest",
 			inline: "nearest"
 		});
@@ -15524,7 +16268,7 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 				for (const column of columns) if (column.editable) targets.push([row, column]);
 			}
 		}
-		else if (selectable === "cell") {
+		else {
 			const column = dataColumnAt(activeCol);
 			if (activeEntry && !activeEntry.placeholder && column?.editable) targets.push([activeEntry.row, column]);
 		}
@@ -15802,6 +16546,7 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 		setAnnouncement("");
 		const column = dataColumnAt(pos.col);
 		if (!entry || entry.placeholder || !column) return;
+		if (entry.hasChildren && pos.col === rowHeaderCol) return;
 		if (selectable === "cell") onSelectionChange?.({
 			rowId: entry.key,
 			column: column.key
@@ -15814,7 +16559,17 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 	const handleDoubleClick = (event) => {
 		if (event.target.closest("[data-part=\"expandButton\"]")) return;
 		const pos = positionOf(event.target);
-		if (pos && pos.row >= 0 && !editingRef.current) openEditor(pos.row, pos.col);
+		if (!pos || pos.row < 0 || editingRef.current) return;
+		if (visible[pos.row]?.hasChildren && pos.col === rowHeaderCol) return;
+		openEditor(pos.row, pos.col);
+	};
+	/** A click anywhere on a parent's row header (the expandButton wrapper included) toggles it. */
+	const handleRowHeaderClick = (event, entry) => {
+		const target = event.target;
+		if (target.closest("[data-part=\"editor\"]")) return;
+		const control = target.closest(CONTROL_SELECTOR);
+		if (control && !control.closest("[data-part=\"expandButton\"]")) return;
+		toggleExpand(entry.key);
 	};
 	const rootStyle = {};
 	for (const [binding, hook] of Object.entries(OVERRIDE_HOOKS)) {
@@ -15956,7 +16711,6 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 			children: [entry.hasChildren ? /* @__PURE__ */ jsx("span", {
 				className: joinClasses("ds-tree-grid__expand", isExpanded && "ds-tree-grid__expand--expanded"),
 				"data-part": "expandButton",
-				onClick: () => toggleExpand(entry.key),
 				children: /* @__PURE__ */ jsx(Button, {
 					variant: "ghost",
 					size: "sm",
@@ -15999,6 +16753,7 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 			"data-part": column.isRowHeader ? "rowHeader" : "cell",
 			className: joinClasses("ds-tree-grid__cell", column.isRowHeader && "ds-tree-grid__cell--row-header", column.align && column.align !== "start" && `ds-tree-grid__cell--align-${column.align}`, numeric && "ds-tree-grid__cell--numeric", column.pinned && "ds-tree-grid__cell--pinned", isActive && "ds-tree-grid__cell--active", isEditing && "ds-tree-grid__cell--editing", isEditing && editError && "ds-tree-grid__cell--invalid"),
 			style: pinnedStyle(column, index),
+			onClick: column.isRowHeader && entry.hasChildren ? (event) => handleRowHeaderClick(event, entry) : void 0,
 			children: isEditing && editing ? /* @__PURE__ */ jsx("div", {
 				ref: editorRef,
 				className: "ds-tree-grid__editor",
@@ -16020,46 +16775,42 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 		};
 		if (virtualize) style.transform = `translateY(calc(${rowIndex} * ${ROW_SIZE}))`;
 		const rowClass = joinClasses("ds-tree-grid__row", entry.level > 1 && "ds-tree-grid__row--nested");
-		if (entry.placeholder) return /* @__PURE__ */ jsx("div", {
-			role: "row",
-			"aria-rowindex": rowIndex + 2,
-			"aria-level": entry.level,
-			"aria-setsize": entry.setsize,
-			"aria-posinset": entry.posinset,
-			"data-part": "row",
-			className: rowClass,
-			style,
-			children: /* @__PURE__ */ jsxs("div", {
-				id: cellId(rowIndex, 0),
+		if (entry.placeholder) {
+			const placeholderCell = (col, content, extra) => /* @__PURE__ */ jsx("div", {
+				id: cellId(rowIndex, col),
 				role: "gridcell",
-				"aria-colindex": 1,
+				"aria-colindex": col + 1,
 				tabIndex: -1,
-				className: joinClasses("ds-tree-grid__cell", "ds-tree-grid__cell--placeholder", activeRow === rowIndex && "ds-tree-grid__cell--active"),
-				style: { gridColumn: "1 / -1" },
-				children: [
-					hasSelectColumn ? /* @__PURE__ */ jsx("span", {
+				className: joinClasses("ds-tree-grid__cell", "ds-tree-grid__cell--placeholder", extra, activeRow === rowIndex && activeCol === col && "ds-tree-grid__cell--active"),
+				style: col < colOffset ? { insetInlineStart: 0 } : pinnedStyle(columns[col - colOffset], col - colOffset),
+				children: content
+			}, col);
+			return /* @__PURE__ */ jsxs("div", {
+				role: "row",
+				"aria-rowindex": rowIndex + 2,
+				"aria-level": entry.level,
+				"aria-setsize": entry.setsize,
+				"aria-posinset": entry.posinset,
+				"data-part": "row",
+				className: rowClass,
+				style,
+				children: [hasSelectColumn ? placeholderCell(0, null, "ds-tree-grid__cell--pinned") : null, columns.map((column, index) => placeholderCell(index + colOffset, column.isRowHeader ? /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("span", {
+					"aria-hidden": "true",
+					className: "ds-tree-grid__indent"
+				}), /* @__PURE__ */ jsxs("span", {
+					className: "ds-tree-grid__row-header",
+					children: [/* @__PURE__ */ jsx("span", {
 						"aria-hidden": "true",
-						className: "ds-tree-grid__select-spacer"
-					}) : null,
-					/* @__PURE__ */ jsx("span", {
-						"aria-hidden": "true",
-						className: "ds-tree-grid__indent"
-					}),
-					/* @__PURE__ */ jsxs("span", {
-						className: "ds-tree-grid__row-header",
-						children: [/* @__PURE__ */ jsx("span", {
-							"aria-hidden": "true",
-							className: "ds-tree-grid__expand"
-						}), /* @__PURE__ */ jsx(Text, {
-							element: "span",
-							size: "sm",
-							tone: "muted",
-							children: COPY$3.loading
-						})]
-					})
-				]
-			})
-		}, entry.key);
+						className: "ds-tree-grid__expand"
+					}), /* @__PURE__ */ jsx(Text, {
+						element: "span",
+						size: "sm",
+						tone: "muted",
+						children: COPY$3.loading
+					})]
+				})] }) : null, column.pinned && "ds-tree-grid__cell--pinned"))]
+			}, entry.key);
+		}
 		const row = entry.row;
 		const name = rowHeaderColumn ? textOf(row[rowHeaderColumn.key]) || row.id : row.id;
 		const isExpanded = expandedSet.has(entry.key);
@@ -16105,19 +16856,19 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 		const entry = visible[i];
 		if (entry) renderedRows.push(bodyRow(entry, i));
 	}
-	const summary = [interpolate$1(pluralForm(COPY$3.rowCount, total), { count: total })];
+	const summary = [interpolate$1(pluralForm(COPY$3.rowCount, total, pageLocale), { count: total })];
 	if (selectable === "row" && selectedIds.length > 0) summary.push(interpolate$1(COPY$3.selectedRows, {
 		count: selectedIds.length,
 		total
 	}));
 	const liveText = loading ? COPY$3.loading : editError ? interpolate$1(COPY$3.invalid, { message: editError }) : announcement;
-	const activeColumn = activeEntry?.placeholder ? rowHeaderColumn : dataColumnAt(activeCol);
+	const activeColumn = dataColumnAt(activeCol);
 	const position = activeRow >= 0 && activeColumn ? interpolate$1(COPY$3.position, {
 		row: activeRow + 1,
 		column: activeColumn.header
 	}) : "";
 	const empty = visibleCount === 0 && !loading;
-	const activeDescendant = activeRendered && colCount > 0 && !empty ? cellId(activeRow, activeEntry?.placeholder ? 0 : activeCol) : void 0;
+	const activeDescendant = activeRendered && colCount > 0 && !empty ? cellId(activeRow, activeCol) : void 0;
 	return /* @__PURE__ */ jsxs("div", {
 		...rest,
 		ref,
@@ -16136,7 +16887,7 @@ function TreeGrid({ ref, caption, captionLevel = "2", hideCaption = false, colum
 				"aria-hidden": "true",
 				className: "ds-tree-grid__sizer ds-tree-grid__sizer--target"
 			}),
-			/* @__PURE__ */ jsx("div", {
+			/* @__PURE__ */ jsx("span", {
 				"data-part": "caption",
 				className: hideCaption ? "ds-tree-grid__visually-hidden" : "ds-tree-grid__caption",
 				children: /* @__PURE__ */ jsx(Heading, {
@@ -16373,8 +17124,27 @@ function Tree({ ref, label, showLabel = false, headingLevel = "2", nodes, expand
 		buffer: "",
 		timer: void 0
 	});
+	/** Set while activation clicks an href node's anchor, so that click's bubble through the row does not toggle. */
+	const activating = useRef(false);
+	useEffect(() => {
+		const state = typeahead.current;
+		return () => {
+			if (state.timer !== void 0) clearTimeout(state.timer);
+		};
+	}, []);
 	const everyNode = useMemo(() => allNodes(nodes), [nodes]);
 	const nodeById = useMemo(() => new Map(everyNode.map((node) => [node.id, node])), [everyNode]);
+	const parentOf = useMemo(() => {
+		const map = /* @__PURE__ */ new Map();
+		const walk = (list, parentId) => {
+			for (const node of list) {
+				map.set(node.id, parentId);
+				walk(loadedChildren(node), node.id);
+			}
+		};
+		walk(nodes, null);
+		return map;
+	}, [nodes]);
 	const [internalExpanded, setInternalExpanded] = useState(defaultExpanded ?? []);
 	/** Lazy ids the user has opened: a lazy id listed in `expanded`/`defaultExpanded` alone never opens itself. */
 	const [openedLazy, setOpenedLazy] = useState([]);
@@ -16494,6 +17264,23 @@ function Tree({ ref, label, showLabel = false, headingLevel = "2", nodes, expand
 		setFocusedId(id);
 		itemRefs.current.get(id)?.focus();
 	};
+	useLayoutEffect(() => {
+		if (focusedId === void 0 || navigable.some((entry) => entry.node.id === focusedId)) return;
+		const active = document.activeElement;
+		if (active && active !== document.body) return;
+		let id = parentOf.get(focusedId) ?? null;
+		while (id !== null && !navigable.some((entry) => entry.node.id === id)) id = parentOf.get(id) ?? null;
+		if (id === null) {
+			setFocusedId(void 0);
+			return;
+		}
+		setFocusedId(id);
+		itemRefs.current.get(id)?.focus();
+	}, [
+		focusedId,
+		navigable,
+		parentOf
+	]);
 	/** Keyboard focus movement: with single + selectOnFocus, the node is selected as focus lands. */
 	const moveTo = (entry) => {
 		if (!entry) return;
@@ -16503,8 +17290,15 @@ function Tree({ ref, label, showLabel = false, headingLevel = "2", nodes, expand
 	const activate = (node) => {
 		if (node.disabled) return;
 		if (selectable === "single") selectOnly(node.id);
-		if (node.href) itemRefs.current.get(node.id)?.querySelector("[data-part=\"link\"] a")?.click();
-		else onActivate?.(node.id);
+		if (node.href) {
+			const anchor = itemRefs.current.get(node.id)?.querySelector("[data-part=\"link\"] a");
+			activating.current = true;
+			try {
+				anchor?.click();
+			} finally {
+				activating.current = false;
+			}
+		} else onActivate?.(node.id);
 	};
 	const handleTypeahead = (char, index) => {
 		const state = typeahead.current;
@@ -16628,6 +17422,7 @@ function Tree({ ref, label, showLabel = false, headingLevel = "2", nodes, expand
 			"data-part": "node",
 			className: "ds-tree__node",
 			style: { "--ds-tree-level": level - 1 },
+			"aria-label": node.badge ? `${node.label}, ${node.badge}` : node.label,
 			"aria-level": level,
 			"aria-setsize": setsize,
 			"aria-posinset": posinset,
@@ -16647,7 +17442,7 @@ function Tree({ ref, label, showLabel = false, headingLevel = "2", nodes, expand
 					if (node.disabled) event.preventDefault();
 				},
 				onClick: (event) => {
-					if (node.disabled) return;
+					if (node.disabled || activating.current) return;
 					focusNode(node.id);
 					if (event.detail >= 2) return;
 					selectAction(node);
@@ -16758,7 +17553,6 @@ function Tree({ ref, label, showLabel = false, headingLevel = "2", nodes, expand
 					"aria-setsize": 1,
 					"aria-posinset": 1,
 					"aria-disabled": true,
-					tabIndex: -1,
 					children: /* @__PURE__ */ jsxs("div", {
 						className: "ds-tree__row ds-tree__row--placeholder",
 						children: [/* @__PURE__ */ jsx("span", {
@@ -16772,6 +17566,7 @@ function Tree({ ref, label, showLabel = false, headingLevel = "2", nodes, expand
 							}), /* @__PURE__ */ jsx(Text, {
 								element: "span",
 								tone: "muted",
+								overrides: labelTextOverrides,
 								children: COPY$2.loading
 							})]
 						})]
@@ -16813,6 +17608,7 @@ function Tree({ ref, label, showLabel = false, headingLevel = "2", nodes, expand
 			nodes.length === 0 ? /* @__PURE__ */ jsx(Text, {
 				"data-part": "emptyState",
 				tone: "muted",
+				overrides: labelTextOverrides,
 				children: COPY$2.empty
 			}) : null,
 			selectable === "multiple" ? /* @__PURE__ */ jsx("span", {
@@ -16829,7 +17625,7 @@ function Tree({ ref, label, showLabel = false, headingLevel = "2", nodes, expand
 /**
 * copy.* — used verbatim; `{label}` and `{percent}` are the only substitutions. `setMinimum` and
 * `setMaximum` name the Home/End accessibility actions, which only the native platforms expose:
-* on web Home and End are the keys themselves and carry no separate label.
+* on web Home and End are bare keys and render neither string.
 */
 const COPY$1 = {
 	collapse: "Collapse {label}",
@@ -16861,21 +17657,24 @@ const BREAKPOINT_TOKEN = {
 	prose: "--layout-max-width-prose",
 	content: "--layout-max-width-content"
 };
-const FOCUSABLE_SELECTOR = "a[href], button, input, select, textarea, [contenteditable]:not([contenteditable=\"false\"]), [tabindex]";
+const LENGTH_PATTERN = /^(\d*\.?\d+)(px|rem|em)$/;
 /**
 * The breakpoint in CSS pixels, read from the loaded token stylesheet (literal-ok: the number is
-* the theme's layout.maxWidth.*, never written here). `null` when the tokens are not loaded.
+* the theme's layout.maxWidth.*, never written here). px, rem (against the root font size) and em
+* (against the splitter's own) are readable; any other unit, or no tokens loaded, is `null`.
 */
 function readBreakpoint(el, stackBelow) {
 	const raw = getComputedStyle(el).getPropertyValue(BREAKPOINT_TOKEN[stackBelow]).trim();
-	const value = parseFloat(raw);
+	const match = LENGTH_PATTERN.exec(raw);
+	if (!match) return null;
+	const value = Number(match[1]);
 	if (!Number.isFinite(value) || value <= 0) return null;
-	if (raw.endsWith("rem")) return value * parseFloat(getComputedStyle(document.documentElement).fontSize);
-	if (raw.endsWith("em")) return value * parseFloat(getComputedStyle(el).fontSize);
+	if (match[2] === "rem") return value * parseFloat(getComputedStyle(document.documentElement).fontSize);
+	if (match[2] === "em") return value * parseFloat(getComputedStyle(el).fontSize);
 	return value;
 }
 function readPersisted(key) {
-	if (!key || typeof window === "undefined") return null;
+	if (!key) return null;
 	try {
 		const raw = window.localStorage.getItem(key);
 		if (!raw) return null;
@@ -16891,10 +17690,15 @@ function readPersisted(key) {
 	}
 }
 function writePersisted(key, value) {
-	if (!key || typeof window === "undefined") return;
+	if (!key) return;
 	try {
 		window.localStorage.setItem(key, JSON.stringify(value));
 	} catch {}
+}
+/** The standard focusable selector; negative tabindex, inert subtrees and aria-disabled are filtered after. */
+const FOCUSABLE_SELECTOR = "a[href], area[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, [contenteditable]:not([contenteditable=\"false\"]), [tabindex]";
+function firstFocusable(region) {
+	return Array.from(region.querySelectorAll(FOCUSABLE_SELECTOR)).find((el) => el.tabIndex >= 0 && !el.closest("[inert]") && el.getAttribute("aria-disabled") !== "true");
 }
 /**
 * Splitter — Design Schema, category: layout. APG window splitter.
@@ -16916,12 +17720,48 @@ function Splitter({ ref, label, orientation = "horizontal", primary, secondary, 
 		if (isDev$1 && !label) console.warn("Splitter: `label` is required; it is the separator’s accessible name.");
 	}, [label]);
 	const clamp = (value) => Math.min(Math.max(value, minSize), maxSize);
-	const [internalSize, setInternalSize] = useState(() => clamp(readPersisted(persistKey)?.size ?? defaultSize));
+	const [internalSize, setInternalSize] = useState(() => clamp(defaultSize));
 	const current = size !== void 0 ? clamp(size) : internalSize;
 	const latestSizeRef = useRef(current);
 	latestSizeRef.current = current;
-	const [internalCollapsed, setInternalCollapsed] = useState(() => readPersisted(persistKey)?.collapsed ?? defaultCollapsed);
+	const [internalCollapsed, setInternalCollapsed] = useState(defaultCollapsed);
 	const collapsedState = collapsible && (collapsed !== void 0 ? collapsed : internalCollapsed);
+	const [animate, setAnimate] = useState(false);
+	const [prevCollapsed, setPrevCollapsed] = useState(collapsedState);
+	if (prevCollapsed !== collapsedState) {
+		setPrevCollapsed(collapsedState);
+		setAnimate(true);
+	}
+	const skipNextWriteRef = useRef(true);
+	useLayoutEffect(() => {
+		if (!persistKey) return;
+		const stored = readPersisted(persistKey);
+		const nextSize = size === void 0 && stored?.size !== void 0 ? clamp(stored.size) : current;
+		const nextCollapsed = collapsible && collapsed === void 0 && stored?.collapsed !== void 0 ? stored.collapsed : collapsedState;
+		if (nextSize !== internalSize && size === void 0) setInternalSize(nextSize);
+		if (nextCollapsed !== collapsedState) {
+			setInternalCollapsed(nextCollapsed);
+			setPrevCollapsed(nextCollapsed);
+		}
+		writePersisted(persistKey, {
+			size: nextSize,
+			collapsed: nextCollapsed
+		});
+	}, []);
+	useEffect(() => {
+		if (skipNextWriteRef.current) {
+			skipNextWriteRef.current = false;
+			if (persistKey) return;
+		}
+		writePersisted(persistKey, {
+			size: current,
+			collapsed: collapsedState
+		});
+	}, [
+		persistKey,
+		current,
+		collapsedState
+	]);
 	const [isRtl, setIsRtl] = useState(false);
 	useLayoutEffect(() => {
 		const el = containerRef.current;
@@ -16955,43 +17795,24 @@ function Splitter({ ref, label, orientation = "horizontal", primary, secondary, 
 		return () => observer.disconnect();
 	}, [canStack, stackBelow]);
 	const effectiveCollapsed = collapsedState && !isStacked;
-	const [animateCollapse, setAnimateCollapse] = useState(false);
-	const [prevCollapsed, setPrevCollapsed] = useState(effectiveCollapsed);
-	if (prevCollapsed !== effectiveCollapsed) {
-		setPrevCollapsed(effectiveCollapsed);
-		setAnimateCollapse(true);
-	}
-	useLayoutEffect(() => {
-		const node = primaryRef.current;
-		if (node && node.inert !== effectiveCollapsed) node.inert = effectiveCollapsed;
-	}, [effectiveCollapsed]);
-	useEffect(() => {
-		writePersisted(persistKey, {
-			size: current,
-			collapsed: collapsedState
-		});
-	}, [
-		persistKey,
-		current,
-		collapsedState
-	]);
 	function changeSize(next) {
 		const clamped = clamp(next);
-		setAnimateCollapse(false);
 		if (clamped === latestSizeRef.current) return false;
 		if (size === void 0) setInternalSize(clamped);
 		latestSizeRef.current = clamped;
+		setAnimate(false);
 		onSizeChange?.(clamped);
 		return true;
 	}
 	function setCollapsed(next) {
-		if (next === collapsedState) return;
+		if (!collapsible || next === collapsedState) return;
 		if (collapsed === void 0) setInternalCollapsed(next);
 		onCollapseChange?.(next);
 	}
 	const [isDragging, setIsDragging] = useState(false);
 	const draggingRef = useRef(false);
 	const movedRef = useRef(false);
+	const collapsedByDragRef = useRef(false);
 	function percentFromPoint(clientX, clientY) {
 		const el = containerRef.current;
 		if (!el) return latestSizeRef.current;
@@ -17004,28 +17825,22 @@ function Splitter({ ref, label, orientation = "horizontal", primary, secondary, 
 		if (rect.height === 0) return latestSizeRef.current;
 		return (clientY - rect.top) / rect.height * 100;
 	}
-	function stopDrag(target, pointerId) {
-		draggingRef.current = false;
-		movedRef.current = false;
-		setIsDragging(false);
-		if (target.hasPointerCapture(pointerId)) target.releasePointerCapture(pointerId);
-	}
 	const handlePointerDown = (event) => {
+		setAnimate(false);
 		if (effectiveCollapsed || event.button !== 0) return;
 		event.preventDefault();
 		event.currentTarget.focus();
 		event.currentTarget.setPointerCapture(event.pointerId);
 		draggingRef.current = true;
 		movedRef.current = false;
+		collapsedByDragRef.current = false;
 		setIsDragging(true);
-		setAnimateCollapse(false);
 	};
 	const handlePointerMove = (event) => {
-		if (!draggingRef.current) return;
+		if (!draggingRef.current || collapsedByDragRef.current) return;
 		const raw = percentFromPoint(event.clientX, event.clientY);
 		if (collapsible && raw < minSize) {
-			stopDrag(event.currentTarget, event.pointerId);
-			onSizeChangeEnd?.(latestSizeRef.current);
+			collapsedByDragRef.current = true;
 			setCollapsed(true);
 			return;
 		}
@@ -17033,9 +17848,14 @@ function Splitter({ ref, label, orientation = "horizontal", primary, secondary, 
 	};
 	const handlePointerEnd = (event) => {
 		if (!draggingRef.current) return;
-		const moved = movedRef.current;
-		stopDrag(event.currentTarget, event.pointerId);
-		if (moved) onSizeChangeEnd?.(latestSizeRef.current);
+		const wasDrag = movedRef.current || collapsedByDragRef.current;
+		draggingRef.current = false;
+		movedRef.current = false;
+		collapsedByDragRef.current = false;
+		setIsDragging(false);
+		const target = event.currentTarget;
+		if (target.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId);
+		if (wasDrag) onSizeChangeEnd?.(latestSizeRef.current);
 	};
 	const handleSeparatorKeyDown = (event) => {
 		if (event.key === "Enter") {
@@ -17073,24 +17893,24 @@ function Splitter({ ref, label, orientation = "horizontal", primary, secondary, 
 	const handleContainerKeyDown = (event) => {
 		onKeyDown?.(event);
 		if (event.defaultPrevented || event.key !== "F6" || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
+		const separatorTrack = separatorRef.current?.parentElement ?? null;
 		const regions = [
 			effectiveCollapsed ? null : primaryRef.current,
-			separatorRef.current,
+			separatorTrack,
 			secondaryRef.current
 		];
 		const active = document.activeElement;
-		const separatorTrack = separatorRef.current?.parentElement ?? null;
-		let from = regions.findIndex((region, index) => index === 1 ? separatorTrack?.contains(active) ?? false : region?.contains(active) ?? false);
+		let from = regions.findIndex((region) => region?.contains(active) ?? false);
 		if (from === -1) from = regions.length - 1;
 		for (let offset = 1; offset <= regions.length; offset += 1) {
 			const region = regions[(from + offset) % regions.length];
 			if (!region) continue;
 			event.preventDefault();
-			if (region === separatorRef.current) {
-				region.focus();
+			if (region === separatorTrack) {
+				separatorRef.current?.focus();
 				return;
 			}
-			const target = Array.from(region.querySelectorAll(FOCUSABLE_SELECTOR)).find((el) => el.tabIndex >= 0 && !el.closest("[inert]") && el.getAttribute("aria-disabled") !== "true");
+			const target = firstFocusable(region);
 			if (target) target.focus();
 			else {
 				if (region.getAttribute("tabindex") !== "-1") region.setAttribute("tabindex", "-1");
@@ -17121,7 +17941,7 @@ function Splitter({ ref, label, orientation = "horizontal", primary, secondary, 
 		isStacked ? "ds-splitter--stacked" : null,
 		effectiveCollapsed ? "ds-splitter--collapsed" : null,
 		isDragging ? "ds-splitter--dragging" : null,
-		animateCollapse ? "ds-splitter--animate" : null
+		animate ? "ds-splitter--animate" : null
 	].filter(Boolean).join(" ");
 	const pointsAtPrimary = !effectiveCollapsed;
 	const collapseIcon = orientation === "vertical" ? pointsAtPrimary ? "chevron-up" : "chevron-down" : pointsAtPrimary !== isRtl ? "chevron-left" : "chevron-right";
@@ -17139,6 +17959,7 @@ function Splitter({ ref, label, orientation = "horizontal", primary, secondary, 
 				id: primaryId,
 				"data-part": "primaryPane",
 				className: "ds-splitter__primary-pane",
+				inert: effectiveCollapsed,
 				children: primary
 			}),
 			isStacked ? null : /* @__PURE__ */ jsxs("div", {
@@ -17207,6 +18028,7 @@ const COPY = {
 /** Bindings Feed owns as hooks on its root. The rest forward to composed children's `overrides`. */
 const ROOT_HOOK = {
 	itemGap: "--ds-feed-item-gap",
+	articleRadius: "--ds-feed-article-radius",
 	newItemsOffset: "--ds-feed-new-items-offset",
 	newItemsLayer: "--ds-feed-new-items-layer",
 	loadingInset: "--ds-feed-loading-inset",
@@ -17311,7 +18133,7 @@ function prefersReducedMotion() {
 * When to use:
 * Use a Feed for a stream of similar, time-ordered items whose total is unknown or large: activity, notifications, comments, posts, audit events. Each item is a Card with a heading and a time. Use `newItemsCount` with `onShowNew` for live streams rather than inserting items while the reader is looking; use `onItemVisible` to mark things read.
 */
-const Feed = function Feed({ ref, label, items, hasMore = false, loading = false, newItemsCount, headingLevel = "3", endMessage, onLoadMore, onShowNew, onItemVisible, overrides, onKeyDown, ...rest }) {
+function Feed({ ref, label, items, hasMore = false, loading = false, newItemsCount, headingLevel = "3", endMessage, onLoadMore, onShowNew, onItemVisible, overrides, onKeyDown, ...rest }) {
 	const baseId = `ds-feed${useId()}`;
 	const rootRef = useRef(null);
 	const feedRef = useRef(null);
@@ -17323,7 +18145,7 @@ const Feed = function Feed({ ref, label, items, hasMore = false, loading = false
 	useEffect(() => {
 		if (warnEmptyLabel && !warnedLabelRef.current) {
 			warnedLabelRef.current = true;
-			console.warn("Feed: `label` is the accessible name of the feed and must not be empty.");
+			console.warn("Feed: label is the accessible name of the feed and must not be empty.");
 		}
 	}, [warnEmptyLabel]);
 	const onLoadMoreRef = useRef(onLoadMore);
@@ -17355,8 +18177,8 @@ const Feed = function Feed({ ref, label, items, hasMore = false, loading = false
 	}, [idsKey, firstId]);
 	const firedEmptyLoadRef = useRef(false);
 	useEffect(() => {
-		if (total > 0) firedEmptyLoadRef.current = false;
-		else if (hasMore && !loading && !firedEmptyLoadRef.current) {
+		if (total > 0 || loading) firedEmptyLoadRef.current = false;
+		else if (hasMore && !firedEmptyLoadRef.current) {
 			firedEmptyLoadRef.current = true;
 			onLoadMoreRef.current?.();
 		}
@@ -17472,112 +18294,110 @@ const Feed = function Feed({ ref, label, items, hasMore = false, loading = false
 					onClick: handleShowNew
 				}) : null
 			}),
-			/* @__PURE__ */ jsxs("div", {
+			/* @__PURE__ */ jsx("div", {
 				ref: feedRef,
 				className: "ds-feed__items",
 				"data-part": "container",
 				role: isFeed ? "feed" : void 0,
 				"aria-label": isFeed ? label : void 0,
 				"aria-busy": isFeed ? loading : void 0,
-				children: [
-					items.map((item, index) => {
-						const timestampId = `${baseId}-${index}-time`;
-						const absolute = formatAbsolute(item.timestamp);
-						return /* @__PURE__ */ jsx("div", {
-							className: item.unread ? "ds-feed__item ds-feed__item--unread" : "ds-feed__item",
-							"data-part": "article",
-							children: /* @__PURE__ */ jsx(Card, {
-								ref: (node) => {
-									if (node) articleRefs.current.set(item.id, node);
-									else articleRefs.current.delete(item.id);
-								},
-								focusable: true,
-								heading: item.heading,
-								headingLevel,
-								inset: "md",
-								overrides: resolved.card,
-								role: "article",
-								"aria-describedby": timestampId,
-								"aria-posinset": index + 1,
-								"aria-setsize": totalKnown ? total : -1,
-								footer: item.actions !== void 0 && item.actions !== null ? /* @__PURE__ */ jsx("div", {
-									className: "ds-feed__part",
-									"data-part": "articleActions",
-									children: /* @__PURE__ */ jsx(Stack, {
-										direction: "horizontal",
-										gap: "tight",
-										children: item.actions
-									})
-								}) : void 0,
-								children: /* @__PURE__ */ jsx("div", {
-									className: "ds-feed__part",
-									"data-part": "articleBody",
-									children: /* @__PURE__ */ jsxs(Stack, {
-										gap: "tight",
-										overrides: resolved.articleBody,
-										children: [
-											item.unread ? /* @__PURE__ */ jsx("span", {
-												className: "ds-feed__visually-hidden",
-												children: COPY.unread
-											}) : null,
-											/* @__PURE__ */ jsx(Text, {
-												element: "span",
-												tone: "muted",
-												size: "xs",
-												overrides: resolved.timestamp,
-												children: /* @__PURE__ */ jsx("time", {
-													id: timestampId,
-													"data-part": "timestamp",
-													dateTime: item.timestamp,
-													title: absolute,
-													children: formatRelative(item.timestamp, now)
-												})
-											}),
-											totalKnown ? /* @__PURE__ */ jsx("span", {
-												className: "ds-feed__visually-hidden",
-												children: COPY.position.replace("{index}", String(index + 1)).replace("{total}", String(total))
-											}) : null,
-											item.content
-										]
-									})
+				children: items.map((item, index) => {
+					const timestampId = `${baseId}-${index}-time`;
+					const absolute = formatAbsolute(item.timestamp);
+					return /* @__PURE__ */ jsx("div", {
+						className: item.unread ? "ds-feed__item ds-feed__item--unread" : "ds-feed__item",
+						"data-part": "article",
+						children: /* @__PURE__ */ jsx(Card, {
+							ref: (node) => {
+								if (node) articleRefs.current.set(item.id, node);
+								else articleRefs.current.delete(item.id);
+							},
+							focusable: true,
+							heading: item.heading,
+							headingLevel,
+							inset: "md",
+							overrides: resolved.card,
+							role: "article",
+							"aria-describedby": timestampId,
+							"aria-posinset": index + 1,
+							"aria-setsize": totalKnown ? total : -1,
+							footer: item.actions !== void 0 && item.actions !== null ? /* @__PURE__ */ jsx("div", {
+								className: "ds-feed__part",
+								"data-part": "articleActions",
+								children: /* @__PURE__ */ jsx(Stack, {
+									direction: "horizontal",
+									gap: "tight",
+									children: item.actions
+								})
+							}) : void 0,
+							children: /* @__PURE__ */ jsx("div", {
+								className: "ds-feed__part",
+								"data-part": "articleBody",
+								children: /* @__PURE__ */ jsxs(Stack, {
+									gap: "tight",
+									overrides: resolved.articleBody,
+									children: [
+										item.unread ? /* @__PURE__ */ jsx("span", {
+											className: "ds-feed__visually-hidden",
+											children: COPY.unread
+										}) : null,
+										/* @__PURE__ */ jsx(Text, {
+											element: "span",
+											tone: "muted",
+											size: "xs",
+											overrides: resolved.timestamp,
+											children: /* @__PURE__ */ jsx("time", {
+												id: timestampId,
+												className: "ds-feed__timestamp",
+												"data-part": "timestamp",
+												dateTime: item.timestamp,
+												title: absolute,
+												children: formatRelative(item.timestamp, now)
+											})
+										}),
+										totalKnown ? /* @__PURE__ */ jsx("span", {
+											className: "ds-feed__visually-hidden",
+											children: COPY.position.replace("{index}", String(index + 1)).replace("{total}", String(total))
+										}) : null,
+										item.content
+									]
 								})
 							})
-						}, item.id);
-					}),
-					!loading && total === 0 && !hasMore ? /* @__PURE__ */ jsx("div", {
-						className: "ds-feed__empty-state",
-						"data-part": "emptyState",
-						children: /* @__PURE__ */ jsx(Text, {
-							tone: "muted",
-							size: "sm",
-							overrides: resolved.emptyState,
-							children: COPY.empty
 						})
-					}) : null,
-					!loading && total > 0 && !hasMore ? /* @__PURE__ */ jsx("div", {
-						className: "ds-feed__end-message",
-						"data-part": "endMessage",
-						children: /* @__PURE__ */ jsx(Text, {
-							tone: "muted",
-							size: "sm",
-							overrides: resolved.endMessage,
-							children: endMessage ?? COPY.end
-						})
-					}) : null
-				]
+					}, item.id);
+				})
 			}),
 			loading ? /* @__PURE__ */ jsx("div", {
 				className: "ds-feed__loading",
 				"data-part": "loadingIndicator",
 				children: /* @__PURE__ */ jsx(ProgressBar, {
 					label: COPY.loading,
-					hideLabel: true
+					hideLabel: true,
+					announce: "none"
 				})
-			}) : null
+			}) : total === 0 ? hasMore ? null : /* @__PURE__ */ jsx("div", {
+				className: "ds-feed__empty-state",
+				"data-part": "emptyState",
+				children: /* @__PURE__ */ jsx(Text, {
+					tone: "muted",
+					size: "sm",
+					overrides: resolved.emptyState,
+					children: COPY.empty
+				})
+			}) : hasMore ? null : /* @__PURE__ */ jsx("div", {
+				className: "ds-feed__end-message",
+				"data-part": "endMessage",
+				children: /* @__PURE__ */ jsx(Text, {
+					tone: "muted",
+					size: "sm",
+					overrides: resolved.endMessage,
+					children: endMessage ?? COPY.end
+				})
+			})
 		]
 	});
-};
+}
 //#endregion
-export { Accordion, ActionSheet, Alert, AlertDialog, BottomSheet, Box, Breadcrumb, Button, Card, Carousel, CarouselSlide, Checkbox, Combobox, Container, DataGrid, DatePicker, Dialog, Disclosure, Divider, Feed, Fieldset, FocusScope, Form, FormContext, Heading, Icon, Input, Landmark, Link, Listbox, Menu, Meter, NumberInput, Popover, ProgressBar, RadioGroup, Search, SegmentedControl, Select, SidePanel, Slider, Splitter, Stack, Stepper, Switch, TabPanel, Table, Tabs, Text, Toast, ToastRegion, Toolbar, ToolbarGroup, Tooltip, Tree, TreeGrid, dismiss, toast, useFormContext };
+export { Accordion, ActionSheet, Alert, AlertDialog, BottomSheet, Box, Breadcrumb, Button, Card, Carousel, CarouselSlide, Checkbox, Combobox, Container, DataGrid, DatePicker, Dialog, Disclosure, Divider, Feed, Fieldset, FocusScope, Form, FormContext, Heading, Icon, Input, LISTBOX_COPY, Landmark, Link, Listbox, Menu, Meter, NumberInput, Popover, ProgressBar, RadioGroup, Search, SegmentedControl, Select, SidePanel, Slider, Splitter, Stack, Stepper, Switch, TabPanel, Table, Tabs, Text, Toast, ToastRegion, Toolbar, ToolbarGroup, Tooltip, Tree, TreeGrid, dismiss, toast, useFormContext };
 
 //# sourceMappingURL=index.js.map

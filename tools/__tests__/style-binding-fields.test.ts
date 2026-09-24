@@ -295,7 +295,7 @@ describe('generated/components.json after the migration', () => {
   test('the fields the migration added, counted', () => {
     const count = (field: string): number => bindings.filter(([, , s]) => s[field] !== undefined).length;
     expect({ part: count('part'), state: count('state'), by: count('by'), values: count('values'), computed: count('computed') })
-      .toEqual({ part: 632, state: 19, by: 11, values: 11, computed: 6 });
+      .toEqual({ part: 633, state: 19, by: 11, values: 11, computed: 6 });
     expect(bindings.filter(([, , s]) => s.state !== undefined).map(([, name]) => name)).toEqual([
       'ActionSheet.itemHover', 'Button.backgroundHover', 'Button.inverseBackgroundHover', 'Button.inverseHoverOpacity',
       'Card.hoverBackground', 'Checkbox.pressedOverlay', 'DataGrid.rowHover', 'DatePicker.dayHover',

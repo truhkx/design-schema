@@ -88,3 +88,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - BottomSheet: the hidden-heading placement with no header ('at the start of the column') is specified only in prose. The existing code renders the visually hidden heading as an absolutely positioned wrapper inside the surface.
 - BottomSheet: jsdom has no `showModal()`, `PointerEvent` or theme stylesheet, so the drag, the wide presentation and the `Escape` reopen path cannot be proven in the unit gate. The spec acknowledges this only for the drag.
 - BottomSheet: the spec gives `contentCap` and the `half` and `full` heights as `90dvh`, `50dvh` and `100dvh - gutter` but not whether `dvh` needs a fallback for browsers without it. The existing code uses `dvh` alone.
+
+## 2026-09-24 00:13 — round 1
+
+- BottomSheet: `overlay.dismiss` lists `swipe` while the event reasons list `drag`; the guidance says swipe is reported as `drag`, which I followed, but the schema itself leaves the mapping implicit.
+- BottomSheet: the spec says `inset` reaches the body Box as `overrides.paddingInline`, but also says the stylesheet delivers it and the override is passed only when the caller set it. I did both: a `--ds-box-padding-inline` rule in the sheet CSS, plus a forward when `overrides.inset` is set. The rule reaches into Box's custom property, which sits close to restyling the child.
+- BottomSheet: the spec gives no interpretation of `layer` for the non-top-layer fallback beyond `z-index`. I applied `z-index` on the dialog root, which has no effect inside the top layer.

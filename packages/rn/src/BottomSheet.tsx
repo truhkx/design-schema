@@ -23,8 +23,6 @@ import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Box } from './Box';
 import { Button } from './Button';
-import { Dialog } from './Dialog';
-import type { DialogOverridableBinding } from './Dialog';
 import { FocusScope } from './FocusScope';
 import { Heading } from './Heading';
 import { Icon } from './Icon';
@@ -58,7 +56,7 @@ export interface BottomSheetProps {
   open: boolean;
   /** The sheet's title and accessible name. May be visually hidden with `hideHeading` when the content is self-explanatory (a share sheet). */
   heading: string;
-  /** Keep the heading for assistive technology but do not render it (forwarded to Dialog above the breakpoint). The accessible name is required regardless. */
+  /** Keep the heading for assistive technology but do not render it. The accessible name is required regardless. */
   hideHeading?: boolean | undefined;
   /** The body. Scrolls inside the sheet when taller than the sheet's height. */
   children: React.ReactNode;
@@ -89,22 +87,6 @@ const CONSTANTS = {
   dismissVelocity: 1.5, // literal-ok: schema constant dismissVelocity (px/ms)
 } as const;
 
-// Overrides whose binding shares a name with a Dialog binding, forwarded in the wide
-// presentation; the handle bindings, `headerPaddingTop` and `handleGap` have no effect
-// there, and a locked binding is never forwarded.
-const DIALOG_BINDINGS: readonly (BottomSheetOverridableBinding & DialogOverridableBinding)[] = [
-  'scrim',
-  'shadow',
-  'radius',
-  'inset',
-  'partGap',
-  'headerGap',
-  'footerGap',
-  'layer',
-  'enter',
-  'exit',
-];
-
 interface DragSample {
   dy: number;
   time: number;
@@ -115,7 +97,9 @@ interface DragSample {
  * page visible behind a scrim, and goes away with a swipe, a tap outside, the close
  * button or Escape.
  *
- * At window width <= `layout.maxWidth.prose`: a native `Modal` (`transparent`,
+ * One presentation at every window width — never a Dialog: the surface is `width: '100%'`
+ * capped at `layout.maxWidth.prose` (locked) with `alignSelf: 'center'`, so a tablet gets
+ * a capped, centred sheet at the bottom. A native `Modal` (`transparent`,
  * `animationType="none"` — the component animates itself, `statusBarTranslucent`) holding
  * a scrim `Pressable` and, inside a `FocusScope` (`trapped`, `autoFocus="first"`,
  * `restoreFocus`), an `Animated.View` surface anchored to the bottom with `role="dialog"`,
@@ -149,9 +133,7 @@ interface DragSample {
  * The closeButton part is a View sized to `size.target.comfortable`; the Button's own
  * hitSlop already extends its hit area to that target, so the wrapper's extra area
  * activates it. Scroll lock has no native meaning — a Modal has no page behind it to
- * scroll — and is not implemented. Above the breakpoint the component renders
- * `Dialog size="md"` alone, with no wrapping View, so the root testID there is Dialog's.
- * The Modal is its own window, so no ref is exposed; callers ref their trigger.
+ * scroll — and is not implemented. The Modal is its own window, so no ref is exposed; callers ref their trigger.
  */
 export function BottomSheet({
   open,
@@ -168,7 +150,7 @@ export function BottomSheet({
 }: BottomSheetProps): React.JSX.Element | null {
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
-  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+  const { height: windowHeight } = useWindowDimensions();
 
   // Kept mounted while the exit animation runs; derived during render so the Modal content exists on the open commit.
   const [mounted, setMounted] = React.useState(open);
@@ -204,8 +186,6 @@ export function BottomSheet({
   // The schema constant `dragSlop`; a constant, not an overridable binding.
   const dragSlop = t.space1;
 
-  // The breakpoint is the theme token, not a per-instance value: exactly the token width is still a sheet.
-  const isWide = windowWidth > t.layoutMaxWidthProse;
   // The handle only exists where dragging does something, so there is no affordance that lies.
   const canDrag = dragToDismiss && dismissible;
 
@@ -345,36 +325,6 @@ export function BottomSheet({
     });
   }
 
-  if (isWide) {
-    // Rendered alone, with no wrapping View: a View around a Modal would take layout space
-    // in the caller's tree. Only overrides the caller set are forwarded, so Dialog keeps
-    // its own tokens — `layer.dialog` included — otherwise.
-    let dialogOverrides: Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined;
-    if (overrides) {
-      dialogOverrides = {};
-      for (const binding of DIALOG_BINDINGS) {
-        if (overrides[binding] !== undefined) {
-          dialogOverrides[binding] = overrides[binding];
-        }
-      }
-    }
-    return (
-      <Dialog
-        open={open}
-        heading={heading}
-        hideHeading={hideHeading}
-        size="md"
-        dismissible={dismissible}
-        footer={footer}
-        // Dialog's reasons map one to one; `drag` has no Dialog source, so it never fires here.
-        onClose={onClose}
-        overrides={dialogOverrides}
-      >
-        {children}
-      </Dialog>
-    );
-  }
-
   if (!mounted) {
     return null;
   }
@@ -426,7 +376,10 @@ export function BottomSheet({
   const maxSheetHeight = height === 'content' ? windowHeight * CONSTANTS.contentCap : undefined;
 
   const surfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
+    // One presentation at every width: full width on a phone, capped and centred beyond the token.
     width: '100%',
+    maxWidth: t.layoutMaxWidthProse,
+    alignSelf: 'center',
     height: sheetHeight[height],
     maxHeight: maxSheetHeight,
     borderTopLeftRadius: radius,

@@ -97,28 +97,25 @@
     }
   },
   "BottomSheet.rn": {
-    "hash": "c248acfda34a18ed",
-    "lastAttemptHash": "c248acfda34a18ed",
-    "generatedAt": "2026-09-23T23:10:55+00:00",
+    "hash": "e24af284cf45842e",
+    "lastAttemptHash": "e24af284cf45842e",
+    "generatedAt": "2026-09-24T04:15:15+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2756,
+    "costUsd": 0.3517,
     "files": [
-      "packages/rn/src/BottomSheet.stories.tsx",
       "packages/rn/src/BottomSheet.test.tsx",
-      "packages/rn/src/BottomSheet.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/BottomSheet.tsx"
     ],
-    "gaps": 4,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true,
-      "axe": true
+      "modules": true
     }
   },
   "Box.rn": {

@@ -98,3 +98,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - BottomSheet: the spec does not say where `BottomSheet.header`, `BottomSheet.heading`, `BottomSheet.handle` and `BottomSheet.scrim` testIDs go on rn; I put them on the header View, a wrapper View around Heading, the handle View and the scrim Pressable.
 - BottomSheet: `drag` and the derived scenarios cannot be exercised in Jest, because PanResponder gestures are not driven by testing-library; the spec says nothing about how to test the drag on rn, so no drag test exists.
 - BottomSheet: the spec gives no rn-specific reduced-motion behaviour for the drag release beyond 'instant'; I set the offset to 0 without animation.
+
+## 2026-09-24 00:15 — round 1
+
+- BottomSheet: the `layer` binding (layer.sheet) is described as applying to the 'rn anchor view', but it does not say whether that is the Modal's inner anchor View or the surface. I applied it as zIndex on the anchor View that holds the surface.
+- BottomSheet: `layout.gutter` for `full` is given as window height minus the gutter, but the spec does not say whether that gutter is the safe-area top inset on iOS (core has no API for it). I used the token only, and on Android the larger of the token and StatusBar.currentHeight.
+- BottomSheet: `half` (window height x 0.5) and the token-free `contentCap` share the literal-ok convention, but the spec does not say whether the 0.5 for `half` is a constant. It is not in `constants`, so I marked it `literal-ok` inline.
+- BottomSheet: the body part is a testID wrapper View around the Box inside the ScrollView, because Box writes its own testID. The spec says the body Box takes its data-part directly on web but is silent on how rn exposes `BottomSheet.body`.
+- BottomSheet: `header`, `handle`, `heading` and `footer` testIDs are used as `BottomSheet.<part>` by the anatomy convention. The rn notes name only `BottomSheet.closeButton` and the root `BottomSheet` explicitly, and `BottomSheet.scrim` is inferred.
+- BottomSheet: the `Keyboard` story is not required by the doc's rn notes, because the Tab-wrap rules are delegated to FocusScope on native. The spec says a component with a `keyboard` block ships one, so the two rules are in tension. I left the existing story as is.

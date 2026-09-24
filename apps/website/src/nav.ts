@@ -54,6 +54,33 @@ export function componentRoute(slug: string): string {
   return `/docs/components/${slug}`;
 }
 
+/**
+ * A route with its trailing slashes removed, `/` left as it is. Astro serves
+ * `/docs/components/button/` for a route written `/docs/components/button`, so every comparison
+ * between a link's href and the page's pathname goes through this on *both* sides.
+ */
+export function normalizeRoute(route: string): string {
+  return route.replace(/\/+$/, '') || '/';
+}
+
+/** The link goes to exactly this page: the docs sidebar's current entry. */
+export function isCurrentPage(href: string, current: string | undefined): boolean {
+  return current !== undefined && normalizeRoute(href) === normalizeRoute(current);
+}
+
+/**
+ * The page is this link's page or somewhere under it: the header's current section, so Docs is
+ * current on every `/docs/*` route and About on `/about`. The home route is never a section — every
+ * route is under it — and an absolute URL (GitHub) is never current.
+ */
+export function isCurrentSection(href: string, current: string | undefined): boolean {
+  if (current === undefined || !href.startsWith('/')) return false;
+  const section = normalizeRoute(href);
+  const page = normalizeRoute(current);
+  if (section === '/') return false;
+  return page === section || page.startsWith(`${section}/`);
+}
+
 /** The whole nav file, shape-checked. */
 export function siteNav(): Nav {
   const parsed = navJson as Partial<Nav>;

@@ -5,8 +5,8 @@
 #   docker build -f apps/website/Dockerfile -t design-schema-website .      # from the repo root
 #   docker run --rm -p 8080:80 design-schema-website                        # http://localhost:8080
 #
-# Or `docker compose -f apps/website/compose.yaml up -d --build`, which also keeps Caddy's certificates
-# in a volume. Hosting on a real domain with automatic HTTPS: see apps/website/README.md, "Self-hosting".
+# Or `docker compose -f apps/website/compose.yaml up -d --build website`. Serving it publicly, through a
+# Cloudflare Tunnel or with Caddy's own HTTPS: see apps/website/README.md, "Self-hosting".
 #
 # The build stage follows .github/workflows-pending/deploy-pages.yml step for step, because every input
 # the site reads is gitignored build output and has to be derived here rather than copied from a
@@ -61,7 +61,10 @@ RUN node --import tsx tools/parse.ts \
  && node --import tsx tools/keyboard_tests.ts
 # 5. Parse the schema, extract the examples, write the nav (and validate every doc and contrast pair).
 RUN pnpm check
-# 6. The site, then the deploy gate: every promised route must be a real, non-empty page.
+# 6. The site, then the deploy gate: every promised route must be a real, non-empty page. PUBLIC_SITE_URL
+#    (compose passes it from apps/website/.env) becomes Astro's `site`; declared here so a change to it only
+#    rebuilds from this step. Empty builds exactly as without it.
+ARG PUBLIC_SITE_URL=
 RUN pnpm --filter website build \
  && pnpm site:routes
 
@@ -72,5 +75,5 @@ COPY apps/website/Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /repo/apps/website/dist /srv
 
 # 80 for HTTP (and the ACME challenge), 443 for HTTPS, 443/udp for HTTP/3. Only 80 is used until
-# SITE_ADDRESS names a domain.
+# SITE_ADDRESS names a domain, which is how it runs behind the Cloudflare Tunnel.
 EXPOSE 80 443 443/udp

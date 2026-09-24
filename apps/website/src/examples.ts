@@ -64,13 +64,17 @@ export interface Example {
    * `trigger` when the page supplies the opener: the component is an overlay a consumer opens from
    * elsewhere (Dialog, BottomSheet), so the story's `open: true` is Storybook's fixture. The island
    * renders a button that opens it, and wires `ExampleSet.harnessEvents` to close it.
+   *
+   * `state` when the component has its own opener (Menu, Select, Disclosure): the island adds no
+   * button, and holds the `open` a story pins, wired to the same events, so the component's trigger
+   * and dismissals work. See ./components/Examples.tsx, `StateHarness`.
    */
-  harness: 'trigger' | null;
+  harness: 'trigger' | 'state' | null;
   /** Whether the tab is in the always-visible strip rather than behind "More examples". */
   primary: boolean;
 }
 
-/** The events a `trigger` harness wires. Mirrors tools/docs_examples.ts. */
+/** The events a harness wires. Mirrors tools/docs_examples.ts. */
 export interface HarnessEvents {
   /** Request-phase events — the consumer is asked to close, and the harness does. */
   close: string[];
@@ -86,8 +90,14 @@ export interface ExampleSet {
    * generation writes `packages/swiftui/Sources/DesignSchema/<Name>.swift` and `pnpm docs:examples` runs.
    */
   platforms: Record<Platform, boolean>;
-  /** The events a `trigger` harness wires, or `null` for a component that needs none. */
+  /** The events a harness wires, or `null` for a component that has none. */
   harnessEvents: HarnessEvents | null;
+  /**
+   * Whether a harnessed component's open state floats above the page (Menu, Popover, Tooltip, and
+   * Select, Combobox and DatePicker's popups) — read off the schema by tools/docs_examples.ts. A
+   * floating `state` example starts closed; an inline one (Disclosure) starts where its story says.
+   */
+  floating: boolean;
   examples: Example[];
 }
 
@@ -124,6 +134,7 @@ export function examplesFor(name: string): ExampleSet {
       layout: 'scenarios',
       platforms: { react: false, lit: false, rn: false, swift: false },
       harnessEvents: null,
+      floating: false,
       examples: [],
     }
   );

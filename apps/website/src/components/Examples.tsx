@@ -155,6 +155,30 @@ function TriggerHarness({ component, props, label, events }: TriggerHarnessProps
   );
 }
 
+interface StateHarnessProps {
+  component: ElementType;
+  /** The example's props, already decoded; their `open` is the first value (see `exampleProps`). */
+  props: Record<string, unknown>;
+  events: HarnessEvents;
+}
+
+/**
+ * A component with an opener of its own (Menu's trigger, Select's field, Disclosure's summary) whose
+ * story pins `open`: the page adds no button, it only holds the state — what a consumer of a
+ * controlled component writes — so the trigger and the component's own dismissals work.
+ *
+ * The first value is `exampleProps`'s: closed for anything floating, so nothing opens over the page on
+ * load and selecting a tab never moves focus into a panel; the story's own for an inline component
+ * (Disclosure "Controlled" starts expanded). Wired exactly as `TriggerHarness` is.
+ */
+function StateHarness({ component, props, events }: StateHarnessProps) {
+  const [open, setOpen] = useState(props['open'] === true);
+  const wiring: Record<string, (next?: unknown) => void> = {};
+  for (const event of events.close) wiring[event] = () => setOpen(false);
+  for (const event of events.change) wiring[event] = (next) => setOpen(next === true);
+  return createElement(component, { ...props, ...wiring, open });
+}
+
 export interface ExamplesProps {
   /** The component the examples render — a `@design-schema/react` export name. */
   name: string;
@@ -172,8 +196,13 @@ export interface ExamplesProps {
    * opens from its own trigger, rendered closed so the visitor opens it. From ../example-probe.ts.
    */
   withoutOpen: boolean[];
-  /** The events a `trigger` harness wires, from `generated/examples/<Name>.json`, or `null` when it needs none. */
+  /** The events a harness wires, from `generated/examples/<Name>.json`, or `null` when it has none. */
   harnessEvents: HarnessEvents | null;
+  /**
+   * Whether the component's open state floats above the page, from the same file: a `state`
+   * example then starts closed, and its card leaves room for the panel to open in (examples.css).
+   */
+  floating: boolean;
   /**
    * The component's required props, from its schema. An example that lost one of those — or its
    * `children` — to `{ $unsupported }` is shown as source rather than as a shell; see `contentGaps`.
@@ -294,6 +323,7 @@ export function Examples({
   renderable,
   withoutOpen,
   harnessEvents,
+  floating,
   required,
   pageHeading,
   headingLevel,
@@ -347,9 +377,10 @@ export function Examples({
   );
 
   /**
-   * The story rendered live, or the note that says why its source stands in. A harness example is
+   * The story rendered live, or the note that says why its source stands in. A `trigger` example is
    * the story behind a button that opens it (`TriggerHarness`) — decorated or not, since the harness
-   * is the frame an overlay needs and a decorator's background or width means nothing to one.
+   * is the frame an overlay needs and a decorator's background or width means nothing to one. A
+   * `state` example is the story with its `open` held by the page (`StateHarness`).
    */
   const live = (index: number, inset: 'md' | 'lg') => {
     const example = examples[index] as ExampleView;
@@ -359,20 +390,33 @@ export function Examples({
     // example's content is. A harness example is exempt — what it renders first is its button.
     const gaps = example.harness === 'trigger' ? [] : contentGaps(example.args, required);
     if (gaps.length > 0) return contentNote(gaps);
-    const props = exampleProps(example, withoutOpen[index] === true);
-    const harnessed = example.harness === 'trigger' && harnessEvents !== null;
+    const props = exampleProps(example, withoutOpen[index] === true, { floating, harnessEvents });
+    const triggered = example.harness === 'trigger' && harnessEvents !== null;
+    // Only a story that pins `open` needs its state held; the rest are uncontrolled already.
+    const held = example.harness === 'state' && harnessEvents !== null && props['open'] !== undefined;
+    const rendered = triggered ? (
+      <TriggerHarness
+        component={Component as ElementType}
+        props={props}
+        label={COPY.harnessLabels[name] ?? COPY.harnessLabel(name)}
+        events={harnessEvents}
+      />
+    ) : held ? (
+      <StateHarness component={Component as ElementType} props={props} events={harnessEvents} />
+    ) : (
+      (EXAMPLE_CONTEXT[name]?.(Component as ElementType, props) ?? createElement(Component as ElementType, props))
+    );
     return (
       <ExampleBoundary fallback={sourceOnly}>
-        <Card inset={inset} data-example={example.storyId} data-example-harness={harnessed ? example.harness : undefined}>
-          {harnessed ? (
-            <TriggerHarness
-              component={Component as ElementType}
-              props={props}
-              label={COPY.harnessLabels[name] ?? COPY.harnessLabel(name)}
-              events={harnessEvents}
-            />
+        <Card inset={inset} data-example={example.storyId} data-example-harness={triggered || held ? example.harness : undefined}>
+          {floating && example.harness === 'state' ? (
+            /* A panel anchored to its own trigger opens inside this card's room, not over the tab row
+               above it or the code below — examples.css sizes it, more above for a `top` placement. */
+            <div className="ds-example-stage" data-placement={typeof props['placement'] === 'string' ? props['placement'] : undefined}>
+              {rendered}
+            </div>
           ) : (
-            (EXAMPLE_CONTEXT[name]?.(Component as ElementType, props) ?? createElement(Component as ElementType, props))
+            rendered
           )}
         </Card>
       </ExampleBoundary>

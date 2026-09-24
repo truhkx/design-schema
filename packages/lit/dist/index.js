@@ -390,7 +390,7 @@ new class extends _identity {
 			}
 		}
 		render() {
-			const glyph = GLYPHS[this.name];
+			const glyph = Object.hasOwn(GLYPHS, this.name) ? GLYPHS[this.name] : void 0;
 			if (import.meta.env.DEV && glyph === void 0) console.warn(`Icon: unknown name "${String(this.name)}"`);
 			const labelled = this.label !== void 0 && this.label !== "";
 			return html`
@@ -398,6 +398,12 @@ new class extends _identity {
         part="glyph"
         data-part="glyph"
         viewBox="0 0 16 16"
+        width="1em"
+        height="1em"
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
         focusable="false"
         role=${ifDefined(labelled ? "img" : void 0)}
         aria-label=${ifDefined(labelled ? this.label : void 0)}
@@ -497,6 +503,8 @@ let _init_disabled$14;
 let _init_extra_disabled$14;
 let _init_keepMounted$2;
 let _init_extra_keepMounted$2;
+let _init_fullWidth;
+let _init_extra_fullWidth;
 let _init_headingLevel$5;
 let _init_extra_headingLevel$5;
 let _init_overrides$47;
@@ -564,7 +572,7 @@ let _DsDisclosure;
 new class extends _identity {
 	static [class DsDisclosure extends LitElement {
 		static {
-			({e: [_init_summary, _init_extra_summary, _init_open$12, _init_extra_open$12, _init_defaultOpen, _init_extra_defaultOpen, _init_disabled$14, _init_extra_disabled$14, _init_keepMounted$2, _init_extra_keepMounted$2, _init_headingLevel$5, _init_extra_headingLevel$5, _init_overrides$47, _init_extra_overrides$47, _init_internalOpen$6, _init_extra_internalOpen$6, _init_triggerEl$2, _init_extra_triggerEl$2], c: [_DsDisclosure, _initClass$49]} = applyDecs2311(this, [customElement("ds-disclosure")], [
+			({e: [_init_summary, _init_extra_summary, _init_open$12, _init_extra_open$12, _init_defaultOpen, _init_extra_defaultOpen, _init_disabled$14, _init_extra_disabled$14, _init_keepMounted$2, _init_extra_keepMounted$2, _init_fullWidth, _init_extra_fullWidth, _init_headingLevel$5, _init_extra_headingLevel$5, _init_overrides$47, _init_extra_overrides$47, _init_internalOpen$6, _init_extra_internalOpen$6, _init_triggerEl$2, _init_extra_triggerEl$2], c: [_DsDisclosure, _initClass$49]} = applyDecs2311(this, [customElement("ds-disclosure")], [
 				[
 					property(),
 					1,
@@ -602,6 +610,15 @@ new class extends _identity {
 					}),
 					1,
 					"keepMounted"
+				],
+				[
+					property({
+						type: Boolean,
+						reflect: true,
+						attribute: "full-width"
+					}),
+					1,
+					"fullWidth"
 				],
 				[
 					property({ attribute: "heading-level" }),
@@ -659,43 +676,51 @@ new class extends _identity {
 			this.#D = v;
 		}
 		#E = (_init_extra_disabled$14(this), _init_keepMounted$2(this, false));
-		/** When set, the trigger is wrapped in a heading of this level so it appears in the outline. */
+		/** The trigger spans the width of its row, so the whole row is the hit area. */
 		get keepMounted() {
 			return this.#E;
 		}
 		set keepMounted(v) {
 			this.#E = v;
 		}
-		#F = (_init_extra_keepMounted$2(this), _init_headingLevel$5(this));
-		/** Per-instance style overrides: `{ triggerRadius: 'radius.sm' }`. Locked bindings are ignored. */
-		get headingLevel() {
+		#F = (_init_extra_keepMounted$2(this), _init_fullWidth(this, false));
+		/** When set, the trigger is wrapped in a heading of this level so it appears in the outline. */
+		get fullWidth() {
 			return this.#F;
 		}
-		set headingLevel(v) {
+		set fullWidth(v) {
 			this.#F = v;
 		}
-		#G = (_init_extra_headingLevel$5(this), _init_overrides$47(this));
-		/** Uncontrolled open state (seeded from `defaultOpen`). */
-		get overrides() {
+		#G = (_init_extra_fullWidth(this), _init_headingLevel$5(this));
+		/** Per-instance style overrides: `{ triggerRadius: 'radius.sm' }`. Locked bindings are ignored. */
+		get headingLevel() {
 			return this.#G;
 		}
-		set overrides(v) {
+		set headingLevel(v) {
 			this.#G = v;
 		}
-		#H = (_init_extra_overrides$47(this), _init_internalOpen$6(this, false));
-		get internalOpen() {
+		#H = (_init_extra_headingLevel$5(this), _init_overrides$47(this));
+		/** Uncontrolled open state (seeded from `defaultOpen`). */
+		get overrides() {
 			return this.#H;
 		}
-		set internalOpen(v) {
+		set overrides(v) {
 			this.#H = v;
 		}
-		#I = (_init_extra_internalOpen$6(this), _init_triggerEl$2(this));
-		/** The resolved state rendered at the last update; `undefined` before the first. */
-		get triggerEl() {
+		#I = (_init_extra_overrides$47(this), _init_internalOpen$6(this, false));
+		get internalOpen() {
 			return this.#I;
 		}
-		set triggerEl(v) {
+		set internalOpen(v) {
 			this.#I = v;
+		}
+		#J = (_init_extra_internalOpen$6(this), _init_triggerEl$2(this));
+		/** The resolved state rendered at the last update; `undefined` before the first. */
+		get triggerEl() {
+			return this.#J;
+		}
+		set triggerEl(v) {
+			this.#J = v;
 		}
 		renderedOpen = void _init_extra_triggerEl$2(this);
 		/** The state the last user activation asked for, so the resulting prop change is not re-reported as `controlled`. */
@@ -830,6 +855,14 @@ new class extends _identity {
       --ds-disclosure-panel-padding-inline: var(--space-sm);
       --ds-disclosure-disabled-opacity: var(--opacity-disabled);
       --ds-disclosure-transition: var(--motion-duration-base);
+      /* Locked: no overrides entry, but the hook stays themeable from page CSS. */
+      --ds-disclosure-trigger-color: var(--color-foreground);
+      --ds-disclosure-trigger-background-hover: var(--color-background-subtle);
+      --ds-disclosure-icon: var(--color-foreground-muted);
+      --ds-disclosure-panel-color: var(--color-foreground);
+      --ds-disclosure-focus-ring: var(--color-border-focus);
+      --ds-disclosure-focus-ring-width: var(--border-width-focus);
+      --ds-disclosure-min-target: var(--size-target-min);
     }
 
     :host([hidden]) {
@@ -848,8 +881,8 @@ new class extends _identity {
       display: inline-flex;
       align-items: center;
       gap: var(--ds-disclosure-trigger-gap);
-      min-inline-size: var(--size-target-min);
-      min-block-size: var(--size-target-min);
+      min-inline-size: var(--ds-disclosure-min-target);
+      min-block-size: var(--ds-disclosure-min-target);
       margin: 0;
       padding-block: var(--ds-disclosure-trigger-padding-block);
       padding-inline: var(--ds-disclosure-trigger-padding-inline);
@@ -860,21 +893,28 @@ new class extends _identity {
       font-weight: var(--ds-disclosure-trigger-font-weight);
       line-height: var(--ds-disclosure-trigger-line-height);
       text-align: start;
-      color: var(--color-foreground);
+      color: var(--ds-disclosure-trigger-color);
+      /* At rest the trigger has no fill; no token expresses its absence. */
       background: transparent;
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
     }
 
-    /* triggerBackgroundHover: pointer hover and pressed state */
+    /* fullWidth: the whole row is the hit area; icon and summary stay at the start. */
+    :host([full-width]) [data-part='trigger'] {
+      display: flex;
+      inline-size: 100%;
+    }
+
+    /* triggerBackgroundHover: pointer hover and pressed state, instant, suppressed while disabled */
     :host(:not([disabled])) [data-part='trigger']:is(:hover, :active) {
-      background: var(--color-background-subtle);
+      background: var(--ds-disclosure-trigger-background-hover);
     }
 
     [data-part='trigger']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-disclosure-focus-ring-width) solid var(--ds-disclosure-focus-ring);
+      outline-offset: var(--ds-disclosure-focus-ring-width);
     }
 
     :host([disabled]) [data-part='trigger'] {
@@ -887,7 +927,7 @@ new class extends _identity {
     [data-part='triggerIcon'] {
       display: inline-flex;
       flex: none;
-      color: var(--color-foreground-muted);
+      color: var(--ds-disclosure-icon);
       transition: transform var(--ds-disclosure-transition) var(--motion-easing-standard);
     }
     [aria-expanded='true'] [data-part='triggerIcon'] {
@@ -909,7 +949,7 @@ new class extends _identity {
     [data-part='panel'] {
       padding-block: var(--ds-disclosure-panel-padding-block);
       padding-inline: var(--ds-disclosure-panel-padding-inline);
-      color: var(--color-foreground);
+      color: var(--ds-disclosure-panel-color);
     }
     [data-part='panel'][hidden] {
       display: none;
@@ -1067,7 +1107,8 @@ new class extends _identity {
 		/**
 		* Semantic color. `onAction` is only for text placed on an action background.
 		* There is no `inverse` tone: an inverse surface re-scopes `--color-foreground`
-		* on its own container, which the `default` tone resolves through.
+		* on its own container, which the `default` tone resolves through. The colour
+		* is locked: not in `overrides`, but it keeps its `--ds-text-color` hook for page CSS.
 		*/
 		get weight() {
 			return this.#B;
@@ -1194,6 +1235,7 @@ new class extends _identity {
       --ds-text-font-size: var(--font-size-md);
       --ds-text-font-weight: var(--font-weight-regular);
       --ds-text-line-height: var(--font-line-height-normal);
+      --ds-text-color: var(--color-foreground);
     }
 
     /* A span-like host gets out of the way so the inline run joins its surrounding line. */
@@ -1208,8 +1250,8 @@ new class extends _identity {
       font-size: var(--ds-text-font-size);
       font-weight: var(--ds-text-font-weight);
       line-height: var(--ds-text-line-height);
-      /* color: color.foreground.{tone}, locked — read straight from the token, no hook */
-      color: var(--color-foreground);
+      /* color: locked (absent from overrides) but it keeps its hook; the tone rules below set it. */
+      color: var(--ds-text-color);
       text-align: start;
     }
 
@@ -1251,21 +1293,21 @@ new class extends _identity {
       --ds-text-font-weight: var(--font-weight-bold);
     }
 
-    /* color: color.foreground.{tone} ("default" is the bare color.foreground token) */
-    :host([tone='default']) .text {
-      color: var(--color-foreground);
+    /* color: color.foreground.{tone}, locked; the hook's default is set per tone ("default" is the bare color.foreground token) */
+    :host([tone='default']) {
+      --ds-text-color: var(--color-foreground);
     }
-    :host([tone='strong']) .text {
-      color: var(--color-foreground-strong);
+    :host([tone='strong']) {
+      --ds-text-color: var(--color-foreground-strong);
     }
-    :host([tone='muted']) .text {
-      color: var(--color-foreground-muted);
+    :host([tone='muted']) {
+      --ds-text-color: var(--color-foreground-muted);
     }
-    :host([tone='danger']) .text {
-      color: var(--color-foreground-danger);
+    :host([tone='danger']) {
+      --ds-text-color: var(--color-foreground-danger);
     }
-    :host([tone='onAction']) .text {
-      color: var(--color-foreground-on-action);
+    :host([tone='onAction']) {
+      --ds-text-color: var(--color-foreground-on-action);
     }
 
     :host([align='start']) .text {
@@ -1541,6 +1583,9 @@ new class extends _identity {
       --ds-divider-color: var(--color-border);
       --ds-divider-thickness: var(--border-width-thin);
       --ds-divider-label-gap: var(--layout-gap-normal);
+      /* locked labelColor: declared for the CSS escape hatch and the naming codemod; the label's colour
+         comes from the composed Text's tone="muted" (same token), so no rule restyles the child */
+      --ds-divider-label-color: var(--color-foreground-muted);
       display: flex;
       box-sizing: border-box;
       block-size: var(--ds-divider-thickness);
@@ -1863,15 +1908,14 @@ new class extends _identity {
 		}
 		willUpdate(changed) {
 			if (!this.hasUpdated) {
-				this.warnExclusive(this.defaultValue);
+				this.warnExclusive(this.value !== void 0 ? this.value : this.defaultValue);
 				this.internalOpenIds = this.toOpenIds(this.defaultValue);
 				this.renderedIds = this.openIds;
-			} else if (changed.has("value")) {
-				this.warnExclusive(this.value);
-				this.reportControlledChange();
-			} else if (changed.has("exclusive")) {
-				if (this.exclusive && this.internalOpenIds.length > 1) this.internalOpenIds = this.internalOpenIds.slice(0, 1);
-				this.renderedIds = this.openIds;
+			} else {
+				if (changed.has("exclusive") && this.exclusive && this.internalOpenIds.length > 1) this.internalOpenIds = this.internalOpenIds.slice(0, 1);
+				if (changed.has("value") || changed.has("exclusive")) this.warnExclusive(this.value);
+				if (changed.has("value")) this.reportControlledChange();
+				else if (changed.has("exclusive")) this.renderedIds = this.openIds;
 			}
 			if (changed.has("overrides")) this.applyOverrides();
 		}
@@ -1895,6 +1939,7 @@ new class extends _identity {
         id=${item.id}
         summary=${item.summary}
         heading-level=${this.headingLevel}
+        full-width
         ?disabled=${item.disabled === true}
         ?keep-mounted=${this.keepMounted}
         .open=${this.openIds.includes(item.id)}
@@ -2033,8 +2078,13 @@ new class extends _identity {
 			const ids = value === void 0 || value === "" ? [] : Array.isArray(value) ? value : [value];
 			return this.exclusive ? ids.slice(0, 1) : [...ids];
 		}
+		/** Id lists already warned about, so each distinct list warns once. */
+		warnedIdLists = /* @__PURE__ */ new Set();
 		warnExclusive(value) {
 			if (!import.meta.env.DEV || !this.exclusive || !Array.isArray(value) || value.length < 2) return;
+			const key = JSON.stringify(value);
+			if (this.warnedIdLists.has(key)) return;
+			this.warnedIdLists.add(key);
 			console.warn(`ds-accordion: \`exclusive\` opens one section; opened "${value[0]}" and ignored ${value.slice(1).map((id) => `"${id}"`).join(", ")}.`, this);
 		}
 		warnedMissingId = false;
@@ -2069,6 +2119,10 @@ new class extends _identity {
       --ds-accordion-font-family: var(--font-family-body);
       --ds-accordion-trigger-font-size: var(--font-size-md);
       --ds-accordion-trigger-font-weight: var(--font-weight-medium);
+      /* Locked: no overrides entry, but the hook stays themeable from page CSS. Disclosure applies them. */
+      --ds-accordion-min-target: var(--size-target-min);
+      --ds-accordion-focus-ring: var(--color-border-focus);
+      --ds-accordion-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -2082,13 +2136,17 @@ new class extends _identity {
       gap: var(--ds-accordion-item-gap);
     }
 
-    /* triggerPaddingBlock / fontFamily / triggerFontSize / triggerFontWeight reach each Disclosure through its documented hooks */
+    /* triggerPaddingBlock / fontFamily / triggerFontSize / triggerFontWeight (and the locked hooks) reach each Disclosure through its documented hooks */
     [data-part='list'] > ds-disclosure,
     ::slotted(ds-disclosure) {
       --ds-disclosure-trigger-padding-block: var(--ds-accordion-trigger-padding-block);
       --ds-disclosure-trigger-font-family: var(--ds-accordion-font-family);
       --ds-disclosure-trigger-font-size: var(--ds-accordion-trigger-font-size);
       --ds-disclosure-trigger-font-weight: var(--ds-accordion-trigger-font-weight);
+      /* minTarget / focusRing / focusRingWidth (locked): the Disclosure trigger draws them from its own hooks */
+      --ds-disclosure-min-target: var(--ds-accordion-min-target);
+      --ds-disclosure-focus-ring: var(--ds-accordion-focus-ring);
+      --ds-disclosure-focus-ring-width: var(--ds-accordion-focus-ring-width);
     }
 
     /* divider / dividerWidth reach each Divider through its documented hooks */
@@ -2124,6 +2182,8 @@ let _init_type$1;
 let _init_extra_type$1;
 let _init_expanded$3;
 let _init_extra_expanded$3;
+let _init_haspopup;
+let _init_extra_haspopup;
 let _init_disabled$13;
 let _init_extra_disabled$13;
 let _init_iconOnly$2;
@@ -2142,14 +2202,15 @@ let _init_overrides$43;
 let _init_extra_overrides$43;
 let _init_hostTabIndex;
 let _init_extra_hostTabIndex;
+/** ARIA's own `aria-haspopup` values, without `true` (which means `menu`). */
 /** Detail carried by the `press` CustomEvent (none). */
 /** Detail carried by the `track` CustomEvent. */
 /**
 * Overridable style hooks; see the `overrides` property. The accessibility-bearing
 * bindings — `background`, `backgroundHover`, `foreground`, `focusRing`,
-* `focusRingWidth`, `inverseForeground`, `inverseFocusRing`, `minTarget` and
-* `spinnerStroke` — are locked and excluded; of those, only `spinnerStroke` keeps
-* a CSS hook (`--ds-button-spinner-stroke`), the rest read their tokens directly.
+* `focusRingWidth`, `focusRingOffset`, `inverseForeground`, `inverseFocusRing`,
+* `minTarget` and `spinnerStroke` — are locked and excluded, but each keeps its
+* `--ds-button-*` hook on `:host`, so page CSS can still re-theme it.
 */
 const HOOKS$43 = {
 	iconGap: "--ds-button-icon-gap",
@@ -2209,7 +2270,7 @@ let _DsButton;
 new class extends _identity {
 	static [class DsButton extends LitElement {
 		static {
-			({e: [_init_label$26, _init_extra_label$26, _init_variant, _init_extra_variant, _init_size$10, _init_extra_size$10, _init_type$1, _init_extra_type$1, _init_expanded$3, _init_extra_expanded$3, _init_disabled$13, _init_extra_disabled$13, _init_iconOnly$2, _init_extra_iconOnly$2, _init_loading$7, _init_extra_loading$7, _init_inverse, _init_extra_inverse, _init_accessibleName, _init_extra_accessibleName, _init_overflowLabel, _init_extra_overflowLabel, _init_track, _init_extra_track, _init_overrides$43, _init_extra_overrides$43, _init_hostTabIndex, _init_extra_hostTabIndex], c: [_DsButton, _initClass$45]} = applyDecs2311(this, [customElement("ds-button")], [
+			({e: [_init_label$26, _init_extra_label$26, _init_variant, _init_extra_variant, _init_size$10, _init_extra_size$10, _init_type$1, _init_extra_type$1, _init_expanded$3, _init_extra_expanded$3, _init_haspopup, _init_extra_haspopup, _init_disabled$13, _init_extra_disabled$13, _init_iconOnly$2, _init_extra_iconOnly$2, _init_loading$7, _init_extra_loading$7, _init_inverse, _init_extra_inverse, _init_accessibleName, _init_extra_accessibleName, _init_overflowLabel, _init_extra_overflowLabel, _init_track, _init_extra_track, _init_overrides$43, _init_extra_overrides$43, _init_hostTabIndex, _init_extra_hostTabIndex], c: [_DsButton, _initClass$45]} = applyDecs2311(this, [customElement("ds-button")], [
 				[
 					property({ type: String }),
 					1,
@@ -2243,6 +2304,11 @@ new class extends _identity {
 					property({ attribute: false }),
 					1,
 					"expanded"
+				],
+				[
+					property({ attribute: false }),
+					1,
+					"haspopup"
 				],
 				[
 					property({
@@ -2352,8 +2418,10 @@ new class extends _identity {
 		}
 		#E = (_init_extra_type$1(this), _init_expanded$3(this));
 		/**
-		* Prevents activation. The button stays in the tab order and is announced as
-		* disabled. Inside a disabled `ds-form` the form sets this for you.
+		* Set by a parent whose popup the button opens (Menu's trigger takes `menu`):
+		* rendered as `aria-haspopup` on the inner button, the element that carries the
+		* button role. A JS property only, like `expanded`; `undefined` (the default)
+		* means the button opens nothing and no `aria-haspopup` is written.
 		*/
 		get expanded() {
 			return this.#E;
@@ -2361,19 +2429,30 @@ new class extends _identity {
 		set expanded(v) {
 			this.#E = v;
 		}
-		#F = (_init_extra_expanded$3(this), _init_disabled$13(this, false));
+		#F = (_init_extra_expanded$3(this), _init_haspopup(this));
+		/**
+		* Prevents activation. The button stays in the tab order and is announced as
+		* disabled. Inside a disabled `ds-form` the form sets this for you.
+		*/
+		get haspopup() {
+			return this.#F;
+		}
+		set haspopup(v) {
+			this.#F = v;
+		}
+		#G = (_init_extra_haspopup(this), _init_disabled$13(this, false));
 		/**
 		* Hides the visible label and shows only `leadingIcon`; `trailingIcon` is not
 		* rendered either. `label` is still required and becomes the accessible name.
 		* Padding becomes equal on all sides (`space.sm`).
 		*/
 		get disabled() {
-			return this.#F;
+			return this.#G;
 		}
 		set disabled(v) {
-			this.#F = v;
+			this.#G = v;
 		}
-		#G = (_init_extra_disabled$13(this), _init_iconOnly$2(this, false));
+		#H = (_init_extra_disabled$13(this), _init_iconOnly$2(this, false));
 		/**
 		* Shows a ring spinner in the leading icon position, hides `trailingIcon`,
 		* keeps the label visible and the height unchanged, and blocks repeat
@@ -2381,63 +2460,63 @@ new class extends _identity {
 		* and iconGap widen the button. `copy.loading` is the description.
 		*/
 		get iconOnly() {
-			return this.#G;
+			return this.#H;
 		}
 		set iconOnly(v) {
-			this.#G = v;
+			this.#H = v;
 		}
-		#H = (_init_extra_iconOnly$2(this), _init_loading$7(this, false));
+		#I = (_init_extra_iconOnly$2(this), _init_loading$7(this, false));
 		/**
 		* The button sits on an inverse surface (Toast, Tooltip-like panels): `ghost`
 		* text and hover change, and the focus ring uses the inverse focus token for
 		* every variant.
 		*/
 		get loading() {
-			return this.#H;
+			return this.#I;
 		}
 		set loading(v) {
-			this.#H = v;
+			this.#I = v;
 		}
-		#I = (_init_extra_loading$7(this), _init_inverse(this, false));
+		#J = (_init_extra_loading$7(this), _init_inverse(this, false));
 		/**
 		* Overrides the accessible name when it must say more than the visible label
 		* ("Sort by Amount, ascending" on a header that shows "Amount"). The name must
 		* contain the visible label (WCAG 2.5.3 label-in-name). Maps to `aria-label`.
 		*/
 		get inverse() {
-			return this.#I;
+			return this.#J;
 		}
 		set inverse(v) {
-			this.#I = v;
+			this.#J = v;
 		}
-		#J = (_init_extra_inverse(this), _init_accessibleName(this));
+		#K = (_init_extra_inverse(this), _init_accessibleName(this));
 		/**
 		* Text used for this button when a Toolbar collapses it into its overflow
 		* Menu. Read by Toolbar from the host attribute; the button never renders it.
 		*/
 		get accessibleName() {
-			return this.#J;
-		}
-		set accessibleName(v) {
-			this.#J = v;
-		}
-		#K = (_init_extra_accessibleName(this), _init_overflowLabel(this));
-		/** An event name sent to analytics when the button is pressed. Omit for no tracking. */
-		get overflowLabel() {
 			return this.#K;
 		}
-		set overflowLabel(v) {
+		set accessibleName(v) {
 			this.#K = v;
 		}
-		#L = (_init_extra_overflowLabel(this), _init_track(this));
-		/** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
-		get track() {
+		#L = (_init_extra_accessibleName(this), _init_overflowLabel(this));
+		/** An event name sent to analytics when the button is pressed. Omit for no tracking. */
+		get overflowLabel() {
 			return this.#L;
 		}
-		set track(v) {
+		set overflowLabel(v) {
 			this.#L = v;
 		}
-		#M = (_init_extra_track(this), _init_overrides$43(this));
+		#M = (_init_extra_overflowLabel(this), _init_track(this));
+		/** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
+		get track() {
+			return this.#M;
+		}
+		set track(v) {
+			this.#M = v;
+		}
+		#N = (_init_extra_track(this), _init_overrides$43(this));
 		/**
 		* Mirror of the host's own `tabindex`, forwarded to the inner `<button>`.
 		*
@@ -2454,21 +2533,21 @@ new class extends _identity {
 		* tabbable exactly as before, and `disabled` still leaves it in the tab order.
 		*/
 		get overrides() {
-			return this.#M;
+			return this.#N;
 		}
 		set overrides(v) {
-			this.#M = v;
+			this.#N = v;
 		}
-		#N = (_init_extra_overrides$43(this), _init_hostTabIndex(this, null));
+		#O = (_init_extra_overrides$43(this), _init_hostTabIndex(this, null));
 		/**
 		* Watches the host's `tabindex` only. The callback writes to the inner button
 		* through `hostTabIndex`, never back to the host, so it cannot re-enter.
 		*/
 		get hostTabIndex() {
-			return this.#N;
+			return this.#O;
 		}
 		set hostTabIndex(v) {
-			this.#N = v;
+			this.#O = v;
 		}
 		tabIndexObserver = (_init_extra_hostTabIndex(this), new MutationObserver(() => this.readHostTabIndex()));
 		connectedCallback() {
@@ -2497,6 +2576,7 @@ new class extends _identity {
         aria-disabled=${ifDefined(this.disabled ? "true" : void 0)}
         aria-busy=${ifDefined(this.loading ? "true" : void 0)}
         aria-expanded=${ifDefined(this.expanded === void 0 ? void 0 : String(this.expanded))}
+        aria-haspopup=${ifDefined(this.haspopup)}
         aria-label=${ifDefined(this.accessibleName ?? (this.iconOnly ? this.label : void 0))}
         aria-describedby=${ifDefined(this.loading ? "loading-description" : void 0)}
         @click=${this.handleClick}
@@ -2551,14 +2631,24 @@ new class extends _identity {
 	};
 	styles = css`
     /*
-     * Hooks for the overridable bindings, plus spinnerStroke (locked, but its
-     * binding keeps the hook). The other locked bindings (background,
-     * backgroundHover, foreground, focusRing, focusRingWidth, inverseForeground,
-     * inverseFocusRing, minTarget) have no hook: their rules read the token.
+     * One hook per binding, locked ones included: locked closes the overrides
+     * API, not the CSS escape hatch, so every rule reads a --ds-button-* hook.
+     * background, backgroundHover and foreground are set per variant below.
      */
     :host {
       display: inline-flex;
       vertical-align: middle;
+      --ds-button-background: var(--color-action-primary-background);
+      --ds-button-background-hover: var(--color-action-primary-background-hover);
+      --ds-button-foreground: var(--color-action-primary-foreground);
+      --ds-button-focus-ring: var(--color-border-focus);
+      --ds-button-focus-ring-width: var(--border-width-focus);
+      --ds-button-focus-ring-offset: var(--border-width-focus);
+      --ds-button-inverse-foreground: var(--color-inverse-link);
+      --ds-button-inverse-focus-ring: var(--color-inverse-focus);
+      --ds-button-min-target: var(--size-target-min);
+      /* touchTarget is an rn/swiftui binding: declared for the hook contract, read by no Lit rule */
+      --ds-button-touch-target: var(--size-target-comfortable);
       --ds-button-icon-gap: var(--space-2);
       --ds-button-padding-inline: var(--space-md);
       --ds-button-padding-block: var(--space-sm);
@@ -2588,8 +2678,8 @@ new class extends _identity {
       justify-content: center;
       inline-size: 100%;
       /* minTarget: locked; the floor at every size (WCAG 2.5.8) */
-      min-inline-size: var(--size-target-min);
-      min-block-size: var(--size-target-min);
+      min-inline-size: var(--ds-button-min-target);
+      min-block-size: var(--ds-button-min-target);
       margin: 0;
       padding-block: var(--ds-button-padding-block);
       padding-inline: var(--ds-button-padding-inline);
@@ -2598,8 +2688,8 @@ new class extends _identity {
       font-family: var(--ds-button-font-family);
       font-size: var(--ds-button-font-size);
       font-weight: var(--ds-button-font-weight);
-      color: var(--color-action-primary-foreground);
-      background: var(--color-action-primary-background);
+      color: var(--ds-button-foreground);
+      background: var(--ds-button-background);
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
@@ -2639,45 +2729,35 @@ new class extends _identity {
       padding-inline: var(--ds-button-padding-block);
     }
 
-    /* background / foreground: color.action.{variant}.*, locked (no hook) */
-    :host([variant='primary']) [data-part='container'] {
-      color: var(--color-action-primary-foreground);
-      background: var(--color-action-primary-background);
+    /* background / backgroundHover / foreground: color.action.{variant}.*, locked; hooks set per variant */
+    :host([variant='primary']) {
+      --ds-button-background: var(--color-action-primary-background);
+      --ds-button-background-hover: var(--color-action-primary-background-hover);
+      --ds-button-foreground: var(--color-action-primary-foreground);
     }
-    :host([variant='secondary']) [data-part='container'] {
-      color: var(--color-action-secondary-foreground);
-      background: var(--color-action-secondary-background);
+    :host([variant='secondary']) {
+      --ds-button-background: var(--color-action-secondary-background);
+      --ds-button-background-hover: var(--color-action-secondary-background-hover);
+      --ds-button-foreground: var(--color-action-secondary-foreground);
     }
-    :host([variant='ghost']) [data-part='container'] {
-      color: var(--color-action-ghost-foreground);
-      background: var(--color-action-ghost-background);
+    :host([variant='ghost']) {
+      --ds-button-background: var(--color-action-ghost-background);
+      --ds-button-background-hover: var(--color-action-ghost-background-hover);
+      --ds-button-foreground: var(--color-action-ghost-foreground);
     }
-    :host([variant='danger']) [data-part='container'] {
-      color: var(--color-action-danger-foreground);
-      background: var(--color-action-danger-background);
+    :host([variant='danger']) {
+      --ds-button-background: var(--color-action-danger-background);
+      --ds-button-background-hover: var(--color-action-danger-background-hover);
+      --ds-button-foreground: var(--color-action-danger-foreground);
     }
 
     /*
-     * backgroundHover: color.action.{variant}.backgroundHover on pointer hover and
-     * pressed, locked. Suppressed by selector while the button is not accepting a
-     * press -- :not([aria-disabled='true']):not([aria-busy='true']), the same
-     * suppression web writes, read off the inner button's own state attributes.
+     * backgroundHover on pointer hover and pressed. Suppressed by selector while
+     * the button is not accepting a press -- :not([aria-disabled='true']):not([aria-busy='true']),
+     * the same suppression web writes, read off the inner button's own state attributes.
      */
-    :host([variant='primary'])
-      [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
-      background: var(--color-action-primary-background-hover);
-    }
-    :host([variant='secondary'])
-      [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
-      background: var(--color-action-secondary-background-hover);
-    }
-    :host([variant='ghost'])
-      [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
-      background: var(--color-action-ghost-background-hover);
-    }
-    :host([variant='danger'])
-      [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
-      background: var(--color-action-danger-background-hover);
+    [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
+      background: var(--ds-button-background-hover);
     }
 
     /*
@@ -2687,7 +2767,7 @@ new class extends _identity {
      * keep their own fills.
      */
     :host([inverse][variant='ghost']) [data-part='container'] {
-      color: var(--color-inverse-link);
+      color: var(--ds-button-inverse-foreground);
     }
     :host([inverse][variant='ghost'])
       [data-part='container']:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
@@ -2698,15 +2778,18 @@ new class extends _identity {
       );
     }
 
-    /* focusRing / focusRingWidth: color.border.focus at border.width.focus, locked */
+    /*
+     * focusRing / focusRingWidth / focusRingOffset: color.border.focus at
+     * border.width.focus, offset by the same token so the ring clears the fill; locked
+     */
     [data-part='container']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-button-focus-ring-width) solid var(--ds-button-focus-ring);
+      outline-offset: var(--ds-button-focus-ring-offset);
     }
 
     /* inverseFocusRing: the ring must read against the inverse surface, for every variant */
     :host([inverse]) [data-part='container']:focus-visible {
-      outline-color: var(--color-inverse-focus);
+      outline-color: var(--ds-button-inverse-focus-ring);
     }
 
     /* disabledOpacity: the whole button; colors are unchanged so the contrast math still holds */
@@ -2778,7 +2861,10 @@ let _init_align$2;
 let _init_extra_align$2;
 let _init_overrides$42;
 let _init_extra_overrides$42;
-/** Overridable style hooks; see the `overrides` property. `color` is locked and excluded. */
+/**
+* Overridable style hooks; see the `overrides` property. `color` is locked and excluded here,
+* though it keeps its `--ds-heading-color` hook on `:host`.
+*/
 const HOOKS$42 = {
 	fontFamily: "--ds-heading-font-family",
 	fontWeight: "--ds-heading-font-weight",
@@ -2951,6 +3037,9 @@ new class extends _identity {
       --ds-heading-font-size: var(--font-size-3xl);
       --ds-heading-line-height: var(--font-line-height-tight);
       --ds-heading-margin-block-end: var(--space-sm);
+      /* color: color.foreground.strong, locked (AAA against color.background) — out of
+         the overrides type, but keeps its hook so page CSS and the naming codemod reach it */
+      --ds-heading-color: var(--color-foreground-strong);
     }
 
     :host([hidden]) {
@@ -2966,8 +3055,7 @@ new class extends _identity {
       font-weight: var(--ds-heading-font-weight);
       font-size: var(--ds-heading-font-size);
       line-height: var(--ds-heading-line-height);
-      /* color: color.foreground.strong, locked (AAA against color.background) — no override hook */
-      color: var(--color-foreground-strong);
+      color: var(--ds-heading-color);
       text-align: start;
     }
 
@@ -3556,6 +3644,17 @@ new class extends _identity {
 	styles = css`
     :host {
       display: block;
+      /* Locked bindings: out of the overrides API, still themeable from page CSS. */
+      --ds-input-background: var(--color-background);
+      --ds-input-foreground: var(--color-foreground);
+      --ds-input-placeholder: var(--color-foreground-muted);
+      --ds-input-border: var(--color-border-strong);
+      --ds-input-border-focus: var(--color-border-focus);
+      --ds-input-min-target: var(--size-target-comfortable);
+      --ds-input-min-target-sm: var(--size-target-min);
+      --ds-input-focus-ring-width: var(--border-width-focus);
+      --ds-input-error-text: var(--color-foreground-danger);
+      --ds-input-description-text: var(--color-foreground-muted);
       --ds-input-border-invalid: var(--color-border-danger);
       --ds-input-border-width: var(--border-width-thin);
       --ds-input-radius: var(--radius-md);
@@ -3618,25 +3717,31 @@ new class extends _identity {
       font-size: var(--ds-input-font-size);
       font-weight: var(--ds-input-label-weight);
       line-height: var(--ds-input-line-height);
-      color: var(--color-foreground);
+      color: var(--ds-input-foreground);
     }
+
+    /*
+     * errorText / descriptionText are realised by the composed Text's danger /
+     * muted tones; a hook here could not reach the child without restyling it,
+     * so neither has a --ds-input-* hook.
+     */
 
     [data-part='field'] {
       box-sizing: border-box;
       display: block;
       inline-size: 100%;
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-input-min-target);
       margin: 0;
       padding-block: var(--ds-input-padding-block);
       padding-inline: var(--ds-input-padding-inline);
-      border: var(--ds-input-border-width) solid var(--color-border-strong);
+      border: var(--ds-input-border-width) solid var(--ds-input-border);
       border-radius: var(--ds-input-radius);
       outline: none;
       font-family: var(--ds-input-font-family);
       font-size: var(--ds-input-font-size);
       line-height: var(--ds-input-line-height);
-      color: var(--color-foreground);
-      background: var(--color-background);
+      color: var(--ds-input-foreground);
+      background: var(--ds-input-background);
       appearance: none;
       -webkit-appearance: none;
       /* transition: border color only; border width and padding change instantly */
@@ -3651,12 +3756,12 @@ new class extends _identity {
 
     /* minTargetSm: the field height floor at size sm */
     :host([size='sm']) [data-part='field'] {
-      min-block-size: var(--size-target-min);
+      min-block-size: var(--ds-input-min-target-sm);
     }
 
     /* placeholder: color.foreground.muted */
     [data-part='field']::placeholder {
-      color: var(--color-foreground-muted);
+      color: var(--ds-input-placeholder);
       opacity: 1;
     }
 
@@ -3668,10 +3773,10 @@ new class extends _identity {
      * locked width leaves the padding alone rather than eating into it.
      */
     [data-part='field']:focus-visible {
-      border-color: var(--color-border-focus);
-      border-width: var(--border-width-focus);
-      padding-inline: calc(var(--ds-input-padding-inline) - max(0px, var(--border-width-focus) - var(--ds-input-border-width)));
-      padding-block: calc(var(--ds-input-padding-block) - max(0px, var(--border-width-focus) - var(--ds-input-border-width)));
+      border-color: var(--ds-input-border-focus);
+      border-width: var(--ds-input-focus-ring-width);
+      padding-inline: calc(var(--ds-input-padding-inline) - max(0px, var(--ds-input-focus-ring-width) - var(--ds-input-border-width)));
+      padding-block: calc(var(--ds-input-padding-block) - max(0px, var(--ds-input-focus-ring-width) - var(--ds-input-border-width)));
     }
 
     /* borderInvalid: the danger color stays while focused; only the width changes */
@@ -3701,6 +3806,8 @@ let _init_tone$5;
 let _init_extra_tone$5;
 let _init_download;
 let _init_extra_download;
+let _init_current$1;
+let _init_extra_current$1;
 let _init_overrides$40;
 let _init_extra_overrides$40;
 /** copy.externalSuffix — appended to the accessible name of an external link. */
@@ -3737,7 +3844,7 @@ let _DsLink;
 new class extends _identity {
 	static [class DsLink extends LitElement {
 		static {
-			({e: [_init_href, _init_extra_href, _init_label$24, _init_extra_label$24, _init_external, _init_extra_external, _init_tone$5, _init_extra_tone$5, _init_download, _init_extra_download, _init_overrides$40, _init_extra_overrides$40], c: [_DsLink, _initClass$42]} = applyDecs2311(this, [customElement("ds-link")], [
+			({e: [_init_href, _init_extra_href, _init_label$24, _init_extra_label$24, _init_external, _init_extra_external, _init_tone$5, _init_extra_tone$5, _init_download, _init_extra_download, _init_current$1, _init_extra_current$1, _init_overrides$40, _init_extra_overrides$40], c: [_DsLink, _initClass$42]} = applyDecs2311(this, [customElement("ds-link")], [
 				[
 					property(),
 					1,
@@ -3773,6 +3880,14 @@ new class extends _identity {
 					"download"
 				],
 				[
+					property({
+						type: Boolean,
+						reflect: true
+					}),
+					1,
+					"current"
+				],
+				[
 					property({ attribute: false }),
 					1,
 					"overrides"
@@ -3783,7 +3898,7 @@ new class extends _identity {
 			super(...args);
 			_init_extra_overrides$40(this);
 		}
-		/** The destination. A URL. */
+		/** The destination. A URL. An empty href still renders `href=""`, so the anchor stays a link in the focus order. */
 		#A = _init_href(this, "");
 		/** The link text. Also the accessible name. Says where the link goes, not "click here". */
 		get href() {
@@ -3817,19 +3932,31 @@ new class extends _identity {
 			this.#D = v;
 		}
 		#E = (_init_extra_tone$5(this), _init_download(this, false));
-		/** Per-instance style overrides: `{ underlineOffset: 'space.2' }`. Locked bindings are ignored. */
+		/**
+		* The link points at the page the user is on, in a navigation list: `aria-current="page"` on the anchor.
+		* The link keeps its colours and underline; how a navigation marks it visually is that container's to say.
+		* False writes nothing.
+		*/
 		get download() {
 			return this.#E;
 		}
 		set download(v) {
 			this.#E = v;
 		}
-		#F = (_init_extra_download(this), _init_overrides$40(this));
-		get overrides() {
+		#F = (_init_extra_download(this), _init_current$1(this, false));
+		/** Per-instance style overrides: `{ underlineOffset: 'space.2' }`. Locked bindings are ignored. */
+		get current() {
 			return this.#F;
 		}
-		set overrides(v) {
+		set current(v) {
 			this.#F = v;
+		}
+		#G = (_init_extra_current$1(this), _init_overrides$40(this));
+		get overrides() {
+			return this.#G;
+		}
+		set overrides(v) {
+			this.#G = v;
 		}
 		connectedCallback() {
 			super.connectedCallback();
@@ -3846,6 +3973,7 @@ new class extends _identity {
       target=${ifDefined(this.external ? "_blank" : void 0)}
       rel=${ifDefined(this.external ? "noopener noreferrer" : void 0)}
       ?download=${this.download}
+      aria-current=${ifDefined(this.current ? "page" : void 0)}
       ><span part="label" data-part="label">${this.label}</span>${this.external ? html`<span class="visually-hidden">${EXTERNAL_SUFFIX}</span
             ><span part="externalIcon" data-part="externalIcon"><ds-icon name="external" inline></ds-icon></span>` : nothing}</a
     >`;
@@ -3870,6 +3998,14 @@ new class extends _identity {
       --ds-link-underline-offset: var(--space-1);
       --ds-link-external-icon-gap: var(--space-1);
       --ds-link-transition: var(--motion-duration-fast);
+      /* Locked bindings: out of the overrides type, but themeable from page CSS and renameable by the naming codemod. */
+      --ds-link-color: var(--color-link);
+      --ds-link-color-hover: var(--color-link-hover);
+      --ds-link-color-visited: var(--color-link-visited);
+      --ds-link-focus-ring: var(--color-border-focus);
+      --ds-link-focus-ring-width: var(--border-width-focus);
+      --ds-link-focus-ring-radius: var(--radius-sm);
+      --ds-link-focus-ring-offset: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -3893,25 +4029,25 @@ new class extends _identity {
       }
     }
 
-    /* color, colorVisited and colorHover apply under tone=default only; locked, so they read the tokens directly */
+    /* color, colorVisited and colorHover apply under tone=default only */
     :host(:not([tone='inherit'])) [data-part='anchor'] {
-      color: var(--color-link);
+      color: var(--ds-link-color);
     }
 
     :host(:not([tone='inherit'])) [data-part='anchor']:visited {
-      color: var(--color-link-visited);
+      color: var(--ds-link-color-visited);
     }
 
     /* colorHover: pointer hover only, not :active, with no hover-media guard */
     :host(:not([tone='inherit'])) [data-part='anchor']:hover {
-      color: var(--color-link-hover);
+      color: var(--ds-link-color-hover);
     }
 
     /* focusRing, focusRingWidth, focusRingRadius, focusRingOffset: the ring follows the inline text box */
     [data-part='anchor']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
-      border-radius: var(--radius-sm);
+      outline: var(--ds-link-focus-ring-width) solid var(--ds-link-focus-ring);
+      outline-offset: var(--ds-link-focus-ring-offset);
+      border-radius: var(--ds-link-focus-ring-radius);
     }
 
     /* externalIconGap, on Link's own wrapper; the icon inside is 1em of the surrounding font (ds-icon inline) */
@@ -4553,7 +4689,13 @@ new class extends _identity {
 			const gapRef = this.overrides?.errorSummaryGap;
 			const stackOverrides = gapRef === void 0 ? void 0 : { gap: gapRef };
 			return html`
-      <div part="errorSummary" data-part="errorSummary" role="alert" tabindex="-1">
+      <div
+        part="errorSummary"
+        data-part="errorSummary"
+        id=${`${this.idBase}-error-summary`}
+        role="alert"
+        tabindex="-1"
+      >
         <ds-stack gap="tight" .overrides=${stackOverrides}>
           <ds-text element="p" weight="semibold" tone="danger">${this.summaryHeading(errorEntries.length)}</ds-text>
           <ds-stack element="ul" gap="tight" .overrides=${stackOverrides}>
@@ -4778,6 +4920,10 @@ new class extends _identity {
       --ds-form-error-summary-border-width: var(--border-width-thin);
       --ds-form-error-summary-radius: var(--radius-md);
       --ds-form-error-summary-padding: var(--space-md);
+      /* Locked: no overrides key, but the hook stays so a page stylesheet or the naming codemod can reach it. */
+      --ds-form-error-summary-text: var(--color-foreground-danger);
+      --ds-form-error-summary-background: var(--color-background-subtle);
+      --ds-form-error-summary-line-height: var(--font-line-height-normal);
     }
 
     :host([hidden]) {
@@ -4798,21 +4944,20 @@ new class extends _identity {
       align-items: flex-start;
     }
 
-    /* errorSummaryBackground / errorSummaryText / errorSummaryLineHeight:
-       color.background.subtle / color.foreground.danger / font.lineHeight.normal, all locked, so they
-       read their tokens directly and get no --ds-form-* hook. */
+    /* errorSummaryBackground / errorSummaryText / errorSummaryLineHeight are locked: out of the
+       overrides type, but read through their :host hooks like every other binding. */
     [data-part='errorSummary'] {
       box-sizing: border-box;
       padding: var(--ds-form-error-summary-padding);
       border: var(--ds-form-error-summary-border-width) solid var(--ds-form-error-summary-border);
       border-radius: var(--ds-form-error-summary-radius);
-      background: var(--color-background-subtle);
-      color: var(--color-foreground-danger);
+      background: var(--ds-form-error-summary-background);
+      color: var(--ds-form-error-summary-text);
       /* The item Links are bare text in this box, so without this they inherit the document's
          line-height: normal and each link's box falls under the 24px target floor (WCAG 2.5.8).
          Form may not give the Links a target of their own, so the box sets the body rhythm and the
          Links inherit it, as they inherit the danger color. Locked for exactly that reason. */
-      line-height: var(--font-line-height-normal);
+      line-height: var(--ds-form-error-summary-line-height);
     }
 
     [data-part='errorSummary']:focus-visible {
@@ -4960,10 +5105,6 @@ new class extends _identity {
 				]
 			], 0, void 0, LitElement));
 		}
-		constructor(...args) {
-			super(...args);
-			_init_extra_overrides$37(this);
-		}
 		/** Padding on all sides, from the layout inset presets. Use `insetBlock`/`insetInline` when the axes differ. */
 		#A = _init_inset$1(this, "none");
 		/**
@@ -5034,12 +5175,14 @@ new class extends _identity {
 			this.#G = v;
 		}
 		#H = (_init_extra_element$1(this), _init_overrides$37(this));
+		/** The role this element last wrote, so it never removes a `role` the consumer set. */
 		get overrides() {
 			return this.#H;
 		}
 		set overrides(v) {
 			this.#H = v;
 		}
+		ownRole = void _init_extra_overrides$37(this);
 		connectedCallback() {
 			super.connectedCallback();
 			this.setAttribute("data-ds", "Box");
@@ -5048,8 +5191,13 @@ new class extends _identity {
 		willUpdate(changed) {
 			if (changed.has("element")) {
 				const role = SECTIONING_ROLES[this.element];
-				if (role === void 0) this.removeAttribute("role");
-				else if (this.getAttribute("role") !== role) this.setAttribute("role", role);
+				if (role === void 0) {
+					if (this.ownRole !== void 0 && this.getAttribute("role") === this.ownRole) this.removeAttribute("role");
+					this.ownRole = void 0;
+				} else {
+					if (this.getAttribute("role") !== role) this.setAttribute("role", role);
+					this.ownRole = role;
+				}
 			}
 			if (changed.has("overrides") || changed.has("border") || changed.has("radius")) this.applyOverrides();
 		}
@@ -5626,7 +5774,10 @@ new class extends _identity {
                   ><ds-icon name=${glyph} size="xs" .overrides=${INDICATOR_OVERRIDES}></ds-icon
                 ></span>` : nothing}
           </span>
-          <div class="text">
+          <div class=${classMap({
+				text: true,
+				"label-hidden": this.hideLabel
+			})}>
             <label
               class=${classMap({
 				label: true,
@@ -5639,6 +5790,7 @@ new class extends _identity {
             >
             ${this.description ? html`<ds-text
                   id="description"
+                  class="description"
                   part="description"
                   data-part="description"
                   element="p"
@@ -5760,8 +5912,20 @@ new class extends _identity {
       --ds-checkbox-line-height: var(--font-line-height-normal);
       --ds-checkbox-disabled-opacity: var(--opacity-disabled);
       --ds-checkbox-transition: var(--motion-duration-fast);
-      /* indicator, indicatorStroke, helperSize, descriptionText and errorText have no hook: the
-         composed Icon and Texts realise them through their own props and overrides. */
+      /* Locked: closed to the overrides API, still themeable from page CSS. */
+      --ds-checkbox-control-border: var(--color-control-border);
+      --ds-checkbox-control-selected-background: var(--color-control-selected-background);
+      --ds-checkbox-label-color: var(--color-foreground);
+      --ds-checkbox-focus-ring: var(--color-border-focus);
+      --ds-checkbox-focus-ring-width: var(--border-width-focus);
+      --ds-checkbox-min-target: var(--size-target-comfortable);
+      /* indicatorStroke, descriptionText and errorText are realised by the composed Icon and Texts;
+         these hooks reach them only through the children's documented hooks (below), on the same
+         tokens those children already use, so page CSS can still re-theme or rename them. */
+      --ds-checkbox-indicator-stroke: var(--border-width-focus);
+      --ds-checkbox-description-text: var(--color-foreground-muted);
+      --ds-checkbox-error-text: var(--color-foreground-danger);
+      /* indicator and helperSize have no hook: they are forwarded to the children's overrides. */
 
       /* The label's first line box; the control centres on it and the row is padded around it. */
       --ds-checkbox-line-box: calc(var(--ds-checkbox-label-size) * var(--ds-checkbox-line-height));
@@ -5782,10 +5946,17 @@ new class extends _identity {
        the cross axis and the padding makes a single-line row exactly minTarget tall, so a wrapping
        label or a description grows the row downwards without pulling the control off the first line. */
     .row {
+      box-sizing: border-box;
       display: flex;
       align-items: flex-start;
       gap: var(--ds-checkbox-gap);
-      padding-block: calc((var(--size-target-comfortable) - var(--ds-checkbox-line-box)) / 2);
+      /* Clamped at zero (a zero length, written without a literal) so a line box taller than the
+         target grows the row instead of producing a negative padding. */
+      padding-block: max(
+        calc(var(--ds-checkbox-min-target) * 0),
+        calc((var(--ds-checkbox-min-target) - var(--ds-checkbox-line-box)) / 2)
+      );
+      min-block-size: var(--ds-checkbox-min-target);
       cursor: pointer;
     }
 
@@ -5810,7 +5981,7 @@ new class extends _identity {
       padding: 0;
       border-width: var(--ds-checkbox-control-border-width);
       border-style: solid;
-      border-color: var(--color-control-border);
+      border-color: var(--ds-checkbox-control-border);
       border-radius: var(--ds-checkbox-control-radius);
       background-color: var(--ds-checkbox-control-background);
       cursor: pointer;
@@ -5826,8 +5997,8 @@ new class extends _identity {
     /* controlSelectedBackground: checked and indeterminate fill; the border takes the same color */
     .control:checked,
     .control:indeterminate {
-      border-color: var(--color-control-selected-background);
-      background-color: var(--color-control-selected-background);
+      border-color: var(--ds-checkbox-control-selected-background);
+      background-color: var(--ds-checkbox-control-selected-background);
     }
 
     /* controlBorderInvalid: replaces the border color in every state; the selected fill is unchanged */
@@ -5840,21 +6011,33 @@ new class extends _identity {
     .row:not(.disabled) .control:active:not(:checked):not(:indeterminate) {
       background-color: color-mix(
         in srgb,
-        var(--color-control-selected-background) calc(var(--ds-checkbox-pressed-overlay) * 100%),
+        var(--ds-checkbox-control-selected-background) calc(var(--ds-checkbox-pressed-overlay) * 100%),
         var(--ds-checkbox-control-background)
       );
     }
 
     /* focusRing, focusRingWidth: a separate outline, so an invalid box keeps controlBorderInvalid */
     .control:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-checkbox-focus-ring-width) solid var(--ds-checkbox-focus-ring);
+      outline-offset: var(--ds-checkbox-focus-ring-width);
     }
 
     /* indicator: the Icon centred over the control; clicks fall through to the input */
     .indicator {
       display: inline-flex;
       pointer-events: none;
+    }
+
+    /* indicatorStroke, descriptionText, errorText: set through each child's documented hook, never
+       by styling its shadow tree. */
+    .indicator ds-icon {
+      --ds-icon-stroke-width: var(--ds-checkbox-indicator-stroke);
+    }
+    .description {
+      --ds-text-color: var(--ds-checkbox-description-text);
+    }
+    .error {
+      --ds-text-color: var(--ds-checkbox-error-text);
     }
 
     /* transition: fill and border only — the indicator is mounted and unmounted, never animated */
@@ -5872,13 +6055,20 @@ new class extends _identity {
       min-inline-size: 0;
     }
 
+    /* hideLabel: the hidden label still sets the line box, so a description starts below the
+       empty label line (where the control sits) rather than beside the control. */
+    .text.label-hidden::before {
+      content: '';
+      block-size: var(--ds-checkbox-line-box);
+    }
+
     /* labelColor, labelSize, labelWeight, fontFamily, lineHeight: the label's own rule */
     .label {
       font-family: var(--ds-checkbox-font-family);
       font-size: var(--ds-checkbox-label-size);
       font-weight: var(--ds-checkbox-label-weight);
       line-height: var(--ds-checkbox-line-height);
-      color: var(--color-foreground);
+      color: var(--ds-checkbox-label-color);
       cursor: pointer;
     }
 
@@ -6126,6 +6316,7 @@ new class extends _identity {
 		get required() {
 			return false;
 		}
+		set required(_value) {}
 		/** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
 		#H = _init_formDisabled$7(this, false);
 		get formDisabled() {
@@ -6202,9 +6393,9 @@ new class extends _identity {
             <label class="label" part="label" data-part="label" for="control">${this.label}</label>
             ${this.description ? html`<ds-text
                   id="description"
+                  class="description"
                   part="description"
                   data-part="description"
-                  element="p"
                   size="sm"
                   tone="muted"
                   .overrides=${this.textOverrides}
@@ -6220,7 +6411,6 @@ new class extends _identity {
                 data-part="track"
                 type="checkbox"
                 role="switch"
-                name=${ifDefined(this.name || void 0)}
                 .checked=${live(this.checked)}
                 aria-checked=${this.checked ? "true" : "false"}
                 aria-describedby=${ifDefined(this.description ? "description" : void 0)}
@@ -6306,9 +6496,18 @@ new class extends _identity {
       --ds-switch-line-height: var(--font-line-height-normal);
       --ds-switch-disabled-opacity: var(--opacity-disabled);
       --ds-switch-transition: var(--motion-duration-fast);
-      /* trackOff, trackOn, thumb, labelColor, focusRing, focusRingWidth and minTarget are locked, so
-         they read their token directly; helperSize and descriptionText reach the composed Text
-         through its own size and tone props and its own overrides alone. */
+      /* Locked: absent from the overrides type, but the hooks stay so page CSS can re-theme them. */
+      --ds-switch-track-off: var(--color-control-track-off);
+      --ds-switch-track-on: var(--color-control-selected-background);
+      --ds-switch-thumb: var(--color-control-selected-foreground);
+      --ds-switch-label-color: var(--color-foreground);
+      --ds-switch-focus-ring: var(--color-border-focus);
+      --ds-switch-focus-ring-width: var(--border-width-focus);
+      --ds-switch-min-target: var(--size-target-comfortable);
+      /* descriptionText is realised by the composed Text; this hook reaches it only through Text's
+         documented --ds-text-color (below), on the same token its muted tone uses, so page CSS can
+         still re-theme or rename it. helperSize has no hook: it is forwarded to the Text's overrides. */
+      --ds-switch-description-text: var(--color-foreground-muted);
 
       /* The label's first line box, which the track slot is tall, and the thumb's travel. */
       --ds-switch-line-box: calc(var(--ds-switch-label-size) * var(--ds-switch-line-height));
@@ -6328,7 +6527,7 @@ new class extends _identity {
       flex-direction: column;
       justify-content: center;
       inline-size: 100%;
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-switch-min-target);
       cursor: pointer;
     }
 
@@ -6372,8 +6571,13 @@ new class extends _identity {
       font-size: var(--ds-switch-label-size);
       font-weight: var(--ds-switch-label-weight);
       line-height: var(--ds-switch-line-height);
-      color: var(--color-foreground);
+      color: var(--ds-switch-label-color);
       cursor: pointer;
+    }
+
+    /* descriptionText: set through the child's documented hook, never by styling its shadow tree. */
+    .description {
+      --ds-text-color: var(--ds-switch-description-text);
     }
 
     /* One label line tall: the track centres on the label's first line. */
@@ -6401,7 +6605,7 @@ new class extends _identity {
       padding: 0;
       border: 0;
       border-radius: var(--ds-switch-radius);
-      background-color: var(--color-control-track-off);
+      background-color: var(--ds-switch-track-off);
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
@@ -6410,14 +6614,14 @@ new class extends _identity {
 
     /* trackOn: keyed off the component state, not :checked, so the look always follows checked. */
     .control[aria-checked='true'] {
-      background-color: var(--color-control-selected-background);
+      background-color: var(--ds-switch-track-on);
     }
 
     /* focusRing, focusRingWidth: drawn around the track, offset by focusRingWidth like every other
        control. Never removed. */
     .control:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-switch-focus-ring-width) solid var(--ds-switch-focus-ring);
+      outline-offset: var(--ds-switch-focus-ring-width);
     }
 
     /* thumb: a real span, not a ::before, which Firefox does not draw on an appearance: none input.
@@ -6429,7 +6633,7 @@ new class extends _identity {
       inline-size: var(--ds-switch-thumb-size);
       block-size: var(--ds-switch-thumb-size);
       border-radius: var(--ds-switch-radius);
-      background-color: var(--color-control-selected-foreground);
+      background-color: var(--ds-switch-thumb);
       pointer-events: none;
       transition: transform var(--ds-switch-transition) var(--motion-easing-standard);
     }
@@ -6549,8 +6753,10 @@ const GUARDED_KEYS = /* @__PURE__ */ new Set([
 * and Space come from the browser and are not reimplemented. Per-option
 * `disabled` is the native attribute so arrow movement skips it; a `disabled`
 * group uses `aria-disabled` plus click, key and change guards so it stays
-* focusable but inert. The indicator dot is the radio's `::before` and has no
-* part: it is a pseudo-element, not a node.
+* focusable but inert. The indicator dot is a real node — a span inside the
+* option's label, laid over the `appearance: none` input with
+* `pointer-events: none` and carrying `part`/`data-part="radioIndicator"` — not
+* a pseudo-element of the input, which Firefox does not render on form controls.
 *
 * The element is form-associated (`setFormValue(value)`) and carries
 * `data-ds-field`, so `<ds-form>` collects the selected value, or no key while
@@ -6764,14 +6970,16 @@ new class extends _identity {
 		}
 		/** Uncontrolled selection, seeded from `defaultValue`. */
 		#L = _init_internalValue$8(this);
-		/** Disabled by an owning native form / fieldset (via `formDisabledCallback`), or by `ds-fieldset`. */
+		/** `defaultValue` as it stood at first render; what a form reset returns to. */
 		get internalValue() {
 			return this.#L;
 		}
 		set internalValue(v) {
 			this.#L = v;
 		}
-		#M = (_init_extra_internalValue$8(this), _init_formDisabled$6(this, false));
+		initialValue = void _init_extra_internalValue$8(this);
+		/** Disabled by an owning native form / fieldset (via `formDisabledCallback`), or by `ds-fieldset`. */
+		#M = _init_formDisabled$6(this, false);
 		get formDisabled() {
 			return this.#M;
 		}
@@ -6823,15 +7031,18 @@ new class extends _identity {
 		formDisabledCallback(disabled) {
 			this.formDisabled = disabled;
 		}
-		/** Back to the initial selection: `defaultValue`, else nothing. */
+		/** Back to the initial selection: `defaultValue` as read at first render, else nothing. */
 		formResetCallback() {
-			this.internalValue = this.defaultValue;
+			this.internalValue = this.initialValue;
 		}
 		formStateRestoreCallback(state) {
 			if (typeof state === "string") this.internalValue = state;
 		}
 		willUpdate(changed) {
-			if (!this.hasUpdated) this.internalValue = this.defaultValue;
+			if (!this.hasUpdated) {
+				this.initialValue = this.defaultValue;
+				this.internalValue = this.defaultValue;
+			}
 			if (changed.has("overrides")) this.applyOverrides();
 		}
 		updated() {
@@ -6861,7 +7072,6 @@ new class extends _identity {
               id="description"
               part="description"
               data-part="description"
-              element="p"
               size="sm"
               tone="muted"
               .overrides=${textOverrides}
@@ -6896,13 +7106,15 @@ new class extends _identity {
                   aria-disabled=${ifDefined(groupDisabled ? "true" : void 0)}
                   @change=${(event) => this.handleChange(event, option)}
                 />
-                <label class="label" part="radioLabel" data-part="radioLabel" for=${id}>${option.label}</label>
+                <label class="label" part="radioLabel" data-part="radioLabel" for=${id}
+                  ><span class="indicator" part="radioIndicator" data-part="radioIndicator" aria-hidden="true"></span
+                  >${option.label}</label
+                >
                 ${option.description ? html`<ds-text
                       id="${id}-description"
                       class="option-description"
                       part="radioDescription"
                       data-part="radioDescription"
-                      element="p"
                       size="sm"
                       tone="muted"
                       .overrides=${textOverrides}
@@ -6917,7 +7129,6 @@ new class extends _identity {
               role="alert"
               part="errorMessage"
               data-part="errorMessage"
-              element="p"
               size="sm"
               tone="danger"
               .overrides=${textOverrides}
@@ -7037,10 +7248,22 @@ new class extends _identity {
       --ds-radio-group-line-height: var(--font-line-height-normal);
       --ds-radio-group-disabled-opacity: var(--opacity-disabled);
       --ds-radio-group-transition: var(--motion-duration-fast);
-      /* controlBackground, controlBorder, controlSelectedBackground, indicator, legendColor,
-         labelColor, focusRing, focusRingWidth and minTarget are locked, so they read their token
-         directly. helperSize, descriptionText and errorText have no hook either: the composed
-         Texts realise them through their own props and overrides. */
+      /* Locked: out of the overrides type, but they keep their hook so page CSS can re-theme them
+         and the naming codemod can rename them. */
+      --ds-radio-group-control-background: var(--color-control-background);
+      --ds-radio-group-control-border: var(--color-control-border);
+      --ds-radio-group-control-selected-background: var(--color-control-selected-background);
+      --ds-radio-group-indicator: var(--color-control-selected-background);
+      --ds-radio-group-legend-color: var(--color-foreground);
+      --ds-radio-group-label-color: var(--color-foreground);
+      --ds-radio-group-focus-ring: var(--color-border-focus);
+      --ds-radio-group-focus-ring-width: var(--border-width-focus);
+      --ds-radio-group-min-target: var(--size-target-comfortable);
+      --ds-radio-group-description-text: var(--color-foreground-muted);
+      --ds-radio-group-error-text: var(--color-foreground-danger);
+      /* helperSize has no hook: it reaches the composed Texts only through their overrides.
+         description-text and error-text are declared for page CSS and the naming codemod only: the
+         composed Texts' tone muted / danger draw the colour, and Text has no colour hook to feed. */
     }
 
     :host([hidden]) {
@@ -7063,7 +7286,7 @@ new class extends _identity {
     legend {
       margin-block-end: var(--ds-radio-group-part-gap);
       padding: 0;
-      color: var(--color-foreground);
+      color: var(--ds-radio-group-legend-color);
       font-family: var(--ds-radio-group-font-family);
       font-size: var(--ds-radio-group-legend-size);
       font-weight: var(--ds-radio-group-legend-weight);
@@ -7091,7 +7314,7 @@ new class extends _identity {
       row-gap: var(--ds-radio-group-option-text-gap);
       align-items: center;
       align-content: center;
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-radio-group-min-target);
       padding-block: var(--ds-radio-group-option-padding-block);
       cursor: pointer;
     }
@@ -7102,66 +7325,78 @@ new class extends _identity {
       box-sizing: border-box;
       grid-column: 1;
       grid-row: 1;
-      display: inline-grid;
-      place-items: center;
+      display: block;
       inline-size: var(--ds-radio-group-control-size);
       block-size: var(--ds-radio-group-control-size);
       margin: 0;
       padding: 0;
-      border: var(--ds-radio-group-control-border-width) solid var(--color-control-border);
+      border: var(--ds-radio-group-control-border-width) solid var(--ds-radio-group-control-border);
       border-radius: var(--ds-radio-group-control-radius);
-      background-color: var(--color-control-background);
+      background-color: var(--ds-radio-group-control-background);
       cursor: inherit;
       appearance: none;
       -webkit-appearance: none;
     }
 
-    /* indicator, indicatorInset: the centre dot, controlSize minus 2 × indicatorInset across, always
-       a circle (it does not follow controlRadius). Its size is fixed and it fades rather than scales,
-       so the thicker focus border eats into the inset rather than shrinking the dot. A pseudo-element,
-       so it carries no part or data-part. */
-    .radio::before {
-      content: '';
-      display: block;
-      inline-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
-      block-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
-      border-radius: var(--radius-full);
-      background-color: var(--color-control-selected-background);
-      opacity: 0;
-    }
-
     /* controlSelectedBackground: selected border color; the fill stays controlBackground */
     .radio:checked {
-      border-color: var(--color-control-selected-background);
-    }
-    .radio:checked::before {
-      opacity: 1;
-    }
-
-    /* controlBorderInvalid: aria-invalid lives on the fieldset only, so the state comes from the host */
-    :host([invalid]) .radio {
-      border-color: var(--ds-radio-group-control-border-invalid);
+      border-color: var(--ds-radio-group-control-selected-background);
     }
 
     /* focusRing, focusRingWidth: the radio's border becomes the focus ring, replacing
        controlBorderWidth/controlBorder; the option row is not outlined. The transparent outline
        keeps a ring in forced-colors mode. */
     .radio:focus-visible {
-      outline: var(--border-width-focus) solid transparent;
-      border-width: var(--border-width-focus);
-      border-color: var(--color-border-focus);
+      outline: var(--ds-radio-group-focus-ring-width) solid transparent;
+      border-width: var(--ds-radio-group-focus-ring-width);
+      border-color: var(--ds-radio-group-focus-ring);
     }
 
-    /* labelColor, labelSize, labelWeight, fontFamily, lineHeight: the label's own rule */
+    /* controlBorderInvalid: aria-invalid lives on the fieldset only, so the state comes from the host.
+       Border-colour precedence is invalid, then selected, then rest; focus does not replace it —
+       a focused invalid radio keeps the danger colour and takes only the focus width. */
+    :host([invalid]) .radio,
+    :host([invalid]) .radio:focus-visible {
+      border-color: var(--ds-radio-group-control-border-invalid);
+    }
+
+    /* labelColor, labelSize, labelWeight, fontFamily, lineHeight: the label's own rule. Positioned,
+       so the indicator inside it can be laid over the radio in column 1 of the same grid row; both
+       are centred in that row, so their centres line up whatever the label's height. */
     .label {
+      position: relative;
       grid-column: 2;
       grid-row: 1;
-      color: var(--color-foreground);
+      color: var(--ds-radio-group-label-color);
       font-family: var(--ds-radio-group-font-family);
       font-size: var(--ds-radio-group-label-size);
       font-weight: var(--ds-radio-group-label-weight);
       line-height: var(--ds-radio-group-line-height);
       cursor: inherit;
+    }
+
+    /* indicator, indicatorInset: the centre dot, controlSize minus 2 × indicatorInset across, always
+       a circle (it does not follow controlRadius). A real span inside the label, pulled back over the
+       input by controlSize + optionGap and in by indicatorInset; pointer-events: none so a click on
+       it reaches the input. Its size is fixed and it fades rather than scales, so the thicker focus
+       border eats into the inset rather than shrinking the dot. */
+    .indicator {
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: calc(
+        var(--ds-radio-group-indicator-inset) - var(--ds-radio-group-option-gap) -
+          var(--ds-radio-group-control-size)
+      );
+      inline-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
+      block-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
+      margin-block: auto;
+      border-radius: var(--radius-full);
+      background-color: var(--ds-radio-group-indicator);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .radio:checked + .label .indicator {
+      opacity: 1;
     }
 
     /* optionTextGap is the row-gap above; the description sits under the label, not under the radio */
@@ -7185,7 +7420,7 @@ new class extends _identity {
       .radio {
         transition: border-color var(--ds-radio-group-transition) var(--motion-easing-standard);
       }
-      .radio::before {
+      .indicator {
         transition: opacity var(--ds-radio-group-transition) var(--motion-easing-standard);
       }
       .radio:focus-visible,
@@ -7368,7 +7603,7 @@ new class extends _identity {
 		set allFieldsRequired(v) {
 			this.#G = v;
 		}
-		disabledByFieldset = (_init_extra_allFieldsRequired(this), /* @__PURE__ */ new WeakSet());
+		disabledByFieldset = (_init_extra_allFieldsRequired(this), /* @__PURE__ */ new Set());
 		/** Watches the light DOM for `required` attribute changes; the callback writes state only, never an observed attribute, so it cannot re-trigger itself. */
 		requiredObserver = new MutationObserver(() => this.syncRequired());
 		connectedCallback() {
@@ -7401,12 +7636,16 @@ new class extends _identity {
         aria-disabled=${ifDefined(this.disabled ? "true" : void 0)}
         aria-invalid=${ifDefined(this.error ? "true" : void 0)}
       >
-        <legend part="legend" data-part="legend"
+        <legend part="legend" data-part="legend" aria-disabled=${ifDefined(this.disabled ? "true" : void 0)}
           ><ds-text element="span" tone="default" size="md" weight="medium" .overrides=${this.legendOverrides}
             >${this.legend}${this.allFieldsRequired ? COPY_REQUIRED_INDICATOR$2 : nothing}</ds-text
           ></legend
         >
-        ${this.description ? html`<div id="description" part="description" data-part="description"
+        ${this.description ? html`<div
+              id="description"
+              part="description"
+              data-part="description"
+              aria-disabled=${ifDefined(this.disabled ? "true" : void 0)}
               ><ds-text element="span" tone="muted" size="sm" .overrides=${helper}>${this.description}</ds-text></div
             >` : nothing}
         <div part="fields" data-part="fields">
@@ -7461,7 +7700,12 @@ new class extends _identity {
 		}
 		/** Sets `disabled` on direct fields, remembering which it set so clearing is exact. */
 		syncDisabled() {
-			for (const field of this.directFields()) if (this.disabled) {
+			const fields = this.directFields();
+			for (const field of this.disabledByFieldset) if (!fields.includes(field)) {
+				field.disabled = false;
+				this.disabledByFieldset.delete(field);
+			}
+			for (const field of fields) if (this.disabled) {
 				if (!field.disabled) {
 					this.disabledByFieldset.add(field);
 					field.disabled = true;
@@ -7484,9 +7728,9 @@ new class extends _identity {
       display: block;
       --ds-fieldset-part-gap: var(--layout-gap-tight);
       --ds-fieldset-disabled-opacity: var(--opacity-disabled);
-      /* legendColor, descriptionText and errorText are locked, and legendSize, legendWeight,
-         helperSize, fontFamily, lineHeight and fieldsGap only forward: the composed Text and
-         Stack realise all of them through their own props and overrides. */
+      /* legendColor, descriptionText and errorText are realised by the Texts' tones; legendSize,
+         legendWeight, helperSize, fontFamily, lineHeight and fieldsGap only forward through the
+         children's overrides. None of them declares a hook here. */
     }
 
     :host([hidden]) {
@@ -7889,7 +8133,7 @@ function isFocusCandidate(el) {
 	const tabindex = el.getAttribute("tabindex");
 	if (tabindex !== null && Number(tabindex) < 0) return false;
 	if (el.matches(":disabled")) return false;
-	if (!el.checkVisibility()) return false;
+	if (!el.checkVisibility({ visibilityProperty: true })) return false;
 	for (let node = el; node; node = node.parentNode ?? (node instanceof ShadowRoot ? node.host : null)) if (node instanceof HTMLElement && node.inert) return false;
 	return true;
 }
@@ -8088,16 +8332,23 @@ let _init_overrides$31;
 let _init_extra_overrides$31;
 let _init_expanded$2;
 let _init_extra_expanded$2;
-/** Shape of each entry in `items`: `{ label: string; href?: string }`. */
+let _init_fallbackTabindex;
+let _init_extra_fallbackTabindex;
+/** Shape of each entry in `items`: `{ label: string; href?: string | undefined }`. */
 /** Detail carried by the `navigate` CustomEvent. `preventDefault()` on `originalEvent` (or on the `navigate` event) cancels navigation. */
-/** copy.separator — drawn with CSS from `--ds-breadcrumb-separator`, so it is not in the accessibility tree. */
-const COPY_SEPARATOR = "/";
-/** copy.expandLabel */
-const COPY_EXPAND_LABEL = "Show all pages";
-/** copy.navLabel */
-const COPY_NAV_LABEL = "Breadcrumb";
+/**
+* copy.* — `current` is a native-only string (aria-current="page" announces it here), so it is omitted.
+* `separator` is drawn with CSS from `--ds-breadcrumb-separator`, so it is not in the accessibility tree.
+*/
+const COPY$8 = {
+	separator: "/",
+	expandLabel: "Show all pages",
+	navLabel: "Breadcrumb"
+};
 /** Trails longer than this collapse (first, ellipsis, last two). */
 const COLLAPSE_ABOVE = 4;
+/** Index of the first item hidden by collapsing, and of the focus fallback after expanding. */
+const FIRST_HIDDEN = 1;
 /** Negates a boolean attribute: `no-collapse` present means `collapse` is `false`. */
 const NEGATED_BOOLEAN_CONVERTER$12 = {
 	fromAttribute(value) {
@@ -8107,7 +8358,15 @@ const NEGATED_BOOLEAN_CONVERTER$12 = {
 		return value ? null : "";
 	}
 };
-/** Overridable style hooks; see the `overrides` property. `currentColor`, `itemColor`, `separatorColor` and `minTarget` are locked and excluded. */
+/** An ancestor with no page of its own renders as plain text, never an empty link. */
+function hasHref(item) {
+	return item?.href !== void 0 && item.href !== "";
+}
+/**
+* Overridable style hooks; see the `overrides` property. `currentColor`, `itemColor`,
+* `separatorColor`, `focusRing`, `focusRingWidth` and `minTarget` are locked: absent from this
+* type, but their `--ds-breadcrumb-*` hooks stay on `:host` for page CSS.
+*/
 const HOOKS$31 = {
 	gap: "--ds-breadcrumb-gap",
 	fontFamily: "--ds-breadcrumb-font-family",
@@ -8124,10 +8383,9 @@ const HOOKS$31 = {
 * the last item is the current page, `<span aria-current="page">`. Separators
 * are CSS-generated. Activating an ancestor dispatches a composed, cancelable
 * `navigate` CustomEvent with `{ item, index, originalEvent }`; calling
-* `preventDefault()` on `originalEvent` (the retargeted native click) cancels
-* navigation. The ellipsis is a ghost `sm` icon-only `<ds-button>`, used
-* unchanged, whose `press` is stopped so consumers see only `navigate`. An
-* ancestor without an `href` renders as plain text.
+* `preventDefault()` on it or on `originalEvent` (the retargeted native click)
+* cancels navigation. The ellipsis is a ghost `sm` icon-only `<ds-button>`,
+* used unchanged, whose `press` is stopped so consumers see only `navigate`.
 *
 * ## When to use
 *
@@ -8142,7 +8400,7 @@ let _DsBreadcrumb;
 new class extends _identity {
 	static [class DsBreadcrumb extends LitElement {
 		static {
-			({e: [_init_items$2, _init_extra_items$2, _init_label$18, _init_extra_label$18, _init_collapse, _init_extra_collapse, _init_overrides$31, _init_extra_overrides$31, _init_expanded$2, _init_extra_expanded$2], c: [_DsBreadcrumb, _initClass$32]} = applyDecs2311(this, [customElement("ds-breadcrumb")], [
+			({e: [_init_items$2, _init_extra_items$2, _init_label$18, _init_extra_label$18, _init_collapse, _init_extra_collapse, _init_overrides$31, _init_extra_overrides$31, _init_expanded$2, _init_extra_expanded$2, _init_fallbackTabindex, _init_extra_fallbackTabindex], c: [_DsBreadcrumb, _initClass$32]} = applyDecs2311(this, [customElement("ds-breadcrumb")], [
 				[
 					property({ attribute: false }),
 					1,
@@ -8171,23 +8429,28 @@ new class extends _identity {
 					state(),
 					1,
 					"expanded"
+				],
+				[
+					state(),
+					1,
+					"fallbackTabindex"
 				]
 			], 0, void 0, LitElement));
 		}
-		constructor(...args) {
-			super(...args);
-			_init_extra_expanded$2(this);
-		}
-		/** The trail from root to current page, in order. Every item but the last needs an `href`; the last is the current page and its `href` is ignored. A property, not an attribute. */
+		/**
+		* The trail from root to current page, in order. Every item but the last needs an `href`; an
+		* ancestor without one (or with `''`) renders as plain text. The last is the current page and
+		* its `href` is ignored. A property, not an attribute.
+		*/
 		#A = _init_items$2(this, []);
-		/** Accessible name of the navigation landmark. Change it only if the page has another breadcrumb. */
+		/** Accessible name of the navigation landmark (`copy.navLabel` by default). Change it only if the page has another breadcrumb. */
 		get items() {
 			return this.#A;
 		}
 		set items(v) {
 			this.#A = v;
 		}
-		#B = (_init_extra_items$2(this), _init_label$18(this, COPY_NAV_LABEL));
+		#B = (_init_extra_items$2(this), _init_label$18(this, COPY$8.navLabel));
 		/**
 		* When there are more than four items, show the first, an ellipsis, and the last two; the
 		* ellipsis reveals the rest. Attribute is the negation, `no-collapse`, because a boolean
@@ -8200,7 +8463,7 @@ new class extends _identity {
 			this.#B = v;
 		}
 		#C = (_init_extra_label$18(this), _init_collapse(this, true));
-		/** Per-instance style overrides: `{ gap: 'space.3' }`. Locked bindings are ignored. */
+		/** Per-instance style overrides: `{ gap: 'space.3' }`. Locked bindings are not accepted. */
 		get collapse() {
 			return this.#C;
 		}
@@ -8208,7 +8471,7 @@ new class extends _identity {
 			this.#C = v;
 		}
 		#D = (_init_extra_collapse(this), _init_overrides$31(this));
-		/** Whether the user has revealed the collapsed items (one-way). */
+		/** Whether the user has revealed the collapsed items: one-way, private, for the life of the instance. */
 		get overrides() {
 			return this.#D;
 		}
@@ -8216,12 +8479,22 @@ new class extends _identity {
 			this.#D = v;
 		}
 		#E = (_init_extra_overrides$31(this), _init_expanded$2(this, false));
+		/** Once focus has fallen back to an item, the `<li>` at index 1 keeps `tabindex="-1"`. */
 		get expanded() {
 			return this.#E;
 		}
 		set expanded(v) {
 			this.#E = v;
 		}
+		#F = (_init_extra_expanded$2(this), _init_fallbackTabindex(this, false));
+		/** Focus target decided at the press, applied in the update that reveals the items. */
+		get fallbackTabindex() {
+			return this.#F;
+		}
+		set fallbackTabindex(v) {
+			this.#F = v;
+		}
+		pendingFocus = void _init_extra_fallbackTabindex(this);
 		connectedCallback() {
 			super.connectedCallback();
 			this.setAttribute("data-ds", "Breadcrumb");
@@ -8229,21 +8502,28 @@ new class extends _identity {
 		willUpdate(changed) {
 			if (changed.has("overrides")) this.applyOverrides();
 		}
+		updated() {
+			const target = this.pendingFocus;
+			if (target === void 0) return;
+			this.pendingFocus = void 0;
+			if (target === "fallback") this.renderRoot.querySelector(`[data-index="${FIRST_HIDDEN}"]`)?.focus();
+			else this.renderRoot.querySelector(`[data-index="${target}"] ds-link`)?.focus();
+		}
 		render() {
 			const items = this.items;
 			const last = items.length - 1;
 			const collapsed = this.collapse && !this.expanded && items.length > COLLAPSE_ABOVE;
 			const entries = [];
 			items.forEach((item, index) => {
-				if (collapsed && index > 0 && index < last - 1) {
-					if (index === 1) entries.push(html`
+				if (collapsed && index >= FIRST_HIDDEN && index < last - 1) {
+					if (index === FIRST_HIDDEN) entries.push(html`
             <li part="item" data-part="item">
               <span part="expand" data-part="expand">
                 <ds-button
                   variant="ghost"
                   size="sm"
                   icon-only
-                  label=${COPY_EXPAND_LABEL}
+                  label=${COPY$8.expandLabel}
                   @press=${this.handleExpand}
                 >
                   <ds-icon slot="leading-icon" name="ellipsis"></ds-icon>
@@ -8253,10 +8533,17 @@ new class extends _identity {
           `);
 					return;
 				}
-				if (index === last) entries.push(html`<li part="item" data-part="item" data-index=${index}><span part="current" data-part="current" aria-current="page">${item.label}</span></li>`);
-				else if (item.href === void 0 || item.href === "") entries.push(html`<li part="item" data-part="item" data-index=${index}><span>${item.label}</span></li>`);
+				const tabindex = this.fallbackTabindex && index === FIRST_HIDDEN ? "-1" : nothing;
+				if (index === last) entries.push(html`
+          <li part="item" data-part="item" data-index=${index} tabindex=${tabindex}>
+            <span part="current" data-part="current" aria-current="page">${item.label}</span>
+          </li>
+        `);
+				else if (!hasHref(item)) entries.push(html`
+          <li part="item" data-part="item" data-index=${index} tabindex=${tabindex}><span>${item.label}</span></li>
+        `);
 				else entries.push(html`
-          <li part="item" data-part="item" data-index=${index}>
+          <li part="item" data-part="item" data-index=${index} tabindex=${tabindex}>
             <span part="link" data-part="link">
               <ds-link
                 tone="default"
@@ -8269,7 +8556,12 @@ new class extends _identity {
         `);
 			});
 			return html`
-      <nav part="nav" data-part="nav" aria-label=${this.label} style=${`--ds-breadcrumb-separator: ${JSON.stringify(COPY_SEPARATOR)}`}>
+      <nav
+        part="nav"
+        data-part="nav"
+        aria-label=${this.label}
+        style=${`--ds-breadcrumb-separator: ${JSON.stringify(COPY$8.separator)}`}
+      >
         <ol part="list" data-part="list">${entries}</ol>
       </nav>
     `;
@@ -8286,24 +8578,17 @@ new class extends _identity {
 				cancelable: true
 			}))) originalEvent.preventDefault();
 		}
-		async handleExpand(event) {
+		handleExpand(event) {
 			event.stopPropagation();
-			const firstHidden = 1;
 			const lastHidden = this.items.length - 3;
+			let target = "fallback";
+			for (let index = FIRST_HIDDEN; index <= lastHidden; index++) if (hasHref(this.items[index])) {
+				target = index;
+				break;
+			}
+			this.pendingFocus = target;
+			if (target === "fallback") this.fallbackTabindex = true;
 			this.expanded = true;
-			await this.updateComplete;
-			for (let index = firstHidden; index <= lastHidden; index++) {
-				const link = this.renderRoot.querySelector(`[data-index="${index}"] ds-link`);
-				if (link) {
-					link.focus();
-					return;
-				}
-			}
-			const first = this.renderRoot.querySelector(`[data-index="${firstHidden}"]`);
-			if (first) {
-				if (first.tabIndex !== -1) first.tabIndex = -1;
-				first.focus();
-			}
 		}
 		applyOverrides() {
 			for (const binding of Object.keys(HOOKS$31)) {
@@ -8321,18 +8606,24 @@ new class extends _identity {
 	styles = css`
     :host {
       display: block;
+      --ds-breadcrumb-current-color: var(--color-foreground);
+      --ds-breadcrumb-item-color: var(--color-foreground-muted);
+      --ds-breadcrumb-separator-color: var(--color-foreground-muted);
       --ds-breadcrumb-gap: var(--space-2);
+      --ds-breadcrumb-focus-ring: var(--color-border-focus);
+      --ds-breadcrumb-focus-ring-width: var(--border-width-focus);
       --ds-breadcrumb-font-family: var(--font-family-body);
       --ds-breadcrumb-font-size: var(--font-size-sm);
       --ds-breadcrumb-font-weight: var(--font-weight-regular);
       --ds-breadcrumb-line-height: var(--font-line-height-normal);
+      --ds-breadcrumb-min-target: var(--size-target-min);
     }
 
     :host([hidden]) {
       display: none;
     }
 
-    /* fontFamily, fontSize, fontWeight, lineHeight on the nav; ds-link inherits (font: inherit on its anchor) */
+    /* fontFamily, fontSize, fontWeight, lineHeight on the nav; ds-link inherits them */
     [data-part='nav'] {
       font-family: var(--ds-breadcrumb-font-family);
       font-size: var(--ds-breadcrumb-font-size);
@@ -8340,45 +8631,42 @@ new class extends _identity {
       line-height: var(--ds-breadcrumb-line-height);
     }
 
-    /* the trail wraps rather than truncating; gap: after each separator */
+    /* the trail wraps rather than truncating; gap between items, no row gap (minTarget spaces the lines) */
     [data-part='list'] {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       column-gap: var(--ds-breadcrumb-gap);
+      row-gap: 0;
       margin: 0;
       padding: 0;
       list-style: none;
     }
 
-    /* minTarget on the list item, not the inline Link; itemColor: an ancestor without href */
+    /* minTarget on the list item, not the inline Link; itemColor reaches a plain ancestor; gap after the separator */
     [data-part='item'] {
       display: inline-flex;
       align-items: center;
       gap: var(--ds-breadcrumb-gap);
-      min-block-size: var(--size-target-min);
-      color: var(--color-foreground-muted);
+      min-block-size: var(--ds-breadcrumb-min-target);
+      color: var(--ds-breadcrumb-item-color);
     }
 
-    /* separator: copy.separator in separatorColor, gap before it; generated, so aria-hidden by construction */
+    /* separator: copy.separator, generated, so it is not in the accessibility tree */
     [data-part='item'] + [data-part='item']::before {
       content: var(--ds-breadcrumb-separator);
-      color: var(--color-foreground-muted);
+      color: var(--ds-breadcrumb-separator-color);
     }
 
-    /* currentColor: the current page, rendered as text in the regular weight */
+    /* currentColor: the current page, as text in the regular weight */
     [data-part='current'] {
-      color: var(--color-foreground);
+      color: var(--ds-breadcrumb-current-color);
     }
 
-    /*
-     * focusRing / focusRingWidth: only the focus-fallback item draws one — the <li> given
-     * tabindex="-1" after expanding when no revealed item is a link. Link and Button draw
-     * their own rings inside their shadow roots.
-     */
+    /* focusRing / focusRingWidth: only the focus-fallback item; Link and Button draw their own */
     [data-part='item']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-breadcrumb-focus-ring-width) solid var(--ds-breadcrumb-focus-ring);
+      outline-offset: var(--ds-breadcrumb-focus-ring-width);
     }
   `;
 	constructor() {
@@ -8642,34 +8930,34 @@ new class extends _identity {
 			return html`
       <div part="container" data-part="container">
         <div part="header" data-part="header">
-          <ds-text
-            id="label"
-            part="label"
-            data-part="label"
-            element="span"
-            size="sm"
-            weight="medium"
-            tone="default"
-            .overrides=${compact$1({
+          <span part="label" data-part="label"
+            ><ds-text
+              id="label"
+              element="span"
+              size="sm"
+              weight="medium"
+              tone="default"
+              .overrides=${compact$1({
 				fontSize: o?.labelSize,
 				fontWeight: o?.labelWeight,
 				fontFamily: o?.fontFamily,
 				lineHeight: o?.lineHeight
 			})}
-            >${this.label}</ds-text
+              >${this.label}</ds-text
+            ></span
           >
-          ${this.hideValue ? nothing : html`<ds-text
-                part="valueText"
-                data-part="valueText"
-                element="span"
-                size="sm"
-                tone="muted"
-                .overrides=${compact$1({
+          ${this.hideValue ? nothing : html`<span part="valueText" data-part="valueText"
+                ><ds-text
+                  element="span"
+                  size="sm"
+                  tone="muted"
+                  .overrides=${compact$1({
 				fontSize: o?.valueSize,
 				fontFamily: o?.fontFamily,
 				lineHeight: o?.lineHeight
 			})}
-                >${displayed}</ds-text
+                  >${displayed}</ds-text
+                ></span
               >`}
         </div>
         <div
@@ -8714,6 +9002,23 @@ new class extends _identity {
       --ds-meter-part-gap: var(--space-1);
       --ds-meter-label-gap: var(--space-2);
       --ds-meter-transition: var(--motion-duration-base);
+      /* Locked: out of the overrides type, but still themeable from document CSS. */
+      --ds-meter-track: var(--color-background-strong);
+      --ds-meter-fill: var(--color-status-info-icon);
+      /* locked labelColor / valueColor: declared for the CSS escape hatch and the naming codemod; the
+         colours come from the composed Texts' tone="default" / tone="muted" (same tokens), so no rule
+         restyles the children */
+      --ds-meter-label-color: var(--color-foreground);
+      --ds-meter-value-color: var(--color-foreground-muted);
+    }
+    :host([tone='success']) {
+      --ds-meter-fill: var(--color-status-success-icon);
+    }
+    :host([tone='warning']) {
+      --ds-meter-fill: var(--color-status-warning-icon);
+    }
+    :host([tone='danger']) {
+      --ds-meter-fill: var(--color-status-danger-icon);
     }
 
     :host([hidden]) {
@@ -8739,29 +9044,29 @@ new class extends _identity {
       gap: var(--ds-meter-label-gap);
     }
 
+    /* Meter-owned wrappers around the composed Texts: the long label wraps, the value never does. */
+    [data-part='label'] {
+      flex-shrink: 1;
+      min-inline-size: 0;
+    }
+    [data-part='valueText'] {
+      flex-shrink: 0;
+    }
+
     /* track: color.background.strong, locked. Deliberately low-contrast; the text identifies the meter. */
     [data-part='track'] {
       overflow: hidden;
       inline-size: 100%;
       block-size: var(--ds-meter-track-height);
       border-radius: var(--ds-meter-radius);
-      background-color: var(--color-background-strong);
+      background-color: var(--ds-meter-track);
     }
 
     /* fill: color.status.{tone}.icon, locked — the step guaranteed 3:1 against the page background. */
     [data-part='fill'] {
       block-size: 100%;
       border-radius: var(--ds-meter-radius);
-      background-color: var(--color-status-info-icon);
-    }
-    :host([tone='success']) [data-part='fill'] {
-      background-color: var(--color-status-success-icon);
-    }
-    :host([tone='warning']) [data-part='fill'] {
-      background-color: var(--color-status-warning-icon);
-    }
-    :host([tone='danger']) [data-part='fill'] {
-      background-color: var(--color-status-danger-icon);
+      background-color: var(--ds-meter-fill);
     }
 
     /* transition: fill width change, with motion.easing.standard; instant under reduced motion. */
@@ -9038,6 +9343,7 @@ new class extends _identity {
 			this.targetObserver.disconnect();
 			this.setCustomState("target-focus", false);
 			this.setCustomState("focus-ring", false);
+			this.warnedTarget = false;
 		}
 		willUpdate(changed) {
 			if (changed.has("overrides") || changed.has("surface") || changed.has("interactive")) this.applyOverrides();
@@ -9224,10 +9530,21 @@ new class extends _identity {
       --ds-card-border-width: var(--border-width-thin);
       --ds-card-radius: var(--radius-lg);
       --ds-card-transition: var(--motion-duration-fast);
+      /* locked: not in the overrides API, but still themeable from page CSS */
+      --ds-card-background: var(--color-background);
+      --ds-card-hover-background: var(--color-background-subtle);
+      --ds-card-focus-ring: var(--color-border-focus);
+      --ds-card-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
       display: none;
+    }
+
+    /* background: color.background.{surface}; default drops the segment. hoverBackground: by surface. */
+    :host([surface='subtle']) {
+      --ds-card-background: var(--color-background-subtle);
+      --ds-card-hover-background: var(--color-background-strong);
     }
 
     /* paddingBlock / paddingInline: layout.inset.{inset} */
@@ -9255,12 +9572,7 @@ new class extends _identity {
       border-width: 0;
       border-color: transparent;
       border-radius: var(--ds-card-radius);
-      /* background: color.background.{surface}, locked; default drops the segment */
-      background-color: var(--color-background);
-    }
-
-    :host([surface='subtle']) [data-part='surface'] {
-      background-color: var(--color-background-subtle);
+      background-color: var(--ds-card-background);
     }
 
     /* borderWidth / border: rendered only with surface default */
@@ -9313,7 +9625,7 @@ new class extends _identity {
       position: relative;
     }
     :host([interactive]) [data-part='surface'] {
-      border-width: var(--border-width-focus);
+      border-width: var(--ds-card-focus-ring-width);
       border-color: var(--ds-card-border);
       transition:
         background-color var(--ds-card-transition) var(--motion-easing-standard),
@@ -9329,17 +9641,14 @@ new class extends _identity {
       z-index: 1;
     }
 
-    /* hoverBackground: color.background.subtle, locked; subtle cards use color.background.strong. Only with a live target. */
+    /* hoverBackground: locked; only with a live, enabled target */
     :host([interactive]:state(has-target):not(:state(target-disabled)):hover) [data-part='surface'] {
-      background-color: var(--color-background-subtle);
-    }
-    :host([interactive][surface='subtle']:state(has-target):not(:state(target-disabled)):hover) [data-part='surface'] {
-      background-color: var(--color-background-strong);
+      background-color: var(--ds-card-hover-background);
     }
 
     /* focusRing: locked; drawn on the card only while its target has keyboard focus */
     :host([interactive]:state(target-focus)) [data-part='surface'] {
-      border-color: var(--color-border-focus);
+      border-color: var(--ds-card-focus-ring);
     }
 
     /*
@@ -9354,7 +9663,7 @@ new class extends _identity {
     :host([focusable]:not([interactive]):focus-visible) [data-part='surface'],
     :host([focusable]:not([interactive]):state(focus-ring)) [data-part='surface'] {
       /* no outline-offset: the ring sits on the card's edge */
-      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline: var(--ds-card-focus-ring-width) solid var(--ds-card-focus-ring);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -9642,7 +9951,7 @@ const NEGATED_BOOLEAN_CONVERTER$11 = {
 		return value ? null : "";
 	}
 };
-const FOCUSABLE_SELECTOR$5 = [
+const FOCUSABLE_SELECTOR$4 = [
 	"a[href]",
 	"area[href]",
 	"button",
@@ -9666,7 +9975,7 @@ const FOCUSABLE_SELECTOR$5 = [
 function isFocusable$3(el) {
 	if (!(el instanceof HTMLElement)) return false;
 	if (el.hasAttribute("data-focus-sentinel") || el.hasAttribute("data-focus-scope-anchor")) return false;
-	if (!el.matches(FOCUSABLE_SELECTOR$5) || el.matches(":disabled")) return false;
+	if (!el.matches(FOCUSABLE_SELECTOR$4) || el.matches(":disabled")) return false;
 	return el.getAttribute("tabindex") !== "-1" && el.tabIndex >= 0;
 }
 /** `inert` and `aria-hidden="true"` subtrees contribute nothing at all. */
@@ -10110,7 +10419,7 @@ new class extends _identity {
 			}));
 		}
 		warnInDev() {
-			if (!import.meta.env.DEV || !this.trapped || !this.active) return;
+			if (!import.meta.env.DEV || !this.trapped) return;
 			if (this.getFocusableDescendants().length === 0) console.warn("<ds-focus-scope> is trapped with no focusable descendants, so focus inside it cannot move or leave. Add a focusable control (a close Button) or set the trapped property to false.", this);
 		}
 	}];
@@ -10156,8 +10465,8 @@ let _init_size$7;
 let _init_extra_size$7;
 let _init_dismissible$5;
 let _init_extra_dismissible$5;
-let _init_initialFocus;
-let _init_extra_initialFocus;
+let _init_initialFocus$1;
+let _init_extra_initialFocus$1;
 let _init_overrides$27;
 let _init_extra_overrides$27;
 let _init_closing$5;
@@ -10228,14 +10537,14 @@ function nextFrame$2() {
 }
 /** How many open `<ds-dialog>`s hold the page-scroll lock, so a second one does not release it early. */
 let scrollLocks$3 = 0;
-let previousOverflow$3 = "";
-let previousGutter$3 = "";
+let previousOverflow$4 = "";
+let previousGutter$4 = "";
 function lockPageScroll$4() {
 	scrollLocks$3 += 1;
 	if (scrollLocks$3 === 1) {
 		const style = document.documentElement.style;
-		previousOverflow$3 = style.getPropertyValue("overflow");
-		previousGutter$3 = style.getPropertyValue("scrollbar-gutter");
+		previousOverflow$4 = style.getPropertyValue("overflow");
+		previousGutter$4 = style.getPropertyValue("scrollbar-gutter");
 		style.setProperty("overflow", "hidden");
 		style.setProperty("scrollbar-gutter", "stable");
 	}
@@ -10244,8 +10553,8 @@ function unlockPageScroll$4() {
 	scrollLocks$3 = Math.max(0, scrollLocks$3 - 1);
 	if (scrollLocks$3 === 0) {
 		const style = document.documentElement.style;
-		style.setProperty("overflow", previousOverflow$3);
-		style.setProperty("scrollbar-gutter", previousGutter$3);
+		style.setProperty("overflow", previousOverflow$4);
+		style.setProperty("scrollbar-gutter", previousGutter$4);
 	}
 }
 /**
@@ -10290,7 +10599,7 @@ let _DsDialog;
 new class extends _identity {
 	static [class DsDialog extends LitElement {
 		static {
-			({e: [_init_open$11, _init_extra_open$11, _init_heading$5, _init_extra_heading$5, _init_description$6, _init_extra_description$6, _init_hideHeading$2, _init_extra_hideHeading$2, _init_size$7, _init_extra_size$7, _init_dismissible$5, _init_extra_dismissible$5, _init_initialFocus, _init_extra_initialFocus, _init_overrides$27, _init_extra_overrides$27, _init_closing$5, _init_extra_closing$5, _init_hasFooter$3, _init_extra_hasFooter$3, _init_headingIsFallback$1, _init_extra_headingIsFallback$1, _init_dialogEl$4, _init_extra_dialogEl$4, _init_scopeEl$2, _init_extra_scopeEl$2, _init_scrimEl$3, _init_extra_scrimEl$3, _init_surfaceEl$4, _init_extra_surfaceEl$4, _init_headingEl$3, _init_extra_headingEl$3, _init_closeButtonEl$2, _init_extra_closeButtonEl$2, _init_bodySlotEl$2, _init_extra_bodySlotEl$2, _init_footerSlotEl$1, _init_extra_footerSlotEl$1], c: [_DsDialog, _initClass$27]} = applyDecs2311(this, [customElement("ds-dialog")], [
+			({e: [_init_open$11, _init_extra_open$11, _init_heading$5, _init_extra_heading$5, _init_description$6, _init_extra_description$6, _init_hideHeading$2, _init_extra_hideHeading$2, _init_size$7, _init_extra_size$7, _init_dismissible$5, _init_extra_dismissible$5, _init_initialFocus$1, _init_extra_initialFocus$1, _init_overrides$27, _init_extra_overrides$27, _init_closing$5, _init_extra_closing$5, _init_hasFooter$3, _init_extra_hasFooter$3, _init_headingIsFallback$1, _init_extra_headingIsFallback$1, _init_dialogEl$4, _init_extra_dialogEl$4, _init_scopeEl$2, _init_extra_scopeEl$2, _init_scrimEl$3, _init_extra_scrimEl$3, _init_surfaceEl$4, _init_extra_surfaceEl$4, _init_headingEl$3, _init_extra_headingEl$3, _init_closeButtonEl$2, _init_extra_closeButtonEl$2, _init_bodySlotEl$2, _init_extra_bodySlotEl$2, _init_footerSlotEl$1, _init_extra_footerSlotEl$1], c: [_DsDialog, _initClass$27]} = applyDecs2311(this, [customElement("ds-dialog")], [
 				[
 					property({
 						type: Boolean,
@@ -10458,7 +10767,7 @@ new class extends _identity {
 		set dismissible(v) {
 			this.#F = v;
 		}
-		#G = (_init_extra_dismissible$5(this), _init_initialFocus(this, "first"));
+		#G = (_init_extra_dismissible$5(this), _init_initialFocus$1(this, "first"));
 		/** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are ignored. */
 		get initialFocus() {
 			return this.#G;
@@ -10466,7 +10775,7 @@ new class extends _identity {
 		set initialFocus(v) {
 			this.#G = v;
 		}
-		#H = (_init_extra_initialFocus(this), _init_overrides$27(this));
+		#H = (_init_extra_initialFocus$1(this), _init_overrides$27(this));
 		/** The exit transition is playing: the dialog stays rendered a beat past `open` turning false. */
 		get overrides() {
 			return this.#H;
@@ -10677,12 +10986,12 @@ new class extends _identity {
 			}
 		};
 		handleScrimClick = (event) => {
-			if (!this.dismissible || event.target !== event.currentTarget) return;
+			if (!this.open || !this.dismissible || event.target !== event.currentTarget) return;
 			this.dispatchClose("scrim");
 		};
 		handleCloseButtonPress = (event) => {
 			event.stopPropagation();
-			this.dispatchClose("close-button");
+			if (this.open) this.dispatchClose("close-button");
 		};
 		/** A slotted form submitted with method="dialog" (or a formmethod="dialog" submitter) asks to close. */
 		handleSubmit = (event) => {
@@ -10717,15 +11026,14 @@ new class extends _identity {
 			}));
 		}
 		async handleClose() {
-			await this.updateComplete;
-			await this.transitionsSettled();
-			if (this.open) return;
 			const dialog = this.dialogEl;
 			if (dialog?.open) {
 				this.closingProgrammatically = true;
 				dialog.close();
 			}
 			this.releaseScroll();
+			await this.transitionsSettled();
+			if (this.open) return;
 			this.closing = false;
 		}
 		/** Waits for the scrim and surface transitions; resolves with how many were running. */
@@ -10801,6 +11109,10 @@ new class extends _identity {
     :host {
       display: contents;
       --ds-dialog-scrim: var(--color-overlay-scrim);
+      /* Locked: not in the overrides type, but still a hook, themeable from page CSS. */
+      --ds-dialog-surface: var(--color-overlay-surface);
+      --ds-dialog-focus-ring: var(--color-border-focus);
+      --ds-dialog-focus-ring-width: var(--border-width-focus);
       --ds-dialog-border: var(--color-border);
       --ds-dialog-border-width: var(--border-width-thin);
       --ds-dialog-shadow: var(--shadow-overlay);
@@ -10837,13 +11149,18 @@ new class extends _identity {
       background: transparent;
       color: inherit;
       overflow: hidden;
+      place-items: center;
       /* Only a non-top-layer fallback honours this; the top layer ignores z-index. */
       z-index: var(--ds-dialog-layer);
+      /* The native <dialog> closes at the start of the exit (focus restore, page no longer inert);
+         these keep it painted in the top layer until the exit transition ends. */
+      transition:
+        display var(--ds-dialog-exit) allow-discrete,
+        overlay var(--ds-dialog-exit) allow-discrete;
     }
 
     dialog[open] {
       display: grid;
-      place-items: center;
     }
 
     /* The scrim is the element below; the native backdrop stays clear. */
@@ -10886,8 +11203,7 @@ new class extends _identity {
       padding-block: var(--ds-dialog-inset);
       font-family: var(--font-family-body);
       color: var(--color-foreground);
-      /* surface: color.overlay.surface, locked — no hook */
-      background: var(--color-overlay-surface);
+      background: var(--ds-dialog-surface);
       border-style: solid;
       border-width: var(--ds-dialog-border-width);
       border-color: var(--ds-dialog-border);
@@ -10929,6 +11245,7 @@ new class extends _identity {
     }
 
     @media (prefers-reduced-motion: reduce) {
+      dialog,
       .scrim,
       .surface {
         transition: none;
@@ -10967,8 +11284,8 @@ new class extends _identity {
       outline: none;
     }
     .heading:has(:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-dialog-focus-ring-width) solid var(--ds-dialog-focus-ring);
+      outline-offset: var(--ds-dialog-focus-ring-width);
     }
 
     /* hideHeading: out of view, still the accessible name and still a focus target. */
@@ -11074,14 +11391,14 @@ const CONFIRM_VARIANT = {
 };
 /** How many open `<ds-alert-dialog>`s hold the page-scroll lock, so a second one does not release it early. */
 let scrollLocks$2 = 0;
-let previousOverflow$2 = "";
-let previousGutter$2 = "";
+let previousOverflow$3 = "";
+let previousGutter$3 = "";
 function lockPageScroll$3() {
 	scrollLocks$2 += 1;
 	if (scrollLocks$2 === 1) {
 		const style = document.documentElement.style;
-		previousOverflow$2 = style.getPropertyValue("overflow");
-		previousGutter$2 = style.getPropertyValue("scrollbar-gutter");
+		previousOverflow$3 = style.getPropertyValue("overflow");
+		previousGutter$3 = style.getPropertyValue("scrollbar-gutter");
 		style.setProperty("overflow", "hidden");
 		style.setProperty("scrollbar-gutter", "stable");
 	}
@@ -11090,8 +11407,8 @@ function unlockPageScroll$3() {
 	scrollLocks$2 = Math.max(0, scrollLocks$2 - 1);
 	if (scrollLocks$2 === 0) {
 		const style = document.documentElement.style;
-		style.setProperty("overflow", previousOverflow$2);
-		style.setProperty("scrollbar-gutter", previousGutter$2);
+		style.setProperty("overflow", previousOverflow$3);
+		style.setProperty("scrollbar-gutter", previousGutter$3);
 	}
 }
 /**
@@ -11332,6 +11649,7 @@ new class extends _identity {
 		closingProgrammatically = false;
 		/** Escape was already reported from a non-cancelable `cancel` that the native close follows. */
 		escapeReported = false;
+		warnedEmpty = false;
 		connectedCallback() {
 			super.connectedCallback();
 			this.setAttribute("data-ds", "AlertDialog");
@@ -11366,12 +11684,13 @@ new class extends _identity {
         role="alertdialog"
         aria-modal="true"
         aria-label=${this.heading}
-        aria-description=${this.description}
+        aria-describedby="description"
         @cancel=${this.handleCancel}
         @close=${this.handleNativeClose}
       >
-        <div class="scrim" part="scrim" data-part="scrim"></div>
-        <ds-focus-scope auto-focus="none" .trapped=${true} .restoreFocus=${true}>
+        <div class="scrim" part="scrim" data-part="scrim" aria-hidden="true"></div>
+        <!-- active follows open, so the trap releases when the exit starts. -->
+        <ds-focus-scope auto-focus="none" .trapped=${true} .restoreFocus=${true} .active=${this.open}>
           <div class="scope" part="focusScope" data-part="focusScope">
             <div class="surface" part="surface" data-part="surface">
               <!-- The icon-and-text row is AlertDialog-owned and carries no part: it only holds iconGap. -->
@@ -11384,7 +11703,8 @@ new class extends _identity {
                   <div part="heading" data-part="heading">
                     <ds-heading level="2">${this.heading}</ds-heading>
                   </div>
-                  <div part="description" data-part="description">
+                  <!-- aria-describedby target: ids resolve within this one shadow root. -->
+                  <div id="description" part="description" data-part="description">
                     <ds-text tone="muted">${this.description}</ds-text>
                   </div>
                 </div>
@@ -11500,11 +11820,13 @@ new class extends _identity {
 				else this.style.setProperty(hook, cssVar(ref));
 			}
 		}
+		/** Warns once per element, naming all three required strings. */
 		warnInDev() {
-			if (!this.open) return;
-			if (!this.heading) console.warn("<ds-alert-dialog> requires a `heading`; it is the accessible name.", this);
-			if (!this.description) console.warn("<ds-alert-dialog> requires a `description` stating the consequence.", this);
-			if (!this.confirmLabel) console.warn("<ds-alert-dialog> requires a `confirm-label` restating the action.", this);
+			if (this.warnedEmpty || !this.open) return;
+			if (!this.heading || !this.description || !this.confirmLabel) {
+				this.warnedEmpty = true;
+				console.warn("<ds-alert-dialog> is open with an empty `heading`, `description` or `confirmLabel`; all three are required, and an empty heading removes the accessible name.", this);
+			}
 		}
 	}];
 	shadowRootOptions = {
@@ -11531,6 +11853,10 @@ new class extends _identity {
       --ds-alert-dialog-rise: var(--space-2);
       --ds-alert-dialog-enter: var(--motion-duration-base);
       --ds-alert-dialog-exit: var(--motion-duration-fast);
+      /* Locked bindings: out of the overrides type, but still hooks for page CSS and the naming codemod. */
+      --ds-alert-dialog-surface: var(--color-overlay-surface);
+      --ds-alert-dialog-focus-ring: var(--color-border-focus);
+      --ds-alert-dialog-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -11601,8 +11927,8 @@ new class extends _identity {
       padding-block: var(--ds-alert-dialog-inset);
       font-family: var(--font-family-body);
       color: var(--color-foreground);
-      /* surface: color.overlay.surface, locked — no hook */
-      background: var(--color-overlay-surface);
+      /* surface: color.overlay.surface, locked (hook only, not in overrides) */
+      background: var(--ds-alert-dialog-surface);
       border-style: solid;
       border-width: var(--ds-alert-dialog-border-width);
       border-color: var(--ds-alert-dialog-border);
@@ -11701,6 +12027,13 @@ new class extends _identity {
 
     .action {
       display: inline-flex;
+    }
+
+    /* focusRing / focusRingWidth: the only focusables are the two Buttons, which draw their own
+       ring; the AlertDialog hooks reach them through the Buttons' own ring hooks, never their shadow. */
+    .action > ds-button {
+      --ds-button-focus-ring: var(--ds-alert-dialog-focus-ring);
+      --ds-button-focus-ring-width: var(--ds-alert-dialog-focus-ring-width);
     }
   `;
 	constructor() {
@@ -12191,6 +12524,7 @@ new class extends _identity {
                 label=${this.label}
                 ?icon-only=${this.iconOnly}
                 .expanded=${isOpen}
+                .haspopup=${"menu"}
                 @press=${this.handleTriggerPress}
                 @keydown=${this.handleTriggerKeydown}
               >
@@ -12475,22 +12809,25 @@ new class extends _identity {
 			const gutter = readLengthPx(popup, HOOKS$25.gutter) ?? 0;
 			const rtl = getComputedStyle(reference).direction === "rtl";
 			const rect = reference.getBoundingClientRect();
-			const size = popup.getBoundingClientRect();
+			const width = popup.offsetWidth;
+			const height = popup.offsetHeight;
 			const viewportWidth = window.innerWidth;
 			const viewportHeight = window.innerHeight;
 			const [preferred, side] = this.placement.split("-");
-			const needed = size.height + offset;
+			const needed = height + offset + gutter;
 			let vertical = preferred;
 			if (vertical === "bottom" && rect.bottom + needed > viewportHeight && rect.top - needed >= 0) vertical = "top";
 			else if (vertical === "top" && rect.top - needed < 0 && rect.bottom + needed <= viewportHeight) vertical = "bottom";
-			const preferredLeft = (rtl ? side === "end" : side === "start") ? rect.left : rect.right - size.width;
-			const furthestLeft = Math.max(gutter, viewportWidth - gutter - size.width);
-			const left = Math.min(Math.max(preferredLeft, gutter), furthestLeft);
-			popup.dataset["side"] = vertical;
+			const preferredLeft = (rtl ? side === "end" : side === "start") ? rect.left : rect.right - width;
+			const furthestLeft = viewportWidth - gutter - width;
+			const left = furthestLeft < gutter ? rtl ? furthestLeft : gutter : Math.min(Math.max(preferredLeft, gutter), furthestLeft);
+			const preferredTop = vertical === "bottom" ? rect.bottom + offset : rect.top - offset - height;
+			const top = Math.max(gutter, Math.min(preferredTop, viewportHeight - gutter - height));
+			if (popup.dataset["side"] !== vertical) popup.dataset["side"] = vertical;
 			popup.style.left = `${left}px`;
 			popup.style.right = "auto";
-			popup.style.top = vertical === "bottom" ? `${rect.bottom}px` : "auto";
-			popup.style.bottom = vertical === "top" ? `${viewportHeight - rect.top}px` : "auto";
+			popup.style.top = `${top}px`;
+			popup.style.bottom = "auto";
 		}
 		applyOverrides() {
 			for (const binding of Object.keys(HOOKS$25)) {
@@ -12533,6 +12870,18 @@ new class extends _identity {
       --ds-menu-layer: var(--layer-dropdown);
       --ds-menu-enter: var(--motion-duration-fast);
       --ds-menu-enter-distance: var(--space-1);
+      /* Locked bindings: outside the overrides type, but still hooks so page CSS can re-theme them. */
+      --ds-menu-surface: var(--color-overlay-surface);
+      /* phoneBreakpoint is read on rn only; declared here so the binding stays renameable. */
+      --ds-menu-phone-breakpoint: var(--layout-max-width-prose);
+      --ds-menu-item-hover: var(--color-background-subtle);
+      --ds-menu-item-color: var(--color-foreground);
+      --ds-menu-item-danger-color: var(--color-foreground-danger);
+      --ds-menu-group-label-color: var(--color-foreground-muted);
+      --ds-menu-shortcut-color: var(--color-foreground-muted);
+      --ds-menu-min-target: var(--size-target-min);
+      --ds-menu-focus-ring: var(--color-border-focus);
+      --ds-menu-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -12554,9 +12903,9 @@ new class extends _identity {
       border-color: var(--ds-menu-border);
       border-radius: var(--ds-menu-radius);
       /* surface: color.overlay.surface, locked */
-      background: var(--color-overlay-surface);
+      background: var(--ds-menu-surface);
       box-shadow: var(--ds-menu-shadow);
-      color: var(--color-foreground);
+      color: var(--ds-menu-item-color);
       z-index: var(--ds-menu-layer);
       /* minWidth: an override replaces the base; the × 2.5 stays in the rule, and the trigger's
          measured width is the runtime floor (0 in anchor mode, which has no trigger). */
@@ -12573,15 +12922,6 @@ new class extends _identity {
       transition:
         opacity var(--ds-menu-enter) var(--motion-easing-standard),
         transform var(--ds-menu-enter) var(--motion-easing-standard);
-    }
-
-    /* popupOffset: the gap between trigger and popup, on the side facing the trigger */
-    [data-part='popup'][data-side='bottom'] {
-      margin-block-start: var(--ds-menu-popup-offset);
-    }
-
-    [data-part='popup'][data-side='top'] {
-      margin-block-end: var(--ds-menu-popup-offset);
     }
 
     [data-part='popup'][hidden] {
@@ -12618,7 +12958,7 @@ new class extends _identity {
       padding-inline: var(--ds-menu-item-padding-inline);
       font-size: var(--ds-menu-group-label-size);
       font-weight: var(--ds-menu-group-label-weight);
-      color: var(--color-foreground-muted);
+      color: var(--ds-menu-group-label-color);
     }
 
     /* borderWidth also sets the separator thickness */
@@ -12634,12 +12974,12 @@ new class extends _identity {
       align-items: center;
       gap: var(--ds-menu-item-gap);
       /* minTarget: size.target.min, locked */
-      min-block-size: var(--size-target-min);
+      min-block-size: var(--ds-menu-min-target);
       padding-block: var(--ds-menu-item-padding-block);
       padding-inline: var(--ds-menu-item-padding-inline);
       border-radius: var(--ds-menu-item-radius);
       /* itemColor: color.foreground, locked */
-      color: var(--color-foreground);
+      color: var(--ds-menu-item-color);
       cursor: pointer;
       user-select: none;
       outline: none;
@@ -12649,13 +12989,13 @@ new class extends _identity {
        never hover-only. The highlight changes instantly: enter is the popup's transition only. */
     [data-part='item']:hover,
     [data-part='item']:focus {
-      background: var(--color-background-subtle);
+      background: var(--ds-menu-item-hover);
     }
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
     [data-part='item']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-menu-focus-ring-width) solid var(--ds-menu-focus-ring);
+      outline-offset: calc(-1 * var(--ds-menu-focus-ring-width));
     }
 
     [data-part='item'][aria-disabled='true'] {
@@ -12669,7 +13009,7 @@ new class extends _identity {
 
     /* itemDangerColor: color.foreground.danger, locked */
     [data-part='item'][data-tone='danger'] {
-      color: var(--color-foreground-danger);
+      color: var(--ds-menu-item-danger-color);
     }
 
     [data-part='itemIcon'] {
@@ -12685,7 +13025,7 @@ new class extends _identity {
     [data-part='itemShortcut'] {
       flex: none;
       font-size: var(--ds-menu-shortcut-size);
-      color: var(--color-foreground-muted);
+      color: var(--ds-menu-shortcut-color);
     }
   `;
 	constructor() {
@@ -12755,8 +13095,8 @@ function parseTimeMs(raw) {
 }
 /** Shared "warm" state: until this timestamp a newly hovered tooltip shows with no delay. Set whenever any tooltip hides. */
 let warmUntil = 0;
-const BUBBLE_CLASS = "ds-tooltip-bubble";
-const DESCRIPTION_CLASS = "ds-tooltip-description";
+const BUBBLE_CLASS = "ds-tooltip";
+const DESCRIPTION_CLASS = "ds-tooltip__description";
 const LIGHT_STYLE_MARKER = "data-ds-tooltip-style";
 const LIGHT_STYLE_CSS = `
 .${DESCRIPTION_CLASS} {
@@ -12772,7 +13112,7 @@ const LIGHT_STYLE_CSS = `
   border: 0;
 }
 .${BUBBLE_CLASS} {
-  --color-foreground: var(--color-inverse-foreground);
+  --color-foreground: var(--ds-tooltip-text);
   position: fixed;
   inset: auto;
   box-sizing: border-box;
@@ -12781,8 +13121,8 @@ const LIGHT_STYLE_CSS = `
   padding-block: var(--ds-tooltip-padding-block);
   padding-inline: var(--ds-tooltip-padding-inline);
   border-radius: var(--ds-tooltip-radius);
-  background: var(--color-inverse-surface);
-  color: var(--color-inverse-foreground);
+  background: var(--ds-tooltip-surface);
+  color: var(--ds-tooltip-text);
   box-shadow: var(--ds-tooltip-shadow);
   inline-size: max-content;
   max-inline-size: calc(var(--ds-tooltip-max-width) * 3);
@@ -13291,6 +13631,9 @@ new class extends _identity {
 	styles = css`
     :host {
       display: contents;
+      /* surface and text are locked: out of the overrides API, still themeable from page CSS. */
+      --ds-tooltip-surface: var(--color-inverse-surface);
+      --ds-tooltip-text: var(--color-inverse-foreground);
       --ds-tooltip-radius: var(--radius-sm);
       --ds-tooltip-padding-block: var(--space-1);
       --ds-tooltip-padding-inline: var(--space-2);
@@ -13413,7 +13756,7 @@ function resolveConstant(el, constant) {
 	const base = readTimeMs(el, tokenProperty(constant.token));
 	return base === null ? null : base * constant.multiply;
 }
-const FOCUSABLE_SELECTOR$4 = [
+const FOCUSABLE_SELECTOR$3 = [
 	"a[href]",
 	"area[href]",
 	"button",
@@ -13430,7 +13773,7 @@ const FOCUSABLE_SELECTOR$4 = [
 function isFocusable$1(el) {
 	if (!(el instanceof HTMLElement)) return false;
 	if (el.hasAttribute("data-focus-sentinel") || el.hasAttribute("data-focus-scope-anchor")) return false;
-	if (!el.matches(FOCUSABLE_SELECTOR$4) || el.matches(":disabled")) return false;
+	if (!el.matches(FOCUSABLE_SELECTOR$3) || el.matches(":disabled")) return false;
 	return el.getAttribute("tabindex") !== "-1" && el.tabIndex >= 0;
 }
 /** `inert` and `aria-hidden="true"` subtrees contribute nothing at all. */
@@ -13676,6 +14019,7 @@ new class extends _identity {
 			this.#H = v;
 		}
 		dismissed = (_init_extra_closing$3(this), false);
+		wasMoot = false;
 		timerId;
 		remainingMs = null;
 		timerStartedAt = 0;
@@ -13725,7 +14069,7 @@ new class extends _identity {
 		updated(changed) {
 			if (changed.has("duration") || changed.has("actionLabel") || changed.has("tone")) {
 				this.restartTimer();
-				this.warnForcedPersistent();
+				this.warnForcedPersistent(changed.has("duration"));
 			}
 			if (changed.has("message") && import.meta.env.DEV && !this.message) console.warn("<ds-toast> requires a `message`.", this);
 		}
@@ -13739,6 +14083,7 @@ new class extends _identity {
 			return html`
       <div
         class=${this.closing ? "closing" : ""}
+        ?inert=${this.closing}
         part="toast"
         data-part="toast"
         role=${this.tone === "danger" ? "alert" : "status"}
@@ -13820,24 +14165,27 @@ new class extends _identity {
 			else this.maybeResumeTimer();
 		};
 		/**
-		* Removes the toast and dispatches `dismiss` once it has left: after the exit
-		* transition, or at once for `replaced`, under reduced motion, and when the
-		* exit time cannot be resolved. A toast holding focus when it leaves — for any
-		* reason, including `replaced` and `programmatic` — sends focus back first.
+		* Starts the toast leaving. `dismiss` fires synchronously here, while the
+		* toast is still connected so it bubbles to the region, and the element is
+		* removed once the exit transition ends — at once for `replaced`, under
+		* reduced motion, and when the exit time cannot be resolved. A toast holding
+		* focus sends it back first; a `replaced` toast restores at unmount, and only
+		* while focus is still inside it or has fallen to the body, so no dismissal
+		* restores twice.
 		*/
 		requestDismiss(reason) {
 			if (this.dismissed) return;
 			this.dismissed = true;
 			this.clearTimer();
+			const root = this.closest("ds-toast-region") ?? this;
+			if (reason !== "replaced" && this.matches(":focus-within")) returnFocus(root);
+			this.dispatchEvent(new CustomEvent("dismiss", {
+				detail: { reason },
+				bubbles: true,
+				composed: true
+			}));
 			const finish = () => {
-				const root = this.closest("ds-toast-region") ?? this;
-				const hadFocus = this.matches(":focus-within");
-				this.dispatchEvent(new CustomEvent("dismiss", {
-					detail: { reason },
-					bubbles: true,
-					composed: true
-				}));
-				if (hadFocus) returnFocus(root);
+				if (reason === "replaced" && (this.matches(":focus-within") || this.focused && deepActiveElement$1() === null)) returnFocus(root);
 				this.remove();
 			};
 			const container = this.containerEl;
@@ -13901,11 +14249,16 @@ new class extends _identity {
 				else this.style.setProperty(hook, cssVar(ref));
 			}
 		}
-		/** Warns each time a change to `duration`, `actionLabel` or `tone` makes an assigned `duration` moot. */
-		warnForcedPersistent() {
-			if (!import.meta.env.DEV || !this.durationAssigned) return;
+		/**
+		* Warns each time a change to `duration`, `actionLabel` or `tone` enters the case where an
+		* assigned `short`/`long` is moot — including a `duration` change while the case already held.
+		*/
+		warnForcedPersistent(durationChanged) {
 			const assigned = this.duration;
-			if ((assigned === "short" || assigned === "long") && this.effectiveDuration === "persistent") console.warn(`<ds-toast>: \`duration="${assigned}"\` is ignored — a toast with an action or \`tone="danger"\` is persistent until dismissed.`, this);
+			const moot = this.durationAssigned && (assigned === "short" || assigned === "long") && this.effectiveDuration === "persistent";
+			const entered = moot && (!this.wasMoot || durationChanged);
+			this.wasMoot = moot;
+			if (import.meta.env.DEV && entered) console.warn(`<ds-toast>: \`duration="${assigned}"\` is ignored — a toast with an action or \`tone="danger"\` is persistent until dismissed.`, this);
 		}
 	}];
 	shadowRootOptions = {
@@ -13925,6 +14278,13 @@ new class extends _identity {
       --ds-toast-enter: var(--motion-duration-base);
       --ds-toast-enter-offset: var(--space-2);
       --ds-toast-exit: var(--motion-duration-fast);
+      /* Locked bindings: out of the overrides API, but themeable from page CSS through these hooks. */
+      --ds-toast-surface: var(--color-inverse-surface);
+      --ds-toast-text: var(--color-inverse-foreground);
+      --ds-toast-action-color: var(--color-inverse-link);
+      --ds-toast-dismiss-color: var(--color-inverse-link);
+      --ds-toast-focus-ring-inverse: var(--color-inverse-focus);
+      --ds-toast-min-target: var(--size-target-min);
       max-inline-size: var(--ds-toast-max-width);
     }
 
@@ -13938,19 +14298,19 @@ new class extends _identity {
       align-items: center;
       gap: var(--ds-toast-gap);
       /* minTarget: size.target.min, locked — the row never falls below the minimum target height */
-      min-block-size: var(--size-target-min);
+      min-block-size: var(--ds-toast-min-target);
       padding-block: var(--ds-toast-padding-block);
       padding-inline: var(--ds-toast-padding-inline);
       border-radius: var(--ds-toast-radius);
       box-shadow: var(--ds-toast-shadow);
       /* surface: color.inverse.surface, locked — inverted like Tooltip, so it floats above any page surface */
-      background: var(--color-inverse-surface);
+      background: var(--ds-toast-surface);
       /* text: color.inverse.foreground, locked. Text's color binding is locked and it has no inverse tone,
          so the toast re-scopes the token Text already reads on its own container and composes Text unchanged. */
-      --color-foreground: var(--color-inverse-foreground);
-      color: var(--color-inverse-foreground);
+      --color-foreground: var(--ds-toast-text);
+      color: var(--ds-toast-text);
       /* focusRingInverse: color.inverse.focus, locked — replaces color.border.focus inside the toast */
-      --color-border-focus: var(--color-inverse-focus);
+      --color-border-focus: var(--ds-toast-focus-ring-inverse);
       opacity: 1;
       transform: none;
       transition:
@@ -14001,6 +14361,17 @@ new class extends _identity {
     [data-part='dismissButton'] {
       display: inline-flex;
       flex: none;
+    }
+
+    /* actionColor / dismissColor: color.inverse.link, locked. The Buttons are ghost + inverse and are
+       never restyled; each wrapper re-scopes the token Button's inverse text already reads, as the
+       toast does for Text's foreground, so the hooks take effect without reaching into Button. */
+    [data-part='actionButton'] {
+      --color-inverse-link: var(--ds-toast-action-color);
+    }
+
+    [data-part='dismissButton'] {
+      --color-inverse-link: var(--ds-toast-dismiss-color);
     }
   `;
 	constructor() {
@@ -14056,7 +14427,7 @@ new class extends _identity {
 			returnFocus(this);
 		}
 		handleDocumentKeydown = (event) => {
-			if (event.key !== "F6") return;
+			if (event.key !== "F6" || event.defaultPrevented) return;
 			const first = Array.from(this.querySelectorAll("ds-toast")).find((el) => !el.dismissing);
 			if (!first) return;
 			if (containsDeep(this, deepActiveElement$1())) {
@@ -14181,6 +14552,8 @@ let _init_showArrow;
 let _init_extra_showArrow;
 let _init_dismissible$3;
 let _init_extra_dismissible$3;
+let _init_initialFocus;
+let _init_extra_initialFocus;
 let _init_overrides$22;
 let _init_extra_overrides$22;
 let _init_internalOpen$4;
@@ -14203,6 +14576,7 @@ let _init_bodyEl;
 let _init_extra_bodyEl;
 let _init_bodySlotEl$1;
 let _init_extra_bodySlotEl$1;
+/** Where focus goes on open: the first control, or nowhere (the composer moves it). */
 /** Why `open-change` fired. */
 /** Detail carried by the `open-change` CustomEvent. */
 /** Overridable style hooks; see the `overrides` property. `surface`, `breakpoint`, `focusRing` and `focusRingWidth` are locked and excluded. */
@@ -14216,6 +14590,7 @@ const HOOKS$22 = {
 	offset: "--ds-popover-offset",
 	arrowSize: "--ds-popover-arrow-size",
 	maxWidth: "--ds-popover-max-width",
+	gutter: "--ds-popover-gutter",
 	layer: "--ds-popover-layer",
 	enter: "--ds-popover-enter",
 	enterDistance: "--ds-popover-enter-distance",
@@ -14283,13 +14658,26 @@ function resolvePlacement(placement, rtl) {
 }
 /** How many modal `<ds-popover>` instances currently hold the page-scroll lock. */
 let openModalCount = 0;
+let previousOverflow$2 = "";
+let previousGutter$2 = "";
+/** Locks page scroll the way Dialog does; `scrollbar-gutter: stable` keeps the page from shifting by the scrollbar width. */
 function lockPageScroll$2() {
 	openModalCount += 1;
-	if (openModalCount === 1) document.documentElement.style.overflow = "hidden";
+	if (openModalCount === 1) {
+		const style = document.documentElement.style;
+		previousOverflow$2 = style.getPropertyValue("overflow");
+		previousGutter$2 = style.getPropertyValue("scrollbar-gutter");
+		style.setProperty("overflow", "hidden");
+		style.setProperty("scrollbar-gutter", "stable");
+	}
 }
 function unlockPageScroll$2() {
 	openModalCount = Math.max(0, openModalCount - 1);
-	if (openModalCount === 0) document.documentElement.style.removeProperty("overflow");
+	if (openModalCount === 0) {
+		const style = document.documentElement.style;
+		style.setProperty("overflow", previousOverflow$2);
+		style.setProperty("scrollbar-gutter", previousGutter$2);
+	}
 }
 /** Negates a boolean attribute: `no-dismiss` present means `dismissible` is `false`. */
 const NEGATED_BOOLEAN_CONVERTER$8 = {
@@ -14336,7 +14724,7 @@ let _DsPopover;
 new class extends _identity {
 	static [class DsPopover extends LitElement {
 		static {
-			({e: [_init_heading$3, _init_extra_heading$3, _init_headingLevel$2, _init_extra_headingLevel$2, _init_open$7, _init_extra_open$7, _init_placement, _init_extra_placement, _init_modal$1, _init_extra_modal$1, _init_showArrow, _init_extra_showArrow, _init_dismissible$3, _init_extra_dismissible$3, _init_overrides$22, _init_extra_overrides$22, _init_internalOpen$4, _init_extra_internalOpen$4, _init_mounted, _init_extra_mounted, _init_triggerAccessibleName, _init_extra_triggerAccessibleName, _init_side$1, _init_extra_side$1, _init_panelEl, _init_extra_panelEl, _init_headingEl$2, _init_extra_headingEl$2, _init_headingControlEl, _init_extra_headingControlEl, _init_closeButtonControlEl, _init_extra_closeButtonControlEl, _init_bodyEl, _init_extra_bodyEl, _init_bodySlotEl$1, _init_extra_bodySlotEl$1], c: [_DsPopover, _initClass$22]} = applyDecs2311(this, [customElement("ds-popover")], [
+			({e: [_init_heading$3, _init_extra_heading$3, _init_headingLevel$2, _init_extra_headingLevel$2, _init_open$7, _init_extra_open$7, _init_placement, _init_extra_placement, _init_modal$1, _init_extra_modal$1, _init_showArrow, _init_extra_showArrow, _init_dismissible$3, _init_extra_dismissible$3, _init_initialFocus, _init_extra_initialFocus, _init_overrides$22, _init_extra_overrides$22, _init_internalOpen$4, _init_extra_internalOpen$4, _init_mounted, _init_extra_mounted, _init_triggerAccessibleName, _init_extra_triggerAccessibleName, _init_side$1, _init_extra_side$1, _init_panelEl, _init_extra_panelEl, _init_headingEl$2, _init_extra_headingEl$2, _init_headingControlEl, _init_extra_headingControlEl, _init_closeButtonControlEl, _init_extra_closeButtonControlEl, _init_bodyEl, _init_extra_bodyEl, _init_bodySlotEl$1, _init_extra_bodySlotEl$1], c: [_DsPopover, _initClass$22]} = applyDecs2311(this, [customElement("ds-popover")], [
 				[
 					property(),
 					1,
@@ -14388,6 +14776,14 @@ new class extends _identity {
 					}),
 					1,
 					"dismissible"
+				],
+				[
+					property({
+						attribute: "initial-focus",
+						reflect: true
+					}),
+					1,
+					"initialFocus"
 				],
 				[
 					property({ attribute: false }),
@@ -14499,94 +14895,106 @@ new class extends _identity {
 			this.#F = v;
 		}
 		#G = (_init_extra_showArrow(this), _init_dismissible$3(this, true));
-		/** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are not accepted. */
+		/**
+		* Where focus goes on open. `first` (default): the first control in the body, then the close
+		* button, then the heading, then the panel. `none`: no focus move — the composer focuses its own
+		* element once the panel is shown (with `modal` that is outside the trap until it does).
+		*/
 		get dismissible() {
 			return this.#G;
 		}
 		set dismissible(v) {
 			this.#G = v;
 		}
-		#H = (_init_extra_dismissible$3(this), _init_overrides$22(this));
-		/** Uncontrolled open state, used when `open` is omitted. */
-		get overrides() {
+		#H = (_init_extra_dismissible$3(this), _init_initialFocus(this, "first"));
+		/** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are not accepted. */
+		get initialFocus() {
 			return this.#H;
 		}
-		set overrides(v) {
+		set initialFocus(v) {
 			this.#H = v;
 		}
-		#I = (_init_extra_overrides$22(this), _init_internalOpen$4(this, false));
-		/** Whether the panel content is rendered: while open, and through the exit transition. */
-		get internalOpen() {
+		#I = (_init_extra_initialFocus(this), _init_overrides$22(this));
+		/** Uncontrolled open state, used when `open` is omitted. */
+		get overrides() {
 			return this.#I;
 		}
-		set internalOpen(v) {
+		set overrides(v) {
 			this.#I = v;
 		}
-		#J = (_init_extra_internalOpen$4(this), _init_mounted(this, false));
-		/** The trigger's name, the panel's `aria-label` when `heading` is unset. */
-		get mounted() {
+		#J = (_init_extra_overrides$22(this), _init_internalOpen$4(this, false));
+		/** Whether the panel content is rendered: while open, and through the exit transition. */
+		get internalOpen() {
 			return this.#J;
 		}
-		set mounted(v) {
+		set internalOpen(v) {
 			this.#J = v;
 		}
-		#K = (_init_extra_mounted(this), _init_triggerAccessibleName(this, ""));
-		/** Physical side the panel resolved to on the last positioning pass. */
-		get triggerAccessibleName() {
+		#K = (_init_extra_internalOpen$4(this), _init_mounted(this, false));
+		/** The trigger's name, the panel's `aria-label` when `heading` is unset. */
+		get mounted() {
 			return this.#K;
 		}
-		set triggerAccessibleName(v) {
+		set mounted(v) {
 			this.#K = v;
 		}
-		#L = (_init_extra_triggerAccessibleName(this), _init_side$1(this, "bottom"));
-		get side() {
+		#L = (_init_extra_mounted(this), _init_triggerAccessibleName(this, ""));
+		/** Physical side the panel resolved to on the last positioning pass. */
+		get triggerAccessibleName() {
 			return this.#L;
 		}
-		set side(v) {
+		set triggerAccessibleName(v) {
 			this.#L = v;
 		}
-		#M = (_init_extra_side$1(this), _init_panelEl(this));
-		/** The `heading` part is the popover-owned wrapper; `tabindex="-1"` sits on the <ds-heading> inside it. */
-		get panelEl() {
+		#M = (_init_extra_triggerAccessibleName(this), _init_side$1(this, "bottom"));
+		get side() {
 			return this.#M;
 		}
-		set panelEl(v) {
+		set side(v) {
 			this.#M = v;
 		}
-		#N = (_init_extra_panelEl(this), _init_headingEl$2(this));
-		get headingEl() {
+		#N = (_init_extra_side$1(this), _init_panelEl(this));
+		/** The `heading` part is the popover-owned wrapper; `tabindex="-1"` sits on the <ds-heading> inside it. */
+		get panelEl() {
 			return this.#N;
 		}
-		set headingEl(v) {
+		set panelEl(v) {
 			this.#N = v;
 		}
-		#O = (_init_extra_headingEl$2(this), _init_headingControlEl(this));
-		get headingControlEl() {
+		#O = (_init_extra_panelEl(this), _init_headingEl$2(this));
+		get headingEl() {
 			return this.#O;
 		}
-		set headingControlEl(v) {
+		set headingEl(v) {
 			this.#O = v;
 		}
-		#P = (_init_extra_headingControlEl(this), _init_closeButtonControlEl(this));
-		get closeButtonControlEl() {
+		#P = (_init_extra_headingEl$2(this), _init_headingControlEl(this));
+		get headingControlEl() {
 			return this.#P;
 		}
-		set closeButtonControlEl(v) {
+		set headingControlEl(v) {
 			this.#P = v;
 		}
-		#Q = (_init_extra_closeButtonControlEl(this), _init_bodyEl(this));
-		get bodyEl() {
+		#Q = (_init_extra_headingControlEl(this), _init_closeButtonControlEl(this));
+		get closeButtonControlEl() {
 			return this.#Q;
 		}
-		set bodyEl(v) {
+		set closeButtonControlEl(v) {
 			this.#Q = v;
 		}
-		#R = (_init_extra_bodyEl(this), _init_bodySlotEl$1(this));
-		get bodySlotEl() {
+		#R = (_init_extra_closeButtonControlEl(this), _init_bodyEl(this));
+		get bodyEl() {
 			return this.#R;
 		}
-		set bodySlotEl(v) {
+		set bodyEl(v) {
 			this.#R = v;
+		}
+		#S = (_init_extra_bodyEl(this), _init_bodySlotEl$1(this));
+		get bodySlotEl() {
+			return this.#S;
+		}
+		set bodySlotEl(v) {
+			this.#S = v;
 		}
 		popoverSupported = (_init_extra_bodySlotEl$1(this), POPOVER_SUPPORTED$3);
 		triggerEl = null;
@@ -14700,6 +15108,13 @@ new class extends _identity {
             </div>
           `}
     `;
+		}
+		/**
+		* Re-measures and re-places the open panel. For composers whose slotted content lays out after
+		* the panel opens, which the scroll and resize listeners never see. A no-op while closed.
+		*/
+		reposition() {
+			if (this.currentOpen) this.updatePosition();
 		}
 		handleTriggerSlotChange = (event) => {
 			const next = event.target.assignedElements({ flatten: true })[0] ?? null;
@@ -14836,7 +15251,8 @@ new class extends _identity {
 		handleClosed() {
 			const request = this.request;
 			this.request = null;
-			const focusInside = this.isWithin(getDeepActiveElement$1(), this);
+			const active = getDeepActiveElement$1();
+			const focusInside = this.isWithin(active, this.panelEl) || this.modal && (active === null || active === document.body);
 			const focusTrigger = request && request.open === false ? request.focusTrigger : focusInside;
 			this.removeOpenListeners();
 			const panel = this.panelEl;
@@ -14892,6 +15308,7 @@ new class extends _identity {
 			].map((el) => el?.updateComplete));
 			if (!this.currentOpen) return;
 			this.updatePosition();
+			if (this.initialFocus === "none") return;
 			(this.getBodyFocusables()[0] ?? this.closeButtonControlEl ?? this.headingControlEl ?? this.panelEl)?.focus();
 		}
 		/** The controls in the panel body, in flat-tree order. The first is where focus lands on open. */
@@ -14938,15 +15355,15 @@ new class extends _identity {
 			const viewportWidth = document.documentElement.clientWidth;
 			const viewportHeight = document.documentElement.clientHeight;
 			const gap = parseFloat(getComputedStyle(panel)[OFFSET_MARGIN[this.side]]) || 0;
-			const gutter = this.readLength("--layout-gutter", panel);
+			const gutter = this.readLength("--ds-popover-gutter", panel);
 			const rtl = getComputedStyle(trigger).direction === "rtl";
 			const { side: preferred, align } = resolvePlacement(this.placement, rtl);
 			const fits = (candidate) => {
 				switch (candidate) {
-					case "bottom": return triggerRect.bottom + gap + panelRect.height <= viewportHeight;
-					case "top": return triggerRect.top - gap - panelRect.height >= 0;
-					case "right": return triggerRect.right + gap + panelRect.width <= viewportWidth;
-					case "left": return triggerRect.left - gap - panelRect.width >= 0;
+					case "bottom": return triggerRect.bottom + gap + panelRect.height + gutter <= viewportHeight;
+					case "top": return triggerRect.top - gap - panelRect.height - gutter >= 0;
+					case "right": return triggerRect.right + gap + panelRect.width + gutter <= viewportWidth;
+					case "left": return triggerRect.left - gap - panelRect.width - gutter >= 0;
 				}
 			};
 			const side = !fits(preferred) && fits(OPPOSITE[preferred]) ? OPPOSITE[preferred] : preferred;
@@ -14999,6 +15416,11 @@ new class extends _identity {
 				this.warned = true;
 				console.warn("<ds-popover> needs panel content in its default slot.", this);
 			}
+			this.updateTriggerAccessibleName();
+			if (!this.heading && !this.triggerAccessibleName) {
+				this.warned = true;
+				console.warn("<ds-popover> panel has no accessible name: set `heading`, or give the trigger a readable name.", this);
+			}
 		}
 	}];
 	shadowRootOptions = {
@@ -15017,10 +15439,17 @@ new class extends _identity {
       --ds-popover-offset: var(--space-2);
       --ds-popover-arrow-size: var(--space-2);
       --ds-popover-max-width: var(--layout-max-width-prose);
+      --ds-popover-gutter: var(--layout-gutter);
       --ds-popover-layer: var(--layer-dropdown);
       --ds-popover-enter: var(--motion-duration-fast);
       --ds-popover-enter-distance: var(--space-1);
       --ds-popover-exit: var(--motion-duration-fast);
+      /* Locked: no override API, but still themeable from page CSS. */
+      --ds-popover-surface: var(--color-overlay-surface);
+      --ds-popover-focus-ring: var(--color-border-focus);
+      --ds-popover-focus-ring-width: var(--border-width-focus);
+      /* React Native only; declared so every platform carries the same hook set. */
+      --ds-popover-breakpoint: var(--layout-max-width-prose);
     }
 
     :host([hidden]) {
@@ -15037,10 +15466,9 @@ new class extends _identity {
       border-width: var(--ds-popover-border-width);
       border-color: var(--ds-popover-border);
       border-radius: var(--ds-popover-radius);
-      /* surface: color.overlay.surface, locked — no override hook */
-      background: var(--color-overlay-surface);
+      background: var(--ds-popover-surface);
       box-shadow: var(--ds-popover-shadow);
-      max-inline-size: min(var(--ds-popover-max-width), calc(100vw - 2 * var(--layout-gutter)));
+      max-inline-size: min(var(--ds-popover-max-width), calc(100vw - 2 * var(--ds-popover-gutter)));
       max-block-size: none;
       overflow: visible;
       color: var(--color-foreground);
@@ -15067,8 +15495,8 @@ new class extends _identity {
     }
 
     [data-part='panel']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-popover-focus-ring-width) solid var(--ds-popover-focus-ring);
+      outline-offset: var(--ds-popover-focus-ring-width);
     }
 
     /* exit: fade out with motion.easing.exit. */
@@ -15147,8 +15575,8 @@ new class extends _identity {
 
     /* The heading is focused only when the panel has no controls; its wrapper draws the ring. */
     [data-part='heading']:has(:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-popover-focus-ring-width) solid var(--ds-popover-focus-ring);
+      outline-offset: var(--ds-popover-focus-ring-width);
     }
 
     [data-part='closeButton'] {
@@ -15166,7 +15594,7 @@ new class extends _identity {
       box-sizing: border-box;
       inline-size: var(--ds-popover-arrow-size);
       block-size: var(--ds-popover-arrow-size);
-      background: var(--color-overlay-surface);
+      background: var(--ds-popover-surface);
       border: 0 solid var(--ds-popover-border);
       transform: rotate(45deg);
     }
@@ -15220,8 +15648,6 @@ let _init_dragToDismiss;
 let _init_extra_dragToDismiss;
 let _init_overrides$21;
 let _init_extra_overrides$21;
-let _init_wide$1;
-let _init_extra_wide$1;
 let _init_closing$2;
 let _init_extra_closing$2;
 let _init_hasFooter$2;
@@ -15267,28 +15693,13 @@ const HOOKS$21 = {
 	enter: "--ds-bottom-sheet-enter",
 	exit: "--ds-bottom-sheet-exit"
 };
-/**
-* The overrides whose binding Dialog shares by name; only these reach Dialog's own `overrides` in
-* the wide presentation, and only when the caller set them, so Dialog keeps its own tokens
-* otherwise — its `layer.dialog` included. The handle bindings, `headerPaddingTop` and `handleGap`
-* have no counterpart there, and a locked binding is never forwarded.
-*/
-const DIALOG_SHARED_BINDINGS = [
-	"scrim",
-	"shadow",
-	"radius",
-	"inset",
-	"partGap",
-	"headerGap",
-	"footerGap",
-	"layer",
-	"enter",
-	"exit"
-];
-/** maxWidth (layout.maxWidth.prose): the breakpoint, read from the theme token, not per instance. */
-const MAX_WIDTH_PROPERTY$1 = "--layout-max-width-prose";
 /** constants.dragSlop (space.1): read from the resolved custom property at gesture time. */
 const DRAG_SLOP_PROPERTY$1 = "--space-1";
+/**
+* constants.contentCap: fraction of the viewport a `height: content` sheet may grow to before its
+* body scrolls. No token expresses a ratio, so it is a module constant (literal-ok).
+*/
+const CONTENT_CAP = .9;
 /** constants.dismissDistance: fraction of the sheet height a release must pass to dismiss. */
 const DISMISS_DISTANCE$1 = .25;
 /** constants.dismissVelocity: downward release speed, in px/ms, that dismisses whatever the distance. */
@@ -15304,45 +15715,23 @@ const NEGATED_BOOLEAN_CONVERTER$7 = {
 		return value ? null : "";
 	}
 };
-const FOCUSABLE_SELECTOR$3 = [
-	"a[href]",
-	"button:not([disabled])",
-	"input:not([disabled])",
-	"select:not([disabled])",
-	"textarea:not([disabled])",
-	"summary",
-	"[contenteditable]:not([contenteditable=\"false\"])",
-	"[tabindex]"
-].join(",");
-/** The first tabbable element in tree order, walking slot assignments and open shadow roots. */
+/**
+* The first tabbable element in a slot's assigned content, by exactly the rules the trapped
+* `<ds-focus-scope>` uses, so initial focus cannot land where Tab would refuse to return.
+*/
 function firstFocusableIn(node) {
-	if (node.hasAttribute("inert") || node.getAttribute("aria-hidden") === "true") return null;
-	if (node instanceof HTMLElement && !node.hidden && node.tabIndex >= 0 && node.matches(FOCUSABLE_SELECTOR$3)) return node;
-	if (node instanceof HTMLSlotElement) {
-		for (const assigned of node.assignedElements({ flatten: true })) {
-			const found = firstFocusableIn(assigned);
-			if (found) return found;
-		}
-		return null;
-	}
-	const scope = node.shadowRoot ?? node;
-	for (const child of Array.from(scope.children)) {
-		const found = firstFocusableIn(child);
-		if (found) return found;
-	}
-	return null;
+	return focusableIn(node)[0] ?? null;
 }
-/** A resolved length custom property (`4px`, `0.25rem`) in CSS pixels; an unresolvable value is 0. */
-function lengthInPx$1(element, value) {
+/**
+* A resolved length custom property in CSS pixels: rem and em multiply by the root font size, px
+* and unitless values are taken verbatim, and an unresolvable value counts as 0.
+*/
+function lengthInPx$1(value) {
 	const amount = Number.parseFloat(value);
 	if (!Number.isFinite(amount)) return 0;
-	if (value.endsWith("rem")) {
+	if (value.endsWith("em")) {
 		const root = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
 		return Number.isFinite(root) ? amount * root : 0;
-	}
-	if (value.endsWith("em")) {
-		const own = Number.parseFloat(getComputedStyle(element).fontSize);
-		return Number.isFinite(own) ? amount * own : 0;
 	}
 	return amount;
 }
@@ -15381,8 +15770,8 @@ let _DsBottomSheet;
 * dialog: a native `<dialog>` in the shadow root opened with `showModal()` (top layer, inert
 * background, Escape), covering the viewport with a scrim element and the surface anchored to the
 * bottom edge. `<ds-focus-scope>` wraps the surface, wraps Tab and returns focus to the opener on
-* close. Above the `layout.maxWidth.prose` viewport width (a `matchMedia` listener on the resolved
-* token) the same props render `<ds-dialog size="md">` instead, so screens are written once.
+* close. The presentation is the same at every width: the surface is `min(viewport, maxWidth)` wide
+* (`layout.maxWidth.prose`), centred, and anchored to the bottom edge — no breakpoint, no Dialog.
 *
 * Escape, the close button, a scrim click and a downward drag on the handle or header each request
 * close through the composed `close` event; the sheet never closes itself, the consumer flips
@@ -15409,7 +15798,7 @@ let _DsBottomSheet;
 new class extends _identity {
 	static [class DsBottomSheet extends LitElement {
 		static {
-			({e: [_init_open$6, _init_extra_open$6, _init_heading$2, _init_extra_heading$2, _init_hideHeading$1, _init_extra_hideHeading$1, _init_height$2, _init_extra_height$2, _init_dismissible$2, _init_extra_dismissible$2, _init_dragToDismiss, _init_extra_dragToDismiss, _init_overrides$21, _init_extra_overrides$21, _init_wide$1, _init_extra_wide$1, _init_closing$2, _init_extra_closing$2, _init_hasFooter$2, _init_extra_hasFooter$2, _init_headingIsFallback, _init_extra_headingIsFallback, _init_dialogEl$2, _init_extra_dialogEl$2, _init_scopeEl$1, _init_extra_scopeEl$1, _init_scrimEl$1, _init_extra_scrimEl$1, _init_surfaceEl$2, _init_extra_surfaceEl$2, _init_headingEl$1, _init_extra_headingEl$1, _init_closeButtonEl$1, _init_extra_closeButtonEl$1, _init_bodySlotEl, _init_extra_bodySlotEl, _init_footerSlotEl, _init_extra_footerSlotEl], c: [_DsBottomSheet, _initClass$21]} = applyDecs2311(this, [customElement("ds-bottom-sheet")], [
+			({e: [_init_open$6, _init_extra_open$6, _init_heading$2, _init_extra_heading$2, _init_hideHeading$1, _init_extra_hideHeading$1, _init_height$2, _init_extra_height$2, _init_dismissible$2, _init_extra_dismissible$2, _init_dragToDismiss, _init_extra_dragToDismiss, _init_overrides$21, _init_extra_overrides$21, _init_closing$2, _init_extra_closing$2, _init_hasFooter$2, _init_extra_hasFooter$2, _init_headingIsFallback, _init_extra_headingIsFallback, _init_dialogEl$2, _init_extra_dialogEl$2, _init_scopeEl$1, _init_extra_scopeEl$1, _init_scrimEl$1, _init_extra_scrimEl$1, _init_surfaceEl$2, _init_extra_surfaceEl$2, _init_headingEl$1, _init_extra_headingEl$1, _init_closeButtonEl$1, _init_extra_closeButtonEl$1, _init_bodySlotEl, _init_extra_bodySlotEl, _init_footerSlotEl, _init_extra_footerSlotEl], c: [_DsBottomSheet, _initClass$21]} = applyDecs2311(this, [customElement("ds-bottom-sheet")], [
 				[
 					property({
 						type: Boolean,
@@ -15465,11 +15854,6 @@ new class extends _identity {
 				[
 					state(),
 					1,
-					"wide"
-				],
-				[
-					state(),
-					1,
 					"closing"
 				],
 				[
@@ -15488,7 +15872,7 @@ new class extends _identity {
 					"dialogEl"
 				],
 				[
-					query(".scope"),
+					query("ds-focus-scope"),
 					1,
 					"scopeEl"
 				],
@@ -15538,8 +15922,8 @@ new class extends _identity {
 		}
 		#B = (_init_extra_open$6(this), _init_heading$2(this, ""));
 		/**
-		* Keep the heading for assistive technology but do not render it (forwarded to Dialog above the
-		* breakpoint). The accessible name is required regardless. Attribute: `hide-heading`.
+		* Keep the heading for assistive technology but do not render it. The accessible name is
+		* required regardless. Attribute: `hide-heading`.
 		*/
 		get heading() {
 			return this.#B;
@@ -15592,111 +15976,99 @@ new class extends _identity {
 			this.#F = v;
 		}
 		#G = (_init_extra_dragToDismiss(this), _init_overrides$21(this));
-		/** Above the maxWidth breakpoint the sheet presents as `<ds-dialog size="md">`. */
+		/** The exit transition is playing: the sheet stays rendered a beat past `open` turning false. */
 		get overrides() {
 			return this.#G;
 		}
 		set overrides(v) {
 			this.#G = v;
 		}
-		#H = (_init_extra_overrides$21(this), _init_wide$1(this, false));
-		/** The exit transition is playing: the sheet stays rendered a beat past `open` turning false. */
-		get wide() {
-			return this.#H;
-		}
-		set wide(v) {
-			this.#H = v;
-		}
-		#I = (_init_extra_wide$1(this), _init_closing$2(this, false));
+		#H = (_init_extra_overrides$21(this), _init_closing$2(this, false));
 		/** A light-DOM child is assigned to the `footer` slot; the footer part renders only then. */
 		get closing() {
-			return this.#I;
+			return this.#H;
 		}
 		set closing(v) {
-			this.#I = v;
+			this.#H = v;
 		}
-		#J = (_init_extra_closing$2(this), _init_hasFooter$2(this, false));
+		#I = (_init_extra_closing$2(this), _init_hasFooter$2(this, false));
 		/** Nothing else could take initial focus, so the heading takes tabindex -1 for the purpose. */
 		get hasFooter() {
-			return this.#J;
+			return this.#I;
 		}
 		set hasFooter(v) {
-			this.#J = v;
+			this.#I = v;
 		}
-		#K = (_init_extra_hasFooter$2(this), _init_headingIsFallback(this, false));
+		#J = (_init_extra_hasFooter$2(this), _init_headingIsFallback(this, false));
 		get headingIsFallback() {
-			return this.#K;
+			return this.#J;
 		}
 		set headingIsFallback(v) {
-			this.#K = v;
+			this.#J = v;
 		}
-		#L = (_init_extra_headingIsFallback(this), _init_dialogEl$2(this));
+		#K = (_init_extra_headingIsFallback(this), _init_dialogEl$2(this));
 		get dialogEl() {
-			return this.#L;
+			return this.#K;
 		}
 		set dialogEl(v) {
-			this.#L = v;
+			this.#K = v;
 		}
-		#M = (_init_extra_dialogEl$2(this), _init_scopeEl$1(this));
+		#L = (_init_extra_dialogEl$2(this), _init_scopeEl$1(this));
 		get scopeEl() {
-			return this.#M;
+			return this.#L;
 		}
 		set scopeEl(v) {
-			this.#M = v;
+			this.#L = v;
 		}
-		#N = (_init_extra_scopeEl$1(this), _init_scrimEl$1(this));
+		#M = (_init_extra_scopeEl$1(this), _init_scrimEl$1(this));
 		get scrimEl() {
-			return this.#N;
+			return this.#M;
 		}
 		set scrimEl(v) {
-			this.#N = v;
+			this.#M = v;
 		}
-		#O = (_init_extra_scrimEl$1(this), _init_surfaceEl$2(this));
+		#N = (_init_extra_scrimEl$1(this), _init_surfaceEl$2(this));
 		get surfaceEl() {
-			return this.#O;
+			return this.#N;
 		}
 		set surfaceEl(v) {
-			this.#O = v;
+			this.#N = v;
 		}
-		#P = (_init_extra_surfaceEl$2(this), _init_headingEl$1(this));
+		#O = (_init_extra_surfaceEl$2(this), _init_headingEl$1(this));
 		get headingEl() {
-			return this.#P;
+			return this.#O;
 		}
 		set headingEl(v) {
-			this.#P = v;
+			this.#O = v;
 		}
-		#Q = (_init_extra_headingEl$1(this), _init_closeButtonEl$1(this));
+		#P = (_init_extra_headingEl$1(this), _init_closeButtonEl$1(this));
 		get closeButtonEl() {
-			return this.#Q;
+			return this.#P;
 		}
 		set closeButtonEl(v) {
-			this.#Q = v;
+			this.#P = v;
 		}
-		#R = (_init_extra_closeButtonEl$1(this), _init_bodySlotEl(this));
+		#Q = (_init_extra_closeButtonEl$1(this), _init_bodySlotEl(this));
 		get bodySlotEl() {
-			return this.#R;
+			return this.#Q;
 		}
 		set bodySlotEl(v) {
-			this.#R = v;
+			this.#Q = v;
 		}
-		#S = (_init_extra_bodySlotEl(this), _init_footerSlotEl(this));
+		#R = (_init_extra_bodySlotEl(this), _init_footerSlotEl(this));
 		get footerSlotEl() {
-			return this.#S;
+			return this.#R;
 		}
 		set footerSlotEl(v) {
-			this.#S = v;
+			this.#R = v;
 		}
 		scrollLocked = (_init_extra_footerSlotEl(this), false);
 		closingProgrammatically = false;
 		/** Escape was already reported from a non-cancelable `cancel` that the native close follows. */
 		escapeReported = false;
-		wideQuery = null;
 		gesture = null;
 		/** Watches light-DOM children for `slot="footer"`; the callback only compares and sets state. */
 		footerObserver = new MutationObserver(() => this.syncHasFooter());
-		handleWideChange = (event) => {
-			this.wide = event.matches;
-		};
 		connectedCallback() {
 			super.connectedCallback();
 			this.setAttribute("data-ds", "BottomSheet");
@@ -15707,71 +16079,32 @@ new class extends _identity {
 				subtree: true,
 				attributeFilter: ["slot"]
 			});
-			const breakpoint = getComputedStyle(document.documentElement).getPropertyValue(MAX_WIDTH_PROPERTY$1).trim();
-			if (breakpoint) {
-				this.wideQuery = matchMedia(`(width > ${breakpoint})`);
-				this.wide = this.wideQuery.matches;
-				this.wideQuery.addEventListener("change", this.handleWideChange);
-			}
 		}
 		disconnectedCallback() {
 			super.disconnectedCallback();
 			this.removeEventListener("submit", this.handleSubmit);
 			this.footerObserver.disconnect();
-			this.wideQuery?.removeEventListener("change", this.handleWideChange);
-			this.wideQuery = null;
 			this.gesture = null;
 			this.releaseScroll();
 		}
 		willUpdate(changed) {
 			if (changed.has("overrides")) this.applyOverrides();
 			if (changed.has("dismissible") || changed.has("open") && this.open) this.headingIsFallback = false;
-			if (this.wide) {
-				this.closing = false;
-				return;
-			}
 			if (changed.has("open")) {
 				if (this.open) this.closing = false;
 				else if (changed.get("open") === true) this.closing = true;
 			}
 		}
 		updated(changed) {
-			if (changed.has("wide") && this.wide) {
-				this.gesture = null;
-				this.releaseScroll();
-			}
-			if (!this.wide && (changed.has("open") || changed.has("wide"))) {
+			if (changed.has("open")) {
 				if (this.open) this.handleOpen();
 				else if (this.closing) this.handleClose();
 			}
 			if (import.meta.env.DEV && (changed.has("heading") || changed.has("open"))) this.warnInDev();
 		}
 		render() {
-			if (this.wide) return this.renderDialog();
 			if (!this.open && !this.closing) return nothing;
 			return this.renderSheet();
-		}
-		/**
-		* Above the breakpoint the sheet is a Dialog: the same props and slots, the shared overrides
-		* forwarded, and its `escape` / `close-button` / `scrim` / `action` reasons re-emitted as the
-		* sheet's own. `drag` has no Dialog source, and Dialog's `opened` is not re-emitted.
-		*/
-		renderDialog() {
-			return html`
-      <ds-dialog
-        ?open=${this.open}
-        heading=${this.heading}
-        size="md"
-        .hideHeading=${this.hideHeading}
-        .dismissible=${this.dismissible}
-        .overrides=${this.dialogOverrides()}
-        @close=${this.handleDialogClose}
-        @opened=${this.stopInnerEvent}
-      >
-        <slot></slot>
-        ${this.hasFooter ? html`<slot name="footer" slot="footer"></slot>` : nothing}
-      </ds-dialog>
-    `;
 		}
 		renderSheet() {
 			const showHandle = this.dismissible && this.dragToDismiss;
@@ -15791,54 +16124,50 @@ new class extends _identity {
         @close=${this.handleNativeClose}
       >
         <div class="scrim" part="scrim" data-part="scrim" @click=${this.handleScrimClick}></div>
-        <ds-focus-scope
-          class="scope"
-          part="focusScope"
-          data-part="focusScope"
-          auto-focus="none"
-          .active=${!this.closing}
-        >
-          <div class="surface" part="surface" data-part="surface">
-            ${showHeader ? html`<div
-                  class=${classMap({
+        <ds-focus-scope auto-focus="none" .active=${!this.closing}>
+          <div class="scope" part="focusScope" data-part="focusScope">
+            <div class="surface" part="surface" data-part="surface">
+              ${showHeader ? html`<div
+                    class=${classMap({
 				header: true,
 				draggable: showHandle
 			})}
-                  part="header"
-                  data-part="header"
-                  @pointerdown=${this.handlePointerDown}
-                  @pointermove=${this.handlePointerMove}
-                  @pointerup=${this.handlePointerUp}
-                  @pointercancel=${this.handlePointerCancel}
-                >
-                  ${showHandle ? html`<span class="handle" part="handle" data-part="handle" aria-hidden="true"></span>` : nothing}
-                  <div class="title-row">
-                    ${this.renderHeading()}
-                    ${showClose ? html`<div
-                          class="close-button"
-                          part="closeButton"
-                          data-part="closeButton"
-                          @click=${this.handleCloseWrapperClick}
-                        >
-                          <ds-button
-                            variant="ghost"
-                            size="sm"
-                            icon-only
-                            label=${COPY_CLOSE_LABEL}
-                            @press=${this.handleCloseButtonPress}
-                            ><ds-icon slot="leading-icon" name="close"></ds-icon
-                          ></ds-button>
-                        </div>` : nothing}
-                  </div>
-                </div>` : this.renderHeading()}
-            <div class="body" part="body" data-part="body">
-              <ds-box .overrides=${bodyOverrides}><slot></slot></ds-box>
+                    part="header"
+                    data-part="header"
+                    @pointerdown=${this.handlePointerDown}
+                    @pointermove=${this.handlePointerMove}
+                    @pointerup=${this.handlePointerUp}
+                    @pointercancel=${this.handlePointerCancel}
+                  >
+                    ${showHandle ? html`<span class="handle" part="handle" data-part="handle" aria-hidden="true"></span>` : nothing}
+                    <div class="title-row">
+                      ${this.renderHeading()}
+                      ${showClose ? html`<div
+                            class="close-button"
+                            part="closeButton"
+                            data-part="closeButton"
+                            @click=${this.handleCloseWrapperClick}
+                          >
+                            <ds-button
+                              variant="ghost"
+                              size="sm"
+                              icon-only
+                              label=${COPY_CLOSE_LABEL}
+                              @press=${this.handleCloseButtonPress}
+                              ><ds-icon slot="leading-icon" name="close"></ds-icon
+                            ></ds-button>
+                          </div>` : nothing}
+                    </div>
+                  </div>` : this.renderHeading()}
+              <div class="body" part="body" data-part="body">
+                <ds-box .overrides=${bodyOverrides}><slot></slot></ds-box>
+              </div>
+              ${this.hasFooter ? html`<div class="footer" part="footer" data-part="footer">
+                    <ds-stack direction="horizontal" justify="end" wrap .overrides=${footerOverrides}
+                      ><slot name="footer"></slot
+                    ></ds-stack>
+                  </div>` : nothing}
             </div>
-            ${this.hasFooter ? html`<div class="footer" part="footer" data-part="footer">
-                  <ds-stack direction="horizontal" justify="end" .overrides=${footerOverrides}
-                    ><slot name="footer"></slot
-                  ></ds-stack>
-                </div>` : nothing}
           </div>
         </ds-focus-scope>
       </dialog>
@@ -15861,27 +16190,9 @@ new class extends _identity {
       </div>
     `;
 		}
-		/** Every set override whose binding Dialog shares by name reaches Dialog's own overrides. */
-		dialogOverrides() {
-			const overrides = this.overrides;
-			if (!overrides) return;
-			const forwarded = {};
-			for (const binding of DIALOG_SHARED_BINDINGS) {
-				const ref = overrides[binding];
-				if (ref !== void 0) forwarded[binding] = ref;
-			}
-			return forwarded;
-		}
-		/** Dialog's `close` is re-dispatched from the sheet so consumers see one event, from one element. */
-		handleDialogClose = (event) => {
-			event.stopPropagation();
-			this.dispatchClose(event.detail.reason);
-		};
-		stopInnerEvent = (event) => {
-			event.stopPropagation();
-		};
 		handleCancel = (event) => {
 			event.preventDefault();
+			if (!this.open) return;
 			this.escapeReported = !event.cancelable;
 			this.dispatchClose("escape");
 		};
@@ -15890,21 +16201,22 @@ new class extends _identity {
 				this.closingProgrammatically = false;
 				return;
 			}
+			if (!this.open) return;
 			if (!this.escapeReported) this.dispatchClose("escape");
 			this.escapeReported = false;
 			const dialog = this.dialogEl;
-			if (this.open && dialog && !dialog.open) {
+			if (dialog && !dialog.open) {
 				dialog.showModal();
 				this.applyInitialFocus();
 			}
 		};
 		handleScrimClick = (event) => {
-			if (!this.dismissible || event.target !== event.currentTarget) return;
+			if (!this.open || !this.dismissible || event.target !== event.currentTarget) return;
 			this.dispatchClose("scrim");
 		};
 		handleCloseButtonPress = (event) => {
 			event.stopPropagation();
-			this.dispatchClose("close-button");
+			if (this.open) this.dispatchClose("close-button");
 		};
 		/**
 		* The wrapper's extra target area activates the Button: it focuses it and requests close itself,
@@ -15912,7 +16224,7 @@ new class extends _identity {
 		*/
 		handleCloseWrapperClick = (event) => {
 			const button = this.closeButtonEl;
-			if (!button || event.composedPath().includes(button)) return;
+			if (!button || !this.open || event.composedPath().includes(button)) return;
 			button.focus();
 			this.dispatchClose("close-button");
 		};
@@ -15923,7 +16235,6 @@ new class extends _identity {
 			const submitter = event.submitter;
 			if (((submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement) && submitter.hasAttribute("formmethod") ? submitter.formMethod : form.method) === "dialog") {
 				event.preventDefault();
-				if (this.wide) return;
 				this.dispatchClose("action");
 			}
 		};
@@ -15937,11 +16248,12 @@ new class extends _identity {
 		*/
 		handlePointerDown = (event) => {
 			if (!this.dismissible || !this.dragToDismiss || !this.open || this.closing || this.gesture) return;
-			if (event.pointerType === "mouse" && event.button !== 0) return;
+			if (!event.isPrimary || event.pointerType === "mouse" && event.button !== 0) return;
 			if (!Number.isFinite(event.clientY)) return;
 			this.gesture = {
 				pointerId: event.pointerId,
 				startY: event.clientY,
+				slop: lengthInPx$1(getComputedStyle(this).getPropertyValue(DRAG_SLOP_PROPERTY$1).trim()),
 				originY: event.clientY,
 				claimed: false,
 				previous: null,
@@ -15954,8 +16266,7 @@ new class extends _identity {
 			if (!gesture || !surface || event.pointerId !== gesture.pointerId || !Number.isFinite(event.clientY)) return;
 			if (!gesture.claimed) {
 				const moved = event.clientY - gesture.startY;
-				const slop = lengthInPx$1(this, getComputedStyle(this).getPropertyValue(DRAG_SLOP_PROPERTY$1).trim());
-				if (moved <= 0 || moved < slop) return;
+				if (moved <= 0 || moved < gesture.slop) return;
 				gesture.claimed = true;
 				gesture.originY = event.clientY;
 				event.currentTarget.setPointerCapture(event.pointerId);
@@ -16010,7 +16321,7 @@ new class extends _identity {
 		async settleRelease(surface) {
 			await this.updateComplete;
 			await nextFrame$1();
-			if (this.open && !this.closing && !this.wide && surface.isConnected) await this.springBack(surface);
+			if (this.open && !this.closing && surface.isConnected) await this.springBack(surface);
 		}
 		/** A spring-back also finishes an interrupted enter animation: it returns the surface to rest. */
 		async springBack(surface) {
@@ -16029,7 +16340,7 @@ new class extends _identity {
 			}
 			if (!dialog.open) dialog.showModal();
 			await this.scopeEl?.updateComplete;
-			if (!this.open || this.closing || this.wide) return;
+			if (!this.open || this.closing) return;
 			await this.applyInitialFocus();
 		}
 		async handleClose() {
@@ -16039,7 +16350,7 @@ new class extends _identity {
 			surface?.classList.remove("dragging", "springing");
 			surface?.style.removeProperty("transform");
 			await this.transitionsSettled();
-			if (this.open || this.wide) return;
+			if (this.open) return;
 			const dialog = this.dialogEl;
 			if (dialog?.open) {
 				this.closingProgrammatically = true;
@@ -16058,15 +16369,23 @@ new class extends _identity {
 		async applyInitialFocus() {
 			const bodyFirst = this.bodySlotEl ? firstFocusableIn(this.bodySlotEl) : null;
 			const footerFirst = this.footerSlotEl ? firstFocusableIn(this.footerSlotEl) : null;
-			let target = bodyFirst ?? footerFirst ?? (this.dismissible ? this.closeButtonEl : null);
-			if (!target) {
-				if (!this.headingIsFallback) {
-					this.headingIsFallback = true;
-					await this.updateComplete;
-				}
-				target = this.headingEl;
-			}
+			const target = bodyFirst ?? footerFirst ?? (this.dismissible ? this.closeButtonEl : null);
 			target?.focus();
+			if (target && this.focusIsInside()) return;
+			if (!this.headingIsFallback) {
+				this.headingIsFallback = true;
+				await this.updateComplete;
+			}
+			this.headingEl?.focus();
+		}
+		/** Focus rests on something inside the sheet — not on the scrim, and not on the page behind it. */
+		focusIsInside() {
+			let active = document.activeElement;
+			while (active) {
+				if (active === this) return true;
+				active = active.shadowRoot?.activeElement ?? null;
+			}
+			return false;
 		}
 		releaseScroll() {
 			if (this.scrollLocked) {
@@ -16115,6 +16434,13 @@ new class extends _identity {
       --ds-bottom-sheet-layer: var(--layer-sheet);
       --ds-bottom-sheet-enter: var(--motion-duration-base);
       --ds-bottom-sheet-exit: var(--motion-duration-fast);
+      /* Locked: not in the overrides type, but still hooks, themeable from page CSS. */
+      --ds-bottom-sheet-surface: var(--color-overlay-surface);
+      --ds-bottom-sheet-handle: var(--color-foreground-muted);
+      --ds-bottom-sheet-max-width: var(--layout-max-width-prose);
+      --ds-bottom-sheet-min-target: var(--size-target-comfortable);
+      --ds-bottom-sheet-focus-ring: var(--color-border-focus);
+      --ds-bottom-sheet-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -16160,11 +16486,17 @@ new class extends _identity {
       transition: opacity var(--ds-bottom-sheet-enter) var(--motion-easing-standard);
     }
 
-    /* focusScope: the <ds-focus-scope> host is the part element. Layout only. */
-    .scope {
+    /* The <ds-focus-scope> host carries no part: it writes its own data-part="scope". */
+    ds-focus-scope {
       position: relative;
       display: block;
       inline-size: 100%;
+      min-inline-size: 0;
+    }
+
+    /* focusScope: the sheet-owned part element directly inside the scope, wrapping the surface. */
+    .scope {
+      display: block;
       min-inline-size: 0;
     }
 
@@ -16178,12 +16510,15 @@ new class extends _identity {
       flex-direction: column;
       inline-size: 100%;
       min-inline-size: 0;
+      /* maxWidth (locked): capped and centred with equal inline margins, at every width. */
+      max-inline-size: var(--ds-bottom-sheet-max-width);
+      margin-inline: auto;
       gap: var(--ds-bottom-sheet-part-gap);
       padding-block-start: var(--ds-bottom-sheet-inset);
       padding-block-end: calc(var(--ds-bottom-sheet-inset) + env(safe-area-inset-bottom));
       font-family: var(--font-family-body);
       color: var(--color-foreground);
-      background: var(--color-overlay-surface);
+      background: var(--ds-bottom-sheet-surface);
       border-start-start-radius: var(--ds-bottom-sheet-radius);
       border-start-end-radius: var(--ds-bottom-sheet-radius);
       box-shadow: var(--ds-bottom-sheet-shadow);
@@ -16198,10 +16533,10 @@ new class extends _identity {
       padding-block-start: var(--ds-bottom-sheet-header-padding-top);
     }
 
-    /* height: content caps at 90% of the viewport; half and full set the block size outright and
-       are deliberately not clamped by that cap, or full would stop short of near-full-screen. */
+    /* height: content caps at contentCap of the viewport; half and full set the block size outright
+       and are deliberately not clamped by that cap, or full would stop short of near-full-screen. */
     :host([height='content']) .surface {
-      max-block-size: 90dvh; /* literal-ok: the height prop's content cap, from the doc */
+      max-block-size: ${unsafeCSS(`${CONTENT_CAP * 100}dvh`)}; /* literal-ok: constants.contentCap */
     }
     :host([height='half']) .surface {
       block-size: 50dvh; /* literal-ok: the height prop's half value, from the doc */
@@ -16271,7 +16606,7 @@ new class extends _identity {
       inline-size: var(--ds-bottom-sheet-handle-width);
       block-size: var(--ds-bottom-sheet-handle-height);
       border-radius: var(--ds-bottom-sheet-handle-radius);
-      background: var(--color-foreground-muted);
+      background: var(--ds-bottom-sheet-handle);
     }
 
     /* headerGap: the heading row's flex gap. Sheet-owned, not an anatomy part. With the heading
@@ -16293,8 +16628,8 @@ new class extends _identity {
       outline: none;
     }
     .heading:has(:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-bottom-sheet-focus-ring-width) solid var(--ds-bottom-sheet-focus-ring);
+      outline-offset: var(--ds-bottom-sheet-focus-ring-width);
     }
 
     /* hideHeading: out of view, still the accessible name and still a focus target. */
@@ -16319,8 +16654,8 @@ new class extends _identity {
       align-items: center;
       justify-content: center;
       margin-inline-start: auto;
-      min-inline-size: var(--size-target-comfortable);
-      min-block-size: var(--size-target-comfortable);
+      min-inline-size: var(--ds-bottom-sheet-min-target);
+      min-block-size: var(--ds-bottom-sheet-min-target);
     }
 
     /* body: the only region that scrolls, so the header and footer stay put. */
@@ -16391,9 +16726,9 @@ let _init_extra_cancelButtonEl;
 */
 /**
 * Host hooks, one per overridable binding. `titleSize`, `fontFamily` and `lineHeight` reach the
-* composed heading Text through Text's own documented hooks, set from these in the stylesheet, so
-* consumer CSS on the sheet hook still lands; `overrides` also forwards them to Text's `overrides`
-* when the caller set one.
+* composed heading Text, and `itemIconSize` each row's Icon, through the child's own documented
+* hooks, set from these in the stylesheet, so consumer CSS on the sheet hook still lands;
+* `overrides` also forwards them to the child's `overrides` when the caller set one.
 */
 const HOOKS$20 = {
 	scrim: "--ds-action-sheet-scrim",
@@ -16410,6 +16745,7 @@ const HOOKS$20 = {
 	titleSize: "--ds-action-sheet-title-size",
 	fontFamily: "--ds-action-sheet-font-family",
 	fontSize: "--ds-action-sheet-font-size",
+	itemIconSize: "--ds-action-sheet-item-icon-size",
 	lineHeight: "--ds-action-sheet-line-height",
 	divider: "--ds-action-sheet-divider",
 	dividerWidth: "--ds-action-sheet-divider-width",
@@ -16468,6 +16804,20 @@ function lengthInPx(element, value) {
 }
 function nextFrame() {
 	return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+/**
+* `showModal()` is what makes the background inert. Where it does not exist or throws (an
+* already-open or detached dialog) the `open` attribute only lets the sheet render; it makes nothing
+* inert and is not a supported browser path. The failure is caught rather than unmounting the sheet.
+*/
+function showDialog(dialog) {
+	try {
+		if (typeof dialog.showModal === "function") {
+			dialog.showModal();
+			return;
+		}
+	} catch {}
+	if (!dialog.open) dialog.setAttribute("open", "");
 }
 function getDeepActiveElement() {
 	let active = document.activeElement;
@@ -16738,19 +17088,17 @@ new class extends _identity {
 		scrollLocked = false;
 		closingProgrammatically = false;
 		focusBeforeCancel = null;
+		escapeReported = false;
 		wideQuery = null;
+		breakpointRetry = false;
 		gesture = null;
-		/** The wide Menu reported a choice since `open` became true: no later (or earlier, pending) close is a dismissal. */
+		/** The wide Menu reported a choice since `open` became true: no later close is a dismissal. */
 		menuChoiceMade = false;
 		/** A wide dismissal is already queued in this task (Menu can follow `outside` with `focus-out`). */
 		menuCloseQueued = false;
 		handleWideChange = (event) => {
 			this.wide = event.matches;
 		};
-		/** The sheet presentation's shadow `<dialog>` (the forwarded ref); null while closed and in the wide presentation. */
-		get dialog() {
-			return this.wide || !this.open ? null : this.dialogEl ?? null;
-		}
 		connectedCallback() {
 			super.connectedCallback();
 			this.setAttribute("data-ds", "ActionSheet");
@@ -16893,7 +17241,9 @@ new class extends _identity {
         aria-disabled=${ifDefined(action.disabled ? "true" : void 0)}
         @click=${() => this.handleItemClick(action)}
       >
-        ${action.icon ? html`<span class="item-icon" part="itemIcon" data-part="itemIcon"><ds-icon name=${action.icon}></ds-icon></span>` : nothing}
+        ${action.icon ? html`<span class="item-icon" part="itemIcon" data-part="itemIcon"
+              ><ds-icon name=${action.icon} .overrides=${this.iconOverrides()}></ds-icon
+            ></span>` : nothing}
         <span class="item-label">${action.label}</span>
       </button>
     `;
@@ -16922,6 +17272,11 @@ new class extends _identity {
 			if (overrides.fontFamily !== void 0) forwarded.fontFamily = overrides.fontFamily;
 			if (overrides.lineHeight !== void 0) forwarded.lineHeight = overrides.lineHeight;
 			return forwarded;
+		}
+		/** itemIconSize is forwarded to each row's Icon as its `size`, only when the caller set it. */
+		iconOverrides() {
+			const ref = this.overrides?.itemIconSize;
+			return ref === void 0 ? void 0 : { size: ref };
 		}
 		menuOverrides() {
 			const overrides = this.overrides;
@@ -16974,8 +17329,11 @@ new class extends _identity {
 		}
 		handleCancel = (event) => {
 			event.preventDefault();
-			const active = getDeepActiveElement();
-			this.focusBeforeCancel = active instanceof HTMLElement ? active : null;
+			if (!event.cancelable) {
+				const active = getDeepActiveElement();
+				this.focusBeforeCancel = active instanceof HTMLElement ? active : null;
+				this.escapeReported = true;
+			}
 			this.dispatchClose("escape");
 		};
 		handleNativeClose = () => {
@@ -16984,13 +17342,17 @@ new class extends _identity {
 				return;
 			}
 			const dialog = this.dialogEl;
+			const reported = this.escapeReported;
+			const previous = this.focusBeforeCancel;
+			this.escapeReported = false;
+			this.focusBeforeCancel = null;
 			if (this.open && dialog && !dialog.open) {
-				dialog.showModal();
-				const previous = this.focusBeforeCancel;
+				if (!reported) this.dispatchClose("escape");
+				if (!this.open) return;
+				showDialog(dialog);
 				if (previous?.isConnected) previous.focus();
 				else this.applyInitialFocus();
 			}
-			this.focusBeforeCancel = null;
 		};
 		handleScrimClick = (event) => {
 			if (!this.dismissible || event.target !== event.currentTarget) return;
@@ -17101,15 +17463,14 @@ new class extends _identity {
 				this.menuChoiceMade = true;
 				return;
 			}
+			if (reason === "focus-out" && !document.hasFocus()) return;
 			const mapped = reason === "escape" ? "escape" : reason === "outside" || reason === "tab-out" || reason === "focus-out" ? "scrim" : null;
 			if (mapped === null || this.menuChoiceMade || this.menuCloseQueued) return;
 			this.menuCloseQueued = true;
-			queueMicrotask(() => {
-				if (!this.menuChoiceMade && this.open && this.wide) this.dispatchClose(mapped);
-			});
 			setTimeout(() => {
 				this.menuCloseQueued = false;
 			});
+			this.dispatchClose(mapped);
 		};
 		async handleOpen() {
 			const dialog = this.dialogEl;
@@ -17119,7 +17480,7 @@ new class extends _identity {
 				this.scrollLocked = true;
 			}
 			if (!dialog.open) {
-				dialog.showModal();
+				showDialog(dialog);
 				this.activeId = null;
 				await this.scopeEl?.updateComplete;
 				if (!this.open || this.closing || this.wide) return;
@@ -17163,12 +17524,34 @@ new class extends _identity {
 		}
 		watchBreakpoint() {
 			const breakpoint = getComputedStyle(document.documentElement).getPropertyValue(MAX_WIDTH_PROPERTY).trim();
-			if (!breakpoint) return;
+			if (!breakpoint) {
+				if (document.readyState !== "complete" && !this.breakpointRetry) {
+					this.breakpointRetry = true;
+					document.addEventListener("readystatechange", this.handleReadyStateChange);
+				}
+				return;
+			}
+			this.stopBreakpointRetry();
 			this.wideQuery = matchMedia(`(width > ${breakpoint})`);
 			this.wide = this.wideQuery.matches;
 			this.wideQuery.addEventListener("change", this.handleWideChange);
 		}
+		handleReadyStateChange = () => {
+			if (this.wideQuery || !this.isConnected) {
+				this.stopBreakpointRetry();
+				return;
+			}
+			this.watchBreakpoint();
+			if (document.readyState === "complete") this.stopBreakpointRetry();
+		};
+		stopBreakpointRetry() {
+			if (this.breakpointRetry) {
+				this.breakpointRetry = false;
+				document.removeEventListener("readystatechange", this.handleReadyStateChange);
+			}
+		}
 		unwatchBreakpoint() {
+			this.stopBreakpointRetry();
 			this.wideQuery?.removeEventListener("change", this.handleWideChange);
 			this.wideQuery = null;
 		}
@@ -17222,12 +17605,27 @@ new class extends _identity {
       --ds-action-sheet-title-size: var(--font-size-sm);
       --ds-action-sheet-font-family: var(--font-family-body);
       --ds-action-sheet-font-size: var(--font-size-md);
+      --ds-action-sheet-item-icon-size: var(--font-size-md);
       --ds-action-sheet-line-height: var(--font-line-height-normal);
       --ds-action-sheet-divider: var(--color-border);
       --ds-action-sheet-divider-width: var(--border-width-thin);
       --ds-action-sheet-layer: var(--layer-sheet);
       --ds-action-sheet-enter: var(--motion-duration-base);
       --ds-action-sheet-exit: var(--motion-duration-fast);
+      /* Locked bindings: out of the overrides API, still hooks, so page CSS can re-theme them and
+         the naming codemod can rename them. */
+      --ds-action-sheet-surface: var(--color-overlay-surface);
+      --ds-action-sheet-handle: var(--color-foreground-muted);
+      --ds-action-sheet-item-hover: var(--color-background-subtle);
+      --ds-action-sheet-item-color: var(--color-foreground);
+      --ds-action-sheet-item-danger-color: var(--color-foreground-danger);
+      --ds-action-sheet-title-color: var(--color-foreground-muted);
+      --ds-action-sheet-min-target: var(--size-target-comfortable);
+      /* maxWidth: the presentation breakpoint is built from the theme token on the root, never per
+         instance (see watchBreakpoint); declared here so the binding stays renameable. */
+      --ds-action-sheet-max-width: var(--layout-max-width-prose);
+      --ds-action-sheet-focus-ring: var(--color-border-focus);
+      --ds-action-sheet-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -17286,9 +17684,9 @@ new class extends _identity {
       min-inline-size: 0;
       max-block-size: 100%;
       padding-block-end: env(safe-area-inset-bottom);
-      color: var(--color-foreground);
-      /* surface: color.overlay.surface, locked — no hook */
-      background: var(--color-overlay-surface);
+      color: var(--ds-action-sheet-item-color);
+      /* surface: color.overlay.surface, locked */
+      background: var(--ds-action-sheet-surface);
       border-start-start-radius: var(--ds-action-sheet-radius);
       border-start-end-radius: var(--ds-action-sheet-radius);
       box-shadow: var(--ds-action-sheet-shadow);
@@ -17355,7 +17753,7 @@ new class extends _identity {
       inline-size: var(--ds-action-sheet-handle-width);
       block-size: var(--ds-action-sheet-handle-height);
       border-radius: var(--ds-action-sheet-handle-radius);
-      background: var(--color-foreground-muted);
+      background: var(--ds-action-sheet-handle);
     }
 
     /* heading: the sheet-owned wrapper around the composed <ds-text> (ds-* hosts carry no data-part
@@ -17364,6 +17762,7 @@ new class extends _identity {
        consumer CSS on the --ds-action-sheet-* hooks lands even though Text sets its own from
        size="sm". */
     .heading ds-text {
+      --ds-text-color: var(--ds-action-sheet-title-color);
       --ds-text-font-size: var(--ds-action-sheet-title-size);
       --ds-text-font-family: var(--ds-action-sheet-font-family);
       --ds-text-line-height: var(--ds-action-sheet-line-height);
@@ -17383,14 +17782,14 @@ new class extends _identity {
       align-items: center;
       gap: var(--ds-action-sheet-item-gap);
       /* minTarget: size.target.comfortable, locked */
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-action-sheet-min-target);
       margin: 0;
       padding-block: var(--ds-action-sheet-item-padding-block);
       padding-inline: var(--ds-action-sheet-item-padding-inline);
       border: 0;
       background: transparent;
       /* itemColor: color.foreground, locked */
-      color: var(--color-foreground);
+      color: var(--ds-action-sheet-item-color);
       font-family: var(--ds-action-sheet-font-family);
       font-size: var(--ds-action-sheet-font-size);
       line-height: var(--ds-action-sheet-line-height);
@@ -17401,12 +17800,12 @@ new class extends _identity {
 
     /* itemDangerColor: color.foreground.danger, locked */
     .item[data-tone='danger'] {
-      color: var(--color-foreground-danger);
+      color: var(--ds-action-sheet-item-danger-color);
     }
 
     /* itemHover: color.background.subtle, locked */
     .item:hover:not([aria-disabled='true']) {
-      background: var(--color-background-subtle);
+      background: var(--ds-action-sheet-item-hover);
     }
 
     .item:focus {
@@ -17415,8 +17814,8 @@ new class extends _identity {
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
     .item:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-action-sheet-focus-ring-width) solid var(--ds-action-sheet-focus-ring);
+      outline-offset: calc(-1 * var(--ds-action-sheet-focus-ring-width));
     }
 
     .item[aria-disabled='true'] {
@@ -17424,9 +17823,15 @@ new class extends _identity {
       opacity: var(--opacity-disabled);
     }
 
+    /* itemIcon: the sheet-owned span wrapping the composed <ds-icon>; itemIconSize reaches Icon
+       through its documented size hook, which this outer-tree rule sets over Icon's own :host. */
     .item-icon {
       display: inline-flex;
       flex: none;
+    }
+
+    .item-icon ds-icon {
+      --ds-icon-size: var(--ds-action-sheet-item-icon-size);
     }
 
     .item-label {
@@ -17497,7 +17902,7 @@ let _init_extra_headingEl;
 let _init_closeButtonEl;
 let _init_extra_closeButtonEl;
 /** Detail carried by the `open-change` CustomEvent. */
-/** Overridable style hooks; see the `overrides` property. `surface`, `focusRing` and `focusRingWidth` are locked and excluded. */
+/** Overridable style hooks; see the `overrides` property. `surface`, `focusRing` and `focusRingWidth` are locked and excluded, but keep their `:host` hooks. */
 const HOOKS$19 = {
 	scrim: "--ds-side-panel-scrim",
 	shadow: "--ds-side-panel-shadow",
@@ -17738,7 +18143,7 @@ new class extends _identity {
 					"hasFooter"
 				],
 				[
-					query("[data-part=\"surface\"]"),
+					query(".surface"),
 					1,
 					"surfaceEl"
 				],
@@ -17929,7 +18334,12 @@ new class extends _identity {
 		overlayModal = false;
 		holdsScrollLock = false;
 		openerEl = null;
-		focusTriggerOnClose = false;
+		/**
+		* Where focus goes when the pending close finishes: `trigger` always, `none`
+		* never (a followed Link owns focus; an outside press put it where it is),
+		* `auto` only if focus was inside or the panel was modal (a controlled close).
+		*/
+		closeFocus = "auto";
 		exitTimer;
 		warnedHeading = false;
 		/** Whether the panel is currently open, controlled or not. */
@@ -18008,9 +18418,11 @@ new class extends _identity {
       <ds-focus-scope .trapped=${useDialog} .active=${visible} auto-focus="none" .restoreFocus=${false}>
         <div part="focusScope" data-part="focusScope" @click=${this.handlePanelClick}>
           ${header}
-          <ds-box part="body" data-part="body" .overrides=${this.bodyOverrides()}>
-            <slot></slot>
-          </ds-box>
+          <div part="body" data-part="body">
+            <ds-box .overrides=${this.bodyOverrides()}>
+              <slot></slot>
+            </ds-box>
+          </div>
           <ds-stack
             part="footer"
             data-part="footer"
@@ -18025,7 +18437,7 @@ new class extends _identity {
         </div>
       </ds-focus-scope>
     `;
-			const surfaceClass = isPersistent ? "sidebar" : `overlay${closing}`;
+			const surfaceClass = isPersistent ? "surface sidebar" : `surface overlay${closing}`;
 			const region = this.landmark === "navigation" ? html`<nav
             part="surface"
             data-part="surface"
@@ -18061,7 +18473,7 @@ new class extends _identity {
             @cancel=${this.handleCancel}
           >
             ${scrimTemplate}
-            <div part="surface" data-part="surface" class=${`overlay${closing}`}>${content}</div>
+            <div part="surface" data-part="surface" class=${`surface overlay${closing}`}>${content}</div>
           </dialog>` : html`${!isPersistent && this.scrim ? scrimTemplate : nothing}${region}`}
     `;
 		}
@@ -18079,7 +18491,9 @@ new class extends _identity {
 			return gap ? { gap } : void 0;
 		}
 		handleTriggerSlotChange = (event) => {
-			const next = event.target.assignedElements({ flatten: true })[0] ?? null;
+			const assigned = event.target.assignedElements({ flatten: true });
+			if (import.meta.env.DEV && assigned.length > 1) console.warn("<ds-side-panel> `trigger` must be exactly one element; only the first is wired.", this);
+			const next = assigned[0] ?? null;
 			if (next === this.triggerEl) return;
 			this.detachTrigger();
 			this.triggerEl = next;
@@ -18194,7 +18608,7 @@ new class extends _identity {
 		* `open` when the consumer sets it.
 		*/
 		requestOpenChange(next, reason, options) {
-			if (!next) this.focusTriggerOnClose = options.focusTrigger;
+			if (!next) this.closeFocus = options.focusTrigger ? "trigger" : "none";
 			if (options.apply && this.open === void 0) this.internalOpen = next;
 			this.dispatchEvent(new CustomEvent("open-change", {
 				detail: {
@@ -18208,6 +18622,7 @@ new class extends _identity {
 		openOverlay() {
 			clearTimeout(this.exitTimer);
 			this.closing = false;
+			this.closeFocus = "auto";
 			const active = deepActiveElement();
 			this.openerEl = active instanceof HTMLElement && active !== document.body ? active : null;
 			this.overlayModal = this.modal;
@@ -18248,11 +18663,11 @@ new class extends _identity {
 			if (dialog?.open) dialog.close();
 			this.releaseScrollLock();
 			this.closing = false;
-			if (this.focusTriggerOnClose || focusWasInside || this.overlayModal) {
+			if (this.closeFocus === "trigger" || this.closeFocus === "auto" && (focusWasInside || this.overlayModal)) {
 				const target = this.triggerEl ?? this.openerEl;
 				if (target?.isConnected) target.focus();
 			}
-			this.focusTriggerOnClose = false;
+			this.closeFocus = "auto";
 			this.overlayModal = false;
 			this.openerEl = null;
 		}
@@ -18345,6 +18760,10 @@ new class extends _identity {
       --ds-side-panel-layer: var(--layer-sheet);
       --ds-side-panel-enter: var(--motion-duration-base);
       --ds-side-panel-exit: var(--motion-duration-fast);
+      /* Locked: out of the overrides type, still themeable and renameable through these hooks. */
+      --ds-side-panel-surface: var(--color-overlay-surface);
+      --ds-side-panel-focus-ring: var(--color-border-focus);
+      --ds-side-panel-focus-ring-width: var(--border-width-focus);
       --ds-side-panel-active-width: var(--ds-side-panel-width);
       /* 100% of the fixed containing block, which excludes the scrollbar gutter — never 100vw. */
       --ds-side-panel-inline-size: min(
@@ -18397,16 +18816,17 @@ new class extends _identity {
       }
     }
 
-    [data-part='surface'] {
+    /* Addressed by class: the body's <ds-box> writes its own data-part="surface" on its host. */
+    .surface {
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
       font-family: var(--font-family-body);
       color: var(--color-foreground);
-      /* surface: color.overlay.surface, locked — no override hook */
-      background: var(--color-overlay-surface);
+      /* surface: color.overlay.surface, locked — excluded from the overrides type, hook kept */
+      background: var(--ds-side-panel-surface);
     }
-    [data-part='surface'][hidden] {
+    .surface[hidden] {
       display: none;
     }
 
@@ -18557,8 +18977,8 @@ new class extends _identity {
       min-inline-size: 0;
     }
     [data-part='heading']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-side-panel-focus-ring-width) solid var(--ds-side-panel-focus-ring);
+      outline-offset: var(--ds-side-panel-focus-ring-width);
     }
 
     /* hideHeading: kept for the accessible name, removed from the visual layout. */
@@ -18579,12 +18999,16 @@ new class extends _identity {
       flex: none;
     }
 
-    /* inset: forwarded as the body Box's paddingInline; its block padding stays zero. */
+    /* Box never scrolls, so the body part is an overlay-owned scroll element around it;
+       partGap measures to this wrapper. */
     [data-part='body'] {
-      --ds-box-padding-inline: var(--ds-side-panel-inset);
       flex: 1 1 auto;
       min-block-size: 0;
       overflow-y: auto;
+    }
+    /* inset: forwarded as the body Box's paddingInline hook; its block padding stays zero. */
+    [data-part='body'] > ds-box {
+      --ds-box-padding-inline: var(--ds-side-panel-inset);
     }
 
     [data-part='footer'] {
@@ -18601,6 +19025,7 @@ new class extends _identity {
 }();
 //#endregion
 //#region src/Tabs.ts
+var _HTMLElement;
 let _initClass$18;
 let _initClass2$2;
 let _init_tabs;
@@ -18661,34 +19086,18 @@ let _DsTabPanel;
 * `aria-labelledby`, because the tab lives in `<ds-tabs>`'s shadow root and a
 * reference cannot point into a descendant shadow tree.
 */
-new class extends _identity {
-	static [class DsTabPanel extends LitElement {
-		static {
-			[_DsTabPanel, _initClass$18] = applyDecs2311(this, [customElement("ds-tab-panel")], [], 0, void 0, LitElement).c;
-		}
-		connectedCallback() {
-			super.connectedCallback();
-			this.setAttribute("data-ds", "TabPanel");
-			this.setAttribute("data-part", "panel");
-		}
-		render() {
-			return html`<slot></slot>`;
-		}
-	}];
-	styles = css`
-    :host {
-      display: block;
-      min-inline-size: 0;
-    }
-
-    :host([hidden]) {
-      display: none;
-    }
-  `;
-	constructor() {
-		super(_DsTabPanel), _initClass$18();
+var DsTabPanel = class extends (_HTMLElement = HTMLElement) {
+	static {
+		[_DsTabPanel, _initClass$18] = applyDecs2311(this, [customElement("ds-tab-panel")], [], 0, void 0, _HTMLElement).c;
 	}
-}();
+	connectedCallback() {
+		setAttr$1(this, "data-ds", "TabPanel");
+		setAttr$1(this, "data-part", "panel");
+	}
+	static {
+		_initClass$18();
+	}
+};
 let _DsTabs;
 new class extends _identity {
 	static [class DsTabs extends LitElement {
@@ -18884,6 +19293,8 @@ new class extends _identity {
 		}
 		resizeObserver = void _init_extra_indicatorEl$1(this);
 		lastScrolledId = null;
+		/** The tab the indicator last sat under; `null` when it was at zero size (or never placed). */
+		indicatorId = null;
 		warned = /* @__PURE__ */ new Set();
 		/** The selected tab id, controlled or not. */
 		get currentValue() {
@@ -18900,7 +19311,7 @@ new class extends _identity {
 		}
 		firstUpdated() {
 			if (this.tablistEl && typeof ResizeObserver !== "undefined") {
-				this.resizeObserver = new ResizeObserver(() => this.updateIndicator());
+				this.resizeObserver = new ResizeObserver(() => this.updateIndicator(false));
 				this.resizeObserver.observe(this.tablistEl);
 			}
 		}
@@ -18910,7 +19321,7 @@ new class extends _identity {
 		}
 		updated() {
 			this.syncPanels();
-			this.updateIndicator();
+			this.updateIndicator(true);
 			this.scrollSelectedIntoView();
 			this.warnInDev();
 		}
@@ -18986,6 +19397,13 @@ new class extends _identity {
 			} else if (event.key === "End") {
 				event.preventDefault();
 				this.focusEdge("last");
+			} else if ((event.key === "Enter" || event.key === " ") && this.activation === "manual") {
+				const id = event.target?.closest("[data-part=tab]")?.dataset["id"];
+				const tab = this.tabs.find((candidate) => candidate.id === id);
+				if (tab) {
+					event.preventDefault();
+					this.handleTabClick(tab);
+				}
 			}
 		};
 		/**
@@ -19071,19 +19489,30 @@ new class extends _identity {
 				if (panel ? current?.[0] !== panel : current !== null) button.ariaControlsElements = panel ? [panel] : null;
 			}
 		}
-		updateIndicator() {
+		/**
+		* Places the indicator under the selected tab. It snaps on first placement,
+		* when the selected tab first appears and on every resize remeasure
+		* (`mayAnimate` false); only a move between two tabs sets `data-animate`.
+		* With a selection that matches no tab it collapses to zero size.
+		*/
+		updateIndicator(mayAnimate) {
 			const indicator = this.indicatorEl;
 			if (!indicator) return;
 			const selected = this.currentValue;
 			const tabEl = selected !== null ? this.tabElement(selected) : null;
-			if (!tabEl) {
-				indicator.style.opacity = "0";
+			const vertical = this.orientation === "vertical";
+			if (!tabEl || selected === null) {
+				indicator.removeAttribute("data-animate");
+				indicator.style.transform = "";
+				indicator.style.inlineSize = vertical ? "" : "0";
+				indicator.style.blockSize = vertical ? "0" : "";
+				this.indicatorId = null;
 				return;
 			}
-			const first = indicator.style.opacity !== "1";
-			if (first) indicator.style.transition = "none";
-			indicator.style.opacity = "1";
-			if (this.orientation === "vertical") {
+			if (mayAnimate && this.indicatorId !== null && this.indicatorId !== selected) indicator.setAttribute("data-animate", "");
+			else if (this.indicatorId !== selected || !mayAnimate) indicator.removeAttribute("data-animate");
+			this.indicatorId = selected;
+			if (vertical) {
 				indicator.style.transform = `translateY(${tabEl.offsetTop}px)`;
 				indicator.style.blockSize = `${tabEl.offsetHeight}px`;
 				indicator.style.inlineSize = "";
@@ -19092,28 +19521,39 @@ new class extends _identity {
 				indicator.style.inlineSize = `${tabEl.offsetWidth}px`;
 				indicator.style.blockSize = "";
 			}
-			if (first) {
-				indicator.offsetWidth;
-				indicator.style.transition = "";
-			}
 		}
-		/** Keeps the selected tab visible when the list overflows, scrolling the list only (never the page). */
+		/**
+		* Keeps the selected tab visible when the list overflows, scrolling the list
+		* only (never the page, so no scrollIntoView). Measured from the tab's box
+		* within the list's client box, not from scrollLeft, so it holds in RTL
+		* where scrollLeft is negative. A `fill` list does not scroll.
+		*/
 		scrollSelectedIntoView() {
 			const selected = this.currentValue;
 			const list = this.tablistEl;
 			if (selected === null || selected === this.lastScrolledId || !list) return;
-			this.lastScrolledId = selected;
 			const tabEl = this.tabElement(selected);
 			if (!tabEl) return;
-			if (this.orientation === "vertical") {
-				const end = tabEl.offsetTop + tabEl.offsetHeight;
-				if (tabEl.offsetTop < list.scrollTop) list.scrollTop = tabEl.offsetTop;
-				else if (end > list.scrollTop + list.clientHeight) list.scrollTop = end - list.clientHeight;
-			} else {
-				const end = tabEl.offsetLeft + tabEl.offsetWidth;
-				if (tabEl.offsetLeft < list.scrollLeft) list.scrollLeft = tabEl.offsetLeft;
-				else if (end > list.scrollLeft + list.clientWidth) list.scrollLeft = end - list.clientWidth;
-			}
+			this.lastScrolledId = selected;
+			const vertical = this.orientation === "vertical";
+			if (this.fit === "fill" && !vertical) return;
+			const listBox = list.getBoundingClientRect();
+			const tabBox = tabEl.getBoundingClientRect();
+			const start = vertical ? tabBox.top - listBox.top - list.clientTop : tabBox.left - listBox.left - list.clientLeft;
+			const size = vertical ? tabBox.height : tabBox.width;
+			const client = vertical ? list.clientHeight : list.clientWidth;
+			let delta = 0;
+			if (start < 0) delta = start;
+			else if (start + size > client) delta = start + size - client;
+			if (delta === 0) return;
+			const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+			list.scrollBy(vertical ? {
+				top: delta,
+				behavior
+			} : {
+				left: delta,
+				behavior
+			});
 		}
 		applyOverrides() {
 			for (const binding of Object.keys(HOOKS$18)) {
@@ -19230,7 +19670,12 @@ new class extends _identity {
       cursor: pointer;
     }
 
-    /* fill is horizontal only: vertical tabs always span the list's inline size. */
+    /* fill is horizontal only: vertical tabs always span the list's inline size.
+       A fill list does not scroll; tabs that overflow it are squeezed. */
+    :host([fit='fill']:not([orientation='vertical'])) [data-part='tablist'] {
+      overflow: hidden;
+    }
+
     :host([fit='fill']:not([orientation='vertical'])) [data-part='tab'] {
       flex: 1 1 0%;
       justify-content: center;
@@ -19276,8 +19721,12 @@ new class extends _identity {
     [data-part='indicator'] {
       position: absolute;
       background: var(--ds-tabs-indicator);
-      opacity: 0;
       pointer-events: none;
+    }
+
+    /* Only a move between tabs animates; first placement, a newly appearing
+       selected tab and a resize remeasure snap (data-animate is absent). */
+    [data-part='indicator'][data-animate] {
       transition:
         transform var(--ds-tabs-transition) var(--motion-easing-standard),
         inline-size var(--ds-tabs-transition) var(--motion-easing-standard),
@@ -19307,8 +19756,15 @@ new class extends _identity {
       min-inline-size: 0;
     }
 
+    /* The panel has no binding of its own: its ring draws from the tab's hooks. */
+    ::slotted([data-part='panel']:focus-visible) {
+      outline: var(--ds-tabs-focus-ring-width) solid var(--ds-tabs-focus-ring);
+      outline-offset: calc(-1 * var(--ds-tabs-focus-ring-width));
+      border-radius: var(--ds-tabs-radius);
+    }
+
     @media (prefers-reduced-motion: reduce) {
-      [data-part='indicator'] {
+      [data-part='indicator'][data-animate] {
         transition: none;
       }
     }
@@ -19366,6 +19822,9 @@ const HOOKS$17 = {
 	transition: "--ds-segmented-control-transition",
 	disabledOpacity: "--ds-segmented-control-disabled-opacity"
 };
+/** The icon takes its segment's colour (segmentColor / segmentSelectedColor) through its own `overrides.color`. */
+const ICON_OVERRIDES$3 = { color: "color.foreground.muted" };
+const SELECTED_ICON_OVERRIDES = { color: "color.foreground.strong" };
 /** The selected segment's box inside the group, in physical pixels, as the pill is drawn. */
 let _DsSegmentedControl;
 /**
@@ -19634,7 +20093,13 @@ new class extends _identity {
         tabindex=${tabStop ? 0 : -1}
         @click=${() => this.handleSegmentClick(option)}
       >
-        ${option.icon ? html`<ds-icon data-part="segmentIcon" part="segmentIcon" name=${option.icon} size=${this.size}></ds-icon>` : nothing}
+        ${option.icon ? html`<ds-icon
+              data-part="segmentIcon"
+              part="segmentIcon"
+              name=${option.icon}
+              size=${this.size}
+              .overrides=${selected ? SELECTED_ICON_OVERRIDES : ICON_OVERRIDES$3}
+            ></ds-icon>` : nothing}
         ${iconOnly ? nothing : html`<span data-part="segmentLabel" part="segmentLabel">${option.label}</span>`}
       </button>
     `;
@@ -19667,29 +20132,45 @@ new class extends _identity {
 					break;
 				default: return;
 			}
-			const origin = enabled.findIndex((option) => option.value === (this.focusedValue() ?? this.tabStopValue()));
 			const inToolbar = this.insideToolbar();
-			let position;
+			let target;
 			if (step === "first" || step === "last") {
 				if (inToolbar) return;
-				position = step === "first" ? 0 : enabled.length - 1;
-			} else if (origin < 0) position = step === 1 ? 0 : enabled.length - 1;
-			else {
-				position = origin + step;
-				if (position < 0 || position >= enabled.length) {
-					if (inToolbar) return;
-					position = (position + enabled.length) % enabled.length;
+				target = step === "first" ? enabled[0] : enabled[enabled.length - 1];
+			} else {
+				const focused = this.focusedValue();
+				const count = this.options.length;
+				const origin = this.options.findIndex((option) => option.value === (focused ?? this.tabStopValue()));
+				if (origin < 0) target = step === 1 ? enabled[0] : enabled[enabled.length - 1];
+				else {
+					let wrapped = false;
+					for (let offset = 1; offset <= count; offset++) {
+						const raw = origin + step * offset;
+						if (raw < 0 || raw >= count) wrapped = true;
+						const candidate = this.options[(raw + count * 2) % count];
+						if (candidate !== void 0 && candidate.disabled !== true) {
+							target = candidate;
+							break;
+						}
+					}
+					const focusedEnabled = enabled.some((option) => option.value === focused);
+					if (wrapped && inToolbar && focusedEnabled) return;
 				}
 			}
-			const target = enabled[position];
 			if (target === void 0) return;
 			event.preventDefault();
 			this.segmentElement(target.value)?.focus();
 			this.select(target.value);
 		};
-		/** Whether a `role="toolbar"` ancestor contains this element, walking host ancestors across shadow roots. */
+		/**
+		* Whether a `role="toolbar"` ancestor contains the group, walking `parentElement` and crossing
+		* shadow roots through each root's host. Starts at the group's parent, so the group never matches
+		* itself.
+		*/
 		insideToolbar() {
-			let node = this.parentElement ?? this.hostOf(this);
+			const group = this.groupEl;
+			if (!group) return false;
+			let node = group.parentElement ?? this.hostOf(group);
 			while (node) {
 				if (node.getAttribute("role") === "toolbar") return true;
 				node = node.parentElement ?? this.hostOf(node);
@@ -19794,6 +20275,14 @@ new class extends _identity {
     :host {
       display: inline-flex;
       max-inline-size: 100%;
+      /* Locked: not in the overrides type, but still themeable from page CSS. */
+      --ds-segmented-control-group-background: var(--color-background-strong);
+      --ds-segmented-control-segment-color: var(--color-foreground-muted);
+      --ds-segmented-control-segment-selected-color: var(--color-foreground-strong);
+      --ds-segmented-control-segment-selected-background: var(--color-background);
+      --ds-segmented-control-min-target: var(--size-target-min);
+      --ds-segmented-control-focus-ring: var(--color-border-focus);
+      --ds-segmented-control-focus-ring-width: var(--border-width-focus);
       --ds-segmented-control-group-padding: var(--space-1);
       --ds-segmented-control-group-radius: var(--radius-md);
       --ds-segmented-control-segment-shadow: var(--shadow-raised);
@@ -19838,7 +20327,7 @@ new class extends _identity {
       gap: var(--ds-segmented-control-segment-spacing);
       padding: var(--ds-segmented-control-group-padding);
       border-radius: var(--ds-segmented-control-group-radius);
-      background: var(--color-background-strong);
+      background: var(--ds-segmented-control-group-background);
     }
 
     [data-part='segment'] {
@@ -19850,8 +20339,8 @@ new class extends _identity {
       justify-content: center;
       gap: var(--ds-segmented-control-segment-gap);
       /* minTarget: size.target.min, locked */
-      min-inline-size: var(--size-target-min);
-      min-block-size: var(--size-target-min);
+      min-inline-size: var(--ds-segmented-control-min-target);
+      min-block-size: var(--ds-segmented-control-min-target);
       margin: 0;
       padding-inline: var(--ds-segmented-control-segment-padding-inline);
       padding-block: var(--ds-segmented-control-segment-padding-block);
@@ -19863,7 +20352,7 @@ new class extends _identity {
       font-weight: var(--ds-segmented-control-font-weight);
       line-height: var(--ds-segmented-control-line-height);
       /* segmentColor: color.foreground.muted, locked */
-      color: var(--color-foreground-muted);
+      color: var(--ds-segmented-control-segment-color);
       white-space: nowrap;
       cursor: pointer;
       appearance: none;
@@ -19883,14 +20372,14 @@ new class extends _identity {
     /* segmentSelectedColor: color.foreground.strong, locked. Selection is the text pair plus the
        checked state plus the pill — never color alone (1.4.1). */
     [data-part='segment'][aria-checked='true'] {
-      color: var(--color-foreground-strong);
+      color: var(--ds-segmented-control-segment-selected-color);
       font-weight: var(--ds-segmented-control-selected-weight);
     }
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked. Never removed. */
     [data-part='segment']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-segmented-control-focus-ring-width) solid var(--ds-segmented-control-focus-ring);
+      outline-offset: calc(-1 * var(--ds-segmented-control-focus-ring-width));
     }
 
     [data-part='segment'][aria-disabled='true'] {
@@ -19914,7 +20403,7 @@ new class extends _identity {
       position: absolute;
       z-index: 0;
       box-sizing: border-box;
-      background: var(--color-background);
+      background: var(--ds-segmented-control-segment-selected-background);
       border-radius: var(--ds-segmented-control-segment-radius);
       box-shadow: var(--ds-segmented-control-segment-shadow);
       pointer-events: none;
@@ -19975,6 +20464,8 @@ let _init_internalValue$5;
 let _init_extra_internalValue$5;
 let _init_activeValue$3;
 let _init_extra_activeValue$3;
+let _init_internalActive;
+let _init_extra_internalActive;
 let _init_formDisabled$5;
 let _init_extra_formDisabled$5;
 let _init_listEl;
@@ -19995,6 +20486,8 @@ const COPY_INVALID$5 = (label) => `${label} is not valid.`;
 const COPY_LOADING$6 = "Loading…";
 /** optionSelectedCheck (locked) forwarded to the composed Icon's `color` binding. */
 const CHECK_OVERRIDES = { color: "color.control.selectedBackground" };
+/** optionColor (locked) forwarded to the option icon's `color`, so it matches its row's label. */
+const ICON_OVERRIDES$2 = { color: "color.foreground" };
 /** Overridable style hooks; see the `overrides` property. Locked bindings are excluded. */
 const HOOKS$16 = {
 	border: "--ds-listbox-border",
@@ -20072,8 +20565,10 @@ function flattenItems(items) {
 * `data-ds-field` for `<ds-form>`.
 *
 * `handleKey(event)` and `activeValue` are public so `<ds-select>`,
-* `<ds-combobox>` and `<ds-search>` can forward their own keydowns and keep
-* their activedescendant in sync.
+* `<ds-combobox>` and `<ds-search>` can forward their own keydowns and drive
+* the active option: while `activeValue` is set (a string, or `null` for no
+* active option), forwarded keys move nothing on their own and only report
+* the option they would make active through `active-change`.
 *
 * ## When to use
 *
@@ -20093,7 +20588,7 @@ let _DsListbox;
 new class extends _identity {
 	static [class DsListbox extends LitElement {
 		static {
-			({e: [_init_label$13, _init_extra_label$13, _init_labelledBy, _init_extra_labelledBy, _init_options$2, _init_extra_options$2, _init_multiple$2, _init_extra_multiple$2, _init_value$7, _init_extra_value$7, _init_defaultValue$6, _init_extra_defaultValue$6, _init_selectionFollowsFocus, _init_extra_selectionFollowsFocus, _init_required$5, _init_extra_required$5, _init_invalid$4, _init_extra_invalid$4, _init_embedded, _init_extra_embedded, _init_initialActiveValue, _init_extra_initialActiveValue, _init_loading$6, _init_extra_loading$6, _init_disabled$6, _init_extra_disabled$6, _init_name$6, _init_extra_name$6, _init_emptyMessage$3, _init_extra_emptyMessage$3, _init_maxVisible, _init_extra_maxVisible, _init_overrides$16, _init_extra_overrides$16, _init_internalValue$5, _init_extra_internalValue$5, _init_activeValue$3, _init_extra_activeValue$3, _init_formDisabled$5, _init_extra_formDisabled$5, _init_listEl, _init_extra_listEl, _initProto$3], c: [_DsListbox, _initClass$16]} = applyDecs2311(this, [customElement("ds-listbox")], [
+			({e: [_init_label$13, _init_extra_label$13, _init_labelledBy, _init_extra_labelledBy, _init_options$2, _init_extra_options$2, _init_multiple$2, _init_extra_multiple$2, _init_value$7, _init_extra_value$7, _init_defaultValue$6, _init_extra_defaultValue$6, _init_selectionFollowsFocus, _init_extra_selectionFollowsFocus, _init_required$5, _init_extra_required$5, _init_invalid$4, _init_extra_invalid$4, _init_embedded, _init_extra_embedded, _init_initialActiveValue, _init_extra_initialActiveValue, _init_loading$6, _init_extra_loading$6, _init_disabled$6, _init_extra_disabled$6, _init_name$6, _init_extra_name$6, _init_emptyMessage$3, _init_extra_emptyMessage$3, _init_maxVisible, _init_extra_maxVisible, _init_overrides$16, _init_extra_overrides$16, _init_internalValue$5, _init_extra_internalValue$5, _init_activeValue$3, _init_extra_activeValue$3, _init_internalActive, _init_extra_internalActive, _init_formDisabled$5, _init_extra_formDisabled$5, _init_listEl, _init_extra_listEl, _initProto$3], c: [_DsListbox, _initClass$16]} = applyDecs2311(this, [customElement("ds-listbox")], [
 				[
 					property(),
 					1,
@@ -20215,9 +20710,14 @@ new class extends _identity {
 					"internalValue"
 				],
 				[
-					state(),
+					property({ attribute: false }),
 					1,
 					"activeValue"
+				],
+				[
+					state(),
+					1,
+					"internalActive"
 				],
 				[
 					state(),
@@ -20400,34 +20900,51 @@ new class extends _identity {
 			this.#Q = v;
 		}
 		#R = (_init_extra_overrides$16(this), _init_internalValue$5(this));
-		/** The option carrying `aria-activedescendant`; public so composing popups can read and set it. */
+		/**
+		* Controlled active option, for a host that keeps focus on its own trigger or
+		* input (Select, Combobox, Search). Set, it wins over `initialActiveValue`;
+		* `null` means no option is active. Omit (undefined) to let the list own it.
+		*/
 		get internalValue() {
 			return this.#R;
 		}
 		set internalValue(v) {
 			this.#R = v;
 		}
-		#S = (_init_extra_internalValue$5(this), _init_activeValue$3(this, null));
-		/** Disabled by an owning native form or fieldset. */
+		#S = (_init_extra_internalValue$5(this), _init_activeValue$3(this));
+		/** Uncontrolled active option, used while `activeValue` is undefined. */
 		get activeValue() {
 			return this.#S;
 		}
 		set activeValue(v) {
 			this.#S = v;
 		}
-		#T = (_init_extra_activeValue$3(this), _init_formDisabled$5(this, false));
-		get formDisabled() {
+		#T = (_init_extra_activeValue$3(this), _init_internalActive(this, null));
+		/** Text overrides forwarded to the emptyState and errorMessage Texts: the root typeface and line height. */
+		get internalActive() {
 			return this.#T;
 		}
-		set formDisabled(v) {
+		set internalActive(v) {
 			this.#T = v;
 		}
-		#U = (_init_extra_formDisabled$5(this), _init_listEl(this));
-		get listEl() {
+		textOverrides = (_init_extra_internalActive(this), {
+			fontFamily: "font.family.body",
+			lineHeight: "font.lineHeight.normal"
+		});
+		/** Disabled by an owning native form or fieldset. */
+		#U = _init_formDisabled$5(this, false);
+		get formDisabled() {
 			return this.#U;
 		}
-		set listEl(v) {
+		set formDisabled(v) {
 			this.#U = v;
+		}
+		#V = (_init_extra_formDisabled$5(this), _init_listEl(this));
+		get listEl() {
+			return this.#V;
+		}
+		set listEl(v) {
+			this.#V = v;
 		}
 		instanceId = (_init_extra_listEl(this), `ds-listbox-${++listboxInstanceCount}`);
 		errorId = `${this.instanceId}-error`;
@@ -20456,7 +20973,12 @@ new class extends _identity {
 				const list = Array.isArray(value) ? value : typeof value === "string" && value !== "" ? [value] : [];
 				return list.length > 0 ? list : null;
 			}
-			return typeof value === "string" && value !== "" ? value : null;
+			const single = Array.isArray(value) ? value[0] : value;
+			return typeof single === "string" && single !== "" ? single : null;
+		}
+		/** The active option in effect: the controlled `activeValue` when set, else the list's own. */
+		get currentActive() {
+			return this.activeValue !== void 0 ? this.activeValue : this.internalActive;
 		}
 		/** The owning native form, if any. */
 		get form() {
@@ -20561,9 +21083,14 @@ new class extends _identity {
 			if (!this.hasUpdated) this.internalValue = this.defaultValue;
 			else if (changed.has("initialActiveValue")) this.followInitialActiveValue();
 			if (changed.has("overrides") || changed.has("embedded")) this.applyOverrides();
+			if (changed.has("overrides")) this.textOverrides = {
+				fontFamily: this.overrides?.fontFamily ?? "font.family.body",
+				lineHeight: this.overrides?.lineHeight ?? "font.lineHeight.normal"
+			};
 		}
-		updated() {
+		updated(changed) {
 			this.syncInternals();
+			if (changed.has("activeValue") || changed.has("internalActive")) this.scrollActiveIntoView();
 			if (import.meta.env.DEV && !this.label && !this.warnedMissingLabel) {
 				this.warnedMissingLabel = true;
 				console.warn("<ds-listbox> requires a `label`; it is the list's aria-label even with `labelledBy`.", this);
@@ -20573,7 +21100,8 @@ new class extends _identity {
 			const flat = this.flatOptions;
 			const optionIds = /* @__PURE__ */ new Map();
 			flat.forEach((option, index) => optionIds.set(option.value, `${this.instanceId}-option-${index}`));
-			const activeId = this.activeValue !== null ? optionIds.get(this.activeValue) : void 0;
+			const active = this.isDisabled ? null : this.currentActive;
+			const activeId = active !== null ? optionIds.get(active) : void 0;
 			const message = this.displayedMessage();
 			const describedBy = [flat.length === 0 ? this.emptyId : null, message ? this.errorId : null].filter(Boolean).join(" ") || void 0;
 			return html`
@@ -20595,7 +21123,7 @@ new class extends _identity {
           @focus=${this.handleListFocus}
           @blur=${this.handleListBlur}
         >
-          ${flat.length === 0 ? this.renderEmpty() : this.renderItems(optionIds)}
+          ${flat.length === 0 ? this.renderEmpty() : this.renderItems(optionIds, active)}
         </div>
         ${message ? html`<ds-text
               id=${this.errorId}
@@ -20604,6 +21132,7 @@ new class extends _identity {
               element="p"
               size="sm"
               tone="danger"
+              .overrides=${this.textOverrides}
               >${message}</ds-text
             >` : nothing}
       </div>
@@ -20617,26 +21146,26 @@ new class extends _identity {
 		*/
 		renderEmpty() {
 			return html`<div class="empty" id=${this.emptyId} aria-hidden="true">
-      <ds-text data-part="emptyState" part="emptyState" element="p" tone="muted"
+      <ds-text data-part="emptyState" part="emptyState" element="p" tone="muted" .overrides=${this.textOverrides}
         >${this.loading ? COPY_LOADING$6 : this.emptyMessage || COPY_EMPTY$5}</ds-text
       >
     </div>`;
 		}
-		renderItems(optionIds) {
+		renderItems(optionIds, active) {
 			let groupCounter = 0;
 			return this.options.map((item) => {
-				if (!isGroup(item)) return this.renderOption(item, optionIds.get(item.value));
+				if (!isGroup(item)) return this.renderOption(item, optionIds.get(item.value), active);
 				if (item.options.length === 0) return nothing;
 				const labelId = `${this.instanceId}-group-${groupCounter++}`;
 				return html`
         <div data-part="group" part="group" role="group" aria-labelledby=${labelId}>
           <div data-part="groupLabel" part="groupLabel" id=${labelId}>${item.group}</div>
-          ${item.options.map((option) => this.renderOption(option, optionIds.get(option.value)))}
+          ${item.options.map((option) => this.renderOption(option, optionIds.get(option.value), active))}
         </div>
       `;
 			});
 		}
-		renderOption(option, id) {
+		renderOption(option, id, active) {
 			const disabled = this.isDisabled || option.disabled === true;
 			const selected = this.selectedSet.has(option.value);
 			const descriptionId = option.description ? `${id}-description` : void 0;
@@ -20647,7 +21176,7 @@ new class extends _identity {
         part="option"
         role="option"
         data-value=${option.value}
-        ?data-active=${this.activeValue === option.value}
+        ?data-active=${active === option.value}
         aria-selected=${selected ? "true" : "false"}
         aria-disabled=${ifDefined(disabled ? "true" : void 0)}
         aria-describedby=${ifDefined(descriptionId)}
@@ -20661,7 +21190,13 @@ new class extends _identity {
               size="sm"
               .overrides=${CHECK_OVERRIDES}
             ></ds-icon>` : nothing}
-        ${option.icon ? html`<ds-icon data-part="optionIcon" part="optionIcon" name=${option.icon} size="sm"></ds-icon>` : nothing}
+        ${option.icon ? html`<ds-icon
+              data-part="optionIcon"
+              part="optionIcon"
+              name=${option.icon}
+              size="sm"
+              .overrides=${ICON_OVERRIDES$2}
+            ></ds-icon>` : nothing}
         <span class="option-text">
           <span data-part="optionLabel" part="optionLabel">${option.label}</span>
           ${option.description ? html`<span id=${ifDefined(descriptionId)} data-part="optionDescription" part="optionDescription"
@@ -20692,15 +21227,22 @@ new class extends _identity {
 		*/
 		followInitialActiveValue() {
 			const next = this.initialActiveValue;
-			if (next === void 0 || next === this.activeValue || this.listHasFocus) return;
-			if (this.enabledOptions.some((option) => option.value === next)) this.activeValue = next;
+			if (next === void 0 || next === this.internalActive || this.listHasFocus) return;
+			if (this.enabledOptions.some((option) => option.value === next)) this.internalActive = next;
 		}
+		/**
+		* Real focus on the list: the active option (kept when it names an enabled
+		* option, else the resolved initial option) is reported every time, even when
+		* its value has not changed, so a host always learns where focus went.
+		*/
 		handleListFocus = () => {
-			if (this.isDisabled || this.activeValue !== null) return;
-			const target = this.initialOption();
-			if (target) this.setActive(target.value);
+			if (this.isDisabled) return;
+			const current = this.currentActive;
+			const target = this.enabledOptions.find((option) => option.value === current) ?? this.initialOption();
+			if (target) this.setActive(target.value, true);
 		};
 		handleListBlur = () => {
+			if (this.isDisabled || this.currentActive === null) return;
 			this.setActive(null);
 		};
 		handleOptionClick(option) {
@@ -20713,7 +21255,8 @@ new class extends _identity {
 			this.setActive(option.value);
 		}
 		activeIndex() {
-			return this.activeValue === null ? -1 : this.enabledOptions.findIndex((option) => option.value === this.activeValue);
+			const active = this.currentActive;
+			return active === null ? -1 : this.enabledOptions.findIndex((option) => option.value === active);
 		}
 		/** Arrows and Page keys: clamp at the first and last enabled option, never wrap. */
 		moveBy(delta) {
@@ -20778,13 +21321,18 @@ new class extends _identity {
 				const index = (from + offset) % options.length;
 				if (options[index].label.toLowerCase().startsWith(query)) {
 					this.moveToIndex(index);
-					return;
+					break;
 				}
+			}
+			if (reset <= 0) {
+				clearTimeout(this.typeaheadTimer);
+				this.typeaheadQuery = "";
 			}
 		}
 		/** Space/Enter: act on the active option, or the resolved initial option when none is active yet. */
 		selectActive() {
-			const option = this.activeValue === null ? this.initialOption() : this.enabledOptions.find((candidate) => candidate.value === this.activeValue);
+			const active = this.currentActive;
+			const option = active === null ? this.initialOption() : this.enabledOptions.find((candidate) => candidate.value === active);
 			if (!option) return;
 			this.setActive(option.value);
 			if (this.multiple) {
@@ -20802,20 +21350,24 @@ new class extends _identity {
 			const known = this.flatOptions.map((option) => option.value);
 			return [...known.filter((value) => set.has(value)), ...[...set].filter((value) => !known.includes(value))];
 		}
-		setActive(value) {
-			if (this.activeValue === value) return;
-			this.activeValue = value;
+		/**
+		* Makes `value` active and reports it. Controlled (`activeValue` set), the
+		* list only reports; the host passes the value back. `always` reports an
+		* unchanged value too (real focus); every other source is deduped.
+		*/
+		setActive(value, always = false) {
+			if (!always && this.currentActive === value) return;
+			if (this.activeValue === void 0) this.internalActive = value;
 			this.dispatchEvent(new CustomEvent("active-change", {
 				detail: { value },
 				bubbles: true,
 				composed: true
 			}));
-			this.scrollActiveIntoView();
 		}
-		async scrollActiveIntoView() {
-			await this.updateComplete;
-			if (this.activeValue === null) return;
-			this.renderRoot.querySelector(`[data-part=option][data-value="${CSS.escape(this.activeValue)}"]`)?.scrollIntoView({ block: "nearest" });
+		scrollActiveIntoView() {
+			const active = this.currentActive;
+			if (active === null || this.isDisabled) return;
+			this.renderRoot.querySelector(`[data-part=option][data-value="${CSS.escape(active)}"]`)?.scrollIntoView({ block: "nearest" });
 		}
 		/** Uncontrolled: stores the value. Controlled: only reports it; the list updates when `value` changes. */
 		commitValue(next) {
@@ -20885,6 +21437,22 @@ new class extends _identity {
       --ds-listbox-line-height: var(--font-line-height-normal);
       --ds-listbox-disabled-opacity: var(--opacity-disabled);
       --ds-listbox-typeahead-reset: var(--motion-duration-loop);
+      /* Locked bindings: out of the overrides API, still hooks for page CSS and the naming codemod. */
+      --ds-listbox-surface: var(--color-background);
+      --ds-listbox-option-color: var(--color-foreground);
+      --ds-listbox-option-description-color: var(--color-foreground-muted);
+      --ds-listbox-option-active-background: var(--color-background-subtle);
+      --ds-listbox-option-selected-check: var(--color-control-selected-background);
+      --ds-listbox-group-label-color: var(--color-foreground-muted);
+      --ds-listbox-min-target: var(--size-target-min);
+      --ds-listbox-focus-ring: var(--color-border-focus);
+      --ds-listbox-focus-ring-width: var(--border-width-focus);
+      /*
+       * errorText and emptyColor are realised by the composed Text's tone (danger / muted);
+       * these hooks are declared for the hook gate and naming codemod, not read here.
+       */
+      --ds-listbox-error-text: var(--color-foreground-danger);
+      --ds-listbox-empty-color: var(--color-foreground-muted);
     }
 
     :host([hidden]) {
@@ -20902,7 +21470,7 @@ new class extends _identity {
       --ds-listbox-frame: var(--ds-listbox-border-width);
       /* Row height from Behavior: max(minTarget, fontSize × lineHeight + 2 × optionPaddingBlock), never measured. */
       --ds-listbox-row-size: max(
-        var(--size-target-min),
+        var(--ds-listbox-min-target),
         calc(var(--ds-listbox-font-size) * var(--ds-listbox-line-height) + 2 * var(--ds-listbox-option-padding-block))
       );
       box-sizing: border-box;
@@ -20914,7 +21482,7 @@ new class extends _identity {
       border-color: var(--ds-listbox-border);
       border-radius: var(--ds-listbox-radius);
       /* surface: color.background, locked */
-      background: var(--color-background);
+      background: var(--ds-listbox-surface);
       font-family: var(--ds-listbox-font-family);
       font-size: var(--ds-listbox-font-size);
       line-height: var(--ds-listbox-line-height);
@@ -20956,8 +21524,8 @@ new class extends _identity {
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
     [data-part='list']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-listbox-focus-ring-width) solid var(--ds-listbox-focus-ring);
+      outline-offset: calc(-1 * var(--ds-listbox-focus-ring-width));
     }
 
     /*
@@ -20982,7 +21550,7 @@ new class extends _identity {
       font-size: var(--ds-listbox-group-label-size);
       font-weight: var(--ds-listbox-group-label-weight);
       /* groupLabelColor: color.foreground.muted, locked */
-      color: var(--color-foreground-muted);
+      color: var(--ds-listbox-group-label-color);
     }
 
     [data-part='option'] {
@@ -20991,19 +21559,19 @@ new class extends _identity {
       align-items: center;
       gap: var(--ds-listbox-option-gap);
       /* minTarget: size.target.min, locked */
-      min-block-size: var(--size-target-min);
+      min-block-size: var(--ds-listbox-min-target);
       padding-block: var(--ds-listbox-option-padding-block);
       padding-inline: var(--ds-listbox-option-padding-inline);
       border-radius: var(--ds-listbox-option-radius);
       /* optionColor: color.foreground, locked */
-      color: var(--color-foreground);
+      color: var(--ds-listbox-option-color);
       cursor: pointer;
       user-select: none;
     }
 
     /* optionActiveBackground: color.background.subtle, locked — keyboard and hover share it */
     [data-part='option'][data-active] {
-      background: var(--color-background-subtle);
+      background: var(--ds-listbox-option-active-background);
     }
 
     /* optionWeight is the base row weight; the selected rule below is more specific and wins. */
@@ -21047,7 +21615,7 @@ new class extends _identity {
     [data-part='optionDescription'] {
       font-size: var(--ds-listbox-option-description-size);
       /* optionDescriptionColor: color.foreground.muted, locked */
-      color: var(--color-foreground-muted);
+      color: var(--ds-listbox-option-description-color);
     }
 
     /* The empty/loading row lines up with the rows it replaces. */
@@ -21119,6 +21687,10 @@ let _init_extra_listboxEl$2;
 * `chevron`, `descriptionText`, `errorText`, `minTarget`, `minTargetSm` and
 * `focusRingWidth` are locked and excluded.
 */
+/**
+* The bindings with a `:host` hook. `labelWeight` and `helperSize` reach the
+* composed Texts only through their `overrides`, so they declare none.
+*/
 const HOOKS$15 = {
 	triggerBorderInvalid: "--ds-select-trigger-border-invalid",
 	triggerBorderWidth: "--ds-select-trigger-border-width",
@@ -21128,8 +21700,6 @@ const HOOKS$15 = {
 	triggerGap: "--ds-select-trigger-gap",
 	chevronReserve: "--ds-select-chevron-reserve",
 	partGap: "--ds-select-part-gap",
-	labelWeight: "--ds-select-label-weight",
-	helperSize: "--ds-select-helper-size",
 	popupSurface: "--ds-select-popup-surface",
 	popupBorder: "--ds-select-popup-border",
 	popupBorderWidth: "--ds-select-popup-border-width",
@@ -21728,17 +22298,17 @@ new class extends _identity {
               >${this.description}</ds-text
             >` : nothing}
         ${this.usesPopup ? this.renderPopupField(isDisabled, describedBy, fontSize) : this.renderNativeField(isDisabled, describedBy)}
-        <div id="error" role="alert" ?hidden=${!message}>
-          ${message ? html`<ds-text
-                data-part="errorMessage"
-                part="errorMessage"
-                element="span"
-                size="sm"
-                tone="danger"
-                .overrides=${helperOverrides}
-                >${message}</ds-text
-              >` : nothing}
-        </div>
+        ${message ? html`<ds-text
+              id="error"
+              role="alert"
+              data-part="errorMessage"
+              part="errorMessage"
+              element="span"
+              size="sm"
+              tone="danger"
+              .overrides=${helperOverrides}
+              >${message}</ds-text
+            >` : nothing}
       </div>
     `;
 		}
@@ -22070,8 +22640,6 @@ new class extends _identity {
       --ds-select-trigger-gap: var(--layout-gap-normal);
       --ds-select-chevron-reserve: var(--font-size-sm);
       --ds-select-part-gap: var(--space-1);
-      --ds-select-label-weight: var(--font-weight-medium);
-      --ds-select-helper-size: var(--font-size-sm);
       --ds-select-popup-surface: var(--color-overlay-surface);
       --ds-select-popup-border: var(--color-border);
       --ds-select-popup-border-width: var(--border-width-thin);
@@ -22085,6 +22653,19 @@ new class extends _identity {
       --ds-select-line-height: var(--font-line-height-normal);
       --ds-select-disabled-opacity: var(--opacity-disabled);
       --ds-select-enter: var(--motion-duration-fast);
+      /* Locked bindings: out of the overrides type, but still themeable from page CSS. */
+      --ds-select-trigger-background: var(--color-background);
+      --ds-select-trigger-border: var(--color-border-strong);
+      --ds-select-trigger-border-focus: var(--color-border-focus);
+      --ds-select-min-target: var(--size-target-comfortable);
+      --ds-select-min-target-sm: var(--size-target-min);
+      --ds-select-focus-ring-width: var(--border-width-focus);
+      /* Realised by the composed Texts' tones (default / muted / muted / danger); declared for the
+         naming codemod, not read here, since a hook cannot reach a child's shadow tree. */
+      --ds-select-value-color: var(--color-foreground);
+      --ds-select-placeholder-color: var(--color-foreground-muted);
+      --ds-select-description-text: var(--color-foreground-muted);
+      --ds-select-error-text: var(--color-foreground-danger);
       font-family: var(--ds-select-font-family);
     }
 
@@ -22134,15 +22715,15 @@ new class extends _identity {
       gap: var(--ds-select-trigger-gap);
       inline-size: 100%;
       /* minTarget: size.target.comfortable, locked */
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-select-min-target);
       margin: 0;
       padding-block: var(--ds-select-trigger-padding-block);
       padding-inline: var(--ds-select-trigger-padding-inline);
       border-style: solid;
       border-width: var(--ds-select-trigger-border-width);
-      border-color: var(--color-border-strong);
+      border-color: var(--ds-select-trigger-border);
       border-radius: var(--ds-select-trigger-radius);
-      background: var(--color-background);
+      background: var(--ds-select-trigger-background);
       color: var(--color-foreground);
       font-family: var(--ds-select-font-family);
       font-size: var(--ds-select-font-size);
@@ -22154,26 +22735,21 @@ new class extends _identity {
 
     /* minTargetSm: size.target.min, locked — the trigger floor at sm */
     :host([size='sm']) [data-part='trigger'] {
-      min-block-size: var(--size-target-min);
+      min-block-size: var(--ds-select-min-target-sm);
     }
 
-    /* triggerBorderFocus + focusRingWidth (locked): the focus width replaces the border width; padding shrinks by the difference */
+    /* triggerBorderFocus + focusRingWidth (locked): the focus width replaces the border width; padding
+       shrinks by the difference, unclamped, so the trigger does not shift */
     [data-part='trigger']:focus-visible {
       outline: none;
-      border-color: var(--color-border-focus);
-      border-width: var(--border-width-focus);
-      padding-block: max(
-        0px,
-        calc(
-          var(--ds-select-trigger-padding-block) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
-        )
-      ); /* literal-ok: the doc's clamp at zero, so the trigger never takes a negative padding */
-      padding-inline: max(
-        0px,
-        calc(
-          var(--ds-select-trigger-padding-inline) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
-        )
-      ); /* literal-ok: the doc's clamp at zero */
+      border-color: var(--ds-select-trigger-border-focus);
+      border-width: var(--ds-select-focus-ring-width);
+      padding-block: calc(
+        var(--ds-select-trigger-padding-block) - (var(--ds-select-focus-ring-width) - var(--ds-select-trigger-border-width))
+      );
+      padding-inline: calc(
+        var(--ds-select-trigger-padding-inline) - (var(--ds-select-focus-ring-width) - var(--ds-select-trigger-border-width))
+      );
     }
 
     :host([invalid]) [data-part='trigger'],
@@ -22247,6 +22823,13 @@ new class extends _identity {
     :host(:not([multiple])) .native [data-part='trigger'] {
       padding-inline-end: calc(
         var(--ds-select-trigger-padding-inline) + var(--ds-select-trigger-gap) + var(--ds-select-chevron-reserve)
+      );
+    }
+
+    :host(:not([multiple])) .native [data-part='trigger']:focus-visible {
+      padding-inline-end: calc(
+        var(--ds-select-trigger-padding-inline) + var(--ds-select-trigger-gap) + var(--ds-select-chevron-reserve) -
+          (var(--ds-select-focus-ring-width) - var(--ds-select-trigger-border-width))
       );
     }
 
@@ -22339,7 +22922,13 @@ let _init_extra_listboxEl$1;
 * Overridable style hooks; see the `overrides` property. `fieldBackground`,
 * `fieldBorder`, `fieldBorderFocus`, `inputColor`, `placeholderColor`,
 * `chipBackground`, `chipColor`, `iconColor`, `descriptionText`, `errorText`,
-* `minTarget` and `focusRingWidth` are locked and excluded.
+* `minTarget`, `inputMinTarget` and `focusRingWidth` are locked and excluded
+* (their `--ds-combobox-*` hooks stay themeable from page CSS; `iconColor` is
+* declared for the hooks gate but reaches the icons through each Icon's `overrides.color`).
+*/
+/**
+* The combobox's own hooks. `labelWeight` and `helperSize` have none: they are forwarded to the
+* composed Text's `overrides` (`fontWeight` / `fontSize`), which carries them.
 */
 const HOOKS$14 = {
 	fieldBorderInvalid: "--ds-combobox-field-border-invalid",
@@ -22353,8 +22942,6 @@ const HOOKS$14 = {
 	chipPaddingBlock: "--ds-combobox-chip-padding-block",
 	chipGap: "--ds-combobox-chip-gap",
 	partGap: "--ds-combobox-part-gap",
-	labelWeight: "--ds-combobox-label-weight",
-	helperSize: "--ds-combobox-helper-size",
 	popupSurface: "--ds-combobox-popup-surface",
 	popupBorder: "--ds-combobox-popup-border",
 	popupBorderWidth: "--ds-combobox-popup-border-width",
@@ -22369,6 +22956,8 @@ const HOOKS$14 = {
 	disabledOpacity: "--ds-combobox-disabled-opacity",
 	enter: "--ds-combobox-enter"
 };
+/** iconColor (locked): forwarded to each composed Icon's own `color` override; no combobox hook. */
+const ICON_OVERRIDES$1 = { color: "color.foreground.muted" };
 /** copy.empty */
 const COPY_EMPTY$4 = "No matches";
 /** copy.loading */
@@ -22399,8 +22988,6 @@ const STATUS_DEBOUNCE$1 = {
 	token: "--motion-duration-base",
 	multiply: 2
 };
-/** iconColor (locked): color.foreground.muted, forwarded to each composed Icon's `color` binding. */
-const ICON_OVERRIDES$1 = { color: "color.foreground.muted" };
 /**
 * Value of the synthetic `copy.addCustom` row given to the Listbox. Namespaced so it cannot be
 * confused with a real option value; `commitRow` also checks that the row is really showing.
@@ -23065,6 +23652,7 @@ new class extends _identity {
 			if (isOpen && !this.shown) {
 				this.shown = true;
 				this.showPopup();
+				if (changed.has("open") && this.open === true) this.claimFocus();
 			} else if (!isOpen && this.shown) {
 				this.shown = false;
 				this.hidePopup();
@@ -23222,6 +23810,17 @@ new class extends _identity {
         ><ds-icon slot="leading-icon" name="close" .overrides=${ICON_OVERRIDES$1}></ds-icon></ds-button
     ></span>`;
 		}
+		/**
+		* Opening through the `open` property moves DOM focus to the input — `copy.activeOption` and the
+		* status region announce nothing otherwise — unless focus is already inside the field, so a
+		* focused clear or chip-remove Button keeps it.
+		*/
+		claimFocus() {
+			const input = this.inputEl;
+			const active = this.shadowRoot?.activeElement ?? null;
+			if (!input || active !== null && this.fieldEl?.contains(active)) return;
+			input.focus({ preventScroll: true });
+		}
 		labelFor(entry) {
 			if (entry === void 0) return "";
 			return this.labelCache.get(entry) ?? flattenOptions(this.options).find((item) => item.value === entry)?.label ?? entry;
@@ -23247,9 +23846,10 @@ new class extends _identity {
 			this.setText(event.currentTarget.value);
 			this.requestOpen(true, this.filter === "none" ? "typeahead" : "none");
 		};
-		/** A click in the input opens the list with the selected option active, else the first. */
+		/** A click in the input opens the full list, as the toggle does, with the selected option active, else the first. */
 		handleInputClick = () => {
 			if (this.isDisabled || this.currentOpen) return;
+			this.showAll = true;
 			this.requestOpen(true, "selectedOrFirst");
 		};
 		handleKeydown = (event) => {
@@ -23482,10 +24082,10 @@ new class extends _identity {
 			const fieldRect = field.getBoundingClientRect();
 			const popupHeight = popup.getBoundingClientRect().height;
 			const viewportHeight = document.documentElement.clientHeight;
-			const offset = parseFloat(getComputedStyle(this).getPropertyValue(HOOKS$14.popupOffset)) || 0;
+			const offset = parseFloat(getComputedStyle(popup).marginBlockStart) || 0;
 			const above = fieldRect.bottom + offset + popupHeight > viewportHeight && fieldRect.top - offset - popupHeight >= 0;
-			popup.style.top = above ? "auto" : `${fieldRect.bottom + offset}px`;
-			popup.style.bottom = above ? `${viewportHeight - fieldRect.top + offset}px` : "auto";
+			popup.style.top = above ? "auto" : `${fieldRect.bottom}px`;
+			popup.style.bottom = above ? `${viewportHeight - fieldRect.top}px` : "auto";
 			popup.style.left = `${fieldRect.left}px`;
 			popup.style.minInlineSize = `${fieldRect.width}px`;
 		}
@@ -23552,6 +24152,21 @@ new class extends _identity {
 	styles = css`
     :host {
       display: block;
+      /* Locked bindings: not in overrides, but the hook stays so page CSS can re-theme them. */
+      --ds-combobox-field-background: var(--color-background);
+      --ds-combobox-field-border: var(--color-border-strong);
+      --ds-combobox-field-border-focus: var(--color-border-focus);
+      --ds-combobox-input-color: var(--color-foreground);
+      --ds-combobox-placeholder-color: var(--color-foreground-muted);
+      --ds-combobox-chip-background: var(--color-background-strong);
+      --ds-combobox-chip-color: var(--color-foreground);
+      --ds-combobox-description-text: var(--color-foreground-muted);
+      --ds-combobox-error-text: var(--color-foreground-danger);
+      /* iconColor is forwarded to each Icon's overrides.color; this declaration only satisfies the locked-hook gate and reaches no child. */
+      --ds-combobox-icon-color: var(--color-foreground-muted);
+      --ds-combobox-min-target: var(--size-target-comfortable);
+      --ds-combobox-input-min-target: var(--size-target-min);
+      --ds-combobox-focus-ring-width: var(--border-width-focus);
       --ds-combobox-field-border-invalid: var(--color-border-danger);
       --ds-combobox-field-border-width: var(--border-width-thin);
       --ds-combobox-field-radius: var(--radius-md);
@@ -23563,8 +24178,6 @@ new class extends _identity {
       --ds-combobox-chip-padding-block: var(--space-0);
       --ds-combobox-chip-gap: var(--layout-gap-tight);
       --ds-combobox-part-gap: var(--space-1);
-      --ds-combobox-label-weight: var(--font-weight-medium);
-      --ds-combobox-helper-size: var(--font-size-sm);
       --ds-combobox-popup-surface: var(--color-overlay-surface);
       --ds-combobox-popup-border: var(--color-border);
       --ds-combobox-popup-border-width: var(--border-width-thin);
@@ -23612,6 +24225,17 @@ new class extends _identity {
       display: block;
     }
 
+    /*
+     * descriptionText / errorText (locked): the composed Text keeps its muted / danger tone;
+     * the parent hook only sets Text's own documented --ds-text-color hook on its host.
+     */
+    [data-part='description'] {
+      --ds-text-color: var(--ds-combobox-description-text);
+    }
+    [data-part='errorMessage'] {
+      --ds-text-color: var(--ds-combobox-error-text);
+    }
+
     /* fieldBackground / fieldBorder: color.background / color.border.strong, locked */
     [data-part='field'] {
       box-sizing: border-box;
@@ -23620,14 +24244,14 @@ new class extends _identity {
       gap: var(--ds-combobox-field-gap);
       inline-size: 100%;
       /* minTarget: size.target.comfortable, locked */
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-combobox-min-target);
       padding-block: var(--ds-combobox-field-padding-block);
       padding-inline: var(--ds-combobox-field-padding-inline);
       border-style: solid;
       border-width: var(--ds-combobox-field-border-width);
-      border-color: var(--color-border-strong);
+      border-color: var(--ds-combobox-field-border);
       border-radius: var(--ds-combobox-field-radius);
-      background: var(--color-background);
+      background: var(--ds-combobox-field-background);
       font-size: var(--ds-combobox-font-size);
       line-height: var(--ds-combobox-line-height);
       /* enter: the field border-color transition */
@@ -23637,13 +24261,15 @@ new class extends _identity {
     /* fieldBorderFocus + focusRingWidth (locked): the focus width replaces the border width; padding shrinks by the difference.
        Tracks the input only, so a focused clear or chip-remove Button shows just its own ring. */
     [data-part='field']:has([data-part='input']:focus-visible) {
-      border-color: var(--color-border-focus);
-      border-width: var(--border-width-focus);
+      border-color: var(--ds-combobox-field-border-focus);
+      border-width: var(--ds-combobox-focus-ring-width);
       padding-block: calc(
-        var(--ds-combobox-field-padding-block) - (var(--border-width-focus) - var(--ds-combobox-field-border-width))
+        var(--ds-combobox-field-padding-block) -
+          max(0px, var(--ds-combobox-focus-ring-width) - var(--ds-combobox-field-border-width))
       );
       padding-inline: calc(
-        var(--ds-combobox-field-padding-inline) - (var(--border-width-focus) - var(--ds-combobox-field-border-width))
+        var(--ds-combobox-field-padding-inline) -
+          max(0px, var(--ds-combobox-focus-ring-width) - var(--ds-combobox-field-border-width))
       );
     }
 
@@ -23676,8 +24302,8 @@ new class extends _identity {
       padding-block: var(--ds-combobox-chip-padding-block);
       padding-inline: var(--ds-combobox-chip-padding-inline);
       border-radius: var(--ds-combobox-chip-radius);
-      background: var(--color-background-strong);
-      color: var(--color-foreground);
+      background: var(--ds-combobox-chip-background);
+      color: var(--ds-combobox-chip-color);
       font-size: var(--ds-combobox-chip-size);
     }
 
@@ -23694,18 +24320,20 @@ new class extends _identity {
       flex: 1;
       box-sizing: border-box;
       min-inline-size: calc(var(--ds-combobox-font-size) * 4);
+      /* inputMinTarget: size.target.min, locked — the input's own floor when chips wrap to several rows */
+      min-block-size: var(--ds-combobox-input-min-target);
       margin: 0;
       padding: 0;
       border: 0;
       outline: none;
       background: transparent;
-      color: var(--color-foreground);
+      color: var(--ds-combobox-input-color);
       font: inherit;
     }
 
     /* placeholderColor: color.foreground.muted, locked */
     [data-part='input']::placeholder {
-      color: var(--color-foreground-muted);
+      color: var(--ds-combobox-placeholder-color);
       opacity: 1;
     }
 
@@ -23723,7 +24351,9 @@ new class extends _identity {
       position: fixed;
       inset: auto;
       box-sizing: border-box;
+      /* popupOffset: the block margin of the fixed popup; only the side facing the field shows */
       margin: 0;
+      margin-block: var(--ds-combobox-popup-offset);
       padding: 0;
       overflow: hidden;
       border-style: solid;
@@ -24259,6 +24889,8 @@ new class extends _identity {
 		/** The value last emitted in the running interaction; the comparison baseline within it. */
 		emitted;
 		interactionChanged = false;
+		/** Value distance from the pointer to a grabbed thumb, so a drag starts from where it was. */
+		grabOffset = 0;
 		/** The value `<ds-form>` collects: the decimal string, or two strings for a range. */
 		get currentValue() {
 			if (this.isDisabled) return null;
@@ -24470,7 +25102,7 @@ new class extends _identity {
       aria-disabled=${ifDefined(disabled ? "true" : void 0)}
       aria-invalid=${ifDefined(invalid ? "true" : void 0)}
       aria-required=${ifDefined(this.required ? "true" : void 0)}
-      style=${styleMap({ insetInlineStart: `calc(${this.percent(current)}% - var(--size-target-comfortable) / 2)` })}
+      style=${styleMap({ insetInlineStart: `calc(${this.percent(current)}% - var(--ds-slider-min-target) / 2)` })}
       @keydown=${(event) => this.handleKeydown(event, index)}
       @keyup=${this.handleKeyup}
       @focus=${() => this.handleThumbFocus(index)}
@@ -24564,8 +25196,11 @@ new class extends _identity {
 				return best;
 			}
 			const step = this.stepSize;
+			const digits = decimalsIn(step);
+			const lastGrid = roundTo$1(this.minValue + Math.floor((this.maxValue - this.minValue) / step) * step, digits);
+			if (clamped > lastGrid) return clamped - lastGrid >= this.maxValue - clamped ? this.maxValue : lastGrid;
 			const steps = Math.round((clamped - this.minValue) / step);
-			return this.clamp(roundTo$1(this.minValue + steps * step, decimalsIn(step)));
+			return this.clamp(roundTo$1(this.minValue + steps * step, digits));
 		}
 		/** The first mark past `from` in `direction`; the bound itself past the last one. */
 		markPast(from, direction) {
@@ -24677,33 +25312,51 @@ new class extends _identity {
 			if (target > high) return 1;
 			return target - low <= high - target ? 0 : 1;
 		}
-		/** Pointer position → a snapped value; logical, so right-to-left mirrors. */
-		valueFromPointer(clientX) {
+		/** Pointer position → an unsnapped value; logical, so right-to-left mirrors. */
+		rawFromPointer(clientX) {
 			const track = this.trackEl;
 			if (!track) return void 0;
 			const rect = track.getBoundingClientRect();
 			if (rect.width === 0) return void 0;
 			let ratio = (clientX - rect.left) / rect.width;
 			if (getComputedStyle(this).direction === "rtl") ratio = 1 - ratio;
-			return this.snap(this.minValue + ratio * (this.maxValue - this.minValue));
+			return this.minValue + ratio * (this.maxValue - this.minValue);
 		}
+		/**
+		* A press on the track area moves the nearest thumb to the press. A press
+		* inside a thumb's own hit area grabs that thumb instead and drags it from its
+		* current value (so a click on the thumb changes nothing); when both range
+		* thumbs share a value, a press before it takes the low thumb, after it the
+		* high thumb, and exactly on it the low thumb.
+		*/
 		handlePointerDown(event) {
 			if (this.isDisabled || !event.isPrimary) return;
-			const target = this.valueFromPointer(event.clientX);
-			if (target === void 0) return;
-			const index = this.nearestThumb(target);
+			const raw = this.rawFromPointer(event.clientX);
+			if (raw === void 0) return;
+			const grabbed = event.composedPath().find((node) => node instanceof HTMLElement && node.dataset["part"] === "thumb");
+			let index;
+			if (grabbed) {
+				const pair = toPair(this.resolvedValue);
+				if (!this.range) index = 0;
+				else if (pair[0] === pair[1]) index = raw > pair[0] ? 1 : 0;
+				else index = grabbed === this.thumbAt(1) ? 1 : 0;
+				this.grabOffset = pair[index] - raw;
+			} else {
+				index = this.nearestThumb(this.snap(raw));
+				this.grabOffset = 0;
+			}
 			event.preventDefault();
 			this.pressedIndex = index;
 			event.currentTarget.setPointerCapture(event.pointerId);
 			this.thumbAt(index)?.focus();
-			this.setThumb(index, target);
+			if (!grabbed) this.setThumb(index, this.snap(raw));
 		}
 		handlePointerMove(event) {
 			const index = this.pressedIndex;
 			if (index === void 0 || this.isDisabled) return;
-			const target = this.valueFromPointer(event.clientX);
-			if (target === void 0) return;
-			this.setThumb(index, target);
+			const raw = this.rawFromPointer(event.clientX);
+			if (raw === void 0) return;
+			this.setThumb(index, this.snap(raw + this.grabOffset));
 		}
 		handlePointerUp(event) {
 			if (this.pressedIndex === void 0) return;
@@ -24808,6 +25461,37 @@ new class extends _identity {
       --ds-slider-font-family: var(--font-family-body);
       --ds-slider-disabled-opacity: var(--opacity-disabled);
       --ds-slider-transition: var(--motion-duration-fast);
+      /* locked: out of the overrides API, still themeable from page CSS */
+      --ds-slider-fill: var(--color-control-selected-background);
+      --ds-slider-thumb-border: var(--color-control-selected-background);
+      --ds-slider-thumb-border-width: var(--border-width-focus);
+      --ds-slider-mark-label-color: var(--color-foreground-muted);
+      --ds-slider-value-color: var(--color-foreground);
+      --ds-slider-bubble-surface: var(--color-inverse-surface);
+      --ds-slider-bubble-text: var(--color-inverse-foreground);
+      --ds-slider-description-text: var(--color-foreground-muted);
+      --ds-slider-error-text: var(--color-foreground-danger);
+      --ds-slider-min-target: var(--size-target-comfortable);
+      --ds-slider-focus-ring: var(--color-border-focus);
+      --ds-slider-focus-ring-width: var(--border-width-focus);
+    }
+
+    /*
+     * Text colour bindings are realised by each Text's tone; the hook reaches
+     * the child only through Text's documented --ds-text-color hook, set on the
+     * ds-text host (same token by default), never Text's shadow tree.
+     */
+    [data-part='valueText'] {
+      --ds-text-color: var(--ds-slider-value-color);
+    }
+    [data-part='description'] {
+      --ds-text-color: var(--ds-slider-description-text);
+    }
+    [data-part='errorMessage'] {
+      --ds-text-color: var(--ds-slider-error-text);
+    }
+    .mark-label > ds-text {
+      --ds-text-color: var(--ds-slider-mark-label-color);
     }
 
     :host([hidden]) {
@@ -24827,6 +25511,17 @@ new class extends _identity {
     }
 
     /* labelGap: between the label and the value text */
+    /*
+     * The label row and the mark label row paint above the thumbs, so a press
+     * where a thumb's hit area (minTarget) overflows the track area lands on
+     * them and moves nothing.
+     */
+    .label-row,
+    .mark-labels {
+      position: relative;
+      z-index: 1;
+    }
+
     .label-row {
       display: flex;
       align-items: baseline;
@@ -24864,7 +25559,7 @@ new class extends _identity {
       position: absolute;
       inset-block: 0;
       border-radius: var(--ds-slider-track-radius);
-      background: var(--color-control-selected-background);
+      background: var(--ds-slider-fill);
     }
 
     /* tickMarks: a layer on the track centre line */
@@ -24886,7 +25581,6 @@ new class extends _identity {
 
     /* The slider grows by one label line only when some mark is labelled. */
     .mark-labels {
-      position: relative;
       block-size: calc(var(--ds-slider-mark-label-size) * var(--font-line-height-normal));
     }
 
@@ -24907,9 +25601,9 @@ new class extends _identity {
     [data-part='thumb'] {
       position: absolute;
       inset-block-start: 50%;
-      margin-block-start: calc(var(--size-target-comfortable) / -2);
-      inline-size: var(--size-target-comfortable);
-      block-size: var(--size-target-comfortable);
+      margin-block-start: calc(var(--ds-slider-min-target) / -2);
+      inline-size: var(--ds-slider-min-target);
+      block-size: var(--ds-slider-min-target);
       outline: none;
       touch-action: none;
     }
@@ -24929,7 +25623,7 @@ new class extends _identity {
       margin-block-start: calc((var(--ds-slider-thumb-size) + var(--ds-slider-halo-spread) * 2) / -2);
       margin-inline-start: calc((var(--ds-slider-thumb-size) + var(--ds-slider-halo-spread) * 2) / -2);
       border-radius: var(--radius-full);
-      background: var(--color-control-selected-background);
+      background: var(--ds-slider-fill);
       opacity: 0;
       transition: opacity var(--ds-slider-transition) var(--motion-easing-standard);
     }
@@ -24949,7 +25643,7 @@ new class extends _identity {
       block-size: var(--ds-slider-thumb-size);
       margin-block-start: calc(var(--ds-slider-thumb-size) / -2);
       margin-inline-start: calc(var(--ds-slider-thumb-size) / -2);
-      border: var(--border-width-focus) solid var(--color-control-selected-background);
+      border: var(--ds-slider-thumb-border-width) solid var(--ds-slider-thumb-border);
       border-radius: var(--radius-full);
       background: var(--ds-slider-thumb);
       box-shadow: var(--ds-slider-thumb-shadow);
@@ -24957,14 +25651,14 @@ new class extends _identity {
 
     /* focusRing / focusRingWidth (locked): a ring around the knob, not the hit area */
     [data-part='thumb']:focus-visible::after {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-slider-focus-ring-width) solid var(--ds-slider-focus-ring);
+      outline-offset: var(--ds-slider-focus-ring-width);
     }
 
     /* bubbleOffset: above the top of the thumb's hit area, centred on the knob */
     .bubble-anchor {
       position: absolute;
-      inset-block-end: calc(50% + var(--size-target-comfortable) / 2 + var(--ds-slider-bubble-offset));
+      inset-block-end: calc(50% + var(--ds-slider-min-target) / 2 + var(--ds-slider-bubble-offset));
       inline-size: 0;
       display: flex;
       justify-content: center;
@@ -24982,11 +25676,11 @@ new class extends _identity {
      * --color-foreground re-scoped so the Text inside reads as inverse.
      */
     [data-part='bubble'] {
-      --color-foreground: var(--color-inverse-foreground);
+      --color-foreground: var(--ds-slider-bubble-text);
       padding-block: var(--ds-slider-bubble-padding-block);
       padding-inline: var(--ds-slider-bubble-padding-inline);
       border-radius: var(--ds-slider-bubble-radius);
-      background: var(--color-inverse-surface);
+      background: var(--ds-slider-bubble-surface);
       white-space: nowrap;
     }
 
@@ -25706,10 +26400,14 @@ new class extends _identity {
 			const lo = finite$1(this.min);
 			const hi = finite$1(this.max);
 			return html`
-      <div class=${classMap({
+      <div
+        class=${classMap({
 				group: true,
 				disabled: isDisabled
-			})}>
+			})}
+        role="group"
+        aria-disabled=${ifDefined(isDisabled ? "true" : void 0)}
+      >
         <label
           class=${classMap({ "visually-hidden": this.hideLabel })}
           part="label"
@@ -25761,6 +26459,7 @@ new class extends _identity {
                   part="decrementButton"
                   data-part="decrementButton"
                   @pointerdown=${(event) => this.handleStepperPointerDown(event, -1)}
+                  @mousedown=${this.keepFocus}
                   @pointerup=${this.stopRepeat}
                   @pointerleave=${this.endPointerStep}
                   @pointercancel=${this.endPointerStep}
@@ -25779,6 +26478,7 @@ new class extends _identity {
                   part="incrementButton"
                   data-part="incrementButton"
                   @pointerdown=${(event) => this.handleStepperPointerDown(event, 1)}
+                  @mousedown=${this.keepFocus}
                   @pointerup=${this.stopRepeat}
                   @pointerleave=${this.endPointerStep}
                   @pointercancel=${this.endPointerStep}
@@ -25863,7 +26563,11 @@ new class extends _identity {
 			}).format(num);
 			return new Intl.NumberFormat(void 0, base).format(num);
 		}
-		/** Reformat whenever the committed value or its formatting changes, except for the echo of the user's own typing. */
+		/**
+		* Reformat whenever the committed value or its formatting changes, except where the typed text wins:
+		* the echo of the user's own typing, a controlled change to `null` mid-typing (kept until blur/Enter),
+		* and committed non-numeric text, which stays as typed until the next edit.
+		*/
 		syncText() {
 			const committed = this.valueAsNumber;
 			const formatKey = `${this.format}|${this.digits}|${this.currency ?? ""}|${this.unit ?? ""}`;
@@ -25873,9 +26577,9 @@ new class extends _identity {
 				value: committed,
 				formatKey
 			};
-			if (prev && this.typing && prev.formatKey === formatKey) {
+			if (prev && (this.typing || this.textInvalid) && prev.formatKey === formatKey) {
 				const typed = parseTyped(this.text);
-				if (Object.is(typed.kind === "number" ? typed.value : void 0, committed)) return;
+				if (committed === void 0 || Object.is(typed.kind === "number" ? typed.value : void 0, committed)) return;
 			}
 			this.typing = false;
 			this.text = committed === void 0 ? "" : this.display(committed);
@@ -25889,11 +26593,18 @@ new class extends _identity {
 			if (this.invalid || this.textInvalid) return withLabel(COPY$4.invalid);
 			return this.rangeMessage;
 		}
-		/** The error text shown: every message except a required miss the user has not been told about yet. */
+		/**
+		* The error text drawn, as Input: `error`; else, while invalid, copy.required for an empty required
+		* field or copy.invalid for committed text with no number; plus a reported clamp. `invalid` over a
+		* valid number draws nothing (aria-invalid and the border carry it), and an empty required field is
+		* not flagged until something marks it invalid.
+		*/
 		get displayedMessage() {
-			const message = this.message;
-			if (message === void 0) return void 0;
-			if (this.error || this.invalid || this.textInvalid || this.rangeMessage) return message;
+			const withLabel = (copy) => copy.replace("{label}", this.label);
+			if (this.error) return this.error;
+			if (this.textInvalid) return withLabel(COPY$4.invalid);
+			if (this.invalid && this.required && this.valueAsNumber === void 0) return withLabel(COPY$4.required);
+			return this.rangeMessage;
 		}
 		rangeCopy() {
 			const lo = finite$1(this.min);
@@ -25966,9 +26677,9 @@ new class extends _identity {
 			this.typing = true;
 			this.text = raw;
 			this.rangeMessage = void 0;
+			this.textInvalid = false;
 			const parsed = parseTyped(raw);
 			if (parsed.kind === "invalid") return;
-			this.textInvalid = false;
 			this.report(parsed.kind === "number" ? parsed.value : void 0);
 		}
 		handleKeydown(event) {
@@ -26015,6 +26726,10 @@ new class extends _identity {
 		}
 		stopInnerPress = (event) => {
 			event.stopPropagation();
+		};
+		/** A stepper press leaves focus where it is (the input, or nowhere), so it never triggers a blur commit. */
+		keepFocus = (event) => {
+			event.preventDefault();
 		};
 		stopRepeat = () => {
 			if (this.repeatTimer !== void 0) {
@@ -26124,6 +26839,18 @@ new class extends _identity {
       --ds-number-input-font-size: var(--font-size-md);
       --ds-number-input-line-height: var(--font-line-height-normal);
       --ds-number-input-disabled-opacity: var(--opacity-disabled);
+      /* Locked bindings: out of the overrides API, still themeable from page CSS. */
+      --ds-number-input-background: var(--color-background);
+      --ds-number-input-foreground: var(--color-foreground);
+      --ds-number-input-placeholder: var(--color-foreground-muted);
+      --ds-number-input-border: var(--color-border-strong);
+      --ds-number-input-border-focus: var(--color-border-focus);
+      --ds-number-input-affix-color: var(--color-foreground-muted);
+      --ds-number-input-description-text: var(--color-foreground-muted);
+      --ds-number-input-error-text: var(--color-foreground-danger);
+      --ds-number-input-min-target: var(--size-target-comfortable);
+      --ds-number-input-min-target-sm: var(--size-target-min);
+      --ds-number-input-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -26184,7 +26911,12 @@ new class extends _identity {
       font-size: var(--ds-number-input-font-size);
       font-weight: var(--ds-number-input-label-weight);
       line-height: var(--ds-number-input-line-height);
-      color: var(--color-foreground);
+      color: var(--ds-number-input-foreground);
+    }
+
+    /* descriptionText (locked): the wrapper's colour; the composed Text draws its own muted tone. */
+    [data-part='description'] {
+      color: var(--ds-number-input-description-text);
     }
 
     /*
@@ -26200,12 +26932,12 @@ new class extends _identity {
       display: flex;
       align-items: stretch;
       inline-size: 100%;
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-number-input-min-target);
       padding-inline: calc(var(--ds-number-input-padding-inline) - var(--field-ring-delta));
       gap: var(--ds-number-input-affix-gap);
-      border: var(--field-border) solid var(--color-border-strong);
+      border: var(--field-border) solid var(--ds-number-input-border);
       border-radius: var(--ds-number-input-radius);
-      background: var(--color-background);
+      background: var(--ds-number-input-background);
       transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
     }
 
@@ -26217,7 +26949,7 @@ new class extends _identity {
 
     /* minTargetSm: the field height floor at size sm */
     :host([size='sm']) [data-part='field'] {
-      min-block-size: var(--size-target-min);
+      min-block-size: var(--ds-number-input-min-target-sm);
     }
 
     /* The steppers sit flush at the end of the field. */
@@ -26230,8 +26962,8 @@ new class extends _identity {
      * drawn while the input matches :focus-visible — no outline, as Input.
      */
     [data-part='field']:has([data-part='input']:focus-visible) {
-      --field-border: var(--border-width-focus);
-      border-color: var(--color-border-focus);
+      --field-border: var(--ds-number-input-focus-ring-width);
+      border-color: var(--ds-number-input-border-focus);
     }
 
     /* borderInvalid */
@@ -26255,14 +26987,14 @@ new class extends _identity {
       font-family: var(--ds-number-input-font-family);
       font-size: var(--ds-number-input-font-size);
       line-height: var(--ds-number-input-line-height);
-      color: var(--color-foreground);
+      color: var(--ds-number-input-foreground);
       appearance: none;
       -webkit-appearance: none;
     }
 
     /* placeholder: color.foreground.muted (locked) */
     [data-part='input']::placeholder {
-      color: var(--color-foreground-muted);
+      color: var(--ds-number-input-placeholder);
       opacity: 1;
     }
 
@@ -26275,7 +27007,7 @@ new class extends _identity {
     [data-part='suffix'] {
       display: inline-flex;
       align-items: center;
-      color: var(--color-foreground-muted);
+      color: var(--ds-number-input-affix-color);
       font-family: var(--ds-number-input-font-family);
       font-size: var(--ds-number-input-font-size);
       line-height: var(--ds-number-input-line-height);
@@ -26380,6 +27112,7 @@ const HOOKS$11 = {
 	labelGap: "--ds-progress-bar-label-gap",
 	transition: "--ds-progress-bar-transition",
 	indeterminateLoop: "--ds-progress-bar-indeterminate-loop",
+	indeterminateReducedOpacity: "--ds-progress-bar-indeterminate-reduced-opacity",
 	sweepEasing: "--ds-progress-bar-sweep-easing"
 };
 /** Drops unset entries so the composed Text keeps its own defaults, and its `overrides` stays `undefined`. */
@@ -26540,8 +27273,8 @@ new class extends _identity {
 		* (there is no locale prop), so 99.5% of the way shows "100%" before completion; completion is only
 		* the clamped value reaching `max`. Called with the clamped value. Rounding is for the text only;
 		* the fill uses the exact fraction. A `max` at or below `min` is not a range: the bar renders empty,
-		* exposes `min` as its value with the given bounds, shows and exposes "0%" unless a custom formatter
-		* says otherwise, makes no progress or completion announcements, and warns in development.
+		* exposes `min` as its value with the given bounds, shows and exposes "0%" (the formatter is not
+		* called), makes no progress or completion announcements, and warns in development once per pair.
 		*/
 		get max() {
 			return this.#D;
@@ -26670,7 +27403,8 @@ new class extends _identity {
 		}
 		/** The value text — the same string as `aria-valuetext` and as `{value}` in an announcement. */
 		get displayText() {
-			const { min, max } = this.bounds;
+			const { min, max, valid } = this.bounds;
+			if (!valid) return defaultFormatValue(min, min, max);
 			return (this.formatValue ?? defaultFormatValue)(this.clampedValue, min, max);
 		}
 		willUpdate(changed) {
@@ -26718,7 +27452,14 @@ new class extends _identity {
 				"label-hidden": this.hideLabel && showValueText
 			})}
         >
-          ${this.hideLabel && showValueText ? html`<span class="visually-hidden">${labelText}</span>` : labelText}
+          <!-- Layout and the visually-hidden styles go on this wrapper, never on the label part. -->
+          <span
+            class=${classMap({
+				"label-wrap": true,
+				"visually-hidden": this.hideLabel && showValueText
+			})}
+            >${labelText}</span
+          >
           ${showValueText ? html`<ds-text
                 part="valueText"
                 data-part="valueText"
@@ -26857,7 +27598,17 @@ new class extends _identity {
       --ds-progress-bar-label-gap: var(--space-2);
       --ds-progress-bar-transition: var(--motion-duration-base);
       --ds-progress-bar-indeterminate-loop: var(--motion-duration-loop);
+      --ds-progress-bar-indeterminate-reduced-opacity: var(--opacity-disabled);
       --ds-progress-bar-sweep-easing: var(--motion-easing-standard);
+      /* Locked: out of the overrides type, but still themeable from document CSS. */
+      --ds-progress-bar-fill: var(--color-control-selected-background);
+      /* locked labelColor / valueColor: declared for the CSS escape hatch and the naming codemod; the
+         colours come from the composed Texts' tone="default" / tone="muted" (same tokens), so no rule
+         restyles the children */
+      --ds-progress-bar-label-color: var(--color-foreground);
+      --ds-progress-bar-value-color: var(--color-foreground-muted);
+      --ds-progress-bar-fill-success: var(--color-status-success-icon);
+      --ds-progress-bar-fill-danger: var(--color-status-danger-icon);
     }
 
     :host([hidden]) {
@@ -26886,6 +27637,15 @@ new class extends _identity {
       justify-content: flex-end;
     }
 
+    /* The label's wrapper shrinks so a long label wraps inside the row; the value text never does. */
+    .label-wrap {
+      flex: 0 1 auto;
+      min-inline-size: 0;
+    }
+    [data-part='valueText'] {
+      flex-shrink: 0;
+    }
+
     /* track: color.background.strong; trackHeight: space.2; radius: radius.full (the track clips the fill) */
     [data-part='track'] {
       position: relative;
@@ -26904,15 +27664,15 @@ new class extends _identity {
       inset-inline-start: 0;
       inline-size: 0;
       border-radius: var(--ds-progress-bar-radius);
-      background-color: var(--color-control-selected-background);
+      background-color: var(--ds-progress-bar-fill);
     }
     /* fillSuccess: color.status.success.icon, locked */
     :host([tone='success']) [data-part='fill'] {
-      background-color: var(--color-status-success-icon);
+      background-color: var(--ds-progress-bar-fill-success);
     }
     /* fillDanger: color.status.danger.icon, locked */
     :host([tone='danger']) [data-part='fill'] {
-      background-color: var(--color-status-danger-icon);
+      background-color: var(--ds-progress-bar-fill-danger);
     }
 
     /* The sweeping fill is one third of the track: geometry, not a token. */
@@ -26936,11 +27696,11 @@ new class extends _identity {
       }
     }
 
-    /* Reduced motion: no sweep — the fill is static and full-width at opacity.disabled, keeping its tone. */
+    /* Reduced motion: no sweep — the fill is static and full-width at indeterminateReducedOpacity, keeping its tone. */
     @media (prefers-reduced-motion: reduce) {
       [data-part='fill'].indeterminate {
         inline-size: 100%;
-        opacity: var(--opacity-disabled);
+        opacity: var(--ds-progress-bar-indeterminate-reduced-opacity);
       }
     }
 
@@ -27247,7 +28007,7 @@ new class extends _identity {
 		willUpdate(changed) {
 			if (changed.has("overrides")) this.applyOverrides();
 			if (import.meta.env.DEV && (changed.has("steps") || changed.has("current"))) {
-				if (this.current !== "" && !this.steps.some((step) => step.id === this.current)) console.warn(`<ds-stepper> \`current\` "${this.current}" matches no step id — nothing is selected.`, this);
+				if (this.current !== "" && !this.steps.some((step) => step.id === this.current)) console.warn(`Stepper: current "${this.current}" matches no step id; nothing is selected.`);
 			}
 		}
 		render() {
@@ -27276,6 +28036,7 @@ new class extends _identity {
 		renderStep(step, index, currentIndex, forwards) {
 			const status = resolveStatus(step, index, currentIndex);
 			const isCurrent = index === currentIndex;
+			const isRevealed = index === Math.max(currentIndex, 0);
 			const isBefore = currentIndex !== -1 && index < currentIndex;
 			const isNavigable = this.navigable === "all" || this.navigable === "completed" && isBefore;
 			const statusWord = STATUS_WORD[status];
@@ -27321,7 +28082,7 @@ new class extends _identity {
       </span>
     `;
 			return html`
-      <li data-part="step" part="step" data-status=${status} ?data-selected=${isCurrent}>
+      <li data-part="step" part="step" data-status=${status} ?data-revealed=${isRevealed}>
         ${isNavigable ? html`<button
               type="button"
               class="control"
@@ -27409,9 +28170,8 @@ new class extends _identity {
       display: none;
     }
 
-    /* Label, description and count colour, size and weight belong to the composed Text: labelColor,
-       labelUpcomingColor, descriptionColor and countColor are its tone, and labelSize, labelWeight,
-       labelCurrentWeight, descriptionSize and countSize reach its overrides. */
+    /* Label, description and count size and weight reach the composed Text's overrides; their colours
+       are the Text's tone (locked, no hook). */
 
     /* The count follows the list, stepGap after it; while it is display:none the gap collapses with it. */
     nav {
@@ -27576,7 +28336,8 @@ new class extends _identity {
       );
     }
 
-    /* vertical: descriptions under each label; the connector runs down from the indicator's centre. */
+    /* vertical: descriptions under each label; the connector runs down from the indicator's centre and
+       is exactly stepGap tall, since a column of auto-height steps has no free space to grow into. */
     :host([orientation='vertical']) ol {
       flex-direction: column;
     }
@@ -27594,7 +28355,7 @@ new class extends _identity {
     :host([orientation='vertical']) [data-part='connector'] {
       align-self: flex-start;
       inline-size: var(--ds-stepper-connector-width);
-      min-block-size: var(--ds-stepper-step-gap);
+      block-size: var(--ds-stepper-step-gap);
       margin-inline-start: calc(
         var(--ds-stepper-step-padding) +
           (var(--ds-stepper-indicator-size) - var(--ds-stepper-connector-width)) / 2
@@ -27603,7 +28364,7 @@ new class extends _identity {
 
     /* compact (horizontal only): the indicators stay, only the current step's label shows, then
        "Step n of m". Hidden labels are clipped, not removed, so a screen reader still reaches them. */
-    :host([compact]:not([orientation='vertical'])) li:not([data-selected]) .content {
+    :host([compact]:not([orientation='vertical'])) li:not([data-revealed]) .content {
       position: absolute;
       inline-size: 1px;
       block-size: 1px;
@@ -27621,7 +28382,7 @@ new class extends _identity {
 
     @container (max-width: ${unsafeCSS(PROSE_WIDTH_PX)}px) { /* literal-ok: breakpoint from layout.maxWidth.prose */
       /* visually-hidden clip pattern, as compact */
-      :host(:not([orientation='vertical'])) li:not([data-selected]) .content {
+      :host(:not([orientation='vertical'])) li:not([data-revealed]) .content {
         position: absolute;
         inline-size: 1px;
         block-size: 1px;
@@ -27696,6 +28457,10 @@ let _init_extra_listboxEl;
 * `foreground`, `placeholder`, `iconColor`, `border`, `borderFocus`,
 * `minTarget` and `focusRingWidth` are locked and excluded.
 */
+/**
+* `labelWeight` is forwarded to the label Text's `fontWeight` override and has
+* no `--ds-search-*` hook: an unread custom property would look like a working one.
+*/
 const HOOKS$9 = {
 	borderWidth: "--ds-search-border-width",
 	radius: "--ds-search-radius",
@@ -27713,7 +28478,6 @@ const HOOKS$9 = {
 	popupShadow: "--ds-search-popup-shadow",
 	layer: "--ds-search-layer",
 	partGap: "--ds-search-part-gap",
-	labelWeight: "--ds-search-label-weight",
 	disabledOpacity: "--ds-search-disabled-opacity"
 };
 /** Bindings drawn by the suggestions popup; no-ops while `suggestions` is undefined. */
@@ -28239,6 +29003,7 @@ new class extends _identity {
         data-part="form"
         part="form"
         role=${ifDefined(this.landmark ? "search" : void 0)}
+        aria-disabled=${ifDefined(this.disabled ? "true" : void 0)}
         @submit=${this.handleFormSubmit}
         @focusout=${this.handleFocusOut}
       >
@@ -28265,7 +29030,7 @@ new class extends _identity {
             role=${combobox ? "combobox" : "searchbox"}
             aria-autocomplete=${ifDefined(combobox ? "list" : void 0)}
             aria-expanded=${ifDefined(combobox ? String(this.open) : void 0)}
-            aria-controls=${ifDefined(combobox ? "suggestions" : void 0)}
+            aria-controls=${ifDefined(combobox && this.open ? "suggestions" : void 0)}
             aria-describedby=${ifDefined(activeLabel ? "active-option" : void 0)}
             aria-disabled=${ifDefined(this.disabled ? "true" : void 0)}
             placeholder=${ifDefined(this.placeholder)}
@@ -28302,13 +29067,14 @@ new class extends _identity {
           ${this.announcedStatus}
         </div>
         ${combobox ? html`<div
-              id="suggestions"
               data-part="suggestions"
               part="suggestions"
               popover=${ifDefined(POPOVER_SUPPORTED ? "manual" : void 0)}
               ?hidden=${!POPOVER_SUPPORTED && !this.open}
+              @mousedown=${this.handlePopupMouseDown}
             >
               <ds-listbox
+                id="suggestions"
                 data-part="listbox"
                 label=${this.label}
                 embedded
@@ -28401,6 +29167,10 @@ new class extends _identity {
 			const item = this.listOptions.find((entry) => entry.value === event.detail.value);
 			if (item && !this.disabled) this.chooseSuggestion(item);
 		};
+		/** A press on a suggestion keeps focus in the input: focus moves by one route only (clear). */
+		handlePopupMouseDown = (event) => {
+			event.preventDefault();
+		};
 		stopInternalEvent = (event) => {
 			event.stopPropagation();
 		};
@@ -28429,7 +29199,6 @@ new class extends _identity {
 		chooseSuggestion(item) {
 			if (this.value === void 0) this.internalValue = item.label;
 			this.open = false;
-			this.inputEl?.focus();
 			this.emitChange(item.label);
 			this.submitQuery(item.label);
 		}
@@ -28474,15 +29243,30 @@ new class extends _identity {
 			field.value = query;
 			form.submit();
 		}
-		/** Loading, no suggestions, or the plural count, while the list is open. */
+		/**
+		* Loading whenever `suggestions` is set and `loading` is true, list open or
+		* not (a fetch the user triggered is worth hearing about); no suggestions or
+		* the plural count only while the list is open.
+		*/
 		statusText() {
+			if (this.isCombobox && this.loading && !this.disabled) return COPY_LOADING$4;
 			if (!this.open) return "";
-			if (this.loading) return COPY_LOADING$4;
 			const count = this.listOptions.length;
 			if (count === 0) return COPY_NO_SUGGESTIONS;
-			const locale = this.closest("[lang]")?.getAttribute("lang") || navigator.language;
+			const locale = this.nearestLang() || navigator.language;
 			const form = new Intl.PluralRules(locale).select(count) === "one" ? "one" : "other";
 			return COPY_SUGGESTIONS_COUNT[form].replace("{count}", String(count));
+		}
+		/** The `lang` of the nearest ancestor that sets one, crossing shadow roots. */
+		nearestLang() {
+			let node = this;
+			while (node) {
+				const lang = node.closest("[lang]")?.getAttribute("lang");
+				if (lang) return lang;
+				const root = node.getRootNode();
+				node = root instanceof ShadowRoot ? root.host : null;
+			}
+			return "";
 		}
 		/** Writes the status region `statusDebounce` after the wanted text last changed; clears it at once. */
 		scheduleStatus(next) {
@@ -28530,10 +29314,14 @@ new class extends _identity {
 			const fieldRect = field.getBoundingClientRect();
 			const popupHeight = popup.getBoundingClientRect().height;
 			const viewportHeight = document.documentElement.clientHeight;
-			const offset = parseFloat(getComputedStyle(this).getPropertyValue(HOOKS$9.suggestionsOffset)) || 0;
-			const above = fieldRect.bottom + offset + popupHeight > viewportHeight && fieldRect.top - offset - popupHeight >= 0;
-			popup.style.top = above ? "auto" : `${fieldRect.bottom + offset}px`;
-			popup.style.bottom = above ? `${viewportHeight - fieldRect.top + offset}px` : "auto";
+			const offsetRef = `var(${HOOKS$9.suggestionsOffset})`;
+			popup.style.bottom = "auto";
+			popup.style.top = `calc(${fieldRect.bottom}px + ${offsetRef})`;
+			const offset = Math.max(0, parseFloat(getComputedStyle(popup).top) - fieldRect.bottom) || 0;
+			if (fieldRect.bottom + offset + popupHeight > viewportHeight && fieldRect.top - offset - popupHeight >= 0) {
+				popup.style.top = "auto";
+				popup.style.bottom = `calc(${viewportHeight - fieldRect.top}px + ${offsetRef})`;
+			}
 			popup.style.left = `${fieldRect.left}px`;
 			popup.style.minInlineSize = `${fieldRect.width}px`;
 		}
@@ -28571,8 +29359,15 @@ new class extends _identity {
       --ds-search-popup-shadow: var(--shadow-overlay);
       --ds-search-layer: var(--layer-dropdown);
       --ds-search-part-gap: var(--space-1);
-      --ds-search-label-weight: var(--font-weight-medium);
       --ds-search-disabled-opacity: var(--opacity-disabled);
+      /* Locked bindings: out of the overrides type, but still hooks for page CSS. */
+      --ds-search-background: var(--color-control-background);
+      --ds-search-foreground: var(--color-foreground);
+      --ds-search-placeholder: var(--color-foreground-muted);
+      --ds-search-border: var(--color-border-strong);
+      --ds-search-border-focus: var(--color-border-focus);
+      --ds-search-min-target: var(--size-target-comfortable);
+      --ds-search-focus-ring-width: var(--border-width-focus);
       font-family: var(--ds-search-font-family);
       font-size: var(--ds-search-font-size);
       line-height: var(--ds-search-line-height);
@@ -28629,24 +29424,26 @@ new class extends _identity {
       gap: var(--ds-search-affix-gap);
       inline-size: 100%;
       /* minTarget (locked): size.target.comfortable */
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-search-min-target);
       padding-block: var(--ds-search-padding-block);
       padding-inline: var(--ds-search-padding-inline);
       border-style: solid;
       border-width: var(--ds-search-border-width);
-      border-color: var(--color-border-strong);
+      border-color: var(--ds-search-border);
       border-radius: var(--ds-search-radius);
-      background: var(--color-control-background);
+      background: var(--ds-search-background);
       transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
     }
 
     /* borderFocus + focusRingWidth (locked): only while the input itself is focused; the focus width replaces the border width and padding shrinks by the difference */
     [data-part='field']:has([data-part='input']:focus-visible) {
-      border-color: var(--color-border-focus);
-      border-width: var(--border-width-focus);
-      padding-block: calc(var(--ds-search-padding-block) - (var(--border-width-focus) - var(--ds-search-border-width)));
+      border-color: var(--ds-search-border-focus);
+      border-width: var(--ds-search-focus-ring-width);
+      padding-block: calc(
+        var(--ds-search-padding-block) - (var(--ds-search-focus-ring-width) - var(--ds-search-border-width))
+      );
       padding-inline: calc(
-        var(--ds-search-padding-inline) - (var(--border-width-focus) - var(--ds-search-border-width))
+        var(--ds-search-padding-inline) - (var(--ds-search-focus-ring-width) - var(--ds-search-border-width))
       );
     }
 
@@ -28666,7 +29463,7 @@ new class extends _identity {
       border: 0;
       outline: none;
       background: transparent;
-      color: var(--color-foreground);
+      color: var(--ds-search-foreground);
       font: inherit;
       appearance: none;
     }
@@ -28677,7 +29474,7 @@ new class extends _identity {
 
     /* placeholder (locked): color.foreground.muted */
     [data-part='input']::placeholder {
-      color: var(--color-foreground-muted);
+      color: var(--ds-search-placeholder);
       opacity: 1;
     }
 
@@ -28699,7 +29496,7 @@ new class extends _identity {
       border-radius: var(--ds-search-popup-radius);
       background: var(--ds-search-popup-surface);
       box-shadow: var(--ds-search-popup-shadow);
-      color: var(--color-foreground);
+      color: var(--ds-search-foreground);
       z-index: var(--ds-search-layer);
       opacity: 1;
       transition: opacity var(--motion-duration-fast) var(--motion-easing-standard);
@@ -28797,8 +29594,6 @@ let _init_endInputEl;
 let _init_extra_endInputEl;
 let _init_popoverEl;
 let _init_extra_popoverEl;
-let _init_calendarButtonEl;
-let _init_extra_calendarButtonEl;
 /** `value`/`defaultValue` shape: an ISO calendar date, or `{ start, end }` of them with `range`. Never a `Date` — a calendar date has no time zone. */
 /** Detail carried by the `change` CustomEvent. `undefined` when the value is cleared. */
 /** Detail carried by the `open-change` CustomEvent. */
@@ -28811,6 +29606,10 @@ let _init_extra_calendarButtonEl;
 * `weekdayColor`, `descriptionText`, `errorText`, `minTarget`, `minTargetSm`,
 * `focusRing` and `focusRingWidth` are locked and excluded.
 */
+/**
+* Bindings forwarded to a composed child's `overrides` (calendarInset → Popover, monthTitleSize /
+* monthTitleWeight → the Selects, helperSize → the Texts) carry no hook of their own.
+*/
 const HOOKS$8 = {
 	borderInvalid: "--ds-date-picker-border-invalid",
 	borderWidth: "--ds-date-picker-border-width",
@@ -28818,7 +29617,6 @@ const HOOKS$8 = {
 	paddingInline: "--ds-date-picker-padding-inline",
 	paddingBlock: "--ds-date-picker-padding-block",
 	fontSize: "--ds-date-picker-font-size",
-	calendarInset: "--ds-date-picker-calendar-inset",
 	calendarGap: "--ds-date-picker-calendar-gap",
 	headerGap: "--ds-date-picker-header-gap",
 	footerGap: "--ds-date-picker-footer-gap",
@@ -28829,15 +29627,12 @@ const HOOKS$8 = {
 	weekdayWeight: "--ds-date-picker-weekday-weight",
 	weekNumberSize: "--ds-date-picker-week-number-size",
 	weekNumberWeight: "--ds-date-picker-week-number-weight",
-	monthTitleSize: "--ds-date-picker-month-title-size",
-	monthTitleWeight: "--ds-date-picker-month-title-weight",
 	partGap: "--ds-date-picker-part-gap",
 	fieldGap: "--ds-date-picker-field-gap",
 	dayFontSize: "--ds-date-picker-day-font-size",
 	fontFamily: "--ds-date-picker-font-family",
 	lineHeight: "--ds-date-picker-line-height",
 	labelWeight: "--ds-date-picker-label-weight",
-	helperSize: "--ds-date-picker-helper-size",
 	disabledOpacity: "--ds-date-picker-disabled-opacity",
 	transition: "--ds-date-picker-transition"
 };
@@ -28868,6 +29663,16 @@ function parseISO(iso) {
 		m: m - 1,
 		d
 	};
+}
+/** A well-formed `YYYY-MM-DD` that names a real calendar date. */
+function isISO(value) {
+	if (!value || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value)) return false;
+	const { y, m, d } = parseISO(value);
+	return toISO(y, m, d) === value;
+}
+/** A bound for a message in the input's own numeric pattern; a malformed bound is shown as given rather than throwing. */
+function formatBound(bound, locale) {
+	return isISO(bound) ? formatNumeric(bound, locale) : bound;
 }
 function toISO(y, m, d) {
 	const date = new Date(Date.UTC(y, m, d));
@@ -28994,15 +29799,16 @@ function parseTypedDate(text, locale) {
 	const iso = toISO(year, month - 1, day);
 	return parseISO(iso).m === month - 1 ? iso : null;
 }
-/** Every day cell for the visible month in 7-day weeks, including the adjacent months' days that fill the grid. */
+/**
+* Every day cell for the visible month in 7-day weeks, including the adjacent months' days that
+* fill the grid. Always six rows, so the panel height does not jump between months (a month that
+* fits in five shows a trailing all-outside week).
+*/
 function getCalendarWeeks(year, month, weekStart) {
 	const firstOfMonth = toISO(year, month, 1);
-	const offset = (weekdayOf(firstOfMonth) - weekStart + 7) % 7;
-	const start = addDays(firstOfMonth, -offset);
-	const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-	const totalCells = Math.ceil((offset + daysInMonth) / 7) * 7;
+	const start = addDays(firstOfMonth, -((weekdayOf(firstOfMonth) - weekStart + 7) % 7));
 	const weeks = [];
-	for (let i = 0; i < totalCells; i += 7) weeks.push(Array.from({ length: 7 }, (_, j) => addDays(start, i + j)));
+	for (let i = 0; i < 42; i += 7) weeks.push(Array.from({ length: 7 }, (_, j) => addDays(start, i + j)));
 	return weeks;
 }
 function sameValue(a, b) {
@@ -29083,7 +29889,7 @@ let _DsDatePicker;
 new class extends _identity {
 	static [class DsDatePicker extends LitElement {
 		static {
-			({e: [_init_label$5, _init_extra_label$5, _init_name, _init_extra_name, _init_value, _init_extra_value, _init_defaultValue, _init_extra_defaultValue, _init_open, _init_extra_open, _init_range$1, _init_extra_range$1, _init_min, _init_extra_min, _init_max, _init_extra_max, _init_isDateDisabled, _init_extra_isDateDisabled, _init_locale, _init_extra_locale, _init_showWeekNumbers, _init_extra_showWeekNumbers, _init_placeholder, _init_extra_placeholder, _init_description, _init_extra_description, _init_required, _init_extra_required, _init_hideLabel, _init_extra_hideLabel, _init_size$2, _init_extra_size$2, _init_disabled, _init_extra_disabled, _init_error, _init_extra_error, _init_overrides$8, _init_extra_overrides$8, _init_internalStart, _init_extra_internalStart, _init_internalEnd, _init_extra_internalEnd, _init_draftStart, _init_extra_draftStart, _init_textStart, _init_extra_textStart, _init_textEnd, _init_extra_textEnd, _init_internalOpen, _init_extra_internalOpen, _init_viewYear, _init_extra_viewYear, _init_viewMonth, _init_extra_viewMonth, _init_focusedDate, _init_extra_focusedDate, _init_formDisabled, _init_extra_formDisabled, _init_startInputEl, _init_extra_startInputEl, _init_endInputEl, _init_extra_endInputEl, _init_popoverEl, _init_extra_popoverEl, _init_calendarButtonEl, _init_extra_calendarButtonEl], c: [_DsDatePicker, _initClass$8]} = applyDecs2311(this, [customElement("ds-date-picker")], [
+			({e: [_init_label$5, _init_extra_label$5, _init_name, _init_extra_name, _init_value, _init_extra_value, _init_defaultValue, _init_extra_defaultValue, _init_open, _init_extra_open, _init_range$1, _init_extra_range$1, _init_min, _init_extra_min, _init_max, _init_extra_max, _init_isDateDisabled, _init_extra_isDateDisabled, _init_locale, _init_extra_locale, _init_showWeekNumbers, _init_extra_showWeekNumbers, _init_placeholder, _init_extra_placeholder, _init_description, _init_extra_description, _init_required, _init_extra_required, _init_hideLabel, _init_extra_hideLabel, _init_size$2, _init_extra_size$2, _init_disabled, _init_extra_disabled, _init_error, _init_extra_error, _init_overrides$8, _init_extra_overrides$8, _init_internalStart, _init_extra_internalStart, _init_internalEnd, _init_extra_internalEnd, _init_draftStart, _init_extra_draftStart, _init_textStart, _init_extra_textStart, _init_textEnd, _init_extra_textEnd, _init_internalOpen, _init_extra_internalOpen, _init_viewYear, _init_extra_viewYear, _init_viewMonth, _init_extra_viewMonth, _init_focusedDate, _init_extra_focusedDate, _init_formDisabled, _init_extra_formDisabled, _init_startInputEl, _init_extra_startInputEl, _init_endInputEl, _init_extra_endInputEl, _init_popoverEl, _init_extra_popoverEl], c: [_DsDatePicker, _initClass$8]} = applyDecs2311(this, [customElement("ds-date-picker")], [
 				[
 					property(),
 					1,
@@ -29262,11 +30068,6 @@ new class extends _identity {
 					query("#popover"),
 					1,
 					"popoverEl"
-				],
-				[
-					query("#calendar-button"),
-					1,
-					"calendarButtonEl"
 				]
 			], 0, void 0, LitElement));
 		}
@@ -29523,21 +30324,14 @@ new class extends _identity {
 			this.#e = v;
 		}
 		#f = (_init_extra_endInputEl(this), _init_popoverEl(this));
+		/** The open state the last `willUpdate` saw, so every change aims and focuses the calendar once. */
 		get popoverEl() {
 			return this.#f;
 		}
 		set popoverEl(v) {
 			this.#f = v;
 		}
-		#g = (_init_extra_popoverEl(this), _init_calendarButtonEl(this));
-		/** The open state the last `willUpdate` saw, so every change aims and focuses the calendar once. */
-		get calendarButtonEl() {
-			return this.#g;
-		}
-		set calendarButtonEl(v) {
-			this.#g = v;
-		}
-		openSeen = (_init_extra_calendarButtonEl(this), false);
+		openSeen = (_init_extra_popoverEl(this), false);
 		focusOnOpen = false;
 		/** The last value a `change` reported (or the seed), so typing the same date never re-dispatches. */
 		lastEmittedValue = null;
@@ -29710,6 +30504,7 @@ new class extends _identity {
           <ds-popover
             id="popover"
             placement="bottom-start"
+            initial-focus="none"
             no-dismiss
             .open=${this.isOpen}
             .overrides=${{ inset: this.overrides?.calendarInset ?? "layout.inset.md" }}
@@ -29761,6 +30556,7 @@ new class extends _identity {
         ?readonly=${isDisabled}
         @input=${(event) => this.handleTextInput(event, which)}
         @keydown=${(event) => this.handleInputKeydown(event, which)}
+        @blur=${() => this.handleInputBlur(which)}
       />
     `;
 		}
@@ -29931,11 +30727,14 @@ new class extends _identity {
 				label: monthName(locale, m)
 			}));
 		}
-		/** The `min`/`max` years when given, else the current year − 100 to + 10, each on its own; always includes the visible year. */
+		/**
+		* The `min`/`max` years when given, else the current year − 100 to + 10, each on its own; always
+		* includes the visible year. An unparseable bound is ignored here.
+		*/
 		get yearOptions() {
 			const currentYear = (/* @__PURE__ */ new Date()).getFullYear();
-			const first = Math.min(this.min ? parseISO(this.min).y : currentYear - 100, this.viewYear);
-			const last = Math.max(this.max ? parseISO(this.max).y : currentYear + 10, this.viewYear);
+			const first = Math.min(isISO(this.min) ? parseISO(this.min).y : currentYear - 100, this.viewYear);
+			const last = Math.max(isISO(this.max) ? parseISO(this.max).y : currentYear + 10, this.viewYear);
 			const options = [];
 			for (let y = first; y <= last; y += 1) options.push({
 				value: String(y),
@@ -29952,9 +30751,31 @@ new class extends _identity {
 				this.internalStart = typeof value === "string" && value !== "" ? value : void 0;
 				this.internalEnd = void 0;
 			}
+			this.showCommittedText(false);
+		}
+		/**
+		* Writes the formatted committed value into the inputs. An input that has focus keeps its typed
+		* text unless `force` (a pick or Clear, which show the value at once).
+		*/
+		showCommittedText(force) {
 			const locale = this.resolvedLocale;
-			this.textStart = this.internalStart ? formatNumeric(this.internalStart, locale) : "";
-			this.textEnd = this.internalEnd ? formatNumeric(this.internalEnd, locale) : "";
+			const active = this.shadowRoot?.activeElement ?? null;
+			if (force || active === null || active !== this.startInputEl) this.textStart = this.internalStart ? formatNumeric(this.internalStart, locale) : "";
+			if (force || active === null || active !== this.endInputEl) this.textEnd = this.internalEnd ? formatNumeric(this.internalEnd, locale) : "";
+		}
+		/**
+		* On blur the input shows the formatted committed value, so a controlled owner that did not
+		* follow `change` sees the text revert. Unparseable text stays, so the field can report
+		* `copy.invalid` for it.
+		*/
+		handleInputBlur(which) {
+			const text = which === "start" ? this.textStart : this.textEnd;
+			if (text.trim() !== "" && parseTypedDate(text, this.resolvedLocale) === null) return;
+			const locale = this.resolvedLocale;
+			const committed = which === "start" ? this.internalStart : this.internalEnd;
+			const next = committed ? formatNumeric(committed, locale) : "";
+			if (which === "start") this.textStart = next;
+			else this.textEnd = next;
 		}
 		isDayDisabled(iso) {
 			return Boolean(this.min && iso < this.min || this.max && iso > this.max || this.isDateDisabled?.(iso));
@@ -30028,17 +30849,20 @@ new class extends _identity {
 				composed: true
 			}));
 		}
+		/**
+		* Focus returns on the state change, not on the request: when `open` actually turns false the
+		* composed popover moves focus to the calendar button if it was inside the calendar, and leaves
+		* it where it is (an input, the button itself) otherwise. A controlled owner that ignores
+		* `open-change` keeps the calendar open and focus inside it.
+		*/
 		closeCalendar() {
 			this.requestOpen(false);
-			this.updateComplete.then(() => {
-				if (!this.isOpen) this.calendarButtonEl?.focus();
-			});
 		}
 		async focusDayAfterOpen() {
 			await this.popoverEl?.updateComplete;
 			await new Promise((resolve) => setTimeout(resolve));
 			if (!this.isOpen) return;
-			this.dispatchEvent(new Event("scroll"));
+			this.popoverEl?.reposition();
 			this.dayButton(this.focusedDate || this.defaultFocusDate)?.focus();
 		}
 		handlePopoverOpenChange = (event) => {
@@ -30050,12 +30874,12 @@ new class extends _identity {
 			event.stopPropagation();
 		};
 		/**
-		* Escape closes the calendar wherever the focus is, and returns it to the
-		* calendar button. `ds-popover` only hears the key when focus is inside its
-		* panel — from the field itself (an input, or the calendar button, which is
+		* Escape closes the calendar wherever the focus is. `ds-popover` only hears
+		* the key when focus is inside its panel (and returns focus to the calendar
+		* button); from the field itself (an input, or the calendar button, which is
 		* the trigger and so outside the panel) the keydown reaches this root
-		* instead. The popover stops propagation on the Escape it handles, so
-		* exactly one of the two runs.
+		* instead, and focus stays where it is. The popover stops propagation on the
+		* Escape it handles, so exactly one of the two runs.
 		*/
 		handleRootKeydown = (event) => {
 			if (event.key !== "Escape" || !this.isOpen || event.defaultPrevented) return;
@@ -30241,8 +31065,8 @@ new class extends _identity {
 			else if (this.required && texts.every(blank)) this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(label), anchor);
 			else if (texts.some(unparseable)) this.internals.setValidity({ badInput: true }, COPY_INVALID$2(label, patternPlaceholder(locale)), anchor);
 			else if (this.required && !complete) this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(label), anchor);
-			else if (complete && this.min && (start < this.min || end < this.min)) this.internals.setValidity({ rangeUnderflow: true }, COPY_TOO_EARLY(label, formatNumeric(this.min, locale)), anchor);
-			else if (complete && this.max && (start > this.max || end > this.max)) this.internals.setValidity({ rangeOverflow: true }, COPY_TOO_LATE(label, formatNumeric(this.max, locale)), anchor);
+			else if (complete && this.min && (start < this.min || end < this.min)) this.internals.setValidity({ rangeUnderflow: true }, COPY_TOO_EARLY(label, formatBound(this.min, locale)), anchor);
+			else if (complete && this.max && (start > this.max || end > this.max)) this.internals.setValidity({ rangeOverflow: true }, COPY_TOO_LATE(label, formatBound(this.max, locale)), anchor);
 			else if (this.range && complete && end < start) this.internals.setValidity({ customError: true }, COPY_RANGE_ORDER, anchor);
 			else this.internals.setValidity({});
 		}
@@ -30269,7 +31093,6 @@ new class extends _identity {
       --ds-date-picker-padding-inline: var(--space-md);
       --ds-date-picker-padding-block: var(--space-sm);
       --ds-date-picker-font-size: var(--font-size-md);
-      --ds-date-picker-calendar-inset: var(--layout-inset-md);
       --ds-date-picker-calendar-gap: var(--layout-gap-normal);
       --ds-date-picker-header-gap: var(--layout-gap-tight);
       --ds-date-picker-footer-gap: var(--layout-gap-tight);
@@ -30280,17 +31103,36 @@ new class extends _identity {
       --ds-date-picker-weekday-weight: var(--font-weight-medium);
       --ds-date-picker-week-number-size: var(--font-size-xs);
       --ds-date-picker-week-number-weight: var(--font-weight-regular);
-      --ds-date-picker-month-title-size: var(--font-size-md);
-      --ds-date-picker-month-title-weight: var(--font-weight-semibold);
       --ds-date-picker-part-gap: var(--space-1);
       --ds-date-picker-field-gap: var(--space-2);
       --ds-date-picker-day-font-size: var(--font-size-sm);
       --ds-date-picker-font-family: var(--font-family-body);
       --ds-date-picker-line-height: var(--font-line-height-normal);
       --ds-date-picker-label-weight: var(--font-weight-medium);
-      --ds-date-picker-helper-size: var(--font-size-sm);
       --ds-date-picker-disabled-opacity: var(--opacity-disabled);
       --ds-date-picker-transition: var(--motion-duration-fast);
+      /* Locked bindings: out of the overrides API, but still a hook, themeable from page CSS. */
+      --ds-date-picker-background: var(--color-background);
+      --ds-date-picker-foreground: var(--color-foreground);
+      --ds-date-picker-placeholder: var(--color-foreground-muted);
+      --ds-date-picker-border: var(--color-border-strong);
+      --ds-date-picker-border-focus: var(--color-border-focus);
+      --ds-date-picker-range-separator-color: var(--color-foreground-muted);
+      --ds-date-picker-calendar-surface: var(--color-overlay-surface);
+      --ds-date-picker-day-size: var(--size-target-comfortable);
+      --ds-date-picker-day-selected-background: var(--color-control-selected-background);
+      --ds-date-picker-day-selected-foreground: var(--color-control-selected-foreground);
+      --ds-date-picker-day-in-range-background: var(--color-background-strong);
+      --ds-date-picker-day-today-border: var(--color-control-selected-background);
+      --ds-date-picker-day-today-border-width: var(--border-width-focus);
+      --ds-date-picker-day-outside-month-color: var(--color-foreground-muted);
+      --ds-date-picker-weekday-color: var(--color-foreground-muted);
+      --ds-date-picker-description-text: var(--color-foreground-muted);
+      --ds-date-picker-error-text: var(--color-foreground-danger);
+      --ds-date-picker-min-target: var(--size-target-comfortable);
+      --ds-date-picker-min-target-sm: var(--size-target-min);
+      --ds-date-picker-focus-ring: var(--color-border-focus);
+      --ds-date-picker-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -30337,7 +31179,7 @@ new class extends _identity {
       font-size: var(--ds-date-picker-font-size);
       font-weight: var(--ds-date-picker-label-weight);
       line-height: var(--ds-date-picker-line-height);
-      color: var(--color-foreground);
+      color: var(--ds-date-picker-foreground);
     }
 
     /* background / foreground / border (locked); minTarget, minTargetSm (locked); fieldGap */
@@ -30347,22 +31189,23 @@ new class extends _identity {
       align-items: center;
       gap: var(--ds-date-picker-field-gap);
       inline-size: 100%;
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-date-picker-min-target);
       padding-block: var(--ds-date-picker-padding-block);
       padding-inline: var(--ds-date-picker-padding-inline);
-      border: var(--ds-date-picker-border-width) solid var(--color-border-strong);
+      border: var(--ds-date-picker-border-width) solid var(--ds-date-picker-border);
       border-radius: var(--ds-date-picker-radius);
-      background: var(--color-background);
-      color: var(--color-foreground);
+      background: var(--ds-date-picker-background);
+      color: var(--ds-date-picker-foreground);
     }
     :host([size='sm']) [data-part='field'] {
-      min-block-size: var(--size-target-min);
+      min-block-size: var(--ds-date-picker-min-target-sm);
     }
 
     /* borderFocus / focusRing / focusRingWidth (locked): the ring follows focus in the typed input(s) */
     [data-part='field']:has([data-part='input']:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline: var(--ds-date-picker-focus-ring-width) solid var(--ds-date-picker-focus-ring);
       outline-offset: calc(-1 * var(--ds-date-picker-border-width));
+      border-color: var(--ds-date-picker-border-focus);
     }
 
     /* borderInvalid */
@@ -30386,7 +31229,7 @@ new class extends _identity {
       line-height: var(--ds-date-picker-line-height);
     }
     [data-part='input']::placeholder {
-      color: var(--color-foreground-muted);
+      color: var(--ds-date-picker-placeholder);
       opacity: 1;
     }
     .group.disabled [data-part='input'] {
@@ -30395,7 +31238,7 @@ new class extends _identity {
 
     /* rangeSeparatorColor (locked) */
     .separator {
-      color: var(--color-foreground-muted);
+      color: var(--ds-date-picker-range-separator-color);
     }
 
     /* errorText (locked) and helperSize come from the composed ds-text (tone="danger", the
@@ -30412,7 +31255,7 @@ new class extends _identity {
       gap: var(--ds-date-picker-calendar-gap);
       font-family: var(--ds-date-picker-font-family);
       line-height: var(--ds-date-picker-line-height);
-      color: var(--color-foreground);
+      color: var(--ds-date-picker-foreground);
     }
 
     /* headerGap */
@@ -30450,7 +31293,7 @@ new class extends _identity {
     [data-part='grid'] thead th {
       font-size: var(--ds-date-picker-weekday-size);
       font-weight: var(--ds-date-picker-weekday-weight);
-      color: var(--color-foreground-muted);
+      color: var(--ds-date-picker-weekday-color);
       text-align: center;
     }
 
@@ -30458,7 +31301,7 @@ new class extends _identity {
     [data-part='weekNumber'] {
       font-size: var(--ds-date-picker-week-number-size);
       font-weight: var(--ds-date-picker-week-number-weight);
-      color: var(--color-foreground-muted);
+      color: var(--ds-date-picker-weekday-color);
       text-align: center;
     }
 
@@ -30468,14 +31311,14 @@ new class extends _identity {
       display: flex;
       align-items: center;
       justify-content: center;
-      inline-size: var(--size-target-comfortable);
-      block-size: var(--size-target-comfortable);
+      inline-size: var(--ds-date-picker-day-size);
+      block-size: var(--ds-date-picker-day-size);
       margin: 0;
       padding: 0;
-      border: var(--border-width-focus) solid transparent;
+      border: var(--ds-date-picker-day-today-border-width) solid transparent;
       border-radius: var(--ds-date-picker-day-radius);
       background: transparent;
-      color: var(--color-foreground);
+      color: var(--ds-date-picker-foreground);
       font-family: var(--ds-date-picker-font-family);
       font-size: var(--ds-date-picker-day-font-size);
       cursor: pointer;
@@ -30492,31 +31335,31 @@ new class extends _identity {
 
     /* dayOutsideMonthColor (locked) */
     [data-part='day'].outside {
-      color: var(--color-foreground-muted);
+      color: var(--ds-date-picker-day-outside-month-color);
     }
 
     /* dayTodayBorder (locked): a ring, distinct in shape from the selected fill */
     [data-part='day'][aria-current='date'] {
-      border-color: var(--color-control-selected-background);
+      border-color: var(--ds-date-picker-day-today-border);
     }
 
     /* dayInRangeBackground (locked) */
     [data-part='day'].in-range {
-      background: var(--color-background-strong);
+      background: var(--ds-date-picker-day-in-range-background);
       border-radius: 0;
     }
 
     /* daySelectedBackground / daySelectedForeground (locked) */
     [data-part='day'].selected,
     [data-part='day'].selected:hover {
-      background: var(--color-control-selected-background);
-      color: var(--color-control-selected-foreground);
+      background: var(--ds-date-picker-day-selected-background);
+      color: var(--ds-date-picker-day-selected-foreground);
     }
 
     /* focusRing / focusRingWidth (locked): replaces the today ring while the day has focus */
     [data-part='day']:focus-visible {
       outline: none;
-      border-color: var(--color-border-focus);
+      border-color: var(--ds-date-picker-focus-ring);
     }
 
     [data-part='day'][aria-disabled='true'] {
@@ -30593,7 +31436,12 @@ const SIZED_TAGS = /* @__PURE__ */ new Map([
 const BUTTON_TAG = "ds-button";
 const GROUP_TAG = "ds-toolbar-group";
 /** Design-system elements that are structure or decoration, not controls. */
-const STRUCTURE_TAGS = /* @__PURE__ */ new Set([GROUP_TAG, "ds-divider"]);
+const STRUCTURE_TAGS = /* @__PURE__ */ new Set([
+	GROUP_TAG,
+	"ds-divider",
+	"ds-icon",
+	"ds-text"
+]);
 const NATIVE_FOCUSABLE = "button, select, input, textarea, a[href], [tabindex]";
 /** Input types that are not text entry, so the toolbar may take their arrow, Home and End keys. */
 const NON_TEXT_INPUTS = /* @__PURE__ */ new Set([
@@ -30671,6 +31519,7 @@ new class extends _identity {
       display: flex;
       /* set by the Toolbar on itself; these inherit through the flattened tree */
       flex-direction: var(--ds-toolbar-group-direction, row);
+      flex-wrap: var(--ds-toolbar-group-wrap, nowrap);
       align-items: var(--ds-toolbar-group-align, center);
       gap: var(--ds-toolbar-item-gap, var(--layout-gap-normal));
     }
@@ -30898,7 +31747,7 @@ new class extends _identity {
 		render() {
 			const dividerOrientation = this.orientation === "vertical" ? "horizontal" : "vertical";
 			return html`
-      <span class="target-probe" aria-hidden="true"></span>
+      ${this.usesMenu() ? html`<span class="target-probe" aria-hidden="true"></span>` : nothing}
       <div part="container" data-part="container" @scroll=${this.syncFades}>
         ${this.entrySlots.map((entry, index) => html`${entry.separatorBefore ? html`<div part="separator" data-part="separator">
                   <ds-divider orientation=${dividerOrientation} spacing="none"></ds-divider>
@@ -30931,20 +31780,25 @@ new class extends _identity {
 		}
 		/**
 		* The focusable control an element stands for: itself when it is a design-system element or natively focusable,
-		* otherwise the first such descendant — an arbitrary wrapper makes what it holds one bare control.
+		* otherwise the first such descendant — an arbitrary wrapper, and a group nested inside a group, make what they
+		* hold one bare control.
 		*/
 		controlOf(el) {
-			if (STRUCTURE_TAGS.has(el.localName)) return null;
-			if (el.localName.startsWith("ds-") || el.matches(NATIVE_FOCUSABLE)) return el;
+			if (STRUCTURE_TAGS.has(el.localName) && !this.isGroup(el)) return null;
+			if (!this.isGroup(el) && (el.localName.startsWith("ds-") || el.matches(NATIVE_FOCUSABLE))) return el;
 			for (const node of Array.from(el.querySelectorAll("*"))) {
 				if (STRUCTURE_TAGS.has(node.localName)) continue;
 				if (node.localName.startsWith("ds-") || node.matches(NATIVE_FOCUSABLE)) return node;
 			}
 			return null;
 		}
-		/** The controls of one entry: a group's children one level down, or the entry itself. */
+		/** The direct children of one entry, exactly one level deep: a group's element children, or the entry itself. */
+		membersOf(entry) {
+			return this.isGroup(entry) ? Array.from(entry.children).filter((el) => el instanceof HTMLElement) : [entry];
+		}
+		/** The controls of one entry: each member, or a wrapper member's first focusable descendant. */
 		controlsOf(entry) {
-			return (this.isGroup(entry) ? Array.from(entry.children).filter((el) => el instanceof HTMLElement) : [entry]).map((el) => this.controlOf(el)).filter((el) => el !== null);
+			return this.membersOf(entry).map((el) => this.controlOf(el)).filter((el) => el !== null);
 		}
 		/** Every control, in order, one level into groups; a control's own internals are never descended into. */
 		controls() {
@@ -31054,7 +31908,7 @@ new class extends _identity {
 		/** A Button, SegmentedControl, Select or Search without a `size` attribute when first discovered takes the toolbar's;
 		its own `size` wins, and a size the control has no value for leaves it at its own default. */
 		applyDefaultSizes() {
-			for (const el of this.controls()) {
+			for (const el of this.entries().flatMap((entry) => this.membersOf(entry))) {
 				const accepted = SIZED_TAGS.get(el.localName);
 				if (!accepted) continue;
 				const owned = el.hasAttribute(SIZED);
@@ -31075,12 +31929,10 @@ new class extends _identity {
 				this.recalcOverflow();
 			});
 		}
-		/** An entry collapses only if every control in it is a Button. */
+		/** An entry collapses only if every member of it is a Button: a wrapper (or nested group) never collapses. */
 		isCollapsible(entry) {
-			if (entry.localName === BUTTON_TAG) return true;
-			if (!this.isGroup(entry)) return false;
-			const controls = this.controlsOf(entry);
-			return controls.length > 0 && controls.every((el) => el.localName === BUTTON_TAG);
+			const members = this.membersOf(entry);
+			return members.length > 0 && members.every((el) => el.localName === BUTTON_TAG);
 		}
 		recalcOverflow() {
 			if (!this.isConnected) return;
@@ -31166,22 +32018,30 @@ new class extends _identity {
 			event.stopPropagation();
 			this.overflowTargets.get(event.detail.id)?.click();
 		};
-		/** Marks which edges have content hidden past them; re-checked on scroll and after every size or children change. */
+		/**
+		* Marks which physical edge (left/right, top/bottom when vertical) has content hidden past it, by comparing the
+		* entries' extent with the row's box — no scroll-offset sign convention, so RTL takes the same path.
+		* Re-checked on scroll and after every size or children change.
+		*/
 		syncFades = () => {
 			const container = this.containerEl;
 			if (!container) return;
 			const vertical = this.orientation === "vertical";
 			const scrolls = this.overflow === "scroll" || vertical && this.overflow === "menu";
-			let hiddenStart = false;
-			let hiddenEnd = false;
+			let hiddenBefore = false;
+			let hiddenAfter = false;
 			if (scrolls) {
-				const offset = Math.abs(vertical ? container.scrollTop : container.scrollLeft);
-				const extent = vertical ? container.scrollHeight - container.clientHeight : container.scrollWidth - container.clientWidth;
-				hiddenStart = offset > 1;
-				hiddenEnd = extent - offset > 1;
+				const box = container.getBoundingClientRect();
+				const rects = this.entries().filter((el) => !el.hidden).map((el) => el.getBoundingClientRect());
+				if (rects.length > 0) {
+					const first = Math.min(...rects.map((r) => vertical ? r.top : r.left));
+					const last = Math.max(...rects.map((r) => vertical ? r.bottom : r.right));
+					hiddenBefore = first < (vertical ? box.top : box.left) - 1;
+					hiddenAfter = last > (vertical ? box.bottom : box.right) + 1;
+				}
 			}
-			if (container.hasAttribute("data-fade-start") !== hiddenStart) container.toggleAttribute("data-fade-start", hiddenStart);
-			if (container.hasAttribute("data-fade-end") !== hiddenEnd) container.toggleAttribute("data-fade-end", hiddenEnd);
+			if (container.hasAttribute("data-fade-before") !== hiddenBefore) container.toggleAttribute("data-fade-before", hiddenBefore);
+			if (container.hasAttribute("data-fade-after") !== hiddenAfter) container.toggleAttribute("data-fade-after", hiddenAfter);
 		};
 		applyOverrides() {
 			for (const binding of Object.keys(HOOKS$7)) {
@@ -31248,8 +32108,20 @@ new class extends _identity {
       align-items: stretch;
     }
 
+    /* A vertical toolbar wraps onto more columns, which needs a bounded height from the parent. */
+    :host([overflow='wrap']) {
+      --ds-toolbar-group-wrap: wrap;
+    }
+
     :host([overflow='wrap']) [data-part='container'] {
       flex-wrap: wrap;
+    }
+
+    /* menu: when the walk runs out of collapsible entries the row clips at the toolbar's edge (never scrolls);
+       the clip margin keeps a child's outset focus ring (width + offset) visible. */
+    :host([orientation='horizontal'][overflow='menu']) [data-part='container'] {
+      overflow: clip;
+      overflow-clip-margin: calc(var(--border-width-focus) * 2);
     }
 
     /* separator: a wrapper of separatorLength along the cross axis; groupGap replaces itemGap either side, so the
@@ -31260,7 +32132,7 @@ new class extends _identity {
       align-self: center;
       box-sizing: content-box;
       block-size: var(--ds-toolbar-separator-length);
-      padding-inline: max(0px, calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap)));
+      padding-inline: max(0px, calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap))); /* literal-ok: the clamp's zero */
     }
 
     :host([orientation='vertical']) [data-part='separator'] {
@@ -31269,42 +32141,39 @@ new class extends _identity {
       block-size: auto;
       inline-size: var(--ds-toolbar-separator-length);
       padding-inline: 0px;
-      padding-block: max(0px, calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap)));
+      padding-block: max(0px, calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap))); /* literal-ok: the clamp's zero */
     }
 
-    /* scroll (and menu on a vertical toolbar): each edge fades only while content is hidden past it */
+    /* scroll (and menu on a vertical toolbar): each physical edge — left/right, or top/bottom when vertical — fades
+       only while content is hidden past it, so RTL needs no rule of its own. */
     :host([overflow='scroll']) [data-part='container'],
     :host([orientation='vertical'][overflow='menu']) [data-part='container'] {
-      --fade-start: 0px;
-      --fade-end: 0px;
+      --fade-before: 0px;
+      --fade-after: 0px;
       scrollbar-width: none;
     }
 
-    :host([overflow='scroll']) [data-part='container'][data-fade-start],
-    :host([orientation='vertical'][overflow='menu']) [data-part='container'][data-fade-start] {
-      --fade-start: var(--ds-toolbar-fade-width);
+    :host([overflow='scroll']) [data-part='container'][data-fade-before],
+    :host([orientation='vertical'][overflow='menu']) [data-part='container'][data-fade-before] {
+      --fade-before: var(--ds-toolbar-fade-width);
     }
 
-    :host([overflow='scroll']) [data-part='container'][data-fade-end],
-    :host([orientation='vertical'][overflow='menu']) [data-part='container'][data-fade-end] {
-      --fade-end: var(--ds-toolbar-fade-width);
+    :host([overflow='scroll']) [data-part='container'][data-fade-after],
+    :host([orientation='vertical'][overflow='menu']) [data-part='container'][data-fade-after] {
+      --fade-after: var(--ds-toolbar-fade-width);
     }
 
     :host([orientation='horizontal'][overflow='scroll']) [data-part='container'] {
       overflow-x: auto;
       overflow-y: hidden;
-      mask-image: linear-gradient(to right, transparent, black var(--fade-start), black calc(100% - var(--fade-end)), transparent); /* literal-ok: mask alpha stops, not a color */
-    }
-
-    :host([orientation='horizontal'][overflow='scroll']:dir(rtl)) [data-part='container'] {
-      mask-image: linear-gradient(to left, transparent, black var(--fade-start), black calc(100% - var(--fade-end)), transparent); /* literal-ok: mask alpha stops, not a color */
+      mask-image: linear-gradient(to right, transparent, black var(--fade-before), black calc(100% - var(--fade-after)), transparent); /* literal-ok: mask alpha stops, not a color */
     }
 
     :host([orientation='vertical'][overflow='scroll']) [data-part='container'],
     :host([orientation='vertical'][overflow='menu']) [data-part='container'] {
       overflow-x: hidden;
       overflow-y: auto;
-      mask-image: linear-gradient(to bottom, transparent, black var(--fade-start), black calc(100% - var(--fade-end)), transparent); /* literal-ok: mask alpha stops, not a color */
+      mask-image: linear-gradient(to bottom, transparent, black var(--fade-before), black calc(100% - var(--fade-after)), transparent); /* literal-ok: mask alpha stops, not a color */
     }
 
     [data-part='container']::-webkit-scrollbar {
@@ -31401,8 +32270,7 @@ const COPY_ANNOUNCE = (n, total) => `Slide ${n} of ${total}`;
 const MIN_INTERVAL = 5e3;
 /** The share of a slide that must be inside the viewport for it to count as visible. */
 const VISIBLE_THRESHOLD = .6;
-/** Settle delay for a user scroll where `scrollend` is not supported. */
-const SCROLL_SETTLE_FALLBACK = 150;
+/** A user scroll settles on `scrollend` where the engine has it, and on the next IntersectionObserver delivery otherwise. */
 const SCROLLEND_SUPPORTED = typeof window !== "undefined" && "onscrollend" in window;
 /** layout.maxWidth.prose from the built token JSON: `@container` conditions cannot read custom properties, so the
 breakpoint is duplicated as a literal, as Table does. Logic reads the token first. literal-ok: breakpoint from layout.maxWidth.prose */
@@ -31448,7 +32316,7 @@ new class extends _identity {
 	static [class DsCarouselSlide extends LitElement {
 		static {
 			({e: [_init_label$3, _init_extra_label$3], c: [_DsCarouselSlide, _initClass$6]} = applyDecs2311(this, [customElement("ds-carousel-slide")], [[
-				property(),
+				property({ reflect: true }),
 				1,
 				"label"
 			]], 0, void 0, LitElement));
@@ -31457,7 +32325,10 @@ new class extends _identity {
 			super(...args);
 			_init_extra_label$3(this);
 		}
-		/** The slide's name in the tabs picker. A plain string, never read from the slide's content. */
+		/**
+		* The slide's name in the tabs picker. A plain string, never read from the slide's content. Reflected so the
+		* carousel, which observes its slides' `label` attribute, sees a property write too.
+		*/
 		#A = _init_label$3(this);
 		get label() {
 			return this.#A;
@@ -31778,10 +32649,11 @@ new class extends _identity {
 		}
 		intersectionObserver = void _init_extra_viewportEl(this);
 		resizeObserver;
+		/** Watches each slide's `label` attribute, so renaming a slide updates the tabs picker. */
+		labelObserver;
 		reducedMotionQuery;
 		timer;
 		timerInterval;
-		settleTimeout;
 		/** True after pointerdown, touchstart or wheel on the viewport: the next settled scroll is a swipe. */
 		userScroll = false;
 		/** The first positioning is instant. */
@@ -31861,8 +32733,9 @@ new class extends _identity {
 			this.intersectionObserver = void 0;
 			this.resizeObserver?.disconnect();
 			this.resizeObserver = void 0;
+			this.labelObserver?.disconnect();
+			this.labelObserver = void 0;
 			this.clearTimer();
-			window.clearTimeout(this.settleTimeout);
 		}
 		willUpdate(changed) {
 			if (changed.has("overrides")) this.applyOverrides();
@@ -31870,6 +32743,7 @@ new class extends _identity {
 				if (this.label) this.setAttribute("aria-label", this.label);
 				else this.removeAttribute("aria-label");
 			}
+			if ((changed.has("activeIndex") || changed.has("internalIndex")) && this.rotationOn && !this.loop && this.slideCount > this.page && this.currentIndex >= this.lastStart) this.stopped = true;
 		}
 		firstUpdated() {
 			this.syncSlides();
@@ -31939,8 +32813,7 @@ new class extends _identity {
           @pointerdown=${this.armUserScroll}
           @touchstart=${this.armUserScroll}
           @wheel=${this.armUserScroll}
-          @scroll=${this.handleScroll}
-          @scrollend=${this.handleScrollEnd}
+          @scrollend=${this.settleSwipe}
         >
           <div data-part="track" part="track" style="--ds-carousel-per-view: ${this.perViewInt}">
             <slot @slotchange=${this.handleSlotChange}></slot>
@@ -31956,7 +32829,8 @@ new class extends _identity {
 			const slides = this.slideElements();
 			const current = this.currentIndex;
 			const page = this.page;
-			const roving = this.focusedPickerIndex ?? current;
+			const focused = this.focusedPickerIndex;
+			const roving = focused !== null && focused >= current && focused < current + page ? focused : current;
 			if (this.picker === "tabs") return html`
         <div
           data-part="picker"
@@ -32092,17 +32966,13 @@ new class extends _identity {
 		handleSlotChange = () => {
 			this.syncSlides();
 			this.observeSlides();
+			this.observeLabels();
 		};
 		armUserScroll = () => {
 			this.userScroll = true;
 		};
-		handleScroll = () => {
-			if (!this.userScroll || SCROLLEND_SUPPORTED) return;
-			window.clearTimeout(this.settleTimeout);
-			this.settleTimeout = window.setTimeout(this.handleScrollEnd, SCROLL_SETTLE_FALLBACK);
-		};
-		/** A scroll the user started has settled: the first visible slide is the new index. */
-		handleScrollEnd = () => {
+		/** A scroll the user started has settled: the first visible slide is the new index. Never on a timer. */
+		settleSwipe = () => {
 			if (!this.userScroll) return;
 			this.userScroll = false;
 			const first = this.firstVisibleIndex();
@@ -32115,18 +32985,29 @@ new class extends _identity {
 				const hidden = !(entry.isIntersecting && entry.intersectionRatio >= VISIBLE_THRESHOLD);
 				setHidden(entry.target, hidden);
 			}
+			if (!SCROLLEND_SUPPORTED) this.settleSwipe();
 		};
 		handleResize = (entries) => {
 			const entry = entries[0];
-			if (!entry) return;
-			const wide = entry.contentRect.width > this.proseBreakpoint();
+			const viewport = this.viewportEl;
+			if (!entry || !viewport) return;
+			const breakpoint = this.proseBreakpoint(viewport);
+			const wide = breakpoint === null || entry.contentRect.width > breakpoint;
 			if (this.viewportWide !== wide) this.viewportWide = wide;
 			if (!this.measured) this.measured = true;
 		};
-		/** layout.maxWidth.prose, read from the token; the built value when the token stylesheet is absent. */
-		proseBreakpoint() {
-			const value = parseFloat(getComputedStyle(this).getPropertyValue("--layout-max-width-prose"));
-			return Number.isFinite(value) ? value : PROSE_BREAKPOINT$1;
+		handleLabelMutation = () => {
+			this.requestUpdate();
+		};
+		/** layout.maxWidth.prose from its built custom property on the viewport, px or rem; null when unreadable. */
+		proseBreakpoint(viewport) {
+			const raw = getComputedStyle(viewport).getPropertyValue("--layout-max-width-prose").trim();
+			const match = /^(\d*\.?\d+)(px|rem)$/.exec(raw);
+			if (!match) return null;
+			const value = parseFloat(match[1]);
+			if (match[2] === "px") return value;
+			const rootSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+			return Number.isFinite(rootSize) ? value * rootSize : null;
 		}
 		firstVisibleIndex() {
 			const viewport = this.viewportEl;
@@ -32229,6 +33110,7 @@ new class extends _identity {
 				this.resizeObserver.observe(viewport);
 			}
 			this.observeSlides();
+			this.observeLabels();
 		}
 		observeSlides() {
 			const viewport = this.viewportEl;
@@ -32239,6 +33121,15 @@ new class extends _identity {
 				threshold: [0, VISIBLE_THRESHOLD]
 			});
 			for (const slide of this.slideElements()) this.intersectionObserver.observe(slide);
+		}
+		observeLabels() {
+			if (typeof MutationObserver === "undefined") return;
+			this.labelObserver?.disconnect();
+			this.labelObserver = new MutationObserver(this.handleLabelMutation);
+			for (const slide of this.slideElements()) this.labelObserver.observe(slide, {
+				attributes: true,
+				attributeFilter: ["label"]
+			});
 		}
 		get effectiveInterval() {
 			return Math.max(this.interval, MIN_INTERVAL);
@@ -32267,7 +33158,6 @@ new class extends _identity {
 				return;
 			}
 			this.moveTo(target, "autoplay");
-			if (!this.loop && target >= this.lastStart) this.stopped = true;
 		};
 		warnMissingSlideLabel(slide, index) {
 			if (!import.meta.env.DEV || this.warnedSlides.has(slide)) return;
@@ -32308,6 +33198,17 @@ new class extends _identity {
       --ds-carousel-tab-padding-inline: var(--space-md);
       --ds-carousel-font-family: var(--font-family-body);
       --ds-carousel-transition: var(--motion-duration-base);
+      /* Locked: not in the overrides property, but still hooks, so page CSS can re-theme or rename them. */
+      --ds-carousel-control-background: var(--color-overlay-surface);
+      --ds-carousel-dot: var(--color-border-strong);
+      --ds-carousel-dot-active: var(--color-control-selected-background);
+      --ds-carousel-dot-target: var(--size-target-min);
+      --ds-carousel-tab-color: var(--color-foreground-muted);
+      --ds-carousel-tab-selected-color: var(--color-foreground-strong);
+      --ds-carousel-tab-indicator-thickness: var(--border-width-focus);
+      --ds-carousel-min-target: var(--size-target-comfortable);
+      --ds-carousel-focus-ring: var(--color-border-focus);
+      --ds-carousel-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -32367,8 +33268,8 @@ new class extends _identity {
     /* The viewport is a keyboard-reachable scroll container, so its tab stop shows a ring. The arrows
        overlay its inline edges, so the ring is drawn inside the box rather than outside it. */
     [data-part='viewport']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-carousel-focus-ring-width) solid var(--ds-carousel-focus-ring);
+      outline-offset: calc(-1 * var(--ds-carousel-focus-ring-width));
     }
 
     :host([no-snap]) [data-part='viewport'] {
@@ -32404,9 +33305,9 @@ new class extends _identity {
       align-items: center;
       justify-content: center;
       align-self: center;
-      min-inline-size: var(--size-target-comfortable);
-      min-block-size: var(--size-target-comfortable);
-      background: var(--color-overlay-surface);
+      min-inline-size: var(--ds-carousel-min-target);
+      min-block-size: var(--ds-carousel-min-target);
+      background: var(--ds-carousel-control-background);
       box-shadow: var(--ds-carousel-control-shadow);
       border-radius: var(--ds-carousel-control-radius);
     }
@@ -32462,8 +33363,8 @@ new class extends _identity {
     /* dotTarget (locked): the hit area; dotSize: the visible dot.
        dotRadius: dots are round, and the focus ring follows the same radius. */
     .dot {
-      inline-size: var(--size-target-min);
-      block-size: var(--size-target-min);
+      inline-size: var(--ds-carousel-dot-target);
+      block-size: var(--ds-carousel-dot-target);
       padding: 0;
       border-radius: var(--ds-carousel-dot-radius);
     }
@@ -32475,41 +33376,41 @@ new class extends _identity {
       block-size: var(--ds-carousel-dot-size);
       border-radius: var(--ds-carousel-dot-radius);
       /* dot: locked */
-      background: var(--color-border-strong);
+      background: var(--ds-carousel-dot);
       transition: background-color var(--ds-carousel-transition) var(--motion-easing-standard);
     }
 
     /* dotActive: locked; aria-current carries the state too */
     .dot[aria-current='true']::before {
-      background: var(--color-control-selected-background);
+      background: var(--ds-carousel-dot-active);
     }
 
     /* tabColor (locked), tabFontSize, tabFontWeight, tabLineHeight, tabPaddingBlock, tabPaddingInline,
        fontFamily, minTarget (locked). A tab has no radius, so its focus ring is square, and no minimum
        inline size — that comes from tabPaddingInline alone; minTarget is only its minimum block size. */
     .tab {
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-carousel-min-target);
       padding-block: var(--ds-carousel-tab-padding-block);
       padding-inline: var(--ds-carousel-tab-padding-inline);
       font-family: var(--ds-carousel-font-family);
       font-size: var(--ds-carousel-tab-font-size);
       font-weight: var(--ds-carousel-tab-font-weight);
       line-height: var(--ds-carousel-tab-line-height);
-      color: var(--color-foreground-muted);
+      color: var(--ds-carousel-tab-color);
       white-space: nowrap;
       transition: color var(--ds-carousel-transition) var(--motion-easing-standard);
     }
 
     /* tabSelectedColor (locked); tabIndicatorThickness (locked) drawn in dotActive inside the tab's box */
     .tab[aria-selected='true'] {
-      color: var(--color-foreground-strong);
-      box-shadow: inset 0 calc(-1 * var(--border-width-focus)) 0 var(--color-control-selected-background);
+      color: var(--ds-carousel-tab-selected-color);
+      box-shadow: inset 0 calc(-1 * var(--ds-carousel-tab-indicator-thickness)) 0 var(--ds-carousel-dot-active);
     }
 
     /* focusRing / focusRingWidth: locked */
     button[data-part='pickerItem']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-carousel-focus-ring-width) solid var(--ds-carousel-focus-ring);
+      outline-offset: calc(-1 * var(--ds-carousel-focus-ring-width));
     }
 
     .visually-hidden {
@@ -32636,6 +33537,8 @@ const NEGATED_BOOLEAN$3 = {
 };
 /** Overridable bindings; the locked ones (surface, header surface/color, stripe, selection, cell colors, stacked
 label color, target size, focus ring) are excluded. */
+/** Table's own hooks. captionSize/captionWeight/captionGap are forwarded to the caption Heading's `overrides` and
+declare no hook here: a consumer restyles the caption through `--ds-heading-*`. */
 const HOOKS$5 = {
 	headerWeight: "--ds-table-header-weight",
 	headerSize: "--ds-table-header-size",
@@ -32648,9 +33551,6 @@ const HOOKS$5 = {
 	cellPaddingInline: "--ds-table-cell-padding-inline",
 	cellPaddingBlock: "--ds-table-cell-padding-block",
 	cellGap: "--ds-table-cell-gap",
-	captionSize: "--ds-table-caption-size",
-	captionWeight: "--ds-table-caption-weight",
-	captionGap: "--ds-table-caption-gap",
 	stackedRowInset: "--ds-table-stacked-row-inset",
 	stackedRowGap: "--ds-table-stacked-row-gap",
 	stackedBlockGap: "--ds-table-stacked-block-gap",
@@ -32667,6 +33567,10 @@ const HOOKS$5 = {
 };
 function textOf$2(value) {
 	return value === void 0 || value === null ? "" : String(value);
+}
+/** A click that landed on the composed control itself (or anything inside it) runs the control's own action. */
+function isInsideControl(event) {
+	return event.composedPath().some((node) => node instanceof Element && (node.localName === "ds-button" || node.localName === "ds-checkbox"));
 }
 /** Uncontrolled sort: `localeCompare` (numeric) for strings, subtraction for numbers. */
 function compareValues$2(left, right) {
@@ -33188,11 +34092,18 @@ new class extends _identity {
 		}
 		renderSelectionHeader() {
 			if (this.selectable === "none") return nothing;
-			if (this.selectable === "single") return html`<td role="cell" class="header-select"></td>`;
+			if (this.selectable === "single") return html`<td role="cell" class="header-select plain"></td>`;
 			const selected = new Set(this.currentSelected);
 			const allSelected = this.data.length > 0 && this.data.every((row) => selected.has(row.id));
 			const someSelected = !allSelected && this.data.some((row) => selected.has(row.id));
-			return html`<th role="columnheader" scope="col" data-part="selectAllCell">
+			return html`<th
+      role="columnheader"
+      scope="col"
+      data-part="selectAllCell"
+      @click=${(event) => {
+				if (!isInsideControl(event)) this.commitSelection(allSelected ? [] : this.data.map((row) => row.id));
+			}}
+    >
       <ds-checkbox
         label=${COPY_SELECT_ALL$2}
         hide-label
@@ -33217,8 +34128,13 @@ new class extends _identity {
       abbr=${ifDefined(column.abbr)}
       aria-sort=${ifDefined(sorted)}
     >
-      ${column.sortable ? html`<ds-button
+      ${column.sortable ? html`<span
             data-part="sortButton"
+            class="sort"
+            @click=${(event) => {
+				if (!isInsideControl(event)) this.handleSort(event, column);
+			}}
+            ><ds-button
             variant="ghost"
             size="sm"
             .overrides=${{
@@ -33234,7 +34150,8 @@ new class extends _identity {
                   name=${sorted === "ascending" ? "chevron-up" : "chevron-down"}
                   inline
                 ></ds-icon>` : nothing}
-          </ds-button>` : column.header}
+          </ds-button></span
+          >` : column.header}
     </th>`;
 		}
 		renderRow(row, rowHeaderColumn, rowsInteractive) {
@@ -33247,7 +34164,13 @@ new class extends _identity {
       aria-selected=${ifDefined(this.selectable !== "none" ? String(isSelected) : void 0)}
       @click=${rowsInteractive ? (event) => this.handleRowClick(event, row.id) : nothing}
     >
-      ${this.selectable !== "none" ? html`<td role="cell" data-part="selectCell">
+      ${this.selectable !== "none" ? html`<td
+            role="cell"
+            data-part="selectCell"
+            @click=${(event) => {
+				if (!isInsideControl(event)) this.selectRow(row.id, !isSelected);
+			}}
+          >
             <ds-checkbox
               label=${COPY_SELECT_ROW$2(name)}
               hide-label
@@ -33326,7 +34249,9 @@ new class extends _identity {
 		}
 		handleSelectRow(event, id) {
 			event.stopPropagation();
-			const checked = event.detail.checked;
+			this.selectRow(id, event.detail.checked);
+		}
+		selectRow(id, checked) {
 			const current = this.currentSelected.filter((existing) => existing !== id);
 			if (this.selectable === "single") this.commitSelection(checked ? [id] : []);
 			else this.commitSelection(checked ? [...current, id] : current);
@@ -33348,7 +34273,7 @@ new class extends _identity {
 		/** Pointer convenience: a press on an interactive row outside its own controls activates it. */
 		handleRowClick(event, id) {
 			const target = event.target;
-			if (target instanceof Element && target.closest("ds-button, ds-checkbox, ds-link, ds-menu, a, button, input, select, textarea, label, [tabindex]")) return;
+			if (target instanceof Element && target.closest("[data-part=\"selectCell\"], ds-button, ds-checkbox, ds-link, ds-menu, a, button, input, select, textarea, label, [tabindex]")) return;
 			this.dispatchRowPress(id);
 		}
 		dispatchRowPress(id) {
@@ -33413,7 +34338,8 @@ new class extends _identity {
 			this.headerObserver?.disconnect();
 			this.headerObserver = void 0;
 			this.observedFor = key;
-			if (!this.stickyHeader || !sentinel || typeof IntersectionObserver === "undefined") {
+			const inert = this.responsive === "scroll" && this.maxHeight !== "viewport";
+			if (!this.stickyHeader || inert || !sentinel || typeof IntersectionObserver === "undefined") {
 				if (this.hasAttribute("data-header-scrolled")) this.removeAttribute("data-header-scrolled");
 				return;
 			}
@@ -33427,10 +34353,10 @@ new class extends _identity {
 			this.headerObserver.observe(sentinel);
 		}
 		applyOverrides() {
-			for (const binding of Object.keys(HOOKS$5)) {
+			for (const [binding, hook] of Object.entries(HOOKS$5)) {
 				const ref = this.overrides?.[binding];
-				if (ref === void 0) this.style.removeProperty(HOOKS$5[binding]);
-				else this.style.setProperty(HOOKS$5[binding], cssVar(ref));
+				if (ref === void 0) this.style.removeProperty(hook);
+				else this.style.setProperty(hook, cssVar(ref));
 			}
 		}
 		warnOnce(message) {
@@ -33462,9 +34388,6 @@ new class extends _identity {
       --ds-table-cell-padding-inline: var(--layout-inset-md);
       --ds-table-cell-padding-block: var(--space-sm);
       --ds-table-cell-gap: var(--layout-gap-tight);
-      --ds-table-caption-size: var(--font-size-md);
-      --ds-table-caption-weight: var(--font-weight-semibold);
-      --ds-table-caption-gap: var(--space-2);
       --ds-table-stacked-row-inset: var(--layout-inset-md);
       --ds-table-stacked-row-gap: var(--layout-gap-tight);
       --ds-table-stacked-block-gap: var(--layout-gap-tight);
@@ -33478,14 +34401,27 @@ new class extends _identity {
       --ds-table-line-height: var(--font-line-height-normal);
       --ds-table-numeric-font: var(--font-family-mono);
       --ds-table-transition: var(--motion-duration-fast);
+      /* locked: out of the overrides API, still themeable from page CSS */
+      --ds-table-surface: var(--color-background);
+      --ds-table-header-surface: var(--color-background-subtle);
+      --ds-table-header-color: var(--color-foreground);
+      --ds-table-row-stripe: var(--color-background-subtle);
+      --ds-table-row-selected: var(--color-background-subtle);
+      --ds-table-row-selected-border: var(--color-control-selected-background);
+      --ds-table-row-selected-border-width: var(--border-width-focus);
+      --ds-table-cell-color: var(--color-foreground);
+      --ds-table-cell-muted-color: var(--color-foreground-muted);
+      --ds-table-stacked-label-color: var(--color-foreground-muted);
+      --ds-table-min-target: var(--size-target-min);
+      --ds-table-focus-ring: var(--color-border-focus);
+      --ds-table-focus-ring-width: var(--border-width-focus);
 
       display: block;
       container-type: inline-size;
       font-family: var(--ds-table-font-family);
       font-size: var(--ds-table-font-size);
       line-height: var(--ds-table-line-height);
-      /* cellColor: color.foreground (locked) */
-      color: var(--color-foreground);
+      color: var(--ds-table-cell-color);
     }
 
     /* cellPaddingInline by density */
@@ -33545,8 +34481,8 @@ new class extends _identity {
       position: relative;
     }
     .region:has([data-part='scrollRegion']:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-table-focus-ring-width) solid var(--ds-table-focus-ring);
+      outline-offset: calc(-1 * var(--ds-table-focus-ring-width));
     }
     [data-part='scrollRegion']:focus-visible {
       outline: none;
@@ -33555,8 +34491,7 @@ new class extends _identity {
     table {
       inline-size: 100%;
       border-collapse: collapse;
-      /* surface: color.background (locked) */
-      background: var(--color-background);
+      background: var(--ds-table-surface);
     }
 
     th,
@@ -33572,9 +34507,8 @@ new class extends _identity {
     [data-part='columnHeader'],
     [data-part='selectAllCell'],
     .header-select {
-      /* headerSurface / headerColor (locked) */
-      background: var(--color-background-subtle);
-      color: var(--color-foreground);
+      background: var(--ds-table-header-surface);
+      color: var(--ds-table-header-color);
       font-weight: var(--ds-table-header-weight);
       font-size: var(--ds-table-header-size);
       border-block-end: var(--ds-table-header-border-width) solid var(--ds-table-header-border);
@@ -33593,31 +34527,30 @@ new class extends _identity {
     }
 
     [data-part='row'] {
-      background: var(--color-background);
+      background: var(--ds-table-surface);
     }
 
     [data-part='row'] > th,
     [data-part='row'] > td {
-      color: var(--color-foreground);
+      color: var(--ds-table-cell-color);
       border-block-end: var(--ds-table-row-border-width) solid var(--ds-table-row-border);
     }
 
-    /* rowStripe (locked) */
     :host([striped]) [data-part='row']:nth-child(even) {
-      background: var(--color-background-subtle);
+      background: var(--ds-table-row-stripe);
     }
 
-    /* rowSelected (locked): the same tint as a stripe */
+    /* rowSelected: the same tint as a stripe */
     [data-part='row'][aria-selected='true'] {
-      background: var(--color-background-subtle);
+      background: var(--ds-table-row-selected);
     }
 
-    /* rowSelectedBorder / rowSelectedBorderWidth (locked): a start-edge bar, so selection is not fill alone */
+    /* rowSelectedBorder / rowSelectedBorderWidth: a start-edge bar, so selection is not fill alone */
     [data-part='row'][aria-selected='true'] > :first-child {
-      box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+      box-shadow: inset var(--ds-table-row-selected-border-width) 0 0 0 var(--ds-table-row-selected-border);
     }
     [data-part='row'][aria-selected='true'] > :first-child:dir(rtl) {
-      box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+      box-shadow: inset calc(-1 * var(--ds-table-row-selected-border-width)) 0 0 0 var(--ds-table-row-selected-border);
     }
 
     /* rowHover: interactive rows only. A render function's output cannot be inspected, so a
@@ -33644,8 +34577,7 @@ new class extends _identity {
     [data-part='selectCell'],
     [data-part='selectAllCell'],
     .header-select {
-      /* minTarget (locked) */
-      inline-size: var(--size-target-min);
+      inline-size: var(--ds-table-min-target);
     }
 
     .align-end {
@@ -33665,6 +34597,11 @@ new class extends _identity {
     }
     .width-fill {
       inline-size: 100%;
+    }
+
+    /* sortButton: the wrapper around the composed Button, which writes its own part hooks */
+    .sort {
+      display: inline-flex;
     }
 
     .actions {
@@ -33691,14 +34628,15 @@ new class extends _identity {
       font: inherit;
     }
 
-    /* hideBelow applies to responsive: stack only; scrolling tables keep every column */
-    @container (max-width: ${unsafeCSS(CONTENT_BREAKPOINT)}px) {
+    /* hideBelow applies to responsive: stack only; scrolling tables keep every column. "Below" is strictly
+       less than the token: at exactly the width the table is still columnar. */
+    @container (width < ${unsafeCSS(CONTENT_BREAKPOINT)}px) {
       :host([responsive='stack']) .hide-below-content {
         display: none;
       }
     }
 
-    @container (max-width: ${unsafeCSS(PROSE_BREAKPOINT)}px) {
+    @container (width < ${unsafeCSS(PROSE_BREAKPOINT)}px) {
       :host([responsive='stack']) .hide-below-prose {
         display: none;
       }
@@ -33712,17 +34650,26 @@ new class extends _identity {
         z-index: 2;
       }
 
-      /* select-all and sortable headers stay visible as a wrapping row, so no focusable control is invisible */
+      /* select-all and sortable headers stay visible as a wrapping row, so no focusable control is invisible.
+         The cells keep headerSurface/Size/Weight/Color; headerBorder and the scrolled-under headerShadow move
+         to the row, which also takes headerSurface so the wrap gaps are filled. */
       :host([responsive='stack']) [data-part='headerRow'] {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: var(--ds-table-stacked-row-gap);
+        background: var(--ds-table-header-surface);
+        border-block-end: var(--ds-table-header-border-width) solid var(--ds-table-header-border);
+      }
+      :host([responsive='stack']:not([no-sticky-header])[data-header-scrolled]) [data-part='headerRow'] {
+        box-shadow: var(--ds-table-header-shadow);
       }
       :host([responsive='stack']) thead th,
       :host([responsive='stack']) thead td {
         position: static;
         display: block;
+        border-block-end: 0;
+        box-shadow: none;
       }
 
       /* plain column headers: visually hidden, not display none, so the columnheaders stay in the tree */
@@ -33760,13 +34707,16 @@ new class extends _identity {
         padding: 0;
         border: 0;
         box-shadow: none;
+        /* a width-min column's nowrap would push its longest line past a phone-width block */
+        white-space: normal;
       }
 
       :host([responsive='stack']) [data-part='row'][aria-selected='true'] {
-        box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+        box-shadow: inset var(--ds-table-row-selected-border-width) 0 0 0 var(--ds-table-row-selected-border);
       }
       :host([responsive='stack']) [data-part='row'][aria-selected='true']:dir(rtl) {
-        box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+        box-shadow: inset calc(-1 * var(--ds-table-row-selected-border-width)) 0 0 0
+          var(--ds-table-row-selected-border);
       }
 
       /* stackedLabel, drawn as a pseudo-element with empty alternative text: the roles already associate the header */
@@ -33774,8 +34724,7 @@ new class extends _identity {
         content: attr(data-label);
         content: attr(data-label) / '';
         display: block;
-        /* stackedLabelColor (locked) */
-        color: var(--color-foreground-muted);
+        color: var(--ds-table-stacked-label-color);
         font-size: var(--ds-table-stacked-label-size);
         font-weight: var(--ds-table-stacked-label-weight);
       }
@@ -33866,8 +34815,6 @@ let _init_probeEl$1;
 let _init_extra_probeEl$1;
 let _init_probeStepEl$1;
 let _init_extra_probeStepEl$1;
-let _init_probeColumnEl;
-let _init_extra_probeColumnEl;
 /** A single record. `id` must be stable across renders. */
 /** A column definition. Exactly one column may set `isRowHeader`. */
 /** Heading level of the caption in the page outline; its size stays `captionSize` regardless. */
@@ -33901,11 +34848,6 @@ const COPY_RESIZE$1 = (column) => `Resize ${column}`;
 const COPY_LOADING$2 = "Loading";
 const COPY_EMPTY$2 = "Nothing to show.";
 const COPY_SCROLL_HINT$1 = "Scroll sideways to see more columns";
-/**
-* The `columnWidth` binding before the probe has been measured (literal-ok: the doc's pixel default, a multiple of
-* space.1). The live value is read from `.probe-column`, so an override of the hook changes it.
-*/
-const DEFAULT_COLUMN_WIDTH$1 = 160;
 /** Rows rendered before one has been measured; they are positioned from the row-size token (literal-ok: the doc's cap). */
 const UNMEASURED_ROW_CAP$1 = 50;
 /** Selects `one`/`other` with the document locale's plural rules. */
@@ -33970,6 +34912,8 @@ const DATE_INSET$1 = {
 	paddingBlock: "space.0",
 	paddingInline: "space.0"
 };
+/** minTarget (locked), forwarded to the select Checkboxes: a select cell is a full minimum target. */
+const SELECT_CHECKBOX = { controlSize: "size.target.min" };
 /** The sort Button's text lines up with the cells; `headerWeight`/`headerSize` reach it through its own hooks. */
 const SORT_BUTTON_INSET$1 = { paddingInline: "space.0" };
 /** Content that takes focus inside a cell; demoted to `tabindex="-1"` so the grid stays one tab stop. */
@@ -34018,7 +34962,7 @@ let _DsDataGrid;
 new class extends _identity {
 	static [class DsDataGrid extends LitElement {
 		static {
-			({e: [_init_caption$1, _init_extra_caption$1, _init_captionLevel$1, _init_extra_captionLevel$1, _init_hideCaption$1, _init_extra_hideCaption$1, _init_columns$1, _init_extra_columns$1, _init_data$1, _init_extra_data$1, _init_rowCount, _init_extra_rowCount, _init_sort$1, _init_extra_sort$1, _init_defaultSort$1, _init_extra_defaultSort$1, _init_selectable$2, _init_extra_selectable$2, _init_selected$2, _init_extra_selected$2, _init_editable$1, _init_extra_editable$1, _init_density$1, _init_extra_density$1, _init_stickyHeader$1, _init_extra_stickyHeader$1, _init_height$1, _init_extra_height$1, _init_loading$2, _init_extra_loading$2, _init_emptyMessage$1, _init_extra_emptyMessage$1, _init_showStatusBar$1, _init_extra_showStatusBar$1, _init_overrides$4, _init_extra_overrides$4, _init_internalSort$1, _init_extra_internalSort$1, _init_internalSelected$2, _init_extra_internalSelected$2, _init_activeRow$1, _init_extra_activeRow$1, _init_activeCol$1, _init_extra_activeCol$1, _init_range, _init_extra_range, _init_rangeAnchor, _init_extra_rangeAnchor, _init_editing$1, _init_extra_editing$1, _init_selectOpen, _init_extra_selectOpen, _init_columnWidths$1, _init_extra_columnWidths$1, _init_message$1, _init_extra_message$1, _init_bodyScrollTop$1, _init_extra_bodyScrollTop$1, _init_scrolledX$1, _init_extra_scrolledX$1, _init_overflowX$1, _init_extra_overflowX$1, _init_viewportHeight$1, _init_extra_viewportHeight$1, _init_headerHeight$1, _init_extra_headerHeight$1, _init_rowHeightPx$1, _init_extra_rowHeightPx$1, _init_draggingColumn$1, _init_extra_draggingColumn$1, _init_scrollEl$1, _init_extra_scrollEl$1, _init_gridEl$1, _init_extra_gridEl$1, _init_probeEl$1, _init_extra_probeEl$1, _init_probeStepEl$1, _init_extra_probeStepEl$1, _init_probeColumnEl, _init_extra_probeColumnEl], c: [_DsDataGrid, _initClass$4]} = applyDecs2311(this, [customElement("ds-data-grid")], [
+			({e: [_init_caption$1, _init_extra_caption$1, _init_captionLevel$1, _init_extra_captionLevel$1, _init_hideCaption$1, _init_extra_hideCaption$1, _init_columns$1, _init_extra_columns$1, _init_data$1, _init_extra_data$1, _init_rowCount, _init_extra_rowCount, _init_sort$1, _init_extra_sort$1, _init_defaultSort$1, _init_extra_defaultSort$1, _init_selectable$2, _init_extra_selectable$2, _init_selected$2, _init_extra_selected$2, _init_editable$1, _init_extra_editable$1, _init_density$1, _init_extra_density$1, _init_stickyHeader$1, _init_extra_stickyHeader$1, _init_height$1, _init_extra_height$1, _init_loading$2, _init_extra_loading$2, _init_emptyMessage$1, _init_extra_emptyMessage$1, _init_showStatusBar$1, _init_extra_showStatusBar$1, _init_overrides$4, _init_extra_overrides$4, _init_internalSort$1, _init_extra_internalSort$1, _init_internalSelected$2, _init_extra_internalSelected$2, _init_activeRow$1, _init_extra_activeRow$1, _init_activeCol$1, _init_extra_activeCol$1, _init_range, _init_extra_range, _init_rangeAnchor, _init_extra_rangeAnchor, _init_editing$1, _init_extra_editing$1, _init_selectOpen, _init_extra_selectOpen, _init_columnWidths$1, _init_extra_columnWidths$1, _init_message$1, _init_extra_message$1, _init_bodyScrollTop$1, _init_extra_bodyScrollTop$1, _init_scrolledX$1, _init_extra_scrolledX$1, _init_overflowX$1, _init_extra_overflowX$1, _init_viewportHeight$1, _init_extra_viewportHeight$1, _init_headerHeight$1, _init_extra_headerHeight$1, _init_rowHeightPx$1, _init_extra_rowHeightPx$1, _init_draggingColumn$1, _init_extra_draggingColumn$1, _init_scrollEl$1, _init_extra_scrollEl$1, _init_gridEl$1, _init_extra_gridEl$1, _init_probeEl$1, _init_extra_probeEl$1, _init_probeStepEl$1, _init_extra_probeStepEl$1], c: [_DsDataGrid, _initClass$4]} = applyDecs2311(this, [customElement("ds-data-grid")], [
 				[
 					property(),
 					1,
@@ -34247,11 +35191,6 @@ new class extends _identity {
 					query(".probe-step"),
 					1,
 					"probeStepEl"
-				],
-				[
-					query(".probe-column"),
-					1,
-					"probeColumnEl"
 				]
 			], 0, void 0, LitElement));
 		}
@@ -34549,14 +35488,7 @@ new class extends _identity {
 		set probeStepEl(v) {
 			this.#m = v;
 		}
-		#n = (_init_extra_probeStepEl$1(this), _init_probeColumnEl(this));
-		get probeColumnEl() {
-			return this.#n;
-		}
-		set probeColumnEl(v) {
-			this.#n = v;
-		}
-		sortCache = void _init_extra_probeColumnEl(this);
+		sortCache = void _init_extra_probeStepEl$1(this);
 		rowAnchorId;
 		rangeDragging = false;
 		rangeDragMoved = false;
@@ -34572,6 +35504,8 @@ new class extends _identity {
 		}
 		disconnectedCallback() {
 			super.disconnectedCallback();
+			this.editing = void 0;
+			this.selectOpen = false;
 			this.resizeObserver?.disconnect();
 			this.resizeObserver = void 0;
 		}
@@ -34581,6 +35515,12 @@ new class extends _identity {
 			if (changed.has("data")) {
 				const previous = changed.get("data");
 				if (!previous || this.data.length !== previous.length) this.requestedEnds.clear();
+				const editing = this.editing;
+				if (editing && !this.data.some((row) => row.id === editing.rowId)) {
+					this.editing = void 0;
+					this.selectOpen = false;
+					this.message = "";
+				}
 			}
 			if (changed.has("data") || changed.has("columns") || changed.has("selectable")) {
 				this.activeRow = clamp$1(this.activeRow, -1, this.data.length - 1);
@@ -34617,9 +35557,9 @@ new class extends _identity {
 			const layout = this.rowLayout();
 			return html`
       <div data-part="container">
-        <div data-part="caption" class=${classMap({ "visually-hidden": this.hideCaption })}>
+        <span data-part="caption" class=${classMap({ "visually-hidden": this.hideCaption })}>
           <ds-heading id="caption" level=${this.captionLevel} size="md">${this.caption}</ds-heading>
-        </div>
+        </span>
         <div
           data-part="scrollRegion"
           class=${classMap({ "x-scrolled": this.scrolledX })}
@@ -34629,7 +35569,11 @@ new class extends _identity {
             data-part="grid"
             role="grid"
             tabindex="0"
-            style=${styleMap({ inlineSize: `max(100%, ${layout.width})` })}
+            style=${styleMap({
+				"--ds-data-grid-tracks": layout.columns,
+				"--ds-data-grid-row-width": layout.width,
+				inlineSize: `max(100%, ${layout.width})`
+			})}
             aria-labelledby="caption"
             aria-describedby=${ifDefined(this.showStatusBar && this.overflowX && !this.scrolledX ? "scroll-hint" : void 0)}
             aria-rowcount=${total + 1}
@@ -34647,40 +35591,21 @@ new class extends _identity {
             @pointercancel=${this.handlePointerup}
             @dblclick=${this.handleDblclick}
           >
-            ${this.renderHeader(layout)}
+            ${this.renderHeader()}
             <div role="rowgroup" data-part="body" style=${styleMap(bodyStyle)}>
               ${rows.length === 0 && !this.loading ? this.renderEmpty() : nothing} ${this.renderRangeOverlay(rows)}
-              ${repeat(this.windowIndexes(rows.length), (index) => rows[index].id, (index) => this.renderRow(rows[index], index, layout))}
+              ${repeat(this.windowIndexes(rows.length), (index) => rows[index].id, (index) => this.renderRow(rows[index], index))}
             </div>
           </div>
         </div>
         ${this.renderStatusBar(rows, total)}
-        <span class="probe" aria-hidden="true">
-          <span class="probe-step"></span><span class="probe-column"></span>
-        </span>
+        <span class="probe" aria-hidden="true"><span class="probe-step"></span></span>
       </div>
     `;
 		}
-		renderHeader(layout) {
-			const sticky = this.stickyHeader || this.height !== "content";
-			return html`<div
-      role="rowgroup"
-      data-part="header"
-      class=${classMap({
-				sticky,
-				raised: sticky && this.bodyScrollTop > 0
-			})}
-    >
-      <div
-        role="row"
-        data-part="headerRow"
-        class="row-layout"
-        aria-rowindex="1"
-        style=${styleMap({
-				gridTemplateColumns: layout.columns,
-				inlineSize: layout.width
-			})}
-      >
+		renderHeader() {
+			return html`<div role="rowgroup" data-part="header" class=${classMap({ raised: this.bodyScrollTop > 0 })}>
+      <div role="row" data-part="headerRow" class="row-layout" aria-rowindex="1">
         ${this.hasSelectColumn ? this.renderSelectAllCell() : nothing}
         ${this.columns.map((column, index) => this.renderColumnHeader(column, index + this.colOffset))}
       </div>
@@ -34694,6 +35619,7 @@ new class extends _identity {
 			return html`<div
       role="columnheader"
       id="h-0"
+      data-part="selectAllCell"
       data-row="-1"
       data-col="0"
       tabindex="-1"
@@ -34707,10 +35633,10 @@ new class extends _identity {
       style=${styleMap({ insetInlineStart: "0" })}
     >
       <ds-checkbox
-        data-part="selectAllCell"
         tabindex="-1"
         label=${COPY_SELECT_ALL$1}
         hide-label
+        .overrides=${SELECT_CHECKBOX}
         .checked=${live(allSelected)}
         .indeterminate=${live(someSelected)}
         @change=${(event) => {
@@ -34727,7 +35653,7 @@ new class extends _identity {
 			const active = this.currentSort;
 			const sorted = active?.column === column.key ? active.direction : void 0;
 			const next = sorted === "ascending" ? "descending" : "ascending";
-			const pixelWidth = this.columnWidths[column.key] ?? column.width;
+			const pixelWidth = this.pixelWidthOf(column);
 			return html`<div
       role="columnheader"
       id="h-${col}"
@@ -34743,8 +35669,7 @@ new class extends _identity {
 			})}
       style=${styleMap(this.pinStyle(column))}
     >
-      ${column.sortable ? html`<ds-button
-            data-part="sortButton"
+      ${column.sortable ? html`<span data-part="sortButton"><ds-button
             tabindex="-1"
             variant="ghost"
             size="sm"
@@ -34760,7 +35685,7 @@ new class extends _identity {
 			}}
           >
             ${sorted ? html`<ds-icon slot="trailing-icon" name=${sorted === "ascending" ? "chevron-up" : "chevron-down"} inline></ds-icon>` : nothing}
-          </ds-button>` : column.abbr ? html`<span data-part="cellContent" aria-hidden="true">${column.header}</span>
+          </ds-button></span>` : column.abbr ? html`<span data-part="cellContent" aria-hidden="true">${column.header}</span>
               <span class="visually-hidden">${column.abbr}</span>` : html`<span data-part="cellContent">${column.header}</span>`}
       ${column.resizable ? html`<div
             class=${classMap({
@@ -34769,7 +35694,8 @@ new class extends _identity {
 			})}
             role="separator"
             aria-orientation="vertical"
-            aria-valuenow=${ifDefined(pixelWidth === void 0 ? void 0 : this.widthOf(column))}
+            aria-valuenow=${ifDefined(pixelWidth)}
+            aria-valuemin=${this.minWidthOf(column)}
             aria-label=${COPY_RESIZE$1(column.header)}
             @pointerdown=${(event) => this.handleResizeDown(event, column)}
             @pointermove=${this.handleResizeMove}
@@ -34785,7 +35711,7 @@ new class extends _identity {
       </div>
     </div>`;
 		}
-		renderRow(row, index, layout) {
+		renderRow(row, index) {
 			const rowMode = this.selectable === "row";
 			const isSelected = rowMode && this.currentSelected.includes(row.id);
 			const virtual = this.height !== "content";
@@ -34798,11 +35724,7 @@ new class extends _identity {
 			})}
       aria-rowindex=${index + 2}
       aria-selected=${ifDefined(rowMode ? String(isSelected) : void 0)}
-      style=${styleMap({
-				gridTemplateColumns: layout.columns,
-				inlineSize: layout.width,
-				transform: virtual ? this.rowHeightPx ? `translateY(${index * this.rowHeightPx}px)` : `translateY(calc(${index} * var(--ds-data-grid-row-size)))` : void 0
-			})}
+      style=${styleMap({ transform: virtual ? this.rowHeightPx ? `translateY(${index * this.rowHeightPx}px)` : `translateY(calc(${index} * var(--ds-data-grid-row-size)))` : void 0 })}
     >
       ${rowMode ? this.renderSelectCell(row, index, isSelected) : nothing}
       ${this.columns.map((column, i) => this.renderCell(row, index, column, i + this.colOffset))}
@@ -34812,6 +35734,7 @@ new class extends _identity {
 			return html`<div
       role="gridcell"
       id=${this.cellId(row.id, 0)}
+      data-part="selectCell"
       data-row=${index}
       data-col="0"
       tabindex="-1"
@@ -34825,10 +35748,10 @@ new class extends _identity {
       style=${styleMap({ insetInlineStart: "0" })}
     >
       <ds-checkbox
-        data-part="selectCell"
         tabindex="-1"
         label=${COPY_SELECT_ROW$1(this.rowName(row))}
         hide-label
+        .overrides=${SELECT_CHECKBOX}
         .checked=${live(isSelected)}
         @change=${(event) => {
 				event.stopPropagation();
@@ -34964,20 +35887,20 @@ new class extends _identity {
 			const top = Math.max(rect.rowStart, first);
 			const bottom = Math.min(rect.rowEnd, last);
 			if (bottom < top) return nothing;
-			let left = 0;
-			let width = 0;
+			const before = [];
+			const spanned = [];
 			this.columns.forEach((column, i) => {
 				const col = i + this.colOffset;
-				if (col < rect.colStart) left += this.widthOf(column);
-				else if (col <= rect.colEnd) width += this.widthOf(column);
+				if (col < rect.colStart) before.push(column);
+				else if (col <= rect.colEnd) spanned.push(column);
 			});
 			return html`<div
       data-part="rangeOverlay"
       aria-hidden="true"
       style=${styleMap({
 				insetBlockStart: `${top * rowH}px`,
-				insetInlineStart: `${left}px`,
-				inlineSize: `${width}px`,
+				insetInlineStart: this.sumOf(before),
+				inlineSize: this.sumOf(spanned),
 				blockSize: `${(bottom - top + 1) * rowH}px`
 			})}
     ></div>`;
@@ -35047,29 +35970,46 @@ new class extends _identity {
 		columnAt(col) {
 			return col < this.colOffset ? void 0 : this.columns[col - this.colOffset];
 		}
+		/**
+		* The column's width in pixels once it has one — an explicit `width` or one the user has resized — floored at
+		* its `minWidth`; undefined while it sits at the columnWidth token, whose pixel value is not known at render.
+		*/
+		pixelWidthOf(column) {
+			const width = this.columnWidths[column.key] ?? column.width;
+			return width === void 0 ? void 0 : Math.max(width, this.minWidthOf(column));
+		}
+		/** The column's rendered width in pixels: its pixel width, else its header cell measured. */
 		widthOf(column) {
-			const width = this.columnWidths[column.key] ?? column.width ?? this.defaultColumnWidth;
-			return Math.max(width, this.minWidthOf(column));
+			const pixel = this.pixelWidthOf(column);
+			if (pixel !== void 0) return pixel;
+			const col = this.columns.indexOf(column) + this.colOffset;
+			const header = this.renderRoot.querySelector(`#h-${col}`);
+			return Math.max(header?.offsetWidth ?? 0, this.minWidthOf(column));
 		}
-		/** The `columnWidth` binding as a length, so an override of its hook changes it. */
-		get defaultColumnWidth() {
-			return this.probeColumnEl?.offsetWidth || DEFAULT_COLUMN_WIDTH$1;
-		}
-		/** The floor for both resize paths: never below `size.target.min`, which is also the default. */
+		/** The floor for both resize paths: never below minTarget, which is also the default. */
 		minWidthOf(column) {
 			return Math.max(column.minWidth ?? 0, this.probeEl?.offsetHeight ?? 0);
 		}
+		/**
+		* The column's track as CSS: its pixel width, else the columnWidth binding (doubled in the internal
+		* `--ds-data-grid-column-size`), never below minTarget or its own `minWidth`.
+		*/
+		trackOf(column) {
+			const width = this.columnWidths[column.key] ?? column.width;
+			return `max(${width === void 0 ? "var(--ds-data-grid-column-size)" : `${width}px`}, var(--ds-data-grid-min-target)${column.minWidth === void 0 ? "" : `, ${column.minWidth}px`})`;
+		}
+		/** The summed width of `columns` as one CSS length, with `lead` (the selection column) first. */
+		sumOf(columns, lead) {
+			const parts = columns.map((column) => this.trackOf(column));
+			if (lead) parts.unshift(lead);
+			return parts.length === 0 ? "var(--space-0)" : `calc(${parts.join(" + ")})`;
+		}
 		rowLayout() {
-			const widths = this.columns.map((column) => this.widthOf(column));
-			const sum = widths.reduce((total, width) => total + width, 0);
-			const tracks = widths.map((width) => `${width}px`);
-			if (this.hasSelectColumn) return {
-				columns: ["var(--ds-data-grid-select-column-size)", ...tracks].join(" "),
-				width: `calc(var(--ds-data-grid-select-column-size) + ${sum}px)`
-			};
+			const lead = this.hasSelectColumn ? "var(--ds-data-grid-select-column-size)" : void 0;
+			const tracks = this.columns.map((column) => this.trackOf(column));
 			return {
-				columns: tracks.join(" "),
-				width: `${sum}px`
+				columns: (lead ? [lead, ...tracks] : tracks).join(" "),
+				width: this.sumOf(this.columns, lead)
 			};
 		}
 		cellClasses(column) {
@@ -35085,20 +36025,13 @@ new class extends _identity {
 		pinStyle(column) {
 			const index = this.columns.indexOf(column);
 			if (column.pinned === "start") {
-				let offset = 0;
-				for (let i = 0; i < index; i += 1) {
-					const other = this.columns[i];
-					if (other.pinned === "start") offset += this.widthOf(other);
-				}
-				return { insetInlineStart: this.hasSelectColumn ? `calc(var(--ds-data-grid-select-column-size) + ${offset}px)` : `${offset}px` };
+				const before = this.columns.slice(0, index).filter((other) => other.pinned === "start");
+				const lead = this.hasSelectColumn ? "var(--ds-data-grid-select-column-size)" : void 0;
+				return { insetInlineStart: this.sumOf(before, lead) };
 			}
 			if (column.pinned === "end") {
-				let offset = 0;
-				for (let i = index + 1; i < this.columns.length; i += 1) {
-					const other = this.columns[i];
-					if (other.pinned === "end") offset += this.widthOf(other);
-				}
-				return { insetInlineEnd: `${offset}px` };
+				const after = this.columns.slice(index + 1).filter((other) => other.pinned === "end");
+				return { insetInlineEnd: this.sumOf(after) };
 			}
 			return {};
 		}
@@ -35122,12 +36055,15 @@ new class extends _identity {
 			const id = this.activeDescendantId(this.rows);
 			return id ? this.renderRoot.querySelector(`#${id}`) : null;
 		}
-		/** Visible rows per page, excluding the sticky header. */
+		/**
+		* rowsPerPage: floor(the scroll region's height ÷ the row height) − 1, the sticky header's row left out, so a
+		* paged move or request keeps one row of context.
+		*/
 		pageRows() {
 			const rowH = this.rowHeightPx;
 			if (!rowH) return 1;
-			const space = this.height === "content" ? window.innerHeight : this.viewportHeight - this.headerHeight;
-			return Math.max(1, Math.floor(space / rowH));
+			const space = this.height === "content" ? window.innerHeight : this.viewportHeight;
+			return Math.max(1, Math.floor(space / rowH) - 1);
 		}
 		/** Rendered row indexes: the visible window plus one page of overscan each way, and the active row. */
 		windowIndexes(count) {
@@ -35923,23 +36859,40 @@ new class extends _identity {
       --ds-data-grid-line-height: var(--font-line-height-tight);
       --ds-data-grid-numeric-font: var(--font-family-mono);
       --ds-data-grid-transition: var(--motion-duration-fast);
-      /* rowHeight (locked); rowHeightComfortable below. Virtualization measures a rendered row instead. */
-      --ds-data-grid-row-size: var(--size-target-min);
-      /*
-       * selectColumnWidth (locked): the selection column's total inline size is the token plus 2 × cellPaddingInline,
-       * and the cell carries no inline padding of its own — the Checkbox is centred in it. Pinned-start offsets add
-       * the same total.
-       */
-      --ds-data-grid-select-column-size: calc(var(--size-target-min) + 2 * var(--ds-data-grid-cell-padding-inline));
+      /* rowHeight / rowHeightComfortable / selectColumnWidth (locked): hooks, read into the internal sizes below */
+      --ds-data-grid-row-height: var(--size-target-min);
+      --ds-data-grid-row-height-comfortable: var(--size-target-comfortable);
+      --ds-data-grid-select-column-width: var(--size-target-min);
+      /* minTarget (locked): the resize floor; the select Checkboxes receive it through their own overrides. */
+      --ds-data-grid-min-target: var(--size-target-min);
+      /* The other locked bindings: themeable from page CSS, never through the overrides property. */
+      --ds-data-grid-surface: var(--color-background);
+      --ds-data-grid-header-surface: var(--color-background-subtle);
+      --ds-data-grid-header-color: var(--color-foreground);
+      --ds-data-grid-row-selected: var(--color-background-subtle);
+      --ds-data-grid-row-selected-border: var(--color-control-selected-background);
+      --ds-data-grid-row-selected-border-width: var(--border-width-focus);
+      --ds-data-grid-cell-color: var(--color-foreground);
+      --ds-data-grid-cell-muted-color: var(--color-foreground-muted);
+      --ds-data-grid-cell-focus-ring: var(--color-border-focus);
+      --ds-data-grid-cell-focus-ring-width: var(--border-width-focus);
+      --ds-data-grid-cell-editing-background: var(--color-control-background);
+      --ds-data-grid-cell-editing-border: var(--color-border-focus);
+      --ds-data-grid-cell-invalid-border: var(--color-border-danger);
+      --ds-data-grid-cell-invalid-background: var(--color-status-danger-background);
+      --ds-data-grid-cell-invalid-foreground: var(--color-status-danger-foreground);
+      --ds-data-grid-range-background: var(--color-background-strong);
+      --ds-data-grid-range-border: var(--color-control-selected-background);
+      --ds-data-grid-range-border-width: var(--border-width-focus);
+      --ds-data-grid-status-bar-surface: var(--color-background-subtle);
+      --ds-data-grid-status-bar-color: var(--color-foreground-muted);
+      --ds-data-grid-focus-ring: var(--color-border-focus);
+      --ds-data-grid-focus-ring-width: var(--border-width-focus);
       font-family: var(--ds-data-grid-font-family);
       font-size: var(--ds-data-grid-font-size);
       line-height: var(--ds-data-grid-line-height);
       /* cellColor (locked) */
-      color: var(--color-foreground);
-    }
-
-    :host([density='comfortable']) {
-      --ds-data-grid-row-size: var(--size-target-comfortable);
+      color: var(--ds-data-grid-cell-color);
     }
 
     :host([hidden]) {
@@ -35962,7 +36915,23 @@ new class extends _identity {
     /* surface (locked) */
     [data-part='container'] {
       position: relative;
-      background: var(--color-background);
+      background: var(--ds-data-grid-surface);
+      /*
+       * Internal sizes the consumer cannot set, resolved from the hooks on :host. The density-selected row height
+       * (virtualization measures a rendered row instead, once one exists); columnWidth doubled, so the hook keeps
+       * the bare token; the selection column's total inline size, selectColumnWidth plus 2 × cellPaddingInline —
+       * the cell carries no inline padding of its own, and pinned-start offsets add the same total.
+       */
+      --ds-data-grid-row-size: var(--ds-data-grid-row-height);
+      --ds-data-grid-column-size: calc(var(--ds-data-grid-column-width) * 2);
+      --ds-data-grid-select-column-size: calc(
+        var(--ds-data-grid-select-column-width) + 2 * var(--ds-data-grid-cell-padding-inline)
+      );
+    }
+    /* A grid with a selection column is comfortable at both densities: a compact row cannot hold a minTarget Checkbox. */
+    :host([density='comfortable']) [data-part='container'],
+    :host([selectable='row']) [data-part='container'] {
+      --ds-data-grid-row-size: var(--ds-data-grid-row-height-comfortable);
     }
     /*
      * viewport and fixed size the whole component; the scroll region takes what the caption and status bar leave,
@@ -35982,6 +36951,7 @@ new class extends _identity {
 
     /* captionSize / captionWeight reach the composed Heading through its documented hooks; captionGap separates it. */
     [data-part='caption'] {
+      display: block;
       padding-block-end: var(--ds-data-grid-caption-gap);
     }
     [data-part='caption'] ds-heading {
@@ -36003,8 +36973,8 @@ new class extends _identity {
     }
     /* focusRing / focusRingWidth (locked): the grid is the tab stop */
     [data-part='scrollRegion']:has([data-part='grid']:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-data-grid-focus-ring-width) solid var(--ds-data-grid-focus-ring);
+      outline-offset: calc(-1 * var(--ds-data-grid-focus-ring-width));
     }
 
     [data-part='grid'] {
@@ -36012,21 +36982,26 @@ new class extends _identity {
       outline: none;
     }
 
+    /*
+     * The header sticks to the grid's own scroll region, never to the page: always when virtualized, and with
+     * height content the region does not scroll vertically, so stickyHeader changes nothing either way.
+     */
     [data-part='header'] {
-      z-index: 3;
-    }
-    [data-part='header'].sticky {
       position: sticky;
       inset-block-start: 0;
+      z-index: 3;
     }
     /* headerShadow: once the body has scrolled */
     [data-part='header'].raised {
       box-shadow: var(--ds-data-grid-header-shadow);
     }
 
+    /* Tracks and the row width are internal variables the grid sets on its grid element from the column model. */
     .row-layout {
       display: grid;
       box-sizing: border-box;
+      grid-template-columns: var(--ds-data-grid-tracks);
+      inline-size: var(--ds-data-grid-row-width);
     }
 
     /* rowHeight / rowHeightComfortable (locked) */
@@ -36055,14 +37030,15 @@ new class extends _identity {
     }
     /* rowSelected (locked) */
     [data-part='row'][aria-selected='true'] {
-      background: var(--color-background-subtle);
+      background: var(--ds-data-grid-row-selected);
     }
     /* rowSelectedBorder / rowSelectedBorderWidth (locked): a start-edge bar, so selection is not fill alone */
     [data-part='row'][aria-selected='true'] > :first-child {
-      box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
+      box-shadow: inset var(--ds-data-grid-row-selected-border-width) 0 0 0 var(--ds-data-grid-row-selected-border);
     }
     [data-part='row'][aria-selected='true'] > :first-child:dir(rtl) {
-      box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+      box-shadow: inset calc(-1 * var(--ds-data-grid-row-selected-border-width)) 0 0 0
+        var(--ds-data-grid-row-selected-border);
     }
 
     .cell {
@@ -36087,25 +37063,29 @@ new class extends _identity {
     /* headerSurface / headerColor (locked); headerWeight / headerSize / headerBorder / headerBorderWidth */
     [data-part='columnHeader'],
     .select-all-cell {
-      background: var(--color-background-subtle);
-      color: var(--color-foreground);
+      background: var(--ds-data-grid-header-surface);
+      color: var(--ds-data-grid-header-color);
       font-weight: var(--ds-data-grid-header-weight);
       font-size: var(--ds-data-grid-header-size);
       border-block-end: var(--ds-data-grid-header-border-width) solid var(--ds-data-grid-header-border);
     }
     /* headerWeight / headerSize forwarded to the composed sort Button through its own hooks */
     [data-part='sortButton'] {
+      display: inline-flex;
+      min-inline-size: 0;
+    }
+    [data-part='sortButton'] ds-button {
       --ds-button-font-weight: var(--ds-data-grid-header-weight);
       --ds-button-font-size: var(--ds-data-grid-header-size);
     }
 
     [data-part='rowHeader'],
     [data-part='cell'] {
-      color: var(--color-foreground);
+      color: var(--ds-data-grid-cell-color);
     }
     /* cellMutedColor (locked): existing rows stay while loading, but read as stale */
     .cell.muted {
-      color: var(--color-foreground-muted);
+      color: var(--ds-data-grid-cell-muted-color);
     }
     .cell.numeric {
       font-family: var(--ds-data-grid-numeric-font);
@@ -36128,35 +37108,42 @@ new class extends _identity {
       min-inline-size: var(--ds-data-grid-select-column-size);
     }
     /*
-     * minTarget (locked) answers the target-24px requirement for the composed Checkbox. A compact row is
-     * rowHeight -- size.target.min -- tall, so two neighbouring select Checkboxes sit exactly one minimum
-     * target apart; with Checkbox's own smaller control that leaves no safe clickable space between them,
-     * every selectable grid fails the target-size rule. The grid raises the child's documented controlSize
-     * hook to the minimum instead of restyling its shadow tree, so the control is a full target in its own
-     * right. The hook is set on the ds-checkbox element, not on the cell: an inherited value would lose to
-     * Checkbox's own :host default.
+     * minTarget (locked) is forwarded to each select Checkbox's own overrides.controlSize, which sets the hook on
+     * the ds-checkbox element itself (a declaration on the cell would lose to Checkbox's :host default).
      */
-    [data-part='selectCell'],
-    [data-part='selectAllCell'] {
-      --ds-checkbox-control-size: var(--size-target-min);
-    }
 
     .pinned-start,
     .pinned-end {
       position: sticky;
       z-index: 2;
-      background: var(--color-background);
+      background: var(--ds-data-grid-surface);
     }
     [data-part='columnHeader'].pinned-start,
     [data-part='columnHeader'].pinned-end,
     .select-all-cell.pinned-start {
       z-index: 4;
-      background: var(--color-background-subtle);
+      background: var(--ds-data-grid-header-surface);
+    }
+    /* rowHover over opaque pinned cells (the select cell included), layered on the surface they must keep */
+    [data-part='row']:hover > .pinned-start,
+    [data-part='row']:hover > .pinned-end {
+      background-color: var(--ds-data-grid-surface);
+      background-image: linear-gradient(var(--ds-data-grid-row-hover), var(--ds-data-grid-row-hover));
+    }
+    /* a selected row keeps rowSelected, pinned cells included */
+    [data-part='row'][aria-selected='true'] > .pinned-start,
+    [data-part='row'][aria-selected='true'] > .pinned-end {
+      background: var(--ds-data-grid-row-selected);
     }
     /* pinnedShadow: once the body has scrolled sideways */
     .x-scrolled .pinned-start,
     .x-scrolled .pinned-end {
       box-shadow: var(--ds-data-grid-pinned-shadow);
+    }
+    .x-scrolled [data-part='row'][aria-selected='true'] > .pinned-start:first-child {
+      box-shadow:
+        inset var(--ds-data-grid-row-selected-border-width) 0 0 0 var(--ds-data-grid-row-selected-border),
+        var(--ds-data-grid-pinned-shadow);
     }
 
     /* cellFocusRing / cellFocusRingWidth (locked): inset, so neighbors and the scroll region never clip it */
@@ -36165,26 +37152,26 @@ new class extends _identity {
       position: absolute;
       inset: 0;
       pointer-events: none;
-      box-shadow: inset 0 0 0 var(--border-width-focus) var(--color-border-focus);
+      box-shadow: inset 0 0 0 var(--ds-data-grid-cell-focus-ring-width) var(--ds-data-grid-cell-focus-ring);
     }
 
     /* cellEditingBackground / cellEditingBorder (locked) */
     .cell.editing {
-      background: var(--color-control-background);
-      box-shadow: inset 0 0 0 var(--border-width-focus) var(--color-border-focus);
+      background: var(--ds-data-grid-cell-editing-background);
+      box-shadow: inset 0 0 0 var(--ds-data-grid-cell-focus-ring-width) var(--ds-data-grid-cell-editing-border);
       padding-inline: 0;
       transition: background-color var(--ds-data-grid-transition) var(--motion-easing-standard);
     }
     /* cellInvalidBackground / cellInvalidBorder (locked): the cell holds the untouched editor and nothing else */
     .cell.invalid {
-      background: var(--color-status-danger-background);
-      box-shadow: inset 0 0 0 var(--border-width-focus) var(--color-border-danger);
+      background: var(--ds-data-grid-cell-invalid-background);
+      box-shadow: inset 0 0 0 var(--ds-data-grid-cell-focus-ring-width) var(--ds-data-grid-cell-invalid-border);
     }
     /* cellInvalidForeground (locked): the status-bar message re-scopes the foreground around a default-tone Text */
     .invalid-message {
       display: inline-flex;
-      background: var(--color-status-danger-background);
-      --color-foreground: var(--color-status-danger-foreground);
+      background: var(--ds-data-grid-cell-invalid-background);
+      --color-foreground: var(--ds-data-grid-cell-invalid-foreground);
     }
     .editor-frame {
       display: flex;
@@ -36218,15 +37205,15 @@ new class extends _identity {
       z-index: 0;
       pointer-events: none;
       box-sizing: border-box;
-      background: var(--color-background-strong);
-      border: var(--border-width-focus) solid var(--color-control-selected-background);
+      background: var(--ds-data-grid-range-background);
+      border: var(--ds-data-grid-range-border-width) solid var(--ds-data-grid-range-border);
     }
 
     .empty-row {
       display: flex;
       align-items: center;
       justify-content: center;
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-data-grid-row-size);
       padding-inline: var(--ds-data-grid-cell-padding-inline);
     }
 
@@ -36238,7 +37225,8 @@ new class extends _identity {
       /* statusBarGap: between items; no separator characters */
       gap: var(--ds-data-grid-status-bar-gap);
       padding: var(--ds-data-grid-status-bar-padding);
-      background: var(--color-background-subtle);
+      background: var(--ds-data-grid-status-bar-surface);
+      color: var(--ds-data-grid-status-bar-color);
       border: var(--ds-data-grid-grid-line-width) solid var(--ds-data-grid-grid-line);
       border-block-start: 0;
     }
@@ -36246,21 +37234,20 @@ new class extends _identity {
       --ds-text-font-size: var(--ds-data-grid-status-bar-size);
     }
 
-    /* minTarget (locked) and the overridable resizeStep / columnWidth read as lengths, never as numbers in code. */
+    /*
+     * minTarget (locked) and the overridable resizeStep, measured as lengths from a hidden probe, never hard-coded
+     * as numbers in code, so an override still moves them.
+     */
     .probe {
       position: absolute;
       visibility: hidden;
       pointer-events: none;
-      block-size: var(--size-target-min);
+      block-size: var(--ds-data-grid-min-target);
     }
     .probe-step {
       display: block;
+      block-size: var(--space-0);
       inline-size: var(--ds-data-grid-resize-step);
-    }
-    /* columnWidth: an override replaces the base; the × 2 stays in the rule. */
-    .probe-column {
-      display: block;
-      inline-size: calc(var(--ds-data-grid-column-width) * 2);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -37142,9 +38129,9 @@ new class extends _identity {
 			const bodyStyle = { blockSize: virtual && rows.length > 0 ? rowH ? `${rows.length * rowH}px` : `calc(${Math.min(rows.length, UNMEASURED_ROW_CAP)} * var(--ds-tree-grid-row-size))` : void 0 };
 			return html`
       <div data-part="container">
-        <div data-part="caption" class=${classMap({ "visually-hidden": this.hideCaption })}>
+        <span data-part="caption" class=${classMap({ "visually-hidden": this.hideCaption })}>
           <ds-heading id="caption" level=${this.captionLevel} size="md">${this.caption}</ds-heading>
-        </div>
+        </span>
         <div
           data-part="scrollRegion"
           class=${classMap({ "x-scrolled": this.scrolledX })}
@@ -37375,7 +38362,7 @@ new class extends _identity {
 			const row = entry.row;
 			const editing = row && this.editing?.rowId === row.id && this.editing.column === column.key ? this.editing : void 0;
 			const raw = row?.[column.key];
-			const content = !row ? isRowHeader ? html`<span data-part="cellContent" class="loading-text">${COPY_LOADING$1}</span>` : nothing : editing ? this.renderEditor(column, row, editing) : html`<span data-part="cellContent">${column.render ? column.render(row) : textOf(raw)}</span>`;
+			const content = !row ? isRowHeader ? html`<ds-text data-part="cellContent" element="span" tone="muted">${COPY_LOADING$1}</ds-text>` : nothing : editing ? this.renderEditor(column, row, editing) : html`<span data-part="cellContent">${column.render ? column.render(row) : textOf(raw)}</span>`;
 			return html`<div
       role=${isRowHeader ? "rowheader" : "gridcell"}
       id=${this.cellId(entry.key, col)}
@@ -37709,8 +38696,8 @@ new class extends _identity {
 			const sum = widths.reduce((total, width) => total + width, 0);
 			const tracks = widths.map((width) => `${width}px`);
 			if (this.hasSelectColumn) return {
-				columns: ["var(--size-target-min)", ...tracks].join(" "),
-				width: `calc(var(--size-target-min) + ${sum}px)`
+				columns: ["var(--ds-tree-grid-min-target)", ...tracks].join(" "),
+				width: `calc(var(--ds-tree-grid-min-target) + ${sum}px)`
 			};
 			return {
 				columns: tracks.join(" "),
@@ -37735,7 +38722,7 @@ new class extends _identity {
 					const other = this.columns[i];
 					if (other.pinned === "start") offset += this.widthOf(other);
 				}
-				return { insetInlineStart: this.hasSelectColumn ? `calc(var(--size-target-min) + ${offset}px)` : `${offset}px` };
+				return { insetInlineStart: this.hasSelectColumn ? `calc(var(--ds-tree-grid-min-target) + ${offset}px)` : `${offset}px` };
 			}
 			if (column.pinned === "end") {
 				let offset = 0;
@@ -38400,8 +39387,17 @@ new class extends _identity {
       --ds-tree-grid-fixed-height: var(--space-20);
       --ds-tree-grid-parent-weight: var(--font-weight-medium);
       --ds-tree-grid-transition: var(--motion-duration-fast);
+      /*
+       * Locked bindings: not in the overrides type, but each keeps its hook so page CSS can re-theme it and the
+       * naming codemod can rename it.
+       */
+      --ds-tree-grid-expand-button-size: var(--size-target-min);
+      --ds-tree-grid-loading-color: var(--color-foreground-muted);
+      --ds-tree-grid-focus-ring: var(--color-border-focus);
+      --ds-tree-grid-focus-ring-width: var(--border-width-focus);
+      --ds-tree-grid-min-target: var(--size-target-min);
       /* minTarget (locked): the row-height floor. Virtualization measures a rendered row instead. */
-      --ds-tree-grid-row-size: var(--size-target-min);
+      --ds-tree-grid-row-size: var(--ds-tree-grid-min-target);
       /*
        * Internal, not an override hook: where the row-header column starts inside a row. The row header is
        * required to come first after the selection column, so this is that column's width or nothing, and it
@@ -38429,7 +39425,7 @@ new class extends _identity {
      */
     :host([selectable='row']) {
       --ds-tree-grid-row-size: var(--size-target-comfortable);
-      --ds-tree-grid-guide-start: var(--size-target-min);
+      --ds-tree-grid-guide-start: var(--ds-tree-grid-min-target);
     }
 
     :host([hidden]) {
@@ -38469,6 +39465,7 @@ new class extends _identity {
     }
 
     [data-part='caption'] {
+      display: block;
       padding-block-end: var(--space-2);
     }
     [data-part='caption'] ds-heading {
@@ -38490,8 +39487,8 @@ new class extends _identity {
     }
     /* focusRing / focusRingWidth (locked): the grid is the tab stop */
     [data-part='scrollRegion']:has([data-part='grid']:focus-visible) {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-tree-grid-focus-ring-width) solid var(--ds-tree-grid-focus-ring);
+      outline-offset: calc(-1 * var(--ds-tree-grid-focus-ring-width));
     }
 
     [data-part='grid'] {
@@ -38544,7 +39541,7 @@ new class extends _identity {
       inset-block: 0;
       inset-inline-start: calc(
         var(--ds-tree-grid-guide-start) + var(--ds-tree-grid-cell-padding-inline) +
-          (var(--size-target-min) - var(--ds-tree-grid-guide-line-width)) / 2
+          (var(--ds-tree-grid-expand-button-size) - var(--ds-tree-grid-guide-line-width)) / 2
       );
       inline-size: calc(var(--ds-tree-grid-indent) * var(--ds-tree-grid-depth));
       background-image: repeating-linear-gradient(
@@ -38661,8 +39658,8 @@ new class extends _identity {
       display: flex;
       align-items: center;
       justify-content: center;
-      inline-size: var(--size-target-min);
-      min-block-size: var(--size-target-min);
+      inline-size: var(--ds-tree-grid-expand-button-size);
+      min-block-size: var(--ds-tree-grid-expand-button-size);
     }
     /* transition: the chevron rotation, on the span around the Button and never on the Icon */
     .expand-chevron {
@@ -38682,17 +39679,17 @@ new class extends _identity {
     .cell.parent [data-part='cellContent'] {
       font-weight: var(--ds-tree-grid-parent-weight);
     }
-    /* loadingColor (locked): the lazy-loading placeholder text */
-    .loading-text {
-      color: var(--color-foreground-muted);
-    }
+    /*
+     * loadingColor (locked): the lazy-loading placeholder text is a composed Text with tone="muted", which
+     * resolves to this token; Text.color is locked, so the hook above is never forwarded as a colour.
+     */
 
     /* minTarget (locked) */
     .select-cell,
     .select-all-cell {
       justify-content: center;
       padding-inline: 0;
-      min-inline-size: var(--size-target-min);
+      min-inline-size: var(--ds-tree-grid-min-target);
     }
     /*
      * minTarget (locked) answers target-24px for the composed Checkbox, whose own control is smaller than a
@@ -38702,7 +39699,7 @@ new class extends _identity {
      */
     [data-part='selectCell'],
     [data-part='selectAllCell'] {
-      --ds-checkbox-control-size: var(--size-target-min);
+      --ds-checkbox-control-size: var(--ds-tree-grid-min-target);
     }
 
     .pinned-start,
@@ -38806,7 +39803,7 @@ new class extends _identity {
       position: absolute;
       visibility: hidden;
       pointer-events: none;
-      block-size: var(--size-target-min);
+      block-size: var(--ds-tree-grid-min-target);
     }
     .probe-step {
       display: block;
@@ -39252,6 +40249,8 @@ new class extends _identity {
 		}
 		instanceId = (_init_extra_focusedId(this), `ds-tree-${++idCounter$1}`);
 		nodeMapCache;
+		/** The node focused when an expansion change began, so `updated` can move focus up if it disappeared. */
+		focusBeforeUpdate;
 		typeaheadBuffer = "";
 		typeaheadTimer;
 		warnedLabel = false;
@@ -39269,20 +40268,44 @@ new class extends _identity {
 				this.internalSelected = [...this.defaultSelected ?? []];
 			}
 			if (changed.has("overrides")) this.applyOverrides();
+			if (changed.has("expanded") || changed.has("internalExpanded") || changed.has("nodes")) {
+				const treeitem = (this.renderRoot instanceof ShadowRoot ? this.renderRoot.activeElement : null)?.closest("[role=\"treeitem\"]");
+				this.focusBeforeUpdate = treeitem ? this.nodeIdOf(treeitem) : void 0;
+			}
 		}
 		updated() {
-			this.demoteComposedLinks();
+			const lost = this.focusBeforeUpdate;
+			this.focusBeforeUpdate = void 0;
+			if (lost !== void 0 && !this.itemEl(lost)) {
+				const parents = this.parentById;
+				for (let id = parents.get(lost); id !== void 0; id = parents.get(id)) if (this.itemEl(id) && this.nodeById.get(id)?.disabled !== true) {
+					this.focusNode(id);
+					break;
+				}
+			}
+			this.demoteComposedControls();
 			if (import.meta.env.DEV && !this.label && !this.warnedLabel) {
 				this.warnedLabel = true;
 				console.warn("<ds-tree> requires a `label`: it names the tree for assistive technology.", this);
 			}
 		}
+		get nodeMaps() {
+			if (this.nodeMapCache?.nodes !== this.nodes) {
+				const parents = /* @__PURE__ */ new Map();
+				for (const node of allNodes(this.nodes)) for (const child of loadedChildren(node)) parents.set(child.id, node.id);
+				this.nodeMapCache = {
+					nodes: this.nodes,
+					map: new Map(allNodes(this.nodes).map((node) => [node.id, node])),
+					parents
+				};
+			}
+			return this.nodeMapCache;
+		}
 		get nodeById() {
-			if (this.nodeMapCache?.nodes !== this.nodes) this.nodeMapCache = {
-				nodes: this.nodes,
-				map: new Map(allNodes(this.nodes).map((node) => [node.id, node]))
-			};
-			return this.nodeMapCache.map;
+			return this.nodeMaps.map;
+		}
+		get parentById() {
+			return this.nodeMaps.parents;
 		}
 		/** The caller's list with `"*"` resolved to concrete ids; a held-lazy id stays in it and in what is reported. */
 		get expandedIds() {
@@ -39379,6 +40402,7 @@ new class extends _identity {
 		toggleExpanded(id) {
 			const ids = this.expandedIds;
 			if (this.expandedSet.has(id)) {
+				if (this.openedLazy.includes(id)) this.openedLazy = this.openedLazy.filter((opened) => opened !== id);
 				this.commitExpanded(ids.filter((existing) => existing !== id), []);
 				return;
 			}
@@ -39592,7 +40616,13 @@ new class extends _identity {
         >
           ${this.nodes.map((node, index) => this.renderNode(node, 1, index + 1, this.nodes.length, context))}
         </ul>
-        ${this.nodes.length === 0 ? html`<ds-text data-part="emptyState" part="emptyState" tone="muted">${COPY$1.empty}</ds-text>` : nothing}
+        ${this.nodes.length === 0 ? html`<ds-text
+              data-part="emptyState"
+              part="emptyState"
+              tone="muted"
+              .overrides=${context.labelOverrides}
+              >${COPY$1.empty}</ds-text
+            >` : nothing}
         ${this.selectable === "multiple" ? html`<span class="visually-hidden" role="status"
               >${interpolate(COPY$1.selectedCount, { count: this.selectedIds.length })}</span
             >` : nothing}
@@ -39618,6 +40648,7 @@ new class extends _identity {
         data-part="node"
         part="node"
         style=${styleMap({ "--ds-tree-level": String(level - 1) })}
+        aria-label=${node.badge !== void 0 ? `${node.label}, ${node.badge}` : node.label}
         aria-level=${level}
         aria-setsize=${setsize}
         aria-posinset=${posinset}
@@ -39661,11 +40692,8 @@ new class extends _identity {
                   @press=${(event) => event.stopPropagation()}
                 >
                   <!--
-                    Not aria-hidden, though the platform notes ask for it: this is a real <button>, and
-                    tabindex="-1" takes it out of the tab order without taking it out of focus, so hiding it
-                    would be axe's aria-hidden-focus (the rule TreeGrid's own chevron settled). It stays
-                    exposed under copy.expand/collapse; ArrowLeft/Right remain the keyboard path and the
-                    treeitem's own aria-expanded is what conveys the state.
+                    Never aria-hidden: tabindex="-1" takes the button out of the tab order, not out of focus.
+                    It stays exposed under copy.expand/collapse; ArrowLeft/Right remain the keyboard path.
                   -->
                   <ds-button
                     variant="ghost"
@@ -39685,13 +40713,9 @@ new class extends _identity {
                     ${checked === "true" ? html`<ds-icon name="check" inline></ds-icon>` : checked === "mixed" ? html`<ds-icon name="dash" inline></ds-icon>` : nothing}
                   </span>` : nothing}
               <span class="body">
-                ${node.icon !== void 0 ? html`<ds-icon
-                      data-part="icon"
-                      part="icon"
-                      name=${node.icon}
-                      inline
-                      .overrides=${ICON_COLOR}
-                    ></ds-icon>` : nothing}
+                ${node.icon !== void 0 ? html`<span data-part="icon" part="icon"
+                      ><ds-icon name=${node.icon} inline .overrides=${ICON_COLOR}></ds-icon
+                    ></span>` : nothing}
                 <ds-text data-part="label" part="label" element="span" truncate .overrides=${labelOverrides}
                   >${node.href !== void 0 ? html`<span data-part="link" part="link"
                         ><ds-link href=${node.href} label=${node.label} tone="inherit"></ds-link
@@ -39710,12 +40734,15 @@ new class extends _identity {
           </span>
         </div>
         ${expanded ? html`<ul role="group" data-part="group" part="group">
-              ${loading ? this.renderLoading(level + 1) : children.map((child, index) => this.renderNode(child, level + 1, index + 1, children.length, context))}
+              ${loading ? this.renderLoading(level + 1, context) : children.map((child, index) => this.renderNode(child, level + 1, index + 1, children.length, context))}
             </ul>` : nothing}
       </li>`;
 		}
-		/** The lazy placeholder: a treeitem the arrows never land on, under an `aria-busy` parent. */
-		renderLoading(level) {
+		/**
+		* The lazy placeholder: a treeitem the arrows never land on, under an `aria-busy` parent. It is not a node,
+		* so it carries no data-part (a part locator never resolves to it) and no tabindex.
+		*/
+		renderLoading(level, context) {
 			return html`<li
       role="treeitem"
       style=${styleMap({ "--ds-tree-level": String(level - 1) })}
@@ -39723,29 +40750,28 @@ new class extends _identity {
       aria-setsize="1"
       aria-posinset="1"
       aria-disabled="true"
-      tabindex="-1"
     >
-      <div data-part="nodeRow" class="placeholder">
-        <span data-part="indent" aria-hidden="true"></span>
+      <div class="placeholder">
+        <span class="placeholder-indent" aria-hidden="true"></span>
         <span class="content">
           <span class="expand-spacer" aria-hidden="true"></span>
-          <ds-text element="span" tone="muted">${COPY$1.loading}</ds-text>
+          <ds-text element="span" tone="muted" .overrides=${context.labelOverrides}>${COPY$1.loading}</ds-text>
         </span>
       </div>
     </li>`;
 		}
 		/**
-		* The tree is one tab stop. `ds-button` forwards the host's `tabindex` to its inner `<button>` on its own,
-		* but `ds-link` does not, so each composed link's inner `<a>` is demoted after every render — otherwise the
-		* tree would have a tab stop per navigation node. A same-value write is skipped.
+		* The tree is one tab stop. A tabindex on a custom-element host does not reach the child's inner control,
+		* so each composed ds-link's `<a>` and ds-button's `<button>` is demoted after every render — otherwise the
+		* tree would have a tab stop per node. A same-value write is skipped.
 		*/
-		async demoteComposedLinks() {
-			const links = [...this.renderRoot.querySelectorAll("[data-part=\"link\"] ds-link")];
-			if (links.length === 0) return;
-			await Promise.all(links.map((link) => link.updateComplete));
-			for (const link of links) {
-				const anchor = link.shadowRoot?.querySelector("a");
-				if (anchor && anchor.getAttribute("tabindex") !== "-1") anchor.setAttribute("tabindex", "-1");
+		async demoteComposedControls() {
+			const hosts = [...this.renderRoot.querySelectorAll("[data-part=\"link\"] ds-link, [data-part=\"expandButton\"] ds-button")];
+			if (hosts.length === 0) return;
+			await Promise.all(hosts.map((host) => host.updateComplete));
+			for (const host of hosts) {
+				const control = host.shadowRoot?.querySelector("a, button");
+				if (control && control.getAttribute("tabindex") !== "-1") control.setAttribute("tabindex", "-1");
 			}
 		}
 		applyOverrides() {
@@ -39780,6 +40806,20 @@ new class extends _identity {
       --ds-tree-line-height: var(--font-line-height-normal);
       --ds-tree-disabled-opacity: var(--opacity-disabled);
       --ds-tree-transition: var(--motion-duration-fast);
+      /* locked: out of the overrides type, but themeable from page CSS and renameable */
+      --ds-tree-row-height: var(--size-target-min);
+      --ds-tree-row-selected: var(--color-background-strong);
+      --ds-tree-row-selected-border: var(--color-control-selected-background);
+      --ds-tree-row-selected-border-width: var(--border-width-focus);
+      --ds-tree-label-color: var(--color-foreground);
+      --ds-tree-badge-color: var(--color-foreground-muted);
+      --ds-tree-expand-button-size: var(--size-target-min);
+      --ds-tree-checkbox-border: var(--color-control-border);
+      --ds-tree-checkbox-selected: var(--color-control-selected-background);
+      --ds-tree-checkbox-mark: var(--color-control-selected-foreground);
+      --ds-tree-min-target: var(--size-target-min);
+      --ds-tree-focus-ring: var(--color-border-focus);
+      --ds-tree-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -39791,7 +40831,7 @@ new class extends _identity {
       font-size: var(--ds-tree-font-size);
       line-height: var(--ds-tree-line-height);
       /* labelColor (locked): the tree's own foreground; the label Text keeps its default tone */
-      color: var(--color-foreground);
+      color: var(--ds-tree-label-color);
     }
 
     .visually-hidden {
@@ -39819,16 +40859,18 @@ new class extends _identity {
 
     /* focusRing / focusRingWidth (locked): around the whole node, the chevron included */
     [data-part='node']:focus-visible > [data-part='nodeRow'] {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-tree-focus-ring-width) solid var(--ds-tree-focus-ring);
+      outline-offset: calc(-1 * var(--ds-tree-focus-ring-width));
     }
 
-    [data-part='nodeRow'] {
+    [data-part='nodeRow'],
+    .placeholder {
       position: relative;
       display: flex;
       align-items: center;
       /* rowHeight / minTarget (locked) */
-      min-block-size: var(--size-target-min);
+      /* rowHeight, never below minTarget; a minimum, so a larger font override grows the row */
+      min-block-size: max(var(--ds-tree-row-height), var(--ds-tree-min-target));
       padding-inline: var(--ds-tree-row-padding-inline);
       border-radius: var(--ds-tree-row-radius);
       cursor: pointer;
@@ -39836,14 +40878,16 @@ new class extends _identity {
       transition: background-color var(--ds-tree-transition) var(--motion-easing-standard);
     }
 
-    [data-part='node']:not([aria-disabled='true']) > [data-part='nodeRow']:hover {
+    /* rowHover: a selected (or checked) row keeps rowSelected */
+    [data-part='node']:not([aria-disabled='true']):not([aria-selected='true']):not([aria-checked='true'])
+      > [data-part='nodeRow']:hover {
       background: var(--ds-tree-row-hover);
     }
 
     /* rowSelected (locked): the fill on the selected (or checked) node; a mixed parent gets neither */
     [data-part='node'][aria-selected='true'] > [data-part='nodeRow'],
     [data-part='node'][aria-checked='true'] > [data-part='nodeRow'] {
-      background: var(--color-background-strong);
+      background: var(--ds-tree-row-selected);
     }
 
     /* rowSelectedBorder / rowSelectedBorderWidth (locked): drawn over the row, so selecting moves nothing */
@@ -39853,7 +40897,7 @@ new class extends _identity {
       position: absolute;
       inset-block: 0;
       inset-inline-start: 0;
-      border-inline-start: var(--border-width-focus) solid var(--color-control-selected-background);
+      border-inline-start: var(--ds-tree-row-selected-border-width) solid var(--ds-tree-row-selected-border);
       pointer-events: none;
     }
 
@@ -39863,7 +40907,8 @@ new class extends _identity {
     }
 
     /* indent: space.5 per level, reserved on the row itself */
-    [data-part='indent'] {
+    [data-part='indent'],
+    .placeholder-indent {
       flex: none;
       inline-size: calc(var(--ds-tree-indent) * var(--ds-tree-level));
     }
@@ -39883,8 +40928,8 @@ new class extends _identity {
       flex: none;
       display: inline-grid;
       place-items: center;
-      inline-size: var(--size-target-min);
-      min-block-size: var(--size-target-min);
+      inline-size: var(--ds-tree-expand-button-size);
+      min-block-size: var(--ds-tree-expand-button-size);
     }
 
     .chevron {
@@ -39932,24 +40977,28 @@ new class extends _identity {
       inline-size: var(--ds-tree-checkbox-size);
       block-size: var(--ds-tree-checkbox-size);
       /* checkboxBorder (locked) */
-      border: var(--ds-tree-checkbox-border-width) solid var(--color-control-border);
+      border: var(--ds-tree-checkbox-border-width) solid var(--ds-tree-checkbox-border);
       border-radius: var(--ds-tree-checkbox-radius);
       background: var(--ds-tree-checkbox-background);
       /* checkboxMark (locked): the check or dash Icon takes this as currentColor */
-      color: var(--color-control-selected-foreground);
+      color: var(--ds-tree-checkbox-mark);
     }
 
     /* checkboxSelected (locked): checked or mixed fills border and background alike, so the fill has no
        contrasting edge */
     [data-part='checkbox'][data-state='true'],
     [data-part='checkbox'][data-state='mixed'] {
-      border-color: var(--color-control-selected-background);
-      background: var(--color-control-selected-background);
+      border-color: var(--ds-tree-checkbox-selected);
+      background: var(--ds-tree-checkbox-selected);
     }
 
     [data-part='icon'],
     [data-part='badge'] {
       flex: none;
+    }
+
+    [data-part='icon'] {
+      display: inline-flex;
     }
 
     [data-part='label'] {
@@ -39967,7 +41016,8 @@ new class extends _identity {
       position: absolute;
       inset-block: 0;
       inset-inline-start: calc(
-        var(--ds-tree-row-padding-inline) + var(--ds-tree-indent) * var(--ds-tree-level) + var(--size-target-min) / 2
+        var(--ds-tree-row-padding-inline) + var(--ds-tree-indent) * var(--ds-tree-level) +
+          var(--ds-tree-expand-button-size) / 2
       );
       border-inline-start: var(--ds-tree-guide-line-width) solid var(--ds-tree-guide-line);
       pointer-events: none;
@@ -39979,6 +41029,7 @@ new class extends _identity {
 
     .placeholder {
       cursor: default;
+      transition: none;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -40076,10 +41127,12 @@ const BREAKPOINT_PROPERTY = {
 */
 function readBreakpoint(el, stackBelow) {
 	const raw = getComputedStyle(el).getPropertyValue(BREAKPOINT_PROPERTY[stackBelow]).trim();
-	const value = Number.parseFloat(raw);
+	const match = /^(\d*\.?\d+)(px|rem|em)$/.exec(raw);
+	if (!match) return null;
+	const value = Number.parseFloat(match[1]);
 	if (!Number.isFinite(value) || value <= 0) return null;
-	if (raw.endsWith("rem")) return value * Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
-	if (raw.endsWith("em")) return value * Number.parseFloat(getComputedStyle(el).fontSize);
+	if (match[2] === "rem") return value * Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+	if (match[2] === "em") return value * Number.parseFloat(getComputedStyle(el).fontSize);
 	return value;
 }
 /**
@@ -40104,7 +41157,7 @@ const FOCUSABLE_SELECTOR$1 = [
 	"select:not([disabled])",
 	"textarea:not([disabled])",
 	"[contenteditable]:not([contenteditable=\"false\"])",
-	"[tabindex]:not([tabindex=\"-1\"])"
+	"[tabindex]"
 ].join(",");
 /** First focusable element among `elements` or their light-DOM descendants, in order. A custom
 element that delegates focus (a `ds-button`) counts as focusable. */
@@ -40112,7 +41165,7 @@ function firstFocusable(elements) {
 	for (const root of elements) {
 		const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
 		for (let node = root; node; node = walker.nextNode()) {
-			if (!(node instanceof HTMLElement) || node.hasAttribute("disabled") || node.closest("[inert]")) continue;
+			if (!(node instanceof HTMLElement) || node.hasAttribute("disabled") || node.getAttribute("aria-disabled") === "true" || node.hasAttribute("tabindex") && node.tabIndex < 0 || node.closest("[inert]")) continue;
 			if (node.matches(FOCUSABLE_SELECTOR$1) || node.shadowRoot?.delegatesFocus) return node;
 		}
 	}
@@ -40217,8 +41270,11 @@ new class extends _identity {
 				],
 				[
 					property({
-						type: Boolean,
-						reflect: true
+						reflect: true,
+						converter: {
+							fromAttribute: (value) => value === null ? void 0 : true,
+							toAttribute: (value) => value ? "" : null
+						}
 					}),
 					1,
 					"collapsed"
@@ -40492,6 +41548,8 @@ new class extends _identity {
 		/** True once a drag has actually changed the size. A press that never moved the separator is not
 		a drag and fires nothing, so a stray tap on the separator is silent. */
 		dragMoved = false;
+		/** The last record written under `persistKey`, so an unrelated update does not rewrite it. */
+		lastPersisted;
 		#T = _init_containerEl(this);
 		get containerEl() {
 			return this.#T;
@@ -40593,6 +41651,7 @@ new class extends _identity {
 			if (changed.has("persistKey")) this.loadPersisted();
 			if (changed.has("overrides")) this.applyOverrides();
 			if (changed.has("collapsed") && changed.get("collapsed") !== void 0) this.animating = true;
+			else if (changed.has("size") && this.hasUpdated) this.animating = false;
 			if (!this.hasUpdated) this.rtl = getComputedStyle(this).direction === "rtl";
 			if (!this.hasUpdated || changed.has("orientation") || changed.has("stackBelow")) this.updateStacked(this.getBoundingClientRect().width);
 			this.warnInDev(changed);
@@ -40611,10 +41670,10 @@ new class extends _identity {
         class=${classMap({
 				container: true,
 				"is-collapsed": collapsed,
-				"is-stacked": this.stacked,
-				"is-animating": this.animating
+				"is-stacked": this.stacked
 			})}
         data-part="container"
+        ?data-animating=${this.animating}
         style=${styleMap({ [PRIMARY_SIZE_PROPERTY]: `${collapsed ? 0 : this.currentSize}%` })}
       >
         <div class="pane primary-pane" data-part="primaryPane" id=${this.primaryPaneId} ?inert=${collapsed}>
@@ -40664,11 +41723,11 @@ new class extends _identity {
     `;
 		}
 		handlePointerDown(event) {
+			this.animating = false;
 			if (this.isCollapsed || event.button !== 0 || !this.separatorEl) return;
 			event.preventDefault();
 			this.separatorEl.focus();
 			this.separatorEl.setPointerCapture(event.pointerId);
-			this.animating = false;
 			this.dragging = true;
 			this.dragSize = this.currentSize;
 			this.dragMoved = false;
@@ -40794,8 +41853,8 @@ new class extends _identity {
 		size did not change (a key press at a bound fires nothing). */
 		changeSize(next) {
 			const clamped = this.clamp(next);
+			if (clamped === (this.dragging ? this.dragSize : this.currentSize)) return;
 			this.animating = false;
-			if (clamped === this.currentSize) return;
 			if (this.size === void 0) this.internalSize = clamped;
 			this.dispatchSize("size-change", clamped);
 			return clamped;
@@ -40826,6 +41885,7 @@ new class extends _identity {
 			if (this.stacked !== next) this.stacked = next;
 		}
 		loadPersisted() {
+			this.lastPersisted = void 0;
 			if (!this.persistKey) return;
 			try {
 				const raw = localStorage.getItem(this.persistKey);
@@ -40839,11 +41899,14 @@ new class extends _identity {
 		}
 		persist() {
 			if (!this.persistKey) return;
+			const record = JSON.stringify({
+				size: this.currentSize,
+				collapsed: this.isCollapsed
+			});
+			if (record === this.lastPersisted) return;
+			this.lastPersisted = record;
 			try {
-				localStorage.setItem(this.persistKey, JSON.stringify({
-					size: this.currentSize,
-					collapsed: this.isCollapsed
-				}));
+				localStorage.setItem(this.persistKey, record);
 			} catch {}
 		}
 		applyOverrides() {
@@ -40874,6 +41937,14 @@ new class extends _identity {
       --ds-splitter-grip-radius: var(--radius-full);
       --ds-splitter-collapse-button-offset: var(--space-2);
       --ds-splitter-transition: var(--motion-duration-fast);
+      /* Locked bindings: out of the overrides API, still themeable from page CSS. */
+      --ds-splitter-separator-hover: var(--color-border-strong);
+      --ds-splitter-separator-active: var(--color-control-selected-background);
+      --ds-splitter-grip: var(--color-border-strong);
+      --ds-splitter-pane-min-target: var(--size-target-comfortable);
+      --ds-splitter-min-target: var(--size-target-min);
+      --ds-splitter-focus-ring: var(--color-border-focus);
+      --ds-splitter-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -40887,18 +41958,18 @@ new class extends _identity {
       block-size: 100%;
       inline-size: 100%;
       grid-template-columns:
-        minmax(var(--size-target-comfortable), var(--ds-splitter-primary-size))
+        minmax(var(--ds-splitter-pane-min-target), var(--ds-splitter-primary-size))
         var(--ds-splitter-separator-size)
-        minmax(var(--size-target-comfortable), 1fr);
+        minmax(var(--ds-splitter-pane-min-target), 1fr);
       grid-template-rows: minmax(0, 1fr);
     }
 
     :host([orientation='vertical']) .container {
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows:
-        minmax(var(--size-target-comfortable), var(--ds-splitter-primary-size))
+        minmax(var(--ds-splitter-pane-min-target), var(--ds-splitter-primary-size))
         var(--ds-splitter-separator-size)
-        minmax(var(--size-target-comfortable), 1fr);
+        minmax(var(--ds-splitter-pane-min-target), 1fr);
     }
 
     /* Collapsed: the primary track drops its floor so collapse reaches zero. */
@@ -40906,7 +41977,7 @@ new class extends _identity {
       grid-template-columns:
         minmax(0, var(--ds-splitter-primary-size))
         var(--ds-splitter-separator-size)
-        minmax(var(--size-target-comfortable), 1fr);
+        minmax(var(--ds-splitter-pane-min-target), 1fr);
     }
 
     :host([orientation='vertical']) .container.is-collapsed {
@@ -40914,7 +41985,7 @@ new class extends _identity {
       grid-template-rows:
         minmax(0, var(--ds-splitter-primary-size))
         var(--ds-splitter-separator-size)
-        minmax(var(--size-target-comfortable), 1fr);
+        minmax(var(--ds-splitter-pane-min-target), 1fr);
     }
 
     /* Stacked (below stackBelow): one column, both panes in full, in source order; no separator. */
@@ -40928,8 +41999,10 @@ new class extends _identity {
       grid-row: 2;
     }
 
-    /* transition: collapse and restore only; dragging and key steps resize instantly. */
-    .container.is-animating {
+    /* transition: collapse and restore only; dragging and key steps resize instantly. The animating
+       state is the container's data-animating, set when the collapsed state changes and cleared by
+       the next size change or pointerdown, so a second toggle animates too. */
+    .container[data-animating] {
       transition: ${unsafeCSS(PRIMARY_SIZE_PROPERTY)} var(--ds-splitter-transition) var(--motion-easing-standard);
     }
 
@@ -40995,30 +42068,32 @@ new class extends _identity {
     /* separatorHover: color.border.strong, locked. The grab area is the separator's ::before, so
        the hover state follows the wider hit area, not the thin line. */
     .separator:hover {
-      background-color: var(--color-border-strong);
+      background-color: var(--ds-splitter-separator-hover);
     }
 
     /* separatorActive: color.control.selectedBackground, locked; while dragging or focused. */
     .separator[data-dragging],
     .separator:focus-visible {
-      background-color: var(--color-control-selected-background);
+      background-color: var(--ds-splitter-separator-active);
     }
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
     .separator:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-splitter-focus-ring-width) solid var(--ds-splitter-focus-ring);
+      outline-offset: var(--ds-splitter-focus-ring-width);
     }
 
     /* handle / handleSize: the grab area centered on the line and overlapping both panes, so the
        panes keep their full width; minTarget (size.target.min, locked) is its floor. Drawn as the
        separator's ::before, so it carries no data-part hook. */
+    /* Centering across the line uses physical left + translateX(-50%), which is direction-agnostic;
+       inset-inline-start would anchor the right edge in RTL and shift the element off-centre. */
     .separator::before {
       content: '';
       position: absolute;
       inset-block: 0;
-      inset-inline-start: 50%;
-      inline-size: max(var(--ds-splitter-handle-size), var(--size-target-min));
+      left: 50%;
+      inline-size: max(var(--ds-splitter-handle-size), var(--ds-splitter-min-target));
       transform: translateX(-50%);
     }
 
@@ -41027,7 +42102,7 @@ new class extends _identity {
       inset-inline: 0;
       inset-block-start: 50%;
       inline-size: auto;
-      block-size: max(var(--ds-splitter-handle-size), var(--size-target-min));
+      block-size: max(var(--ds-splitter-handle-size), var(--ds-splitter-min-target));
       transform: translateY(-50%);
     }
 
@@ -41036,10 +42111,10 @@ new class extends _identity {
     .separator::after {
       content: '';
       position: absolute;
-      inset-block-start: 50%;
-      inset-inline-start: 50%;
+      top: 50%;
+      left: 50%;
       transform: translate(-50%, -50%);
-      background-color: var(--color-border-strong);
+      background-color: var(--ds-splitter-grip);
       border-radius: var(--ds-splitter-grip-radius);
       inline-size: var(--ds-splitter-separator-size);
       block-size: var(--ds-splitter-grip-length);
@@ -41058,12 +42133,13 @@ new class extends _identity {
       z-index: 1;
       display: flex;
       inset-block-start: var(--ds-splitter-collapse-button-offset);
-      inset-inline-start: 50%;
+      left: 50%;
       transform: translateX(-50%);
     }
 
     :host([orientation='vertical']) .collapse-button {
       inset-block-start: 50%;
+      left: auto;
       inset-inline-start: var(--ds-splitter-collapse-button-offset);
       transform: translateY(-50%);
     }
@@ -41071,6 +42147,7 @@ new class extends _identity {
     /* While collapsed the primary pane has no size, so the button aligns to the secondary pane's
        start edge instead of hanging outside the container. */
     .container.is-collapsed .collapse-button {
+      left: auto;
       inset-inline-start: 100%;
       transform: none;
     }
@@ -41082,7 +42159,7 @@ new class extends _identity {
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .container.is-animating,
+      .container[data-animating],
       .separator {
         transition: none;
       }
@@ -41127,6 +42204,7 @@ const HOOKS = {
 	itemGap: "--ds-feed-item-gap",
 	articleInset: "--ds-feed-article-inset",
 	articleBodyGap: "--ds-feed-article-body-gap",
+	articleRadius: "--ds-feed-article-radius",
 	timestampSize: "--ds-feed-timestamp-size",
 	newItemsOffset: "--ds-feed-new-items-offset",
 	newItemsLayer: "--ds-feed-new-items-layer",
@@ -41430,10 +42508,14 @@ new class extends _identity {
 		connectedCallback() {
 			super.connectedCallback();
 			this.setAttribute("data-ds", "Feed");
+			this.warnedLabel = false;
 			if (this.hasUpdated) {
+				this.warnMissingLabel();
 				this.loadMoreKey = null;
+				this.askedForFirstPage = false;
 				this.syncVisibilityObserver();
 				this.syncLoadMoreObserver();
+				this.askForFirstPage();
 			}
 		}
 		disconnectedCallback() {
@@ -41624,16 +42706,20 @@ new class extends _identity {
 		warnMissingLabel() {
 			if (import.meta.env.DEV && this.label.trim() === "" && !this.warnedLabel) {
 				this.warnedLabel = true;
-				console.warn("Feed: `label` is the accessible name of the feed and must not be empty.");
+				console.warn("Feed: label is the accessible name of the feed and must not be empty.");
 			}
 		}
-		/** An empty feed has no last article to observe, so it asks for its first page itself, once. */
+		/**
+		* An empty feed has no last article to observe, so it asks for its first page itself, once per
+		* change: filling or clearing `items`, turning `hasMore` on, or a `loading` cycle that ended
+		* still empty (a failed page can be asked for again) each re-arm the request.
+		*/
 		askForFirstPage() {
-			if (this.items.length > 0) {
+			if (this.items.length > 0 || !this.hasMore || this.loading) {
 				this.askedForFirstPage = false;
 				return;
 			}
-			if (this.hasMore && !this.loading && !this.askedForFirstPage) {
+			if (!this.askedForFirstPage) {
 				this.askedForFirstPage = true;
 				this.dispatchLoadMore();
 			}
@@ -41656,7 +42742,7 @@ new class extends _identity {
 			if (article === void 0) return;
 			article.focus({ preventScroll: true });
 			article.scrollIntoView({
-				behavior: prefersReducedMotion() ? "auto" : "smooth",
+				behavior: prefersReducedMotion() ? "instant" : "smooth",
 				block: "start"
 			});
 		}
@@ -41680,17 +42766,27 @@ new class extends _identity {
 			observer.observe(last);
 			this.loadMoreObserver = observer;
 		}
-		/** Watches every article whose id has not reported yet; ids already reported stay reported. */
+		/**
+		* Watches every article whose id has not reported yet; ids already reported stay reported.
+		* A change of `items` keeps the dwell timer of an article that is still rendered, so a
+		* prepend during the one-second wait does not restart it; removed ids lose theirs.
+		*/
 		syncVisibilityObserver() {
-			this.visibilityObserver?.disconnect();
-			for (const timer of this.visibilityTimers.values()) clearTimeout(timer);
-			this.visibilityTimers.clear();
-			const observer = new IntersectionObserver(this.handleVisibilityIntersect, { threshold: .5 });
+			this.visibilityObserver ??= new IntersectionObserver(this.handleVisibilityIntersect, { threshold: .5 });
+			const observer = this.visibilityObserver;
+			observer.disconnect();
+			const watched = /* @__PURE__ */ new Set();
 			for (const wrapper of this.getArticles()) {
 				const id = wrapper.dataset.itemId;
-				if (id !== void 0 && !this.reportedVisible.has(id)) observer.observe(wrapper);
+				if (id !== void 0 && !this.reportedVisible.has(id)) {
+					watched.add(id);
+					observer.observe(wrapper);
+				}
 			}
-			this.visibilityObserver = observer;
+			for (const [id, timer] of this.visibilityTimers) if (!watched.has(id)) {
+				clearTimeout(timer);
+				this.visibilityTimers.delete(id);
+			}
 		}
 		teardownObservers() {
 			this.loadMoreObserver?.disconnect();
@@ -41744,13 +42840,19 @@ new class extends _identity {
       --ds-feed-article-body-gap: var(--layout-gap-tight);
       --ds-feed-unread-border: var(--color-control-selected-background);
       --ds-feed-unread-border-width: var(--border-width-focus);
+      --ds-feed-article-radius: var(--radius-lg);
+      --ds-feed-focus-ring: var(--color-border-focus);
+      --ds-feed-focus-ring-width: var(--border-width-focus);
+      --ds-feed-timestamp-color: var(--color-foreground-muted);
       --ds-feed-timestamp-size: var(--font-size-xs);
       --ds-feed-new-items-offset: var(--space-3);
       --ds-feed-new-items-layer: var(--layer-raised);
       --ds-feed-loading-inset: var(--layout-inset-md);
       --ds-feed-end-message-inset: var(--layout-inset-md);
+      --ds-feed-end-message-color: var(--color-foreground-muted);
       --ds-feed-end-message-size: var(--font-size-sm);
       --ds-feed-empty-state-inset: var(--layout-inset-md);
+      --ds-feed-empty-state-color: var(--color-foreground-muted);
       --ds-feed-empty-state-size: var(--font-size-sm);
       --ds-feed-font-family: var(--font-family-body);
     }
@@ -41792,16 +42894,17 @@ new class extends _identity {
        that host's whole flat-tree subtree out of sequential focus navigation, so a focusable
        <ds-card> would make every link and button inside an article unreachable by Tab. A plain
        div does not, so the wrapper is the role="article", the focus target and the ring. */
+    /* articleRadius: radius.lg, Card's own default radius, so the ring follows the Card's corners */
     [data-part='article'] {
       position: relative;
-      border-radius: var(--radius-lg);
+      border-radius: var(--ds-feed-article-radius);
       outline: none;
     }
 
     /* focusRing / focusRingWidth (locked): an outline of focusRingWidth in focusRing sitting on the
        card's edge, no offset — the treatment a composed Card draws for itself. */
     [data-part='article']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline: var(--ds-feed-focus-ring-width) solid var(--ds-feed-focus-ring);
     }
 
     /* articleInset: layout.inset.md, forwarded to the Card's own padding hooks rather than
@@ -41820,6 +42923,8 @@ new class extends _identity {
       inset-inline-start: 0;
       inline-size: var(--ds-feed-unread-border-width);
       background: var(--ds-feed-unread-border);
+      border-start-start-radius: var(--ds-feed-article-radius);
+      border-end-start-radius: var(--ds-feed-article-radius);
       pointer-events: none;
     }
 
@@ -41828,9 +42933,11 @@ new class extends _identity {
       --ds-stack-gap: var(--ds-feed-article-body-gap);
     }
 
-    /* timestampSize: font.size.xs through Text's hook; timestampColor is Text tone="muted" (locked) */
+    /* timestampSize: font.size.xs through Text's hook. timestampColor (locked) is Text tone="muted";
+       its hook feeds the Text's color hook with the same token, so it stays re-themeable from CSS. */
     .timestamp-text {
       --ds-text-font-size: var(--ds-feed-timestamp-size);
+      --ds-text-color: var(--ds-feed-timestamp-color);
     }
 
     /* fontFamily: font.family.body, reaching every composed Text and the new-items Button
@@ -41855,6 +42962,7 @@ new class extends _identity {
 
     [data-part='endMessage'] > ds-text {
       --ds-text-font-size: var(--ds-feed-end-message-size);
+      --ds-text-color: var(--ds-feed-end-message-color);
     }
 
     /* emptyStateInset / emptyStateSize; emptyStateColor is Text tone="muted" (locked) */
@@ -41864,6 +42972,7 @@ new class extends _identity {
 
     [data-part='emptyState'] > ds-text {
       --ds-text-font-size: var(--ds-feed-empty-state-size);
+      --ds-text-color: var(--ds-feed-empty-state-color);
     }
 
     .visually-hidden {

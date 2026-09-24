@@ -20,7 +20,7 @@
 import { createElement, type ElementType } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import { COMPONENTS, exampleProps } from './example-args';
+import { COMPONENTS, exampleProps, type HarnessContext } from './example-args';
 import type { Example } from './examples';
 
 interface Probe {
@@ -33,7 +33,8 @@ interface Probe {
 /**
  * Each example's static markup, in the order given.
  *
- * A harness example is probed shut, the way the page first renders it. Any other example that throws
+ * A harness example is probed the way the page first renders it (`context` is its set's; see
+ * `exampleProps`). Any other example that throws
  * and sets `open` is tried once more without it: an overlay that opens from its own trigger (Popover,
  * Tooltip, DatePicker) portals into `document` when open, which a server render does not have, and
  * closed is how a visitor first meets it anyway. Asked by rendering, like everything here, so it
@@ -43,13 +44,13 @@ interface Probe {
  * source-only stories would bury the build log in stacks for failures that are already handled. The
  * probe is the one place that is expected, so it is the one place that quiets it.
  */
-function probe(name: string, examples: Example[]): Probe[] {
+function probe(name: string, examples: Example[], context?: HarnessContext): Probe[] {
   const Component = COMPONENTS[name];
   if (typeof Component !== 'function') return examples.map(() => ({ markup: null, withoutOpen: false }));
 
   const render = (example: Example, withoutOpen: boolean): string | null => {
     try {
-      return renderToStaticMarkup(createElement(Component as ElementType, exampleProps(example, withoutOpen)));
+      return renderToStaticMarkup(createElement(Component as ElementType, exampleProps(example, withoutOpen, context)));
     } catch {
       return null;
     }
@@ -69,18 +70,18 @@ function probe(name: string, examples: Example[]): Probe[] {
   }
 }
 
-function staticMarkup(name: string, examples: Example[]): (string | null)[] {
-  return probe(name, examples).map((result) => result.markup);
+function staticMarkup(name: string, examples: Example[], context?: HarnessContext): (string | null)[] {
+  return probe(name, examples, context).map((result) => result.markup);
 }
 
 /** Whether each example renders, in the order given. */
-export function renderableExamples(name: string, examples: Example[]): boolean[] {
-  return staticMarkup(name, examples).map((markup) => markup !== null);
+export function renderableExamples(name: string, examples: Example[], context?: HarnessContext): boolean[] {
+  return staticMarkup(name, examples, context).map((markup) => markup !== null);
 }
 
 /** Whether each example renders only without its story's `open`, in the order given — see `probe`. */
-export function withoutOpenExamples(name: string, examples: Example[]): boolean[] {
-  return probe(name, examples).map((result) => result.withoutOpen);
+export function withoutOpenExamples(name: string, examples: Example[], context?: HarnessContext): boolean[] {
+  return probe(name, examples, context).map((result) => result.withoutOpen);
 }
 
 /**
@@ -97,8 +98,8 @@ export function withoutOpenExamples(name: string, examples: Example[]): boolean[
  * has to render anything other than what its args say: a `Heading` at `level: "1"` still produces a
  * real `<h1>` here, which is exactly why the page cannot embed one.
  */
-export function pageHeadingExamples(name: string, examples: Example[]): boolean[] {
-  return staticMarkup(name, examples).map((markup) => markup !== null && /<h1[\s/>]/i.test(markup));
+export function pageHeadingExamples(name: string, examples: Example[], context?: HarnessContext): boolean[] {
+  return staticMarkup(name, examples, context).map((markup) => markup !== null && /<h1[\s/>]/i.test(markup));
 }
 
 /**
@@ -114,8 +115,8 @@ export function pageHeadingExamples(name: string, examples: Example[]): boolean[
  * Asked by rendering, like everything else here, so the answer follows whatever the args actually
  * produce: a component that starts emitting a heading, or stops, needs no list updated anywhere.
  */
-export function headingLevelExamples(name: string, examples: Example[]): (number | null)[] {
-  return staticMarkup(name, examples).map((markup) => {
+export function headingLevelExamples(name: string, examples: Example[], context?: HarnessContext): (number | null)[] {
+  return staticMarkup(name, examples, context).map((markup) => {
     const match = markup === null ? null : /<h([1-6])[\s/>]/i.exec(markup);
     return match === null ? null : Number(match[1]);
   });

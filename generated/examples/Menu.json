@@ -6,7 +6,13 @@
     "rn": true,
     "swift": false
   },
-  "harnessEvents": null,
+  "harnessEvents": {
+    "close": [],
+    "change": [
+      "onOpenChange"
+    ]
+  },
+  "floating": true,
   "examples": [
     {
       "title": "Default",
@@ -70,7 +76,7 @@
       "storyId": "menu-react--default",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -139,7 +145,7 @@
         "value": "ghost"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -208,7 +214,7 @@
         "value": "secondary"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -277,7 +283,7 @@
         "value": "primary"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -346,7 +352,7 @@
         "value": "ellipsis"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -415,7 +421,7 @@
         "value": "chevron-down"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -484,7 +490,7 @@
         "value": "none"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -551,7 +557,7 @@
       "storyId": "menu-react--placement-bottom-start",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -618,7 +624,7 @@
       "storyId": "menu-react--placement-bottom-end",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -685,7 +691,7 @@
       "storyId": "menu-react--placement-top-start",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -752,7 +758,7 @@
       "storyId": "menu-react--placement-top-end",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -819,7 +825,7 @@
       "storyId": "menu-react--icon-only",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -862,7 +868,7 @@
       "storyId": "menu-react--row-overflow",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -901,7 +907,7 @@
       "storyId": "menu-react--sort-by",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -960,7 +966,7 @@
       "storyId": "menu-react--grouped-account-menu",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -995,7 +1001,7 @@
       "storyId": "menu-react--with-shortcuts",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -1060,7 +1066,7 @@
       "storyId": "menu-react--anchor-positioned",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     }
   ]

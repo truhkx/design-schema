@@ -51,6 +51,30 @@
   background-color: var(--color-foreground-muted);
 }
 
+/*
+ * Room for a floating panel (Menu, Popover, Tooltip, a Select's list, DatePicker's calendar) to open
+ * from its trigger. Written by Examples.tsx around a `state` harness example of a component
+ * tools/docs_examples.ts marks `floating`.
+ *
+ * - Block: the larger padding on the side the panel opens toward — below by default, above for a
+ *   `top`/`top-*` placement. With the card scrolled to the centre of the viewport that puts the
+ *   trigger off-centre, away from the panel, so the tallest panel here (the calendar) still fits
+ *   below at desktop height, and a top-placed one clears the example tab row.
+ * - Inline: half the prose measure (the grid tiles' ratio above), so a field does not stretch the
+ *   column and park its trigger at the far edge — DatePicker's calendar is aligned to the start of a
+ *   button at the field's end, and next to the "More examples" strip a full-width field put it past
+ *   the viewport.
+ */
+.ds-example-stage {
+  --ds-example-stage-room: calc(var(--layout-section-lg) + var(--layout-section-sm));
+  max-inline-size: calc(var(--layout-max-width-prose) / 2); /* literal-ok: a ratio, not a dimension */
+  padding-block: var(--layout-gap-tight) var(--ds-example-stage-room);
+}
+
+.ds-example-stage[data-placement^='top'] {
+  padding-block: var(--ds-example-stage-room) var(--layout-gap-tight);
+}
+
 .ds-example-grid__tile {
   /* The same guard as the docs column: a long caption or a wide sample scrolls inside its tile
      rather than stretching the track. */

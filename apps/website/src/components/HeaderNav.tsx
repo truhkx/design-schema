@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button, Icon, Link, SegmentedControl, SidePanel, Stack } from '@design-schema/react';
 import { layoutBreakpointMd } from '@design-schema/tokens/calm-precise/light';
 
-import type { TopItem } from '../nav';
+import { isCurrentSection, type TopItem } from '../nav';
 import { applyTheme, THEME_LINK_ATTR } from '../theme-switch';
 import { chooseMode, parseMode, storedMode, type ModeChoice } from '../mode-switch';
 
@@ -23,6 +23,8 @@ export interface HeaderNavProps {
   items: TopItem[];
   /** The published themes, from `generated/themes.json`. The first is the default. */
   themes: { id: string; title: string }[];
+  /** The route of the page being rendered, so the section it is in is marked current. */
+  current?: string | undefined;
 }
 
 /**
@@ -35,7 +37,7 @@ export interface HeaderNavProps {
  * broken. The `matchMedia` below is only a safety net — it closes a drawer left open when the
  * window grows past the breakpoint and takes the hamburger away with it.
  */
-export default function HeaderNav({ items, themes }: HeaderNavProps) {
+export default function HeaderNav({ items, themes, current }: HeaderNavProps) {
   const [open, setOpen] = useState(false);
   // The server has no way to know the visitor's remembered theme, so it renders the default and
   // Layout.astro's inline script corrects <html> before first paint; this picks that up on hydration.
@@ -146,9 +148,16 @@ export default function HeaderNav({ items, themes }: HeaderNavProps) {
   };
 
   // Link's default tone: in the header that is the dark `--color-link` from the band's
-  // `data-mode="dark"`, and in the drawer (portaled to <body>) the page's own.
+  // `data-mode="dark"`, and in the drawer (portaled to <body>) the page's own. `current` marks the
+  // section the page is in — Docs on every `/docs/*` route — and header.css shows it.
   const links = items.map((item) => (
-    <Link key={item.href} href={item.href} label={item.label} external={item.external} />
+    <Link
+      key={item.href}
+      href={item.href}
+      label={item.label}
+      external={item.external}
+      current={isCurrentSection(item.href, current)}
+    />
   ));
 
   // One control per layout, both driven by the same state: only one of the two is ever displayed,
@@ -206,9 +215,12 @@ export default function HeaderNav({ items, themes }: HeaderNavProps) {
           }
           trigger={hamburger}
         >
-          <Stack element="nav" aria-label={COPY.navLabel} direction="vertical" gap="normal" align="start">
-            {links}
-          </Stack>
+          {/* A plain div for header.css's current-link rule: the drawer is portaled out of the band. */}
+          <div className="ds-site-header__drawer-nav">
+            <Stack element="nav" aria-label={COPY.navLabel} direction="vertical" gap="normal" align="start">
+              {links}
+            </Stack>
+          </div>
         </SidePanel>
       </div>
     </>

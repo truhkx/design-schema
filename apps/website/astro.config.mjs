@@ -10,7 +10,12 @@ import { fileURLToPath } from 'node:url';
 //
 // The React integration is here because the chrome and the example islands are all React: Astro
 // renders them to HTML at build time, and only the interactive ones get a `client:*` directive.
+//
+// `site` is the public URL (Astro.site, canonical links, a sitemap once there is one). It comes from
+// PUBLIC_SITE_URL, which the self-hosted image gets from apps/website/.env; unset or empty leaves it
+// undefined, exactly as before.
 export default defineConfig({
+  site: process.env.PUBLIC_SITE_URL || undefined,
   integrations: [react()],
   vite: {
     plugins: [reactFromSourceInDev()],

@@ -29,17 +29,19 @@
  *
  *   { "layout": "scenarios",
  *     "platforms": { "react": true, "lit": true, "rn": true, "swift": false },
- *     "harnessEvents": null,
+ *     "harnessEvents": null, "floating": false,
  *     "examples": [{ "title": "Default", "args": {...},
  *                    "snippets": { "react": "import { Button } …", "lit": "<ds-button …>", "rn": "…", "swift": null },
  *                    "stories": { "react": "Default", "lit": "Default", "rn": "Default", "swift": null },
  *                    "storyId": "button-react--default", "sweep": null, "decorated": false, "harness": null,
  *                    "primary": true }, …] }
  *
- * `harness` and `harnessEvents` are for overlays a consumer opens from elsewhere (Dialog, BottomSheet):
- * the page renders a button that opens the example and wires the listed events to close it — see
- * `harnessOf`. Stories titled `Closed` or `Keyboard` are Storybook's and are not projected at all
- * (`SITE_EXCLUDED_TITLES`).
+ * `harness`, `harnessEvents` and `floating` are for components with a boolean `open`. For overlays a
+ * consumer opens from elsewhere (Dialog, BottomSheet) the page renders a button that opens the example
+ * and wires the listed events to close it; for ones with an opener of their own (Menu, Select,
+ * Disclosure) it only holds the state — see `harnessOf`. Stories titled `Closed` or `Keyboard` are
+ * Storybook's and are not projected at all (`SITE_EXCLUDED_TITLES`), and neither are a floating
+ * component's `Open` stories (`OPEN_TITLES`).
  *
  * `snippets` is the copy/paste code for each platform, rendered by ./docs_snippets.ts from that
  * platform's own story module (`packages/{react,rn}/src/<Name>.stories.tsx`,
@@ -158,11 +160,14 @@ export type Layout = 'sweep' | 'scenarios';
 /**
  * Whether the page has to supply what opens the example. `trigger`: the component is an overlay the
  * consumer opens from elsewhere — it has a boolean `open`, a close event, and no opener of its own — so
- * a story's `open: true` is Storybook's fixture, not something a page can mount. See `harnessOf`.
+ * a story's `open: true` is Storybook's fixture, not something a page can mount. `state`: the
+ * component has a boolean `open` and its own opener (Menu's trigger, Select's field, Disclosure's
+ * summary), so the page adds no button and only owns the state the story's `open` would have pinned.
+ * See `harnessOf`.
  */
-export type Harness = 'trigger' | null;
+export type Harness = 'trigger' | 'state' | null;
 
-/** Which of a `trigger` component's events the page's harness listens to. See `harnessEventsOf`. */
+/** Which of a harnessed component's events the page's harness listens to. See `harnessEventsOf`. */
 export interface HarnessEvents {
   /** Request-phase events: the consumer is asked to close, and the harness does (Dialog `onClose`, AlertDialog `onConfirm`). */
   close: string[];
@@ -201,8 +206,14 @@ export interface ExampleSet {
   layout: Layout;
   /** Whether each platform has source for this component at all: a story module, or the generated Swift view. */
   platforms: Record<Platform, boolean>;
-  /** The events a `trigger` harness wires, or `null` when the component needs none. */
+  /** The events a harness wires, or `null` when the component has no harness. */
   harnessEvents: HarnessEvents | null;
+  /**
+   * Whether a harnessed component's open state is a panel above the page rather than part of it —
+   * see `floatingOf`. A floating `state` example starts closed; an inline one (Disclosure) starts
+   * where its story says. Always `false` without a harness.
+   */
+  floating: boolean;
   examples: Example[];
 }
 
@@ -213,6 +224,8 @@ export interface ComponentInfo {
   /** Absent reads as `null`: the tests' components are not overlays. */
   harness?: Harness;
   harnessEvents?: HarnessEvents | null;
+  /** Absent reads as `false`. See `ExampleSet.floating`. */
+  floating?: boolean;
 }
 
 /** Where an example's code comes from. The tests' default is React-only with no snippets. */
@@ -668,6 +681,7 @@ export function examplesFor(
       );
     }
     if (SITE_EXCLUDED_TITLES.has(entry.name)) continue;
+    if (component.floating === true && (component.harness ?? null) !== null && OPEN_TITLES.has(entry.name)) continue;
     const { snippets, stories: from, problems: gaps } = code.forStory(story.exportName, entry.name);
     problems.push(...gaps.map((gap) => `${name}/${entry.name}: ${gap}`));
     examples.push({
@@ -692,7 +706,8 @@ export function examplesFor(
   return {
     layout,
     platforms: code.platforms,
-    harnessEvents: component.harness === 'trigger' ? (component.harnessEvents ?? null) : null,
+    harnessEvents: (component.harness ?? null) !== null ? (component.harnessEvents ?? null) : null,
+    floating: (component.harness ?? null) !== null && component.floating === true,
     examples: examples.map((example, index) => ({ ...example, primary: primary[index] === true })),
     problems,
   };
@@ -707,6 +722,14 @@ export function examplesFor(
  * Storybook, and in the manifest check above: an excluded story still has to exist there.
  */
 export const SITE_EXCLUDED_TITLES: ReadonlySet<string> = new Set(['Closed', 'Keyboard']);
+
+/**
+ * Story titles a harnessed floating component (see `floatingOf`) keeps in Storybook and not on the
+ * site. The page starts every floating panel closed, so a story that exists to show it open renders
+ * the same closed trigger as its neighbour (`Open` beside `Default`, `Disabled Open` beside
+ * `Disabled`). Placement stories stay: their trigger opens the panel where the story says.
+ */
+export const OPEN_TITLES: ReadonlySet<string> = new Set(['Open', 'Disabled Open']);
 
 /** A package's name from its manifest beside `src/`, or the workspace's own name when the sandbox has none. */
 function packageName(sourceDirectory: string, fallback: string): string {
@@ -854,6 +877,8 @@ export interface OverlaySchema {
   events?: Record<string, { timing?: { phase?: unknown }; payload?: { name?: unknown; type?: unknown }[] }> | undefined;
   overlay?: { closeEvent?: unknown; anchor?: unknown } | undefined;
   form?: unknown;
+  styles?: Record<string, unknown> | undefined;
+  composition?: Record<string, unknown> | undefined;
 }
 
 /** The event names that close an overlay by convention, beside whatever `overlay.closeEvent` names. */
@@ -873,15 +898,46 @@ const CLOSE_EVENTS: readonly string[] = ['onClose', 'onOpenChange'];
  *     (Select, Combobox, DatePicker) already renders what a visitor presses; a second button beside
  *     it would be a second way to do one thing. SidePanel's `trigger` is optional, so it qualifies,
  *     and an example that passes one keeps it (the page's harness steps aside).
+ *
+ * Everything else with a boolean `open` it can drive is `state`: a component with an opener of its
+ * own, or one with an event that reports the new `open` (Disclosure's `onToggle` — its summary is the
+ * opener). The page adds no button there; it holds the `open` a story pins, so the component's own
+ * trigger and dismissals work. Tooltip has an anchor and no event at all — `open` is for stories only,
+ * and hover and focus are ignored while it is set — so its harness drops the story's `open` instead.
  */
 export function harnessOf(component: OverlaySchema): Harness {
   if (component.props['open']?.type !== 'boolean') return null;
   const events = component.events ?? {};
   const closeEvent = component.overlay?.closeEvent;
   const closes = [...CLOSE_EVENTS, ...(typeof closeEvent === 'string' ? [closeEvent] : [])].some((event) => Object.hasOwn(events, event));
-  if (!closes) return null;
   const ownOpener = component.overlay?.anchor !== undefined || component.props['trigger']?.required === true || component.form !== undefined;
-  return ownOpener ? null : 'trigger';
+  if (closes && !ownOpener) return 'trigger';
+  if (ownOpener || harnessEventsOf(component).change.length > 0) return 'state';
+  return null;
+}
+
+/** Whether a schema paints on a layer above the page: an `overlay` block, or a style bound to a `layer.*` token. */
+function layered(component: OverlaySchema): boolean {
+  if (component.overlay !== undefined) return true;
+  return Object.values(component.styles ?? {}).some((style) => {
+    const token = (style as { token?: unknown } | null)?.token;
+    return typeof token === 'string' && token.startsWith('layer.');
+  });
+}
+
+/**
+ * Whether a component's open state floats above the page, read off the schema: it has an `overlay`
+ * block (Menu, Popover, Tooltip, the dialogs), its popup is bound to a `layer.*` token (Select's and
+ * Combobox's `layer.dropdown`), or it composes a part from a component that does (DatePicker's
+ * `popover` is a Popover). Disclosure is none of these: its panel is part of the page.
+ */
+export function floatingOf(component: OverlaySchema, schemas: ReadonlyMap<string, OverlaySchema>): boolean {
+  if (layered(component)) return true;
+  return Object.values(component.composition ?? {}).some((part) => {
+    const name = typeof part === 'string' ? part : (part as { component?: unknown } | null)?.component;
+    const composed = typeof name === 'string' ? schemas.get(name) : undefined;
+    return composed !== undefined && layered(composed);
+  });
 }
 
 /**
@@ -903,19 +959,24 @@ export function harnessEventsOf(component: OverlaySchema): HarnessEvents {
 /** `generated/components.json`, by component name, narrowed to `ComponentInfo`. */
 export function componentInfo(json: unknown): Map<string, ComponentInfo> {
   if (!Array.isArray(json)) throw new ExamplesError('generated/components.json is not an array — re-run `pnpm parse`');
-  const components = new Map<string, ComponentInfo>();
+  const schemas = new Map<string, OverlaySchema & { category: string }>();
   for (const entry of json as { component?: { name?: unknown; category?: unknown; props?: unknown } & Omit<OverlaySchema, 'props'> }[]) {
     const { name, category, props } = entry.component ?? {};
     if (typeof name !== 'string' || typeof category !== 'string' || typeof props !== 'object' || props === null) {
       throw new ExamplesError('generated/components.json has an entry without component.name/category/props — re-run `pnpm parse`');
     }
-    const schema = { ...entry.component, props: props as OverlaySchema['props'] };
+    schemas.set(name, { ...entry.component, category, props: props as OverlaySchema['props'] });
+  }
+  // A second pass: whether a component floats can depend on a component it composes.
+  const components = new Map<string, ComponentInfo>();
+  for (const [name, schema] of schemas) {
     const harness = harnessOf(schema);
     components.set(name, {
-      category,
-      props: props as ComponentInfo['props'],
+      category: schema.category,
+      props: schema.props as ComponentInfo['props'],
       harness,
-      harnessEvents: harness === 'trigger' ? harnessEventsOf(schema) : null,
+      harnessEvents: harness === null ? null : harnessEventsOf(schema),
+      floating: harness !== null && floatingOf(schema, schemas),
     });
   }
   return components;
@@ -923,8 +984,8 @@ export function componentInfo(json: unknown): Map<string, ComponentInfo> {
 
 /** The bytes of one `<Name>.json`: deterministic, so re-running on unchanged stories is a no-op. */
 export function render(set: ExampleSet): string {
-  const { layout, platforms, harnessEvents, examples } = set;
-  return JSON.stringify({ layout, platforms, harnessEvents, examples }, null, 2) + '\n';
+  const { layout, platforms, harnessEvents, floating, examples } = set;
+  return JSON.stringify({ layout, platforms, harnessEvents, floating, examples }, null, 2) + '\n';
 }
 
 /** Every `{ $unsupported }` in a value, as `path -> source`, for `--report`. */

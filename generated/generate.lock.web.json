@@ -100,20 +100,17 @@
     }
   },
   "BottomSheet.web": {
-    "hash": "91ba5056582ddad0",
-    "lastAttemptHash": "91ba5056582ddad0",
-    "generatedAt": "2026-09-23T23:14:42+00:00",
+    "hash": "c578bc76a0c20873",
+    "lastAttemptHash": "c578bc76a0c20873",
+    "generatedAt": "2026-09-24T04:13:24+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3107,
+    "costUsd": 0.3373,
     "files": [
-      "packages/react/src/BottomSheet.css",
-      "packages/react/src/BottomSheet.stories.tsx",
-      "packages/react/src/BottomSheet.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/BottomSheet.css"
     ],
-    "gaps": 6,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -121,10 +118,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
-      "hooks": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
+      "hooks": true
     }
   },
   "Box.web": {

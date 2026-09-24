@@ -4,6 +4,10 @@
 #   unset (default :80)   plain HTTP on port 80 — local use, or behind another reverse proxy
 #   example.com           automatic HTTPS: Caddy gets and renews a Let's Encrypt certificate, redirects
 #                         HTTP to HTTPS, and needs ports 80 and 443 reachable from the internet
+#
+# Behind the Cloudflare Tunnel it stays unset: requests arrive as HTTP on :80 with Host = the public
+# hostname, and a bare port address turns automatic HTTPS off, so any Host is served and nothing redirects
+# to HTTPS (Cloudflare already did TLS; a redirect here would loop).
 
 {
 	# No runtime config API inside the container; the Caddyfile is the whole configuration.
@@ -25,6 +29,9 @@
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
 		-Server
+		# Uncomment once the public hostname is HTTPS-only at Cloudflare (SSL/TLS > Edge Certificates >
+		# Always Use HTTPS). Browsers ignore it over plain HTTP, so the local check port is unaffected.
+		# Strict-Transport-Security "max-age=31536000"
 	}
 
 	# Directories serve their index.html, and /about redirects to /about/.

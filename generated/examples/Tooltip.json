@@ -6,7 +6,11 @@
     "rn": true,
     "swift": false
   },
-  "harnessEvents": null,
+  "harnessEvents": {
+    "close": [],
+    "change": []
+  },
+  "floating": true,
   "examples": [
     {
       "title": "Default",
@@ -36,7 +40,7 @@
       "storyId": "tooltip-react--default",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -69,7 +73,7 @@
       "storyId": "tooltip-react--placement-top",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -102,7 +106,7 @@
       "storyId": "tooltip-react--placement-bottom",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -135,7 +139,7 @@
       "storyId": "tooltip-react--placement-start",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -168,7 +172,7 @@
       "storyId": "tooltip-react--placement-end",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -203,7 +207,7 @@
         "value": "default"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -238,7 +242,7 @@
         "value": "none"
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -280,7 +284,7 @@
         "value": false
       },
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": true
     },
     {
@@ -311,7 +315,7 @@
       "storyId": "tooltip-react--column-header-hint",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -350,7 +354,7 @@
       "storyId": "tooltip-react--warm-toolbar",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     },
     {
@@ -389,7 +393,7 @@
       "storyId": "tooltip-react--below-the-trigger",
       "sweep": null,
       "decorated": false,
-      "harness": null,
+      "harness": "state",
       "primary": false
     }
   ]

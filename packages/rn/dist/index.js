@@ -110,7 +110,8 @@ function useReducedMotion() {
 	return reduced;
 }
 //#endregion
-//#region src/FormContext.tsx
+//#region src/FormContext.ts
+/** `null` outside of a Form so Button and Input work standalone. */
 const FormContext = React.createContext(null);
 function useFormContext() {
 	return React.useContext(FormContext);
@@ -232,6 +233,7 @@ function Button({ label, variant = "primary", size = "md", type = "button", expa
 		if (isDisabled) node.setAttribute("aria-disabled", "true");
 		else node.removeAttribute("aria-disabled");
 	}, [isDisabled]);
+	const name = accessibleName ?? accessibilityLabel ?? label;
 	const colors = VARIANT_TOKENS[variant];
 	const isInverseGhost = variant === "ghost" && inverse;
 	const background = t[colors.background];
@@ -369,7 +371,8 @@ function Button({ label, variant = "primary", size = "md", type = "button", expa
 		ref: rootRef,
 		testID: "Button",
 		accessibilityRole: "button",
-		accessibilityLabel: accessibleName ?? accessibilityLabel ?? label,
+		accessibilityLabel: name,
+		"aria-label": name,
 		accessibilityHint,
 		accessibilityState: expanded === void 0 ? {
 			disabled: isDisabled,
@@ -404,11 +407,13 @@ function Button({ label, variant = "primary", size = "md", type = "button", expa
 		style: containerStyle
 	}, /* @__PURE__ */ React.createElement(Animated.View, { style: backgroundFillStyle }, loading ? /* @__PURE__ */ React.createElement(View, {
 		style: iconSlotStyle,
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no"
 	}, /* @__PURE__ */ React.createElement(Animated.View, { style: spinnerStyle })) : leadingIcon !== void 0 && leadingIcon !== null ? /* @__PURE__ */ React.createElement(View, {
 		testID: "Button.leadingIcon",
 		style: iconSlotStyle,
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no"
 	}, leadingIcon) : null, iconOnly ? null : /* @__PURE__ */ React.createElement(Text$1, {
@@ -418,6 +423,7 @@ function Button({ label, variant = "primary", size = "md", type = "button", expa
 	}, label), !iconOnly && !loading && trailingIcon !== void 0 && trailingIcon !== null ? /* @__PURE__ */ React.createElement(View, {
 		testID: "Button.trailingIcon",
 		style: iconSlotStyle,
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no"
 	}, trailingIcon) : null));
@@ -623,519 +629,6 @@ function Heading({ level, size, children, align = "start", overrides, ref }) {
 	}, /* @__PURE__ */ React.createElement(TextStyleContext.Provider, { value: contextValue }, children));
 }
 //#endregion
-//#region src/Stack.tsx
-const GAP_TOKEN = {
-	none: "layoutGapNone",
-	tight: "layoutGapTight",
-	normal: "layoutGapNormal",
-	loose: "layoutGapLoose",
-	section: "layoutGapSection"
-};
-const ALIGN = {
-	start: "flex-start",
-	center: "center",
-	end: "flex-end",
-	stretch: "stretch"
-};
-const JUSTIFY$3 = {
-	start: "flex-start",
-	center: "center",
-	end: "flex-end",
-	between: "space-between"
-};
-/**
-* Stack — how things get spaced. Owns the gap between its children using a preset
-* from the theme's layout rhythm, instead of margins on individual components.
-*
-* When to use: Use Stack for any group of siblings that should be evenly spaced:
-* form fields, a row of buttons, a list of cards, label-plus-control pairs. Reach
-* for it before writing any layout style. Do not use it for two-dimensional layouts
-* or for positioning a single element.
-*
-* Renders a `View` with `flexDirection`, `gap` from the token object, `alignItems`,
-* `justifyContent` and `flexWrap`; children are not wrapped. `element` is not
-* applicable on React Native: a navigation region is `Landmark`, and a list is a
-* plain Stack whose rows carry their own semantics (a native list has no role to claim).
-* Row direction already follows the writing direction under `I18nManager`.
-* Horizontal stacks should `wrap` rather than scroll, so content reflows for large
-* text settings (WCAG 1.4.10).
-*/
-function Stack({ children, direction = "vertical", gap = "normal", align = "stretch", justify = "start", wrap = false, overrides, ref }) {
-	const { tokens: t } = useTheme();
-	const style = React.useMemo(() => ({
-		flexDirection: direction === "horizontal" ? "row" : "column",
-		gap: gap !== "none" && overrides?.gap ? resolveToken(t, overrides.gap) : t[GAP_TOKEN[gap]],
-		alignItems: ALIGN[align],
-		justifyContent: JUSTIFY$3[justify],
-		flexWrap: wrap ? "wrap" : "nowrap"
-	}), [
-		t,
-		direction,
-		gap,
-		align,
-		justify,
-		wrap,
-		overrides
-	]);
-	return /* @__PURE__ */ React.createElement(View, {
-		ref,
-		style,
-		testID: "Stack"
-	}, children);
-}
-//#endregion
-//#region src/Fieldset.tsx
-/** `null` outside of a Fieldset so every field works standalone. */
-const FieldsetContext = React.createContext(null);
-function useFieldsetContext() {
-	return React.useContext(FieldsetContext);
-}
-const COPY$31 = { requiredIndicator: " (required)" };
-/**
-* `fieldsGap` reaches the Stack only as a token path through its own `overrides.gap`,
-* always sent (the override, else `layout.gap.{gap}`); the Stack gets no `gap` prop.
-*/
-const FIELDS_GAP_TOKEN = {
-	tight: "layout.gap.tight",
-	normal: "layout.gap.normal",
-	loose: "layout.gap.loose"
-};
-/**
-* The direct child fields, with fragments flattened so `<>{street}{city}</>` counts as
-* two children rather than one. Only elements count; raw strings and `null` are skipped.
-*/
-function collectFields(children, out) {
-	React.Children.forEach(children, (child) => {
-		if (!React.isValidElement(child)) return;
-		if (child.type === React.Fragment) {
-			collectFields(child.props.children, out);
-			return;
-		}
-		out.push(child);
-	});
-}
-/**
-* Fieldset — how a form says "these belong together." A screen-reader user moving
-* into "Street" hears "Shipping address, Street" and knows where they are.
-*
-* When to use: Use a Fieldset whenever two or more fields share a name a user would
-* say aloud — an address, a card, a start and end date. Give it a `description` when
-* the group needs a rule, and put cross-field errors on the group rather than on one
-* field. Do not wrap a whole form in it (the Form's `label` names the form), use it
-* for a single field, or nest one inside a RadioGroup, which already is a fieldset.
-*
-* Renders a `View` that is NOT `accessible` (so children stay individually
-* reachable) with `role="group"`, `accessibilityLabel` (the legend, with
-* `copy.requiredIndicator` appended when every direct child field is `required`)
-* and `accessibilityHint={description}`. The legend is plain `Text` — not a header
-* trait, which would put it in the headings rotor. The fields render in a `Stack`
-* that is sized only through its own `overrides.gap` (the override, else
-* `layout.gap.{gap}`); `FieldsetContext` carries the legend and `disabled` to Input,
-* Checkbox, Switch and RadioGroup, which render disabled and prefix the legend into
-* their label. Children are never cloned; a non-field child gets no association.
-* `disabled` dims only the legend and description with `opacity.disabled` — the
-* fields dim themselves, and the group error is never dimmed. Those two dimmed
-* Views also carry `aria-disabled`, which is what reaches the DOM under
-* react-native-web (`accessibilityState` is dropped there) and what stops a
-* checker reading dimmed-because-inapplicable text as failing contrast. The group error is announced as in Input
-* (`accessibilityLiveRegion` on Android, `announceForAccessibility` on iOS); native
-* has no invalid state, so the error text alone identifies it.
-*/
-function Fieldset({ legend, children, description, error, disabled = false, gap = "normal", overrides, ref }) {
-	const { tokens: t } = useTheme();
-	const hasError = error !== void 0 && error !== "";
-	const hasDescription = description !== void 0 && description !== "";
-	React.useEffect(() => {
-		if (Platform.OS === "ios" && error !== void 0 && error !== "") AccessibilityInfo.announceForAccessibility(error);
-	}, [error]);
-	const fieldElements = [];
-	collectFields(children, fieldElements);
-	const visibleLegend = fieldElements.length > 0 && fieldElements.every((child) => child.props.required === true) ? `${legend}${COPY$31.requiredIndicator}` : legend;
-	const contextValue = React.useMemo(() => ({
-		legend,
-		disabled
-	}), [legend, disabled]);
-	const groupStyle = React.useMemo(() => ({
-		flexDirection: "column",
-		gap: overrides?.partGap ? resolveToken(t, overrides.partGap) : t.layoutGapTight
-	}), [t, overrides?.partGap]);
-	const dimStyle = React.useMemo(() => disabled ? { opacity: overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled } : void 0, [
-		t,
-		disabled,
-		overrides?.disabledOpacity
-	]);
-	const typographyOverrides = {
-		fontFamily: overrides?.fontFamily,
-		lineHeight: overrides?.lineHeight
-	};
-	const legendOverrides = {
-		...typographyOverrides,
-		fontSize: overrides?.legendSize,
-		fontWeight: overrides?.legendWeight
-	};
-	const helperOverrides = {
-		...typographyOverrides,
-		fontSize: overrides?.helperSize
-	};
-	return /* @__PURE__ */ React.createElement(View, {
-		ref,
-		testID: "Fieldset",
-		role: "group",
-		accessibilityLabel: visibleLegend,
-		accessibilityHint: hasDescription ? description : void 0,
-		style: groupStyle
-	}, /* @__PURE__ */ React.createElement(View, {
-		testID: "Fieldset.legend",
-		style: dimStyle,
-		"aria-disabled": disabled
-	}, /* @__PURE__ */ React.createElement(Text, {
-		tone: "default",
-		size: "md",
-		weight: "medium",
-		overrides: legendOverrides
-	}, visibleLegend)), hasDescription ? /* @__PURE__ */ React.createElement(View, {
-		testID: "Fieldset.description",
-		style: dimStyle,
-		"aria-disabled": disabled
-	}, /* @__PURE__ */ React.createElement(Text, {
-		tone: "muted",
-		size: "sm",
-		overrides: helperOverrides
-	}, description)) : null, /* @__PURE__ */ React.createElement(View, { testID: "Fieldset.fields" }, /* @__PURE__ */ React.createElement(FieldsetContext.Provider, { value: contextValue }, /* @__PURE__ */ React.createElement(Stack, { overrides: { gap: overrides?.fieldsGap ?? FIELDS_GAP_TOKEN[gap] } }, children))), hasError ? /* @__PURE__ */ React.createElement(View, {
-		accessibilityLiveRegion: "assertive",
-		testID: "Fieldset.errorMessage"
-	}, /* @__PURE__ */ React.createElement(Text, {
-		tone: "danger",
-		size: "sm",
-		overrides: helperOverrides
-	}, error)) : null);
-}
-//#endregion
-//#region src/Input.tsx
-/** The component's user-facing strings, from the doc's `copy` block. */
-const COPY$30 = {
-	required: (label) => `${label} is required.`,
-	invalid: (label) => `${label} is not valid.`,
-	requiredIndicator: " (required)"
-};
-/**
-* `longPressDelay`: how long a press on the TextInput is held before the forwarded
-* `onLongPress` fires — the Pressable default, which TextInput lacks.
-*/
-const LONG_PRESS_DELAY = 500;
-const KEYBOARD_TYPE = {
-	text: "default",
-	email: "email-address",
-	password: "default",
-	number: "numeric",
-	search: "default",
-	tel: "phone-pad",
-	url: "url"
-};
-const CONTENT_TYPE = {
-	text: "none",
-	email: "emailAddress",
-	password: "password",
-	number: "none",
-	search: "none",
-	tel: "telephoneNumber",
-	url: "URL"
-};
-/** Types whose value is never a sentence: no autocapitalisation and no autocorrection. */
-const LITERAL_TYPES = [
-	"email",
-	"password",
-	"url"
-];
-/** `font.size.{size}` — the field text and the label, so the label follows `size`. */
-const FONT_SIZE_TOKEN$3 = {
-	sm: "fontSizeSm",
-	md: "fontSizeMd"
-};
-const PADDING_INLINE_TOKEN$2 = {
-	sm: "space2",
-	md: "spaceMd"
-};
-const PADDING_BLOCK_TOKEN$3 = {
-	sm: "space1",
-	md: "spaceSm"
-};
-/** `minTarget` / `minTargetSm`: both locked, so the sm floor is always `size.target.min`. */
-const MIN_TARGET_TOKEN$2 = {
-	sm: "sizeTargetMin",
-	md: "sizeTargetComfortable"
-};
-/**
-* Input — collects a single line of text.
-*
-* When to use: Use Input for names, emails, passwords, search terms, and short
-* free-text values. Choose `type` for the value so the touch keyboard matches.
-* Provide `description` when the format matters ("Use the email you signed up
-* with"). Do not use `placeholder` as the label; it vanishes as soon as the user
-* types.
-*
-* Renders a group `View` (`testID="Input"`) holding the label, description, the
-* `TextInput` and the error message, separated by `partGap`. There is no label
-* element on native: `label` is rendered as the system `Text` at `weight="medium"`
-* and is also the field's `accessibilityLabel`, and `description` becomes its
-* `accessibilityHint` (a hint forwarded by a parent is appended after it, joined
-* with a space; a forwarded `accessibilityLabel` replaces the name outright). A
-* Fieldset legend still prefixes the name ("Shipping address, Street").
-* `hideLabel` drops the label Text entirely, so the `label` part has no native
-* home while hidden and the name lives only in `accessibilityLabel`.
-*
-* `required` appends `copy.requiredIndicator` to the visible label and to the
-* accessible name — there is no required accessibility state on native. The error
-* is announced through `accessibilityLiveRegion` (Android) and
-* `AccessibilityInfo.announceForAccessibility` (iOS) rather than `role="alert"`,
-* and both are suppressed inside a Form that renders its own error summary.
-*
-* `disabled` uses `editable={false}` with `accessibilityState.disabled`: iOS
-* cannot keep a non-editable TextInput focusable, so a disabled field is not
-* focusable on native and the state is announced instead. react-native-web drops
-* `accessibilityState`, so it is mirrored as `aria-disabled` on both the TextInput
-* and the group View that carries `disabledOpacity` — the group is what makes a
-* web accessibility checker treat the dimmed label and value as disabled.
-*
-* The field's border *is* its focus ring: on focus it widens to `focusRingWidth`
-* in `color.border.focus` while the padding shrinks by the difference so nothing
-* shifts, and when the field is both invalid and focused the danger color stays so
-* the error is never hidden by focus. Native swaps the border instantly, so the
-* `transition` binding is accepted for parity with web and has no effect here.
-*
-* Inside a Form the field registers by `name`, submits its string value, and takes
-* `returnKeyType`/`onSubmitEditing` from the Form's field order (next field, or
-* submit on the last). Validation precedence is `error`, then `required`
-* (`copy.required`), then `invalid` (`copy.invalid`); the error slot shows `error`,
-* else the Form's message for this field, else — only while invalid — the derived
-* copy, so an untouched empty required field flags nothing.
-*
-* TextInput has no hover or long-press handlers: `onHoverIn`/`onHoverOut` map to
-* `onPointerEnter`/`onPointerLeave`, and `onLongPress` is timed from `onPressIn`
-* over `longPressDelay` unless `onPressOut` comes first.
-*/
-function Input({ label, name, value, defaultValue, placeholder, description, type = "text", required = false, disabled = false, invalid = false, error, hideLabel = false, size = "md", overrides, ref, accessibilityHint, accessibilityLabel, onChangeText, onFocus, onBlur, onHoverIn, onHoverOut, onPressOut, onLongPress }) {
-	const { tokens: t } = useTheme();
-	const form = useFormContext();
-	const fieldset = useFieldsetContext();
-	const inputRef = React.useRef(null);
-	const [internalValue, setInternalValue] = React.useState(defaultValue ?? "");
-	const [focused, setFocused] = React.useState(false);
-	const currentValue = value ?? internalValue;
-	const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
-	const formErrors = form?.errors;
-	const formMarked = formErrors !== void 0 && Object.prototype.hasOwnProperty.call(formErrors, name);
-	const formError = formErrors?.[name];
-	const ownError = error !== void 0 && error !== "" ? error : void 0;
-	const isInvalid = ownError !== void 0 || invalid || formMarked;
-	const derivedError = isInvalid ? required && currentValue === "" ? COPY$30.required(label) : COPY$30.invalid(label) : void 0;
-	const displayedError = ownError ?? (formError !== void 0 && formError !== "" ? formError : derivedError);
-	const summarised = form !== null && form.errorSummary;
-	const validateValue = React.useCallback((candidate) => {
-		if (isDisabled) return null;
-		if (error !== void 0 && error !== "") return error;
-		if (required && candidate === "") return COPY$30.required(label);
-		if (invalid) return COPY$30.invalid(label);
-		return null;
-	}, [
-		isDisabled,
-		error,
-		required,
-		invalid,
-		label
-	]);
-	const focusField = React.useCallback(() => {
-		inputRef.current?.focus();
-		const node = inputRef.current === null ? null : findNodeHandle(inputRef.current);
-		if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
-	}, []);
-	const latest = React.useRef({
-		currentValue,
-		isDisabled,
-		validateValue,
-		focusField
-	});
-	latest.current = {
-		currentValue,
-		isDisabled,
-		validateValue,
-		focusField
-	};
-	const handle = React.useMemo(() => ({
-		label,
-		getValue: () => latest.current.isDisabled || latest.current.currentValue === "" ? void 0 : latest.current.currentValue,
-		validate: () => latest.current.validateValue(latest.current.currentValue),
-		focus: () => latest.current.focusField()
-	}), [label]);
-	const register = form?.register;
-	const unregister = form?.unregister;
-	React.useEffect(() => {
-		if (register === void 0 || unregister === void 0 || isDisabled) return;
-		register(name, handle);
-		return () => unregister(name);
-	}, [
-		register,
-		unregister,
-		name,
-		handle,
-		isDisabled
-	]);
-	React.useEffect(() => {
-		if (Platform.OS === "ios" && !summarised && displayedError !== void 0) AccessibilityInfo.announceForAccessibility(displayedError);
-	}, [displayedError, summarised]);
-	const longPressTimer = React.useRef(null);
-	const cancelLongPress = React.useCallback(() => {
-		if (longPressTimer.current !== null) {
-			clearTimeout(longPressTimer.current);
-			longPressTimer.current = null;
-		}
-	}, []);
-	React.useEffect(() => cancelLongPress, [cancelLongPress]);
-	const borderWidth = overrides?.borderWidth ? resolveToken(t, overrides.borderWidth) : t.borderWidthThin;
-	const borderInvalid = overrides?.borderInvalid ? resolveToken(t, overrides.borderInvalid) : t.colorBorderDanger;
-	const radius = overrides?.radius ? resolveToken(t, overrides.radius) : t.radiusMd;
-	const paddingInline = overrides?.paddingInline ? resolveToken(t, overrides.paddingInline) : t[PADDING_INLINE_TOKEN$2[size]];
-	const paddingBlock = overrides?.paddingBlock ? resolveToken(t, overrides.paddingBlock) : t[PADDING_BLOCK_TOKEN$3[size]];
-	const partGap = overrides?.partGap ? resolveToken(t, overrides.partGap) : t.space1;
-	const fontFamily = overrides?.fontFamily ? resolveToken(t, overrides.fontFamily) : t.fontFamilyBody;
-	const fontSize = overrides?.fontSize ? resolveToken(t, overrides.fontSize) : t[FONT_SIZE_TOKEN$3[size]];
-	const lineHeight = overrides?.lineHeight ? resolveToken(t, overrides.lineHeight) : t.fontLineHeightNormal;
-	const disabledOpacity = overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled;
-	const focusRingWidth = t.borderWidthFocus;
-	const currentBorderWidth = focused ? focusRingWidth : borderWidth;
-	const borderGrowth = currentBorderWidth - borderWidth;
-	const borderColor = isInvalid ? borderInvalid : focused ? t.colorBorderFocus : t.colorBorderStrong;
-	const groupStyle = React.useMemo(() => ({
-		flexDirection: "column",
-		gap: partGap,
-		opacity: isDisabled ? disabledOpacity : 1
-	}), [
-		partGap,
-		isDisabled,
-		disabledOpacity
-	]);
-	const fieldStyle = React.useMemo(() => ({
-		minHeight: t[MIN_TARGET_TOKEN$2[size]],
-		paddingHorizontal: Math.max(0, paddingInline - borderGrowth),
-		paddingVertical: Math.max(0, paddingBlock - borderGrowth),
-		borderWidth: currentBorderWidth,
-		borderColor,
-		borderRadius: radius,
-		backgroundColor: t.colorBackground,
-		color: t.colorForeground,
-		fontFamily,
-		fontSize,
-		lineHeight: toLineHeight(fontSize, lineHeight)
-	}), [
-		t,
-		size,
-		paddingInline,
-		paddingBlock,
-		borderGrowth,
-		currentBorderWidth,
-		borderColor,
-		radius,
-		fontFamily,
-		fontSize,
-		lineHeight
-	]);
-	const labelOverrides = {
-		fontSize: overrides?.fontSize,
-		fontWeight: overrides?.labelWeight,
-		fontFamily: overrides?.fontFamily,
-		lineHeight: overrides?.lineHeight
-	};
-	const helperOverrides = {
-		fontSize: overrides?.helperSize,
-		fontFamily: overrides?.fontFamily,
-		lineHeight: overrides?.lineHeight
-	};
-	const visibleLabel = required ? `${label}${COPY$30.requiredIndicator}` : label;
-	const ownName = accessibilityLabel ?? visibleLabel;
-	const accessibleName = fieldset === null ? ownName : `${fieldset.legend}, ${ownName}`;
-	const hint = [description, accessibilityHint].filter((part) => part !== void 0 && part !== "").join(" ");
-	const order = form?.order ?? [];
-	const index = order.indexOf(name);
-	const isLastField = index === -1 || index === order.length - 1;
-	const handleSubmitEditing = () => {
-		if (form === null) return;
-		const next = order[index + 1];
-		if (isLastField || next === void 0) form.submit();
-		else form.focusField(next);
-	};
-	const handleChangeText = (next) => {
-		if (value === void 0) setInternalValue(next);
-		onChangeText?.(next);
-		if (form !== null && (form.validateMode === "change" || form.submitFailed)) form.reportValidity(name, validateValue(next));
-	};
-	const handleBlur = () => {
-		setFocused(false);
-		if (form !== null && (form.validateMode === "blur" || form.submitFailed)) form.reportValidity(name, validateValue(currentValue));
-		onBlur?.();
-	};
-	const literalType = LITERAL_TYPES.includes(type);
-	return /* @__PURE__ */ React.createElement(View, {
-		ref,
-		testID: "Input",
-		style: groupStyle,
-		"aria-disabled": isDisabled
-	}, hideLabel ? null : /* @__PURE__ */ React.createElement(View, { testID: "Input.label" }, /* @__PURE__ */ React.createElement(Text, {
-		size,
-		weight: "medium",
-		overrides: labelOverrides
-	}, visibleLabel)), description === void 0 || description === "" ? null : /* @__PURE__ */ React.createElement(View, { testID: "Input.description" }, /* @__PURE__ */ React.createElement(Text, {
-		size: "sm",
-		tone: "muted",
-		overrides: helperOverrides
-	}, description)), /* @__PURE__ */ React.createElement(TextInput, {
-		ref: inputRef,
-		testID: "Input.field",
-		style: fieldStyle,
-		value: currentValue,
-		placeholder,
-		placeholderTextColor: t.colorForegroundMuted,
-		editable: !isDisabled,
-		keyboardType: KEYBOARD_TYPE[type],
-		textContentType: CONTENT_TYPE[type],
-		secureTextEntry: type === "password",
-		autoCapitalize: literalType ? "none" : void 0,
-		autoCorrect: literalType ? false : void 0,
-		accessibilityLabel: accessibleName,
-		accessibilityHint: hint === "" ? void 0 : hint,
-		accessibilityState: { disabled: isDisabled },
-		"aria-disabled": isDisabled,
-		returnKeyType: form === null ? void 0 : isLastField ? "done" : "next",
-		onSubmitEditing: form === null ? void 0 : handleSubmitEditing,
-		onChangeText: handleChangeText,
-		onFocus: () => {
-			setFocused(true);
-			onFocus?.();
-		},
-		onBlur: handleBlur,
-		onPointerEnter: onHoverIn,
-		onPointerLeave: onHoverOut,
-		onPressIn: () => {
-			if (onLongPress === void 0) return;
-			cancelLongPress();
-			longPressTimer.current = setTimeout(() => {
-				longPressTimer.current = null;
-				onLongPress();
-			}, LONG_PRESS_DELAY);
-		},
-		onPressOut: () => {
-			cancelLongPress();
-			onPressOut?.();
-		}
-	}), displayedError === void 0 ? null : /* @__PURE__ */ React.createElement(View, {
-		testID: "Input.errorMessage",
-		accessibilityLiveRegion: summarised ? "none" : "assertive"
-	}, /* @__PURE__ */ React.createElement(Text, {
-		size: "sm",
-		tone: "danger",
-		overrides: helperOverrides
-	}, displayedError)));
-}
-//#endregion
 //#region src/paths.ts
 /**
 * Glyphs drawn on a 16×16 grid, keyed by `name` — the same grid and `d` data as the
@@ -1206,8 +699,8 @@ const SIZE_TOKEN = {
 	lg: "fontSizeLg",
 	xl: "fontSizeXl"
 };
-/** The shared glyph grid every platform draws on: path data is 16×16 and `viewBox` scales it to the rendered box. */
-const GRID = 16;
+/** `viewBox` over the shared glyph grid every platform draws on, scaled to the rendered box. */
+const VIEW_BOX = `0 0 16 16`;
 /**
 * Icon — a single glyph that takes its size from the type scale and, on this
 * platform, an explicit color from its parent.
@@ -1232,11 +725,15 @@ const GRID = 16;
 * `size` and `overrides.size` are ignored while `inline` is set: the size comes from
 * the enclosing Text, or `font.size.md` when there is none. An Svg inside a Text is
 * centred by the text renderer with no baseline control, so an inline glyph sits
-* slightly higher than on web — a platform limit. The root is react-native-svg's
+* slightly higher than on web — a platform limit. The glyph is react-native-svg's
 * `Svg`, whose ref is a class instance, so Icon exposes no ref and no part hook
-* beyond `testID="Icon"`. Decorative (no `label`): `accessibilityElementsHidden`
-* and `importantForAccessibility="no"`. Labelled: `accessibilityRole="image"` and
-* `accessibilityLabel`. No interaction, no focus, no animation.
+* beyond `testID="Icon"`. The accessibility props sit on a View sized to the glyph
+* that wraps the `Svg`, never on the `Svg` itself: react-native-svg's web build
+* spreads every prop onto the DOM `<svg>`, where `importantForAccessibility` is an
+* invalid attribute and `accessibilityElementsHidden` produces no `aria-hidden`.
+* Decorative (no `label`): `aria-hidden`, `accessibilityElementsHidden` and
+* `importantForAccessibility="no"`. Labelled: `accessible`, `accessibilityRole="image"`
+* and `accessibilityLabel`. No interaction, no focus, no animation.
 */
 function Icon({ name, size = "md", inline = false, label, color, overrides }) {
 	const { tokens: t } = useTheme();
@@ -1245,41 +742,38 @@ function Icon({ name, size = "md", inline = false, label, color, overrides }) {
 	const dimension = inline ? textStyle.nested ? textStyle.fontSize : t.fontSizeMd : overrides?.size ? resolveToken(t, overrides.size) : t[SIZE_TOKEN[size]];
 	const resolvedColor = color ?? (overrides?.color ? resolveToken(t, overrides.color) : textStyle.nested ? textStyle.color : t.colorForeground);
 	const glyph = paths[name];
-	const a11y = {
+	const wrap = (svg) => /* @__PURE__ */ React.createElement(View, {
+		testID: "Icon",
+		style: {
+			width: dimension,
+			height: dimension
+		},
+		accessible: !decorative,
 		accessibilityRole: decorative ? void 0 : "image",
 		accessibilityLabel: decorative ? void 0 : label,
 		accessibilityElementsHidden: decorative,
-		importantForAccessibility: decorative ? "no" : "auto"
-	};
+		importantForAccessibility: decorative ? "no" : "auto",
+		"aria-hidden": decorative ? true : void 0
+	}, svg);
 	if (glyph === void 0) {
 		if (__DEV__) console.warn(`Icon: unknown name "${name}"`);
-		return /* @__PURE__ */ React.createElement(Svg, {
-			testID: "Icon",
+		return wrap(/* @__PURE__ */ React.createElement(Svg, {
 			width: dimension,
 			height: dimension,
-			viewBox: "0 0 16 16",
-			fill: "none",
-			accessibilityRole: a11y.accessibilityRole,
-			accessibilityLabel: a11y.accessibilityLabel,
-			accessibilityElementsHidden: a11y.accessibilityElementsHidden,
-			importantForAccessibility: a11y.importantForAccessibility
-		});
+			viewBox: VIEW_BOX,
+			fill: "none"
+		}));
 	}
 	const web = Platform.OS === "web";
-	const strokeWidth = glyph.filled ? void 0 : web ? t.borderWidthFocus : t.borderWidthFocus * (GRID / dimension);
-	return /* @__PURE__ */ React.createElement(Svg, {
-		testID: "Icon",
+	const strokeWidth = glyph.filled ? void 0 : web ? t.borderWidthFocus : t.borderWidthFocus * (16 / dimension);
+	return wrap(/* @__PURE__ */ React.createElement(Svg, {
 		width: dimension,
 		height: dimension,
-		viewBox: "0 0 16 16",
+		viewBox: VIEW_BOX,
 		fill: "none",
 		stroke: resolvedColor,
 		strokeLinecap: "round",
-		strokeLinejoin: "round",
-		accessibilityRole: a11y.accessibilityRole,
-		accessibilityLabel: a11y.accessibilityLabel,
-		accessibilityElementsHidden: a11y.accessibilityElementsHidden,
-		importantForAccessibility: a11y.importantForAccessibility
+		strokeLinejoin: "round"
 	}, glyph.filled ? /* @__PURE__ */ React.createElement(Path, {
 		d: glyph.d,
 		fill: resolvedColor,
@@ -1292,7 +786,2726 @@ function Icon({ name, size = "md", inline = false, label, color, overrides }) {
 	}) : /* @__PURE__ */ React.createElement(Path, {
 		d: glyph.d,
 		strokeWidth
-	}));
+	})));
+}
+//#endregion
+//#region src/Checkbox.tsx
+const COPY$31 = {
+	required: (label) => `${label} is required.`,
+	invalid: (label) => `${label} is not valid.`,
+	requiredIndicator: " (required)"
+};
+/**
+* Cross-fades from the previous target color to the new one over `duration`; instant under
+* reduced motion. A change mid-fade starts from the previous target rather than the in-between
+* color, which is invisible at `motion.duration.fast`.
+*/
+function useColorTransition(target, duration, easing, reducedMotion) {
+	const progress = React.useRef(new Animated.Value(1)).current;
+	const [pair, setPair] = React.useState({
+		from: target,
+		to: target
+	});
+	if (pair.to !== target) setPair({
+		from: pair.to,
+		to: target
+	});
+	React.useLayoutEffect(() => {
+		if (reducedMotion || pair.from === pair.to) {
+			progress.setValue(1);
+			return;
+		}
+		progress.setValue(0);
+		const animation = Animated.timing(progress, {
+			toValue: 1,
+			duration,
+			easing,
+			useNativeDriver: false
+		});
+		animation.start();
+		return () => animation.stop();
+	}, [
+		pair,
+		reducedMotion,
+		progress,
+		duration,
+		easing
+	]);
+	return progress.interpolate({
+		inputRange: [0, 1],
+		outputRange: [pair.from, pair.to]
+	});
+}
+/**
+* Checkbox — a single yes/no choice that the user makes and then submits, as
+* opposed to a Switch, which takes effect the moment it is flipped.
+*
+* When to use: Use a Checkbox for one independent option ("Remember me"), for terms
+* and consent (`required`), or several, each with its own `name`, when the user may
+* pick any number of items. Use `indeterminate` on a "select all" parent when only some
+* of its children are checked. Do not use it for a setting that applies immediately
+* (Switch) or to pick exactly one option (RadioGroup).
+*
+* There is no checkbox in core React Native. Renders a `Pressable` row with
+* `accessibilityRole="checkbox"`, `accessibilityLabel`, `accessibilityHint={description}`
+* and `accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}`, mirrored
+* to `aria-checked` (and, on react-native-web, `aria-disabled` set on the DOM node) because
+* react-native-web renders only the aria-* forms and `role="checkbox"` requires `aria-checked`.
+* `disabled` is never passed to `Pressable` itself — that would drop the row from the tab order —
+* so a disabled checkbox stays focusable and is announced as disabled while a press guard blocks
+* the toggle. It contains the drawn control (the `check`/`dash` `Icon`) and the label and
+* description, so the whole row — control, label or description — is the hit area and
+* never drops below the comfortable target. The row aligns to the start of the cross
+* axis and pads (minTarget − labelSize × lineHeight) / 2 above and below, so a single
+* line is exactly the comfortable target tall while a wrapping label or a description
+* grows it downwards with the control still centred on the label's first line (as
+* Switch). Space on a hardware keyboard is handled by the platform once the role is
+* set. The fill and border color cross-fade over `transition` with
+* `motion.easing.standard` (skipped under reduced motion); the indicator is not
+* animated — the check and dash Icons are mounted and unmounted, so they appear,
+* disappear and swap instantly. While pressed an unchecked, enabled box shows the
+* selected fill at `pressedOverlay` as an overlay inside the box, so the border does
+* not fade. Border color is invalid, then selected, then rest: focus draws the border
+* at the larger of `focusRingWidth` and `controlBorderWidth` and never hides
+* `controlBorderInvalid`, as in Input. Toggling an indeterminate checkbox clears the
+* mixed state until `indeterminate` changes value again. Inside a Form the control
+* registers by `name` and submits its checked state as a boolean (`value` is not used
+* on native); the error slot shows `error`, else the Form's message, else — only while
+* `invalid` — `copy.required` (required and unchecked) or `copy.invalid`, as in Input,
+* and `validate: blur` means on change. The error sits below the row, outside the hit
+* area, indented by controlSize + gap so it lines up with the label.
+* `disabledOpacity` dims the control and label, not the description or error. Inside a
+* Fieldset the group's `disabled` applies and the legend prefixes the accessibility
+* label. Errors are announced as in Input.
+*/
+function Checkbox({ label, hideLabel = false, name, value = "on", checked, defaultChecked = false, indeterminate = false, disabled = false, required = false, invalid = false, description, error, overrides, onChange, ref }) {
+	const { tokens: t } = useTheme();
+	const form = useFormContext();
+	const fieldset = useFieldsetContext();
+	const reducedMotion = useReducedMotion();
+	const pressableRef = React.useRef(null);
+	const [internalChecked, setInternalChecked] = React.useState(defaultChecked);
+	const [mixedCleared, setMixedCleared] = React.useState(false);
+	const [focused, setFocused] = React.useState(false);
+	React.useEffect(() => {
+		setMixedCleared(false);
+	}, [indeterminate]);
+	const isChecked = checked ?? internalChecked;
+	const isMixed = indeterminate && !mixedCleared;
+	const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
+	const formError = form?.errors[name];
+	const derivedError = invalid ? required && !isChecked ? COPY$31.required(label) : COPY$31.invalid(label) : void 0;
+	const displayedError = error !== void 0 && error !== "" ? error : formError ?? derivedError;
+	const isInvalid = invalid || displayedError !== void 0;
+	const summarised = form !== null && form.errorSummary;
+	const validateValue = React.useCallback((candidate) => {
+		if (error !== void 0 && error !== "") return error;
+		if (required && !candidate) return COPY$31.required(label);
+		if (invalid) return COPY$31.invalid(label);
+		return null;
+	}, [
+		error,
+		required,
+		invalid,
+		label
+	]);
+	const latest = React.useRef({
+		isChecked,
+		value,
+		validateValue
+	});
+	latest.current = {
+		isChecked,
+		value,
+		validateValue
+	};
+	const handle = React.useMemo(() => ({
+		getValue: () => latest.current.isChecked,
+		validate: () => latest.current.validateValue(latest.current.isChecked),
+		focus: () => {
+			const node = pressableRef.current === null ? null : findNodeHandle(pressableRef.current);
+			if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+		}
+	}), []);
+	const register = form?.register;
+	const unregister = form?.unregister;
+	React.useEffect(() => {
+		if (register === void 0 || unregister === void 0 || isDisabled) return;
+		register(name, handle);
+		return () => unregister(name);
+	}, [
+		register,
+		unregister,
+		name,
+		handle,
+		isDisabled
+	]);
+	const announcedError = React.useRef(displayedError);
+	React.useEffect(() => {
+		if (announcedError.current === displayedError) return;
+		announcedError.current = displayedError;
+		if (Platform.OS === "ios" && !summarised && displayedError !== void 0) AccessibilityInfo.announceForAccessibility(displayedError);
+	}, [displayedError, summarised]);
+	React.useEffect(() => {
+		if (Platform.OS !== "web") return;
+		const node = pressableRef.current;
+		if (node === null) return;
+		if (isDisabled) node.setAttribute("aria-disabled", "true");
+		else node.removeAttribute("aria-disabled");
+	}, [isDisabled]);
+	const handlePress = () => {
+		if (isDisabled) return;
+		const next = !isChecked;
+		if (checked === void 0) setInternalChecked(next);
+		if (isMixed) setMixedCleared(true);
+		onChange?.(next);
+		if (form !== null && form.validateMode !== "submit") form.reportValidity(name, validateValue(next));
+	};
+	const visibleLabel = required ? `${label}${COPY$31.requiredIndicator}` : label;
+	const accessibleName = fieldset !== null ? `${fieldset.legend}, ${visibleLabel}` : visibleLabel;
+	const filled = isChecked || isMixed;
+	const controlBackground = overrides?.controlBackground ? resolveToken(t, overrides.controlBackground) : t.colorControlBackground;
+	const controlBorderWidth = overrides?.controlBorderWidth ? resolveToken(t, overrides.controlBorderWidth) : t.borderWidthThin;
+	const pressedOverlay = overrides?.pressedOverlay ? resolveToken(t, overrides.pressedOverlay) : t.opacityDisabled;
+	const controlBorderInvalid = overrides?.controlBorderInvalid ? resolveToken(t, overrides.controlBorderInvalid) : t.colorBorderDanger;
+	const controlSize = overrides?.controlSize ? resolveToken(t, overrides.controlSize) : t.space5;
+	const controlRadius = overrides?.controlRadius ? resolveToken(t, overrides.controlRadius) : t.radiusSm;
+	const gap = overrides?.gap ? resolveToken(t, overrides.gap) : t.space2;
+	const partGap = overrides?.partGap ? resolveToken(t, overrides.partGap) : t.space1;
+	const labelSize = overrides?.labelSize ? resolveToken(t, overrides.labelSize) : t.fontSizeMd;
+	const lineHeight = overrides?.lineHeight ? resolveToken(t, overrides.lineHeight) : t.fontLineHeightNormal;
+	const disabledOpacity = overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled;
+	const transitionDuration = overrides?.transition ? resolveToken(t, overrides.transition) : t.motionDurationFast;
+	const easing = React.useMemo(() => toEasing(t.motionEasingStandard), [t.motionEasingStandard]);
+	const backgroundTarget = filled ? t.colorControlSelectedBackground : controlBackground;
+	const borderTarget = isInvalid ? controlBorderInvalid : focused ? t.colorBorderFocus : filled ? t.colorControlSelectedBackground : t.colorControlBorder;
+	const animatedBackground = useColorTransition(backgroundTarget, transitionDuration, easing, reducedMotion);
+	const animatedBorderColor = useColorTransition(borderTarget, transitionDuration, easing, reducedMotion);
+	const rootStyle = {
+		flexDirection: "column",
+		gap: partGap
+	};
+	const firstLine = toLineHeight(labelSize, lineHeight);
+	const rowStyle = {
+		flexDirection: "row",
+		alignItems: "flex-start",
+		gap,
+		minHeight: t.sizeTargetComfortable,
+		paddingVertical: Math.max(0, (t.sizeTargetComfortable - firstLine) / 2)
+	};
+	const controlSlotStyle = {
+		height: firstLine,
+		justifyContent: "center"
+	};
+	const dimStyle = { opacity: isDisabled ? disabledOpacity : 1 };
+	const controlStyle = {
+		width: controlSize,
+		height: controlSize,
+		borderRadius: controlRadius,
+		borderWidth: focused ? Math.max(t.borderWidthFocus, controlBorderWidth) : controlBorderWidth,
+		borderColor: animatedBorderColor,
+		backgroundColor: animatedBackground,
+		overflow: "hidden",
+		alignItems: "center",
+		justifyContent: "center",
+		opacity: dimStyle.opacity
+	};
+	const overlayStyle = ({ pressed }) => ({
+		...StyleSheet.absoluteFill,
+		backgroundColor: t.colorControlSelectedBackground,
+		opacity: pressed && !filled && !isDisabled ? pressedOverlay : 0
+	});
+	const textColumnStyle = {
+		flex: 1,
+		flexDirection: "column",
+		gap: partGap
+	};
+	const errorStyle = { paddingStart: controlSize + gap };
+	const typographyOverrides = {
+		fontFamily: overrides?.fontFamily,
+		lineHeight: overrides?.lineHeight
+	};
+	const helperOverrides = {
+		...typographyOverrides,
+		fontSize: overrides?.helperSize
+	};
+	return /* @__PURE__ */ React.createElement(View, {
+		ref,
+		testID: "Checkbox",
+		style: rootStyle
+	}, /* @__PURE__ */ React.createElement(Pressable, {
+		ref: pressableRef,
+		accessibilityRole: "checkbox",
+		accessibilityLabel: accessibleName,
+		"aria-label": accessibleName,
+		accessibilityHint: description,
+		accessibilityState: {
+			checked: isMixed ? "mixed" : isChecked,
+			disabled: isDisabled
+		},
+		"aria-checked": isMixed ? "mixed" : isChecked,
+		onPress: handlePress,
+		onFocus: () => setFocused(true),
+		onBlur: () => setFocused(false),
+		style: rowStyle
+	}, (state) => /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(View, { style: controlSlotStyle }, /* @__PURE__ */ React.createElement(Animated.View, {
+		testID: "Checkbox.control",
+		style: controlStyle,
+		"aria-hidden": true,
+		accessibilityElementsHidden: true,
+		importantForAccessibility: "no"
+	}, /* @__PURE__ */ React.createElement(View, { style: overlayStyle(state) }), filled ? /* @__PURE__ */ React.createElement(View, { testID: "Checkbox.indicator" }, /* @__PURE__ */ React.createElement(Icon, {
+		name: isMixed ? "dash" : "check",
+		size: "xs",
+		overrides: { color: "color.control.selectedForeground" }
+	})) : null)), /* @__PURE__ */ React.createElement(View, { style: textColumnStyle }, hideLabel ? /* @__PURE__ */ React.createElement(View, {
+		testID: "Checkbox.label",
+		style: controlSlotStyle
+	}) : /* @__PURE__ */ React.createElement(View, {
+		testID: "Checkbox.label",
+		style: dimStyle
+	}, /* @__PURE__ */ React.createElement(Text, {
+		size: "md",
+		weight: "regular",
+		tone: "default",
+		overrides: {
+			...typographyOverrides,
+			fontSize: overrides?.labelSize,
+			fontWeight: overrides?.labelWeight
+		}
+	}, visibleLabel)), description !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "Checkbox.description" }, /* @__PURE__ */ React.createElement(Text, {
+		size: "sm",
+		tone: "muted",
+		overrides: helperOverrides
+	}, description)) : null))), displayedError !== void 0 ? /* @__PURE__ */ React.createElement(View, {
+		accessibilityLiveRegion: summarised ? "none" : "assertive",
+		testID: "Checkbox.errorMessage",
+		style: errorStyle
+	}, /* @__PURE__ */ React.createElement(Text, {
+		size: "sm",
+		tone: "danger",
+		overrides: helperOverrides
+	}, displayedError)) : null);
+}
+//#endregion
+//#region src/Box.tsx
+const INSET_TOKEN = {
+	none: "layoutInsetNone",
+	sm: "layoutInsetSm",
+	md: "layoutInsetMd",
+	lg: "layoutInsetLg",
+	xl: "layoutInsetXl"
+};
+const SURFACE_TOKEN = {
+	default: "colorBackground",
+	subtle: "colorBackgroundSubtle",
+	strong: "colorBackgroundStrong"
+};
+const RADIUS_TOKEN = {
+	none: "radiusNone",
+	sm: "radiusSm",
+	md: "radiusMd",
+	lg: "radiusLg",
+	full: "radiusFull"
+};
+/**
+* Box — a surface: padding around a group of content, a background under it, a border,
+* rounded corners. It has no opinions about what is inside and no spacing between its
+* children (that is Stack's job), and it never carries margin of its own.
+*
+* Renders a `View` with paddingVertical/paddingHorizontal from `layout.inset.*`,
+* backgroundColor from `color.background.*` (literal `transparent` for `surface: none`,
+* so the parent's shows through), borderWidth/borderColor when `border`, and borderRadius
+* from `radius.*`. It adds no accessibility role of its own; `radius` does not clip
+* (a child that should be clipped clips itself). The `element` prop is web/Lit only —
+* React Native has no sectioning elements, so the `nav`/`article` semantics those
+* builds render have no counterpart here; use Landmark for a page region.
+*/
+function Box({ children, inset = "none", insetBlock, insetInline, surface = "none", border = false, radius = "none", overrides, ref }) {
+	const { tokens: t } = useTheme();
+	const style = React.useMemo(() => {
+		const blockInset = insetBlock ?? inset;
+		const inlineInset = insetInline ?? inset;
+		const next = {
+			paddingVertical: overrides?.paddingBlock ? resolveToken(t, overrides.paddingBlock) : t[INSET_TOKEN[blockInset]],
+			paddingHorizontal: overrides?.paddingInline ? resolveToken(t, overrides.paddingInline) : t[INSET_TOKEN[inlineInset]],
+			borderRadius: radius !== "none" && overrides?.radius ? resolveToken(t, overrides.radius) : t[RADIUS_TOKEN[radius]]
+		};
+		next.backgroundColor = surface === "none" ? "transparent" : t[SURFACE_TOKEN[surface]];
+		if (border) {
+			next.borderWidth = overrides?.borderWidth ? resolveToken(t, overrides.borderWidth) : t.borderWidthThin;
+			next.borderColor = overrides?.border ? resolveToken(t, overrides.border) : t.colorBorder;
+		}
+		return next;
+	}, [
+		t,
+		inset,
+		insetBlock,
+		insetInline,
+		surface,
+		border,
+		radius,
+		overrides
+	]);
+	return /* @__PURE__ */ React.createElement(View, {
+		ref,
+		style,
+		testID: "Box"
+	}, children);
+}
+//#endregion
+//#region src/FocusScope.tsx
+/** Whatever `TextInput` is focused right now — the one "what is focused" React Native exposes. */
+function currentlyFocusedInput() {
+	try {
+		return TextInput.State.currentlyFocusedInput() ?? null;
+	} catch {
+		return null;
+	}
+}
+/**
+* FocusScope — the smallest possible answer to the hardest accessibility bug: focus
+* that escapes a modal, or never comes back from one. It has no appearance and no
+* opinion about what is inside it.
+*
+* When to use: consumers rarely render it directly; Dialog, AlertDialog, BottomSheet
+* and ActionSheet declare it in their composition. Render it yourself only when
+* building a new modal surface the system does not have yet, with `trapped` on and a
+* dismiss control of your own — or with `trapped: false` for a non-modal panel that
+* should still move focus in and restore it on close. Do not trap focus in anything
+* that is not modal, and do not use it for composites (menus, tab lists).
+*
+* Renders a `View` with `accessibilityViewIsModal={trapped && active}` so VoiceOver
+* and TalkBack ignore siblings while the scope is the active one; a paused outer
+* scope therefore does not hide a nested Menu. On react-native-web the prop is
+* omitted: it would render `aria-modal` on a role-less div, and the composing
+* overlay's own dialog carries `aria-modal` there. There is no Tab order to confine
+* on native, so hardware-keyboard Tab is not wrapped (a platform limit, on
+* react-native-web too) and `onEscapeAttempt` never fires; screen-reader users are
+* kept inside by `accessibilityViewIsModal` instead. `autoFocus` runs once after
+* mount and calls `AccessibilityInfo.setAccessibilityFocus` on the wrapper for
+* `first`, `last` and `container` alike — children cannot be walked for a focusable
+* descendant — so the screen reader reads the scope from its top; only `none` skips
+* it. iOS VoiceOver may ignore focus on a non-`accessible` View; that is a platform
+* limit, and `accessibilityViewIsModal` is the accessibility alternative.
+* `restoreFocus` runs once on unmount and focuses `returnFocusTo` when given,
+* otherwise the `TextInput` that was focused when the scope first rendered; there is
+* no document order on native, so when that opener is gone nothing is restored. The
+* wrapper sets no `role`, `accessibilityRole` or `accessibilityLabel`, and never
+* handles Escape or the back button — the overlay owns dismissal.
+*/
+function FocusScope({ children, trapped = true, autoFocus = "first", restoreFocus = true, returnFocusTo, active = true, onEscapeAttempt, ref }) {
+	const wrapperRef = React.useRef(null);
+	React.useImperativeHandle(ref, () => wrapperRef.current, []);
+	const [capturedOpener] = React.useState(() => restoreFocus && returnFocusTo === void 0 ? currentlyFocusedInput() : null);
+	React.useEffect(() => {
+		if (autoFocus !== "none") {
+			const node = wrapperRef.current === null ? null : findNodeHandle(wrapperRef.current);
+			if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+		}
+		return () => {
+			if (!restoreFocus) return;
+			const opener = returnFocusTo !== void 0 ? returnFocusTo.current : capturedOpener;
+			const node = opener == null ? null : findNodeHandle(opener);
+			if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+		};
+	}, []);
+	return /* @__PURE__ */ React.createElement(View, {
+		ref: wrapperRef,
+		collapsable: false,
+		accessibilityViewIsModal: Platform.OS === "web" ? void 0 : trapped && active,
+		testID: "FocusScope"
+	}, children);
+}
+//#endregion
+//#region src/Stack.tsx
+const GAP_TOKEN = {
+	none: "layoutGapNone",
+	tight: "layoutGapTight",
+	normal: "layoutGapNormal",
+	loose: "layoutGapLoose",
+	section: "layoutGapSection"
+};
+const ALIGN = {
+	start: "flex-start",
+	center: "center",
+	end: "flex-end",
+	stretch: "stretch"
+};
+const JUSTIFY$3 = {
+	start: "flex-start",
+	center: "center",
+	end: "flex-end",
+	between: "space-between"
+};
+/**
+* Stack — how things get spaced. Owns the gap between its children using a preset
+* from the theme's layout rhythm, instead of margins on individual components.
+*
+* When to use: Use Stack for any group of siblings that should be evenly spaced:
+* form fields, a row of buttons, a list of cards, label-plus-control pairs. Reach
+* for it before writing any layout style. Do not use it for two-dimensional layouts
+* or for positioning a single element.
+*
+* Renders a `View` with `flexDirection`, `gap` from the token object, `alignItems`,
+* `justifyContent` and `flexWrap`; children are not wrapped. `element` is not
+* applicable on React Native: a navigation region is `Landmark`, and a list is a
+* plain Stack whose rows carry their own semantics (a native list has no role to claim).
+* Row direction already follows the writing direction under `I18nManager`.
+* Horizontal stacks should `wrap` rather than scroll, so content reflows for large
+* text settings (WCAG 1.4.10).
+*/
+function Stack({ children, direction = "vertical", gap = "normal", align = "stretch", justify = "start", wrap = false, overrides, ref }) {
+	const { tokens: t } = useTheme();
+	const style = React.useMemo(() => ({
+		flexDirection: direction === "horizontal" ? "row" : "column",
+		gap: gap !== "none" && overrides?.gap ? resolveToken(t, overrides.gap) : t[GAP_TOKEN[gap]],
+		alignItems: ALIGN[align],
+		justifyContent: JUSTIFY$3[justify],
+		flexWrap: wrap ? "wrap" : "nowrap"
+	}), [
+		t,
+		direction,
+		gap,
+		align,
+		justify,
+		wrap,
+		overrides
+	]);
+	return /* @__PURE__ */ React.createElement(View, {
+		ref,
+		style,
+		testID: "Stack"
+	}, children);
+}
+//#endregion
+//#region src/BottomSheet.tsx
+const COPY$30 = { closeLabel: "Close" };
+/** Schema constants without a token; `dragSlop` has one (`space.1`) and is read from the theme. */
+const CONSTANTS$2 = {
+	contentCap: .9,
+	dismissDistance: .25,
+	dismissVelocity: 1.5
+};
+/**
+* BottomSheet — the phone's dialog. Rises from the edge the thumb can reach, keeps the
+* page visible behind a scrim, and goes away with a swipe, a tap outside, the close
+* button or Escape.
+*
+* One presentation at every window width — never a Dialog: the surface is `width: '100%'`
+* capped at `layout.maxWidth.prose` (locked) with `alignSelf: 'center'`, so a tablet gets
+* a capped, centred sheet at the bottom. A native `Modal` (`transparent`,
+* `animationType="none"` — the component animates itself, `statusBarTranslucent`) holding
+* a scrim `Pressable` and, inside a `FocusScope` (`trapped`, `autoFocus="first"`,
+* `restoreFocus`), an `Animated.View` surface anchored to the bottom with `role="dialog"`,
+* `accessibilityViewIsModal` and `accessibilityLabel={heading}`. It slides up with `enter`
+* and `motion.easing.standard` and down with `exit` and `motion.easing.exit`, instantly
+* under reduced motion. Android back (`onRequestClose`) and the VoiceOver escape gesture
+* report `onClose('escape')`, even when not dismissible. `autoFocus="first"` lands on the
+* scope wrapper rather than a real control — FocusScope's own documented native limit —
+* so the screen reader reads the sheet from the top, which is the intended result.
+*
+* A `PanResponder` on the header (handle and heading row, never the body `ScrollView`,
+* whatever its scroll position) claims a move once it passes `dragSlop` (`space.1`)
+* downward, so a tap on the close button still activates it; the offset counts from where
+* the slop was crossed, so the surface does not jump. It follows the finger even under
+* reduced motion, since the drag is user-driven. On release past `dismissDistance` of the
+* measured sheet height, or faster than `dismissVelocity` between the last two move
+* samples, it fires `onDragDismiss` then `onClose('drag')` and holds the released offset
+* until the consumer's update renders: `open` false plays the normal exit from there,
+* `open` still true springs back over `exit` with `motion.easing.standard`. The handle is
+* decorative, not a focus stop, and rendered only when the gesture is live.
+*
+* `inset` is applied once each way so nothing doubles between parts: the surface column
+* carries the block padding (`headerPaddingTop` at the top when the handle is rendered,
+* `inset` otherwise; `inset` at the bottom), the header and footer wrappers the inline
+* padding, and the body `Box` receives it as `overrides.paddingInline` with zero block
+* padding of its own. The bottom safe-area inset is an empty `SafeAreaView` after the last
+* part, whose column gap is cancelled so the only space it adds is its own inset; RN core
+* has no Android safe-area API, and the Modal is not `navigationBarTranslucent`, so
+* Android adds none.
+*
+* The closeButton part is a View sized to `size.target.comfortable`; the Button's own
+* hitSlop already extends its hit area to that target, so the wrapper's extra area
+* activates it. Scroll lock has no native meaning — a Modal has no page behind it to
+* scroll — and is not implemented. The Modal is its own window, so no ref is exposed; callers ref their trigger.
+*/
+function BottomSheet({ open, heading, hideHeading = false, children, footer, height = "content", dismissible = true, dragToDismiss = true, onClose, onDragDismiss, overrides }) {
+	const { tokens: t } = useTheme();
+	const reducedMotion = useReducedMotion();
+	const { height: windowHeight } = useWindowDimensions();
+	const [mounted, setMounted] = React.useState(open);
+	if (open && !mounted) setMounted(true);
+	const [dragReleases, setDragReleases] = React.useState(0);
+	const progress = React.useRef(new Animated.Value(0)).current;
+	const dragY = React.useRef(new Animated.Value(0)).current;
+	const sheetHeightRef = React.useRef(0);
+	const samplesRef = React.useRef([]);
+	const grantDyRef = React.useRef(0);
+	const scrimColor = overrides?.scrim ? resolveToken(t, overrides.scrim) : t.colorOverlayScrim;
+	const shadow = overrides?.shadow ? resolveToken(t, overrides.shadow) : t.shadowOverlay;
+	const radius = overrides?.radius ? resolveToken(t, overrides.radius) : t.radiusLg;
+	const handleHeight = overrides?.handleHeight ? resolveToken(t, overrides.handleHeight) : t.space1;
+	const handleWidth = overrides?.handleWidth ? resolveToken(t, overrides.handleWidth) : t.space10;
+	const handleRadius = overrides?.handleRadius ? resolveToken(t, overrides.handleRadius) : t.radiusFull;
+	const headerPaddingTop = overrides?.headerPaddingTop ? resolveToken(t, overrides.headerPaddingTop) : t.spaceSm;
+	const handleGap = overrides?.handleGap ? resolveToken(t, overrides.handleGap) : t.layoutGapTight;
+	const headerGap = overrides?.headerGap ? resolveToken(t, overrides.headerGap) : t.layoutGapNormal;
+	const inset = overrides?.inset ? resolveToken(t, overrides.inset) : t.layoutInsetLg;
+	const partGap = overrides?.partGap ? resolveToken(t, overrides.partGap) : t.layoutGapLoose;
+	const layer = overrides?.layer ? resolveToken(t, overrides.layer) : t.layerSheet;
+	const enterDuration = overrides?.enter ? resolveToken(t, overrides.enter) : t.motionDurationBase;
+	const exitDuration = overrides?.exit ? resolveToken(t, overrides.exit) : t.motionDurationFast;
+	const dragSlop = t.space1;
+	const canDrag = dragToDismiss && dismissible;
+	const springBack = () => {
+		if (reducedMotion || exitDuration === 0) {
+			dragY.setValue(0);
+			if (open) progress.setValue(1);
+			return;
+		}
+		const config = {
+			toValue: 0,
+			duration: exitDuration,
+			easing: toEasing(t.motionEasingStandard),
+			useNativeDriver: false
+		};
+		const toRest = [Animated.timing(dragY, config)];
+		if (open) toRest.push(Animated.timing(progress, {
+			...config,
+			toValue: 1
+		}));
+		Animated.parallel(toRest).start();
+	};
+	React.useEffect(() => {
+		if (!mounted) return;
+		if (open) {
+			if (reducedMotion || enterDuration === 0) {
+				progress.setValue(1);
+				dragY.setValue(0);
+				return;
+			}
+			const enterConfig = {
+				toValue: 1,
+				duration: enterDuration,
+				easing: toEasing(t.motionEasingStandard),
+				useNativeDriver: false
+			};
+			const animation = Animated.parallel([Animated.timing(progress, enterConfig), Animated.timing(dragY, {
+				...enterConfig,
+				toValue: 0
+			})]);
+			animation.start();
+			return () => animation.stop();
+		}
+		const unmount = () => {
+			progress.setValue(0);
+			dragY.setValue(0);
+			setMounted(false);
+		};
+		if (reducedMotion || exitDuration === 0) {
+			unmount();
+			return;
+		}
+		const animation = Animated.timing(progress, {
+			toValue: 0,
+			duration: exitDuration,
+			easing: toEasing(t.motionEasingExit),
+			useNativeDriver: false
+		});
+		animation.start(({ finished }) => {
+			if (finished) unmount();
+		});
+		return () => animation.stop();
+	}, [
+		open,
+		mounted,
+		reducedMotion
+	]);
+	React.useEffect(() => {
+		if (dragReleases > 0 && open) springBack();
+	}, [dragReleases]);
+	const latest = React.useRef({
+		open,
+		dragSlop,
+		windowHeight,
+		onClose,
+		onDragDismiss,
+		springBack
+	});
+	latest.current = {
+		open,
+		dragSlop,
+		windowHeight,
+		onClose,
+		onDragDismiss,
+		springBack
+	};
+	const panResponder = React.useRef(null);
+	if (panResponder.current === null) {
+		const claims = (_, g) => g.dy > latest.current.dragSlop && Math.abs(g.dy) > Math.abs(g.dx);
+		panResponder.current = PanResponder.create({
+			onMoveShouldSetPanResponderCapture: claims,
+			onMoveShouldSetPanResponder: claims,
+			onPanResponderGrant: (_, g) => {
+				samplesRef.current = [];
+				grantDyRef.current = g.dy;
+				progress.stopAnimation();
+			},
+			onPanResponderMove: (event, g) => {
+				const offset = Math.max(0, g.dy - grantDyRef.current);
+				dragY.setValue(offset);
+				const sample = {
+					dy: offset,
+					time: event.nativeEvent.timestamp
+				};
+				samplesRef.current = [samplesRef.current[samplesRef.current.length - 1] ?? sample, sample];
+			},
+			onPanResponderRelease: (_, g) => {
+				const offset = Math.max(0, g.dy - grantDyRef.current);
+				const [previous, last] = samplesRef.current;
+				const elapsed = previous !== void 0 && last !== void 0 ? last.time - previous.time : 0;
+				const velocity = previous !== void 0 && last !== void 0 && elapsed > 0 ? Math.max(0, (last.dy - previous.dy) / elapsed) : 0;
+				if (!(offset > (sheetHeightRef.current > 0 ? sheetHeightRef.current : latest.current.windowHeight) * CONSTANTS$2.dismissDistance || velocity > CONSTANTS$2.dismissVelocity) || !latest.current.open) {
+					latest.current.springBack();
+					return;
+				}
+				latest.current.onDragDismiss?.();
+				latest.current.onClose?.("drag");
+				setDragReleases((count) => count + 1);
+			},
+			onPanResponderTerminate: () => latest.current.springBack()
+		});
+	}
+	if (!mounted) return null;
+	const handleScrimPress = () => {
+		if (dismissible) onClose?.("scrim");
+	};
+	const handleCloseButtonPress = () => {
+		onClose?.("close-button");
+	};
+	const handleEscape = () => {
+		onClose?.("escape");
+	};
+	const handleSurfaceLayout = (event) => {
+		sheetHeightRef.current = event.nativeEvent.layout.height;
+	};
+	const showHeader = canDrag || !hideHeading || dismissible;
+	const hostStyle = { flex: 1 };
+	const scrimStyle = {
+		...StyleSheet.absoluteFill,
+		backgroundColor: scrimColor,
+		opacity: progress
+	};
+	const anchorStyle = {
+		flex: 1,
+		justifyContent: "flex-end",
+		zIndex: layer
+	};
+	const fullInset = Platform.OS === "android" ? Math.max(t.layoutGutter, StatusBar.currentHeight ?? 0) : t.layoutGutter;
+	const sheetHeight = {
+		content: void 0,
+		half: windowHeight * .5,
+		full: windowHeight - fullInset
+	};
+	const maxSheetHeight = height === "content" ? windowHeight * CONSTANTS$2.contentCap : void 0;
+	const surfaceStyle = {
+		width: "100%",
+		maxWidth: t.layoutMaxWidthProse,
+		alignSelf: "center",
+		height: sheetHeight[height],
+		maxHeight: maxSheetHeight,
+		borderTopLeftRadius: radius,
+		borderTopRightRadius: radius,
+		...shadow,
+		backgroundColor: t.colorOverlaySurface,
+		overflow: "hidden",
+		gap: partGap,
+		paddingTop: canDrag ? headerPaddingTop : inset,
+		paddingBottom: inset,
+		transform: [{ translateY: Animated.add(progress.interpolate({
+			inputRange: [0, 1],
+			outputRange: [windowHeight, 0]
+		}), dragY) }]
+	};
+	const headerStyle = {
+		paddingHorizontal: inset,
+		gap: handleGap
+	};
+	const handleStyle = {
+		alignSelf: "center",
+		width: handleWidth,
+		height: handleHeight,
+		borderRadius: handleRadius,
+		backgroundColor: t.colorForegroundMuted
+	};
+	const headingRowStyle = {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: hideHeading ? "flex-end" : "space-between",
+		gap: headerGap
+	};
+	const headingStyle = { flexShrink: 1 };
+	const closeButtonStyle = {
+		minWidth: t.sizeTargetComfortable,
+		minHeight: t.sizeTargetComfortable,
+		alignItems: "center",
+		justifyContent: "center"
+	};
+	const bodyStyle = {
+		flexShrink: 1,
+		flexGrow: height === "content" ? 0 : 1
+	};
+	const footerStyle = { paddingHorizontal: inset };
+	const safeAreaStyle = { marginTop: -partGap };
+	return /* @__PURE__ */ React.createElement(Modal, {
+		visible: true,
+		transparent: true,
+		animationType: "none",
+		onRequestClose: handleEscape,
+		statusBarTranslucent: true
+	}, /* @__PURE__ */ React.createElement(View, { style: hostStyle }, /* @__PURE__ */ React.createElement(Animated.View, { style: scrimStyle }, /* @__PURE__ */ React.createElement(Pressable, {
+		style: StyleSheet.absoluteFill,
+		onPress: handleScrimPress,
+		accessible: false,
+		testID: "BottomSheet.scrim"
+	})), /* @__PURE__ */ React.createElement(View, {
+		style: anchorStyle,
+		pointerEvents: "box-none"
+	}, /* @__PURE__ */ React.createElement(FocusScope, {
+		trapped: true,
+		active: open,
+		autoFocus: "first",
+		restoreFocus: true
+	}, /* @__PURE__ */ React.createElement(Animated.View, {
+		style: surfaceStyle,
+		onLayout: handleSurfaceLayout,
+		role: "dialog",
+		accessibilityViewIsModal: true,
+		"aria-modal": true,
+		accessibilityLabel: heading,
+		"aria-label": heading,
+		onAccessibilityEscape: handleEscape,
+		testID: "BottomSheet"
+	}, showHeader ? /* @__PURE__ */ React.createElement(View, {
+		...canDrag ? panResponder.current.panHandlers : void 0,
+		style: headerStyle,
+		testID: "BottomSheet.header"
+	}, canDrag ? /* @__PURE__ */ React.createElement(View, {
+		style: handleStyle,
+		accessibilityElementsHidden: true,
+		importantForAccessibility: "no",
+		"aria-hidden": true,
+		testID: "BottomSheet.handle"
+	}) : null, /* @__PURE__ */ React.createElement(View, { style: headingRowStyle }, !hideHeading ? /* @__PURE__ */ React.createElement(View, {
+		style: headingStyle,
+		testID: "BottomSheet.heading"
+	}, /* @__PURE__ */ React.createElement(Heading, { level: "2" }, heading)) : null, dismissible ? /* @__PURE__ */ React.createElement(View, {
+		style: closeButtonStyle,
+		testID: "BottomSheet.closeButton"
+	}, /* @__PURE__ */ React.createElement(Button, {
+		label: COPY$30.closeLabel,
+		variant: "ghost",
+		size: "sm",
+		iconOnly: true,
+		leadingIcon: /* @__PURE__ */ React.createElement(Icon, {
+			name: "close",
+			color: t.colorActionGhostForeground
+		}),
+		onPress: handleCloseButtonPress
+	})) : null)) : null, /* @__PURE__ */ React.createElement(ScrollView, {
+		style: bodyStyle,
+		keyboardShouldPersistTaps: "handled"
+	}, /* @__PURE__ */ React.createElement(View, { testID: "BottomSheet.body" }, /* @__PURE__ */ React.createElement(Box, {
+		inset: "none",
+		overrides: { paddingInline: overrides?.inset ?? "layout.inset.lg" }
+	}, children))), footer !== void 0 ? /* @__PURE__ */ React.createElement(View, {
+		style: footerStyle,
+		testID: "BottomSheet.footer"
+	}, /* @__PURE__ */ React.createElement(Stack, {
+		direction: "horizontal",
+		justify: "end",
+		wrap: true,
+		overrides: { gap: overrides?.footerGap ?? "layout.gap.tight" }
+	}, footer)) : null, /* @__PURE__ */ React.createElement(SafeAreaView, { style: safeAreaStyle }))))));
+}
+//#endregion
+//#region src/Listbox.tsx
+const COPY$29 = {
+	empty: "No options",
+	required: "{label} is required.",
+	invalid: "{label} is not valid.",
+	selectedCount: "{count} selected",
+	loading: "Loading…"
+};
+function withLabel(template, label) {
+	return template.replace("{label}", label);
+}
+const isWeb$3 = Platform.OS === "web";
+/**
+* One option row. Owned as its own component so the node can be given `aria-disabled` on
+* react-native-web: its `Pressable` overwrites any `aria-disabled` passed in with its own
+* (absent) `disabled` prop, exactly as Button, Checkbox, RadioGroup and SegmentedControl record,
+* and passing Pressable's `disabled` instead would drop the row out of the accessibility tree —
+* which the press guard exists to avoid. The attribute is also what keeps a dimmed disabled row
+* out of axe's contrast check (WCAG 1.4.3 exempts inactive components, and `opacity.disabled`
+* over `color.foreground` cannot reach 4.5:1).
+*/
+function ListboxOptionRow({ option, selected, optionDisabled, multiple, hint, webProps, rowStyle, labelStyle, descriptionStyle, textColumnStyle, onPress, onFocus, onBlur, onHoverIn, registerRef }) {
+	const nodeRef = React.useRef(null);
+	const accessibleLabel = option.description !== void 0 ? `${option.label}. ${option.description}` : option.label;
+	React.useEffect(() => {
+		if (!isWeb$3) return;
+		const node = nodeRef.current;
+		if (node === null) return;
+		if (optionDisabled) node.setAttribute("aria-disabled", "true");
+		else node.removeAttribute("aria-disabled");
+	}, [optionDisabled]);
+	return /* @__PURE__ */ React.createElement(Pressable, {
+		...webProps,
+		ref: (instance) => {
+			nodeRef.current = instance;
+			registerRef(instance);
+		},
+		accessibilityRole: isWeb$3 ? void 0 : "menuitem",
+		accessibilityLabel: accessibleLabel,
+		"aria-label": accessibleLabel,
+		accessibilityHint: hint,
+		accessibilityState: {
+			selected,
+			checked: multiple ? selected : void 0,
+			disabled: optionDisabled
+		},
+		"aria-selected": selected,
+		"aria-checked": multiple ? selected : void 0,
+		"aria-disabled": optionDisabled,
+		onPress,
+		onFocus,
+		onBlur,
+		onHoverIn,
+		style: rowStyle,
+		testID: "Listbox.option"
+	}, multiple ? /* @__PURE__ */ React.createElement(View, {
+		style: { opacity: selected ? 1 : 0 },
+		testID: "Listbox.optionCheck"
+	}, /* @__PURE__ */ React.createElement(Icon, {
+		name: "check",
+		size: "sm",
+		overrides: { color: "color.control.selectedBackground" }
+	})) : null, option.icon !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "Listbox.optionIcon" }, /* @__PURE__ */ React.createElement(Icon, {
+		name: option.icon,
+		size: "sm",
+		overrides: { color: "color.foreground" }
+	})) : null, /* @__PURE__ */ React.createElement(View, { style: textColumnStyle }, /* @__PURE__ */ React.createElement(Text$1, {
+		numberOfLines: 1,
+		style: labelStyle,
+		testID: "Listbox.optionLabel"
+	}, option.label), option.description !== void 0 ? /* @__PURE__ */ React.createElement(Text$1, {
+		numberOfLines: 1,
+		style: descriptionStyle,
+		testID: "Listbox.optionDescription"
+	}, option.description) : null));
+}
+function isGroup$3(item) {
+	return "group" in item;
+}
+/** Rows in display order; groups flatten into a label row followed by their options, and empty groups are omitted. */
+function flattenRows(items) {
+	const rows = [];
+	items.forEach((item, itemIndex) => {
+		if (isGroup$3(item)) {
+			if (item.options.length === 0) return;
+			rows.push({
+				kind: "group",
+				key: `group-${itemIndex}`,
+				label: item.group
+			});
+			item.options.forEach((option, optionIndex) => rows.push({
+				kind: "option",
+				key: `${itemIndex}-${optionIndex}-${option.value}`,
+				option
+			}));
+		} else rows.push({
+			kind: "option",
+			key: `${itemIndex}-${item.value}`,
+			option: item
+		});
+	});
+	return rows;
+}
+function flattenOptions$2(items) {
+	const options = [];
+	items.forEach((item) => {
+		if (isGroup$3(item)) options.push(...item.options);
+		else options.push(item);
+	});
+	return options;
+}
+/**
+* The selection as an array, normalised to the mode rather than warned about: single-select
+* takes an array's first entry, multi-select reads a bare string as a one-entry array.
+*/
+function toSelectedArray(selection, multiple) {
+	const all = Array.isArray(selection) ? selection : selection !== void 0 && selection !== "" ? [selection] : [];
+	if (multiple) return all;
+	const first = all[0];
+	return first !== void 0 && first !== "" ? [first] : [];
+}
+/** `initialActiveValue` when it names an enabled option, else the first selected, else the first enabled. */
+function resolveInitialActive(items, initialActiveValue, selection, multiple) {
+	const enabled = flattenOptions$2(items).filter((option) => option.disabled !== true);
+	if (initialActiveValue !== void 0 && enabled.some((option) => option.value === initialActiveValue)) return initialActiveValue;
+	const selected = toSelectedArray(selection, multiple);
+	return enabled.find((option) => selected.includes(option.value))?.value ?? enabled[0]?.value ?? null;
+}
+/**
+* Listbox — the engine behind a picker: the list a Select's popup or a Combobox's
+* suggestions renders, so all of them behave identically, including for multi-select.
+*
+* Renders a `FlatList` (virtualised) of `Pressable` rows with
+* `accessibilityRole="menuitem"` (native has no listbox/option roles) and
+* `accessibilityState={{ selected, checked, disabled }}` (`checked` only with `multiple`).
+* Find the list by its accessible label, never by role. Groups are plain label rows, not
+* the header trait. `maxVisible` becomes `maxHeight` from the token formula: rows ×
+* (max(minTarget, fontSize × lineHeight + 2 × optionPaddingBlock) + 2 × focusRingWidth),
+* plus 2 × listPadding, plus 2 × borderWidth when not `embedded`; never measured. Each row
+* is its own accessibility stop and a tap is the selection: arrows, Home/End, Page keys,
+* typeahead, Shift+Arrow and Ctrl+A have no native form, and `selectionFollowsFocus` and
+* `typeaheadReset` have no runtime effect. The active row (focused, hovered, pre-highlighted,
+* or named by a host's `activeValue`) gets `color.background.subtle`; focus draws a `color.border.focus`
+* border that is always reserved. Selection shows by weight, and with `multiple` by the
+* check (an invisible slot when unselected, so labels align). Inside a Form the list
+* registers by `name`; the message below it follows `error` → Form error →
+* `copy.required` / `copy.invalid`, and a failed submit moves accessibility focus to the
+* first selected row, else the first enabled one.
+*/
+function Listbox({ label, options, multiple = false, value, defaultValue, selectionFollowsFocus: _selectionFollowsFocus = true, required = false, invalid = false, error, embedded = false, initialActiveValue, activeValue: activeValueProp, loading = false, disabled = false, name, emptyMessage, maxVisible = "8", overrides, ref, onChange, onActiveChange }) {
+	const { tokens: t } = useTheme();
+	const form = useFormContext();
+	const instanceId = React.useId();
+	const emptyId = `${instanceId}empty`;
+	const errorId = `${instanceId}error`;
+	const listRef = React.useRef(null);
+	const rowRefs = React.useRef(/* @__PURE__ */ new Map());
+	const [internalValue, setInternalValue] = React.useState(defaultValue);
+	const [internalActive, setInternalActive] = React.useState(() => resolveInitialActive(options, initialActiveValue, value ?? defaultValue, multiple));
+	const [focusedValue, setFocusedValue] = React.useState(null);
+	const isControlled = value !== void 0;
+	const currentValue = isControlled ? value : internalValue;
+	const isDisabled = disabled || (form?.disabled ?? false);
+	const isActiveControlled = activeValueProp !== void 0;
+	const effectiveActive = isActiveControlled ? activeValueProp : internalActive;
+	const setActive = (next) => {
+		if (!isActiveControlled) setInternalActive(next);
+	};
+	const orderedOptions = React.useMemo(() => flattenOptions$2(options), [options]);
+	const orderedValues = React.useMemo(() => orderedOptions.map((option) => option.value), [orderedOptions]);
+	const rows = React.useMemo(() => flattenRows(options), [options]);
+	const selectedValues = toSelectedArray(currentValue, multiple);
+	const selectedValue = multiple ? void 0 : selectedValues[0];
+	const nothingSelected = selectedValues.length === 0;
+	const lastInitialActive = React.useRef(initialActiveValue);
+	React.useEffect(() => {
+		if (lastInitialActive.current === initialActiveValue) return;
+		lastInitialActive.current = initialActiveValue;
+		if (focusedValue === null) setInternalActive(resolveInitialActive(options, initialActiveValue, currentValue, multiple));
+	}, [
+		initialActiveValue,
+		options,
+		currentValue,
+		focusedValue,
+		multiple
+	]);
+	const hasError = error !== void 0 && error !== "";
+	const formError = name !== void 0 ? form?.errors[name] : void 0;
+	const isInvalid = invalid || hasError || formError !== void 0;
+	const displayedError = hasError ? error : formError ?? (invalid ? withLabel(required && nothingSelected ? COPY$29.required : COPY$29.invalid, label) : void 0);
+	const validateValue = React.useCallback((candidate) => {
+		if (error !== void 0 && error !== "") return error;
+		if (required && toSelectedArray(candidate, multiple).length === 0) return withLabel(COPY$29.required, label);
+		if (invalid) return withLabel(COPY$29.invalid, label);
+		return null;
+	}, [
+		required,
+		label,
+		error,
+		invalid,
+		multiple
+	]);
+	const focusTargets = React.useRef({
+		orderedOptions,
+		selectedValues,
+		rows
+	});
+	focusTargets.current = {
+		orderedOptions,
+		selectedValues,
+		rows
+	};
+	const focusField = React.useCallback(() => {
+		const { orderedOptions: all, selectedValues: selected, rows: allRows } = focusTargets.current;
+		const target = all.find((option) => selected.includes(option.value)) ?? all.find((option) => option.disabled !== true);
+		const focusNow = () => {
+			const row = target === void 0 ? void 0 : rowRefs.current.get(target.value);
+			const node = findNodeHandle(row ?? listRef.current);
+			if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+		};
+		const index = target === void 0 ? -1 : allRows.findIndex((row) => row.kind === "option" && row.option.value === target.value);
+		if (index < 0 || listRef.current === null) {
+			focusNow();
+			return;
+		}
+		listRef.current.scrollToIndex({
+			index,
+			animated: false
+		});
+		requestAnimationFrame(focusNow);
+	}, []);
+	const handleScrollToIndexFailed = (info) => {
+		listRef.current?.scrollToOffset({
+			offset: info.index * info.averageItemLength,
+			animated: false
+		});
+	};
+	const latest = React.useRef({
+		currentValue,
+		validateValue,
+		label
+	});
+	latest.current = {
+		currentValue,
+		validateValue,
+		label
+	};
+	const handle = React.useMemo(() => ({
+		get label() {
+			return latest.current.label;
+		},
+		getValue: () => {
+			const selected = toSelectedArray(latest.current.currentValue, multiple);
+			if (selected.length === 0) return;
+			return multiple ? selected : selected[0];
+		},
+		validate: () => latest.current.validateValue(latest.current.currentValue),
+		focus: focusField
+	}), [multiple, focusField]);
+	const register = form?.register;
+	const unregister = form?.unregister;
+	React.useEffect(() => {
+		if (register === void 0 || unregister === void 0 || name === void 0 || isDisabled) return;
+		register(name, handle);
+		return () => unregister(name);
+	}, [
+		register,
+		unregister,
+		name,
+		handle,
+		isDisabled
+	]);
+	const commit = (next) => {
+		if (!isControlled) setInternalValue(next);
+		onChange?.(next);
+		if (form !== null && name !== void 0 && form.validateMode !== "submit") form.reportValidity(name, validateValue(next));
+	};
+	const selectOption = (option) => {
+		if (isDisabled || option.disabled === true) return;
+		if (multiple) {
+			const nextSet = new Set(selectedValues);
+			if (nextSet.has(option.value)) nextSet.delete(option.value);
+			else nextSet.add(option.value);
+			commit(orderedValues.filter((v) => nextSet.has(v)));
+			return;
+		}
+		if (option.value === selectedValue) return;
+		commit(option.value);
+	};
+	const handleFocusOption = (optionValue) => {
+		setFocusedValue(optionValue);
+		if (isDisabled) return;
+		setActive(optionValue);
+		onActiveChange?.(optionValue);
+	};
+	const handleBlurOption = (optionValue) => {
+		setFocusedValue((prev) => prev === optionValue ? null : prev);
+		if (!isDisabled && effectiveActive === optionValue) {
+			setActive(null);
+			onActiveChange?.(null);
+		}
+	};
+	const handleHoverOption = (optionValue) => {
+		if (isDisabled || optionValue === effectiveActive) return;
+		setActive(optionValue);
+		onActiveChange?.(optionValue);
+	};
+	const border = overrides?.border ? resolveToken(t, overrides.border) : t.colorBorderStrong;
+	const borderInvalid = overrides?.borderInvalid ? resolveToken(t, overrides.borderInvalid) : t.colorBorderDanger;
+	const partGap = overrides?.partGap ? resolveToken(t, overrides.partGap) : t.space1;
+	const borderWidth = overrides?.borderWidth ? resolveToken(t, overrides.borderWidth) : t.borderWidthThin;
+	const radius = overrides?.radius ? resolveToken(t, overrides.radius) : t.radiusMd;
+	const listPadding = overrides?.listPadding ? resolveToken(t, overrides.listPadding) : t.space1;
+	const optionPaddingBlock = overrides?.optionPaddingBlock ? resolveToken(t, overrides.optionPaddingBlock) : t.spaceSm;
+	const optionPaddingInline = overrides?.optionPaddingInline ? resolveToken(t, overrides.optionPaddingInline) : t.spaceMd;
+	const optionGap = overrides?.optionGap ? resolveToken(t, overrides.optionGap) : t.layoutGapNormal;
+	const optionRadius = overrides?.optionRadius ? resolveToken(t, overrides.optionRadius) : t.radiusSm;
+	const optionDescriptionSize = overrides?.optionDescriptionSize ? resolveToken(t, overrides.optionDescriptionSize) : t.fontSizeSm;
+	const optionWeight = overrides?.optionWeight ? resolveToken(t, overrides.optionWeight) : t.fontWeightRegular;
+	const optionSelectedWeight = overrides?.optionSelectedWeight ? resolveToken(t, overrides.optionSelectedWeight) : t.fontWeightMedium;
+	const groupLabelSize = overrides?.groupLabelSize ? resolveToken(t, overrides.groupLabelSize) : t.fontSizeXs;
+	const groupLabelWeight = overrides?.groupLabelWeight ? resolveToken(t, overrides.groupLabelWeight) : t.fontWeightSemibold;
+	const groupLabelPaddingBlock = overrides?.groupLabelPaddingBlock ? resolveToken(t, overrides.groupLabelPaddingBlock) : t.space1;
+	const fontFamily = overrides?.fontFamily ? resolveToken(t, overrides.fontFamily) : t.fontFamilyBody;
+	const fontSize = overrides?.fontSize ? resolveToken(t, overrides.fontSize) : t.fontSizeMd;
+	const lineHeightMultiplier = overrides?.lineHeight ? resolveToken(t, overrides.lineHeight) : t.fontLineHeightNormal;
+	const disabledOpacity = overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled;
+	const rowHeight = Math.max(t.sizeTargetMin, toLineHeight(fontSize, lineHeightMultiplier) + 2 * optionPaddingBlock) + 2 * t.borderWidthFocus;
+	const rowCount = maxVisible === "all" ? null : Number(maxVisible);
+	const maxHeight = rowCount === null ? void 0 : rowCount * rowHeight + 2 * listPadding + (embedded ? 0 : 2 * borderWidth);
+	const placeholderText = loading ? COPY$29.loading : emptyMessage ?? COPY$29.empty;
+	const selectedCountText = multiple && !isWeb$3 ? COPY$29.selectedCount.replace("{count}", String(selectedValues.length)) : void 0;
+	const messageOverrides = {
+		fontFamily: overrides?.fontFamily,
+		lineHeight: overrides?.lineHeight
+	};
+	const rootStyle = {
+		flexDirection: "column",
+		gap: partGap
+	};
+	const listStyle = {
+		flexGrow: 0,
+		...embedded ? null : {
+			borderWidth,
+			borderColor: isInvalid ? borderInvalid : border,
+			borderRadius: radius,
+			backgroundColor: t.colorBackground,
+			overflow: "hidden"
+		},
+		...maxHeight !== void 0 ? { maxHeight } : null,
+		opacity: isDisabled ? disabledOpacity : 1
+	};
+	const listContentStyle = { padding: listPadding };
+	const groupLabelStyle = {
+		paddingHorizontal: optionPaddingInline,
+		paddingVertical: groupLabelPaddingBlock,
+		fontFamily,
+		fontSize: groupLabelSize,
+		fontWeight: toFontWeight(groupLabelWeight),
+		lineHeight: toLineHeight(groupLabelSize, lineHeightMultiplier),
+		color: t.colorForegroundMuted
+	};
+	const optionRowStyle = (active, focused, optionDisabled) => ({
+		flexDirection: "row",
+		alignItems: "flex-start",
+		gap: optionGap,
+		minHeight: t.sizeTargetMin + 2 * t.borderWidthFocus,
+		paddingVertical: optionPaddingBlock,
+		paddingHorizontal: optionPaddingInline,
+		borderRadius: optionRadius,
+		backgroundColor: active && !isDisabled ? t.colorBackgroundSubtle : "transparent",
+		borderWidth: t.borderWidthFocus,
+		borderColor: focused ? t.colorBorderFocus : "transparent",
+		opacity: optionDisabled && !isDisabled ? disabledOpacity : 1
+	});
+	const optionLabelStyle = (selected) => ({
+		flexShrink: 1,
+		fontFamily,
+		fontSize,
+		fontWeight: toFontWeight(selected ? optionSelectedWeight : optionWeight),
+		lineHeight: toLineHeight(fontSize, lineHeightMultiplier),
+		color: t.colorForeground
+	});
+	const optionDescriptionStyle = {
+		flexShrink: 1,
+		fontFamily,
+		fontSize: optionDescriptionSize,
+		lineHeight: toLineHeight(optionDescriptionSize, lineHeightMultiplier),
+		color: t.colorForegroundMuted
+	};
+	const optionTextColumnStyle = {
+		flexShrink: 1,
+		flexDirection: "column"
+	};
+	const emptyRowStyle = {
+		paddingVertical: optionPaddingBlock,
+		paddingHorizontal: optionPaddingInline
+	};
+	const isEmpty = rows.length === 0;
+	const webListProps = isWeb$3 ? {
+		role: "listbox",
+		"aria-multiselectable": multiple ? "true" : void 0,
+		"aria-invalid": isInvalid ? "true" : void 0,
+		"aria-required": required ? "true" : void 0,
+		"aria-describedby": [isEmpty ? emptyId : void 0, displayedError !== void 0 ? errorId : void 0].filter((part) => part !== void 0).join(" ") || void 0
+	} : {};
+	const webRowProps = isWeb$3 ? { role: "option" } : {};
+	const keepRowRef = (optionValue) => (instance) => {
+		if (instance === null) rowRefs.current.delete(optionValue);
+		else rowRefs.current.set(optionValue, instance);
+	};
+	const renderItem = ({ item }) => {
+		if (item.kind === "group") return /* @__PURE__ */ React.createElement(Text$1, {
+			style: groupLabelStyle,
+			testID: "Listbox.groupLabel"
+		}, item.label);
+		const option = item.option;
+		const selected = multiple ? selectedValues.includes(option.value) : option.value === selectedValue;
+		const optionDisabled = isDisabled || option.disabled === true;
+		return /* @__PURE__ */ React.createElement(ListboxOptionRow, {
+			option,
+			selected,
+			optionDisabled,
+			multiple,
+			hint: displayedError,
+			webProps: webRowProps,
+			rowStyle: optionRowStyle(effectiveActive === option.value, focusedValue === option.value, optionDisabled),
+			labelStyle: optionLabelStyle(selected),
+			descriptionStyle: optionDescriptionStyle,
+			textColumnStyle: optionTextColumnStyle,
+			onPress: () => selectOption(option),
+			onFocus: () => handleFocusOption(option.value),
+			onBlur: () => handleBlurOption(option.value),
+			onHoverIn: () => handleHoverOption(option.value),
+			registerRef: keepRowRef(option.value)
+		});
+	};
+	return /* @__PURE__ */ React.createElement(View, {
+		ref,
+		testID: "Listbox",
+		style: rootStyle
+	}, /* @__PURE__ */ React.createElement(FlatList, {
+		...webListProps,
+		ref: listRef,
+		data: rows,
+		keyExtractor: (row) => row.key,
+		renderItem,
+		style: listStyle,
+		contentContainerStyle: listContentStyle,
+		onScrollToIndexFailed: handleScrollToIndexFailed,
+		accessibilityRole: isWeb$3 ? void 0 : "list",
+		accessibilityLabel: label,
+		"aria-label": label,
+		accessibilityState: {
+			disabled: isDisabled,
+			busy: loading
+		},
+		"aria-disabled": isDisabled,
+		"aria-busy": loading,
+		accessibilityValue: selectedCountText !== void 0 ? { text: selectedCountText } : void 0,
+		"aria-valuetext": selectedCountText,
+		ListEmptyComponent: /* @__PURE__ */ React.createElement(View, {
+			id: emptyId,
+			"aria-hidden": isWeb$3,
+			style: emptyRowStyle,
+			testID: "Listbox.emptyState"
+		}, /* @__PURE__ */ React.createElement(Text, {
+			tone: "muted",
+			overrides: messageOverrides
+		}, placeholderText)),
+		testID: "Listbox.list"
+	}), displayedError !== void 0 ? /* @__PURE__ */ React.createElement(View, {
+		id: errorId,
+		testID: "Listbox.errorMessage"
+	}, /* @__PURE__ */ React.createElement(Text, {
+		size: "sm",
+		tone: "danger",
+		overrides: messageOverrides
+	}, displayedError)) : null);
+}
+//#endregion
+//#region src/Select.tsx
+/** The component's user-facing strings, from the doc's `copy` block. */
+const COPY$28 = {
+	placeholder: "Select…",
+	selectedCount: "{count} selected",
+	done: "Done",
+	required: "{label} is required.",
+	invalid: "{label} is not valid.",
+	requiredIndicator: " (required)"
+};
+/** The most selected labels the trigger spells out before it counts them instead. */
+const MAX_LISTED_LABELS = 2;
+function isGroup$2(item) {
+	return "group" in item;
+}
+function flattenOptions$1(items) {
+	const options = [];
+	items.forEach((item) => {
+		if (isGroup$2(item)) options.push(...item.options);
+		else options.push(item);
+	});
+	return options;
+}
+/** Nothing selected: no entries with `multiple`, no string without it. */
+function isEmptyValue$1(candidate) {
+	return Array.isArray(candidate) ? candidate.length === 0 : candidate === void 0 || candidate === "";
+}
+/**
+* Select — the field for "one of these" (or "any of these") when the list is longer
+* than a RadioGroup should show and typing is not the natural way in.
+*
+* When to use: a form field with about seven to fifty recognisable options — country,
+* role, status. Use `multiple` for tags or memberships. Use Combobox instead when typing
+* to filter is faster than scrolling, or free text is allowed. Do not use it for two to
+* six options (RadioGroup), for actions (Menu), for modes (SegmentedControl), or for
+* on/off (Switch).
+*
+* Renders a `Pressable` trigger (`accessibilityRole="combobox"`, `accessibilityLabel`,
+* `accessibilityHint`, `accessibilityState={{ expanded, disabled }}`,
+* `accessibilityValue={{ text }}` with the selected label(s), the count, or the
+* placeholder) showing the value and a `chevron-down` `Icon`. A long value is clipped to
+* one line with an ellipsis. Activating the trigger opens an `embedded` `Listbox` (given
+* no `name`, so Select alone is the field, `selectionFollowsFocus: false`, and the first
+* selection as `initialActiveValue`): a `BottomSheet` on phone-width screens
+* (`layout.maxWidth.prose` and narrower) with a `copy.done` footer button for `multiple`,
+* or else a transparent `Modal` whose popup sits below the trigger (flipped above when
+* there is no room), at least as wide as it, on `layer.dropdown`, fading in over `enter`.
+* Closing is instant on every platform, as on web. Escape (the Android back gesture) and
+* an outside tap close without changing the value; focus returns to the trigger by hand
+* (`AccessibilityInfo.setAccessibilityFocus`), since `FocusScope`'s restore only
+* recaptures a `TextInput`. Selecting an option commits and, for a single select, closes;
+* re-picking the selected option closes without firing `onChange`. `Pressable` sees no
+* keys, so Enter-as-press is the only other keyboard rule — Tab-commits-and-closes has no
+* native form.
+*
+* `disabled` wins over a controlled `open`: a disabled Select never shows its popup, is
+* not submitted, and stays visible and focusable (the `disabled` prop is never passed to
+* the `Pressable`, which would take it out of the tab order; react-native-web gets
+* `aria-disabled` on the DOM node instead, and `aria-expanded` is mirrored because
+* react-native-web drops `accessibilityState`).
+*
+* Validation works as `Input`'s: precedence `error`, then `required` (`copy.required`),
+* then `invalid` (`copy.invalid`), registered with the enclosing `FormContext` by `name`
+* with a string value for a single select and a `string[]` with `multiple`.
+*/
+function Select({ label, name, options, value, defaultValue, placeholder, hideLabel = false, size = "md", open: openProp, multiple = false, description, required = false, disabled = false, invalid = false, error, native = "auto", overrides, ref, onChange, onOpenChange }) {
+	const { tokens: t } = useTheme();
+	const form = useFormContext();
+	const fieldset = useFieldsetContext();
+	const reducedMotion = useReducedMotion();
+	const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+	const triggerRef = React.useRef(null);
+	const popupId = React.useId();
+	const [internalValue, setInternalValue] = React.useState(defaultValue);
+	const [focused, setFocused] = React.useState(false);
+	const [internalOpen, setInternalOpen] = React.useState(false);
+	const [triggerRect, setTriggerRect] = React.useState(null);
+	const [popupHeight, setPopupHeight] = React.useState(null);
+	const progress = React.useRef(new Animated.Value(0)).current;
+	const isControlled = value !== void 0;
+	const currentValue = isControlled ? value : internalValue;
+	const isOpenControlled = openProp !== void 0;
+	const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
+	const open = isDisabled ? false : isOpenControlled ? openProp : internalOpen;
+	const formErrors = form?.errors;
+	const formMarked = formErrors !== void 0 && Object.prototype.hasOwnProperty.call(formErrors, name);
+	const formError = formErrors?.[name];
+	const ownError = error !== void 0 && error !== "" ? error : void 0;
+	const summarised = form !== null && form.errorSummary;
+	const isPhoneWidth = windowWidth <= t.layoutMaxWidthProse;
+	const usesSheet = native !== "never" && isPhoneWidth;
+	const popupMounted = open && (usesSheet || triggerRect !== null);
+	const flatOptions = React.useMemo(() => flattenOptions$1(options), [options]);
+	const labelFor = React.useCallback((optionValue) => flatOptions.find((option) => option.value === optionValue)?.label ?? optionValue, [flatOptions]);
+	const selectedValues = multiple ? Array.isArray(currentValue) ? currentValue : [] : typeof currentValue === "string" && currentValue !== "" ? [currentValue] : [];
+	const hasSelection = selectedValues.length > 0;
+	const isInvalid = ownError !== void 0 || invalid || formMarked;
+	const derivedError = isInvalid ? required && !hasSelection ? COPY$28.required.replace("{label}", label) : COPY$28.invalid.replace("{label}", label) : void 0;
+	const displayedError = ownError ?? (formError !== void 0 && formError !== "" ? formError : derivedError);
+	const validateValue = React.useCallback((candidate) => {
+		if (isDisabled) return null;
+		if (error !== void 0 && error !== "") return error;
+		if (required && isEmptyValue$1(candidate)) return COPY$28.required.replace("{label}", label);
+		if (invalid) return COPY$28.invalid.replace("{label}", label);
+		return null;
+	}, [
+		isDisabled,
+		error,
+		required,
+		invalid,
+		label
+	]);
+	const focusTrigger = React.useCallback(() => {
+		const node = triggerRef.current === null ? null : findNodeHandle(triggerRef.current);
+		if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+	}, []);
+	const latest = React.useRef({
+		currentValue,
+		validateValue
+	});
+	latest.current = {
+		currentValue,
+		validateValue
+	};
+	const handle = React.useMemo(() => ({
+		label,
+		getValue: () => {
+			const current = latest.current.currentValue;
+			if (multiple) return Array.isArray(current) && current.length > 0 ? current : void 0;
+			return typeof current === "string" && current !== "" ? current : void 0;
+		},
+		validate: () => latest.current.validateValue(latest.current.currentValue),
+		focus: focusTrigger
+	}), [
+		label,
+		multiple,
+		focusTrigger
+	]);
+	const register = form?.register;
+	const unregister = form?.unregister;
+	React.useEffect(() => {
+		if (register === void 0 || unregister === void 0 || isDisabled) return;
+		register(name, handle);
+		return () => unregister(name);
+	}, [
+		register,
+		unregister,
+		name,
+		handle,
+		isDisabled
+	]);
+	React.useEffect(() => {
+		if (Platform.OS === "ios" && !summarised && displayedError !== void 0) AccessibilityInfo.announceForAccessibility(displayedError);
+	}, [displayedError, summarised]);
+	React.useEffect(() => {
+		if (Platform.OS !== "web") return;
+		const node = triggerRef.current;
+		if (node === null) return;
+		if (isDisabled) node.setAttribute("aria-disabled", "true");
+		else node.removeAttribute("aria-disabled");
+		if (popupMounted) node.setAttribute("aria-controls", popupId);
+		else node.removeAttribute("aria-controls");
+	}, [
+		isDisabled,
+		popupMounted,
+		popupId
+	]);
+	const changeOpen = (next) => {
+		if (!isOpenControlled) setInternalOpen(next);
+		onOpenChange?.(next);
+	};
+	const closePopup = () => {
+		if (!open) return;
+		changeOpen(false);
+		focusTrigger();
+	};
+	const handleTriggerPress = () => {
+		if (isDisabled) return;
+		if (open) {
+			closePopup();
+			return;
+		}
+		changeOpen(true);
+	};
+	const handleListboxChange = (next) => {
+		if (!multiple && next === currentValue) {
+			closePopup();
+			return;
+		}
+		if (!isControlled) setInternalValue(next);
+		onChange?.(next);
+		if (form !== null && form.validateMode !== "submit") form.reportValidity(name, validateValue(next));
+		if (!multiple) closePopup();
+	};
+	const token = (overrideRef, fallback) => overrideRef ? resolveToken(t, overrideRef) : fallback;
+	const enterDuration = token(overrides?.enter, t.motionDurationFast);
+	const standardEasing = toEasing(t.motionEasingStandard);
+	React.useEffect(() => {
+		if (usesSheet) return;
+		if (!open) {
+			progress.setValue(0);
+			setTriggerRect(null);
+			setPopupHeight(null);
+			return;
+		}
+		triggerRef.current?.measureInWindow((x, y, width, height) => setTriggerRect({
+			x,
+			y,
+			width,
+			height
+		}));
+		if (reducedMotion) {
+			progress.setValue(1);
+			return;
+		}
+		const animation = Animated.timing(progress, {
+			toValue: 1,
+			duration: enterDuration,
+			easing: standardEasing,
+			useNativeDriver: false
+		});
+		animation.start();
+		return () => animation.stop();
+	}, [
+		open,
+		usesSheet,
+		reducedMotion,
+		enterDuration,
+		standardEasing,
+		progress
+	]);
+	const handlePopupLayout = (event) => {
+		setPopupHeight(event.nativeEvent.layout.height);
+	};
+	const triggerBorderInvalid = token(overrides?.triggerBorderInvalid, t.colorBorderDanger);
+	const triggerBorderWidth = token(overrides?.triggerBorderWidth, t.borderWidthThin);
+	const triggerRadius = token(overrides?.triggerRadius, t.radiusMd);
+	const triggerPaddingInline = token(overrides?.triggerPaddingInline, t.spaceMd);
+	const triggerPaddingBlock = token(overrides?.triggerPaddingBlock, size === "sm" ? t.space1 : t.spaceSm);
+	const triggerGap = token(overrides?.triggerGap, t.layoutGapNormal);
+	const partGap = token(overrides?.partGap, t.space1);
+	const popupSurface = token(overrides?.popupSurface, t.colorOverlaySurface);
+	const popupBorder = token(overrides?.popupBorder, t.colorBorder);
+	const popupBorderWidth = token(overrides?.popupBorderWidth, t.borderWidthThin);
+	const popupShadow = token(overrides?.popupShadow, t.shadowOverlay);
+	const popupRadius = token(overrides?.popupRadius, t.radiusMd);
+	const popupOffset = token(overrides?.popupOffset, t.space1);
+	const layer = token(overrides?.layer, t.layerDropdown);
+	const disabledOpacity = token(overrides?.disabledOpacity, t.opacityDisabled);
+	const minTarget = size === "sm" ? t.sizeTargetMin : t.sizeTargetComfortable;
+	const visibleLabel = required ? `${label}${COPY$28.requiredIndicator}` : label;
+	const accessibleName = fieldset === null ? visibleLabel : `${fieldset.legend}, ${visibleLabel}`;
+	const valueText = !hasSelection ? placeholder ?? COPY$28.placeholder : selectedValues.length <= MAX_LISTED_LABELS ? selectedValues.map(labelFor).join(", ") : COPY$28.selectedCount.replace("{count}", new Intl.NumberFormat().format(selectedValues.length));
+	const borderWidth = focused ? t.borderWidthFocus : triggerBorderWidth;
+	const borderGrowth = borderWidth - triggerBorderWidth;
+	const triggerBorderColor = isInvalid ? triggerBorderInvalid : focused ? t.colorBorderFocus : t.colorBorderStrong;
+	const containerStyle = {
+		flexDirection: "column",
+		gap: partGap,
+		opacity: isDisabled ? disabledOpacity : 1
+	};
+	const triggerStyle = {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: triggerGap,
+		minHeight: minTarget,
+		backgroundColor: t.colorBackground,
+		borderWidth,
+		borderColor: triggerBorderColor,
+		borderRadius: triggerRadius,
+		paddingHorizontal: triggerPaddingInline - borderGrowth,
+		paddingVertical: triggerPaddingBlock - borderGrowth
+	};
+	const fontFamilyRef = overrides?.fontFamily ?? "font.family.body";
+	const fontSizeRef = overrides?.fontSize ?? `font.size.${size}`;
+	const lineHeightRef = overrides?.lineHeight ?? "font.lineHeight.normal";
+	const helperSizeRef = overrides?.helperSize ?? "font.size.sm";
+	const labelOverrides = {
+		fontWeight: overrides?.labelWeight ?? "font.weight.medium",
+		fontSize: fontSizeRef,
+		fontFamily: fontFamilyRef,
+		lineHeight: lineHeightRef
+	};
+	const valueOverrides = {
+		fontSize: fontSizeRef,
+		fontWeight: overrides?.fontWeight ?? "font.weight.regular",
+		fontFamily: fontFamilyRef,
+		lineHeight: lineHeightRef
+	};
+	const helperOverrides = {
+		fontSize: helperSizeRef,
+		fontFamily: fontFamilyRef,
+		lineHeight: lineHeightRef
+	};
+	const listboxOverrides = {
+		fontFamily: fontFamilyRef,
+		lineHeight: lineHeightRef
+	};
+	const chevronOverrides = { color: "color.foreground.muted" };
+	const listbox = /* @__PURE__ */ React.createElement(Listbox, {
+		label,
+		options,
+		multiple,
+		value: currentValue,
+		embedded: true,
+		selectionFollowsFocus: false,
+		initialActiveValue: selectedValues[0],
+		onChange: handleListboxChange,
+		overrides: listboxOverrides
+	});
+	const spaceBelow = triggerRect !== null ? windowHeight - (triggerRect.y + triggerRect.height) : 0;
+	const spaceAbove = triggerRect !== null ? triggerRect.y : 0;
+	const measuredPopupHeight = popupHeight ?? 0;
+	const flipAbove = triggerRect !== null && spaceBelow < measuredPopupHeight + popupOffset && spaceAbove > spaceBelow;
+	const popupTop = triggerRect === null ? 0 : flipAbove ? triggerRect.y - popupOffset - measuredPopupHeight : triggerRect.y + triggerRect.height + popupOffset;
+	const hostStyle = { flex: 1 };
+	const valueSlotStyle = { flexShrink: 1 };
+	const popupOuterStyle = {
+		position: "absolute",
+		top: popupTop,
+		left: triggerRect?.x ?? 0,
+		minWidth: triggerRect?.width,
+		borderRadius: popupRadius,
+		zIndex: layer,
+		opacity: progress,
+		...popupShadow
+	};
+	const popupInnerStyle = {
+		borderRadius: popupRadius,
+		borderWidth: popupBorderWidth,
+		borderColor: popupBorder,
+		backgroundColor: popupSurface,
+		overflow: "hidden"
+	};
+	return /* @__PURE__ */ React.createElement(View, {
+		ref,
+		testID: "Select",
+		style: containerStyle,
+		"aria-disabled": isDisabled
+	}, hideLabel ? null : /* @__PURE__ */ React.createElement(View, { testID: "Select.label" }, /* @__PURE__ */ React.createElement(Text, {
+		weight: "medium",
+		overrides: labelOverrides
+	}, visibleLabel)), description === void 0 || description === "" ? null : /* @__PURE__ */ React.createElement(View, { testID: "Select.description" }, /* @__PURE__ */ React.createElement(Text, {
+		tone: "muted",
+		size: "sm",
+		overrides: helperOverrides
+	}, description)), /* @__PURE__ */ React.createElement(Pressable, {
+		ref: triggerRef,
+		accessibilityRole: "combobox",
+		accessibilityLabel: accessibleName,
+		accessibilityHint: description,
+		accessibilityState: {
+			expanded: open,
+			disabled: isDisabled
+		},
+		accessibilityValue: { text: valueText },
+		"aria-label": accessibleName,
+		"aria-expanded": open,
+		onPress: handleTriggerPress,
+		onFocus: () => setFocused(true),
+		onBlur: () => setFocused(false),
+		style: triggerStyle,
+		testID: "Select.trigger"
+	}, /* @__PURE__ */ React.createElement(View, {
+		testID: "Select.value",
+		style: valueSlotStyle
+	}, /* @__PURE__ */ React.createElement(Text, {
+		tone: hasSelection ? "default" : "muted",
+		truncate: true,
+		overrides: valueOverrides
+	}, valueText)), /* @__PURE__ */ React.createElement(View, { testID: "Select.chevron" }, /* @__PURE__ */ React.createElement(Icon, {
+		name: "chevron-down",
+		size: "sm",
+		overrides: chevronOverrides
+	}))), displayedError === void 0 ? null : /* @__PURE__ */ React.createElement(View, {
+		testID: "Select.errorMessage",
+		accessibilityLiveRegion: summarised ? "none" : "assertive"
+	}, /* @__PURE__ */ React.createElement(Text, {
+		tone: "danger",
+		size: "sm",
+		overrides: helperOverrides
+	}, displayedError)), usesSheet ? /* @__PURE__ */ React.createElement(BottomSheet, {
+		open,
+		heading: label,
+		onClose: closePopup,
+		footer: multiple ? /* @__PURE__ */ React.createElement(Button, {
+			label: COPY$28.done,
+			onPress: closePopup
+		}) : void 0
+	}, /* @__PURE__ */ React.createElement(View, {
+		nativeID: popupId,
+		testID: "Select.popup"
+	}, listbox)) : /* @__PURE__ */ React.createElement(Modal, {
+		visible: open,
+		transparent: true,
+		animationType: "none",
+		onRequestClose: closePopup,
+		statusBarTranslucent: true
+	}, /* @__PURE__ */ React.createElement(View, { style: hostStyle }, /* @__PURE__ */ React.createElement(Pressable, {
+		style: StyleSheet.absoluteFill,
+		onPress: closePopup,
+		accessible: false,
+		testID: "Select.scrim"
+	}), triggerRect === null ? null : /* @__PURE__ */ React.createElement(FocusScope, {
+		trapped: true,
+		active: open,
+		autoFocus: "first",
+		restoreFocus: false
+	}, /* @__PURE__ */ React.createElement(Animated.View, {
+		style: popupOuterStyle,
+		onLayout: handlePopupLayout,
+		nativeID: popupId,
+		accessibilityViewIsModal: true,
+		testID: "Select.popup"
+	}, /* @__PURE__ */ React.createElement(View, { style: popupInnerStyle }, listbox))))));
+}
+//#endregion
+//#region src/DatePicker.tsx
+/** The component's user-facing strings, from the doc's `copy` block. */
+const COPY$27 = {
+	open: "Choose date",
+	openRange: "Choose dates",
+	previousMonth: "Previous month",
+	nextMonth: "Next month",
+	month: "Month",
+	year: "Year",
+	today: "Today",
+	clear: "Clear",
+	weekNumber: "Week",
+	gridLabel: (label, month, year) => `${label}, ${month} ${year}`,
+	selected: "selected",
+	todayLabel: "today",
+	startLabel: "Start date",
+	endLabel: "End date",
+	required: (label) => `${label} is required.`,
+	invalid: (label, pattern) => `${label} must be a valid date (${pattern}).`,
+	tooEarly: (label, min) => `${label} must be on or after ${min}.`,
+	tooLate: (label, max) => `${label} must be on or before ${max}.`,
+	rangeOrder: "End date must be on or after the start date.",
+	requiredIndicator: " (required)"
+};
+/** Six rows always, so the grid's height does not change with the month. */
+const WEEKS_SHOWN = 6;
+const DAYS_PER_WEEK = 7;
+/** The year Select's span when `min`/`max` give no bound of their own. */
+const YEARS_BACK = 100;
+const YEARS_FORWARD = 10;
+const MS_PER_DAY = 864e5;
+/** The en dash between the start and end inputs. */
+const RANGE_SEPARATOR = "–";
+/** `font.size.{size}` — the field text and the label, so the label follows `size`. */
+const FONT_SIZE_TOKEN$3 = {
+	sm: "fontSizeSm",
+	md: "fontSizeMd"
+};
+const PADDING_INLINE_TOKEN$2 = {
+	sm: "space2",
+	md: "spaceMd"
+};
+const PADDING_BLOCK_TOKEN$3 = {
+	sm: "space1",
+	md: "spaceSm"
+};
+/** `minTarget` / `minTargetSm`: both locked, so the sm floor is always `size.target.min`. */
+const MIN_TARGET_TOKEN$2 = {
+	sm: "sizeTargetMin",
+	md: "sizeTargetComfortable"
+};
+const ISO = /^(\d{4})-(\d{2})-(\d{2})$/u;
+function daysInMonth(year, month) {
+	return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+function toUtc(date) {
+	return Date.UTC(date.year, date.month - 1, date.day);
+}
+function fromUtc(ms) {
+	const d = new Date(ms);
+	return {
+		year: d.getUTCFullYear(),
+		month: d.getUTCMonth() + 1,
+		day: d.getUTCDate()
+	};
+}
+function toIso(date) {
+	return `${String(date.year).padStart(4, "0")}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
+}
+/** Parses an ISO calendar date, rejecting impossible days (`2026-02-30`). */
+function parseIso(iso) {
+	const match = ISO.exec(iso);
+	if (match === null) return null;
+	const year = Number(match[1]);
+	const month = Number(match[2]);
+	const day = Number(match[3]);
+	if (month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) return null;
+	return {
+		year,
+		month,
+		day
+	};
+}
+function addDays(date, days) {
+	return fromUtc(toUtc(date) + days * MS_PER_DAY);
+}
+/** 0 = Sunday, as `Date.prototype.getUTCDay`. */
+function weekdayOf(date) {
+	return new Date(toUtc(date)).getUTCDay();
+}
+/** The ISO-8601 week of the given day: the week whose Thursday names the year. */
+function isoWeekOf(date) {
+	const thursday = addDays(date, 3 - (weekdayOf(date) + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK);
+	const january1 = {
+		year: thursday.year,
+		month: 1,
+		day: 1
+	};
+	return Math.floor((toUtc(thursday) - toUtc(january1)) / MS_PER_DAY / DAYS_PER_WEEK) + 1;
+}
+/** Today in the device's own calendar; `new Date()` is read for its local parts only. */
+function todayIso() {
+	const now = /* @__PURE__ */ new Date();
+	return toIso({
+		year: now.getFullYear(),
+		month: now.getMonth() + 1,
+		day: now.getDate()
+	});
+}
+/** The device locale, since React Native has no `document.documentElement.lang`. */
+function deviceLocale() {
+	return new Intl.DateTimeFormat().resolvedOptions().locale;
+}
+const FIELD_PLACEHOLDER = {
+	year: "YYYY",
+	month: "MM",
+	day: "DD"
+};
+const FIELD_DIGITS = {
+	year: 4,
+	month: 2,
+	day: 2
+};
+function isPatternField(type) {
+	return type === "year" || type === "month" || type === "day";
+}
+/** The numeric formatter every typed value is read and written through. */
+function numericFormat(locale) {
+	return new Intl.DateTimeFormat(locale, {
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		timeZone: "UTC"
+	});
+}
+/** A reference date whose parts are all unambiguous, used only to read the locale's pattern. */
+const PATTERN_SAMPLE = Date.UTC(2026, 10, 22);
+/** The locale's typed pattern ("MM/DD/YYYY", "DD.MM.YYYY"), which is also the default placeholder. */
+function localePattern(locale) {
+	return numericFormat(locale).formatToParts(PATTERN_SAMPLE).map((part) => isPatternField(part.type) ? FIELD_PLACEHOLDER[part.type] : part.value).join("");
+}
+/** The pattern's field order, which is how a typed string's numbers are assigned. */
+function patternOrder(locale) {
+	const order = [];
+	for (const part of numericFormat(locale).formatToParts(PATTERN_SAMPLE)) if (isPatternField(part.type)) order.push(part.type);
+	return order;
+}
+/**
+* Reads typed text against the locale pattern, leniently: any non-digit run separates
+* the fields, and the separators may be left out entirely. Two-digit years are refused —
+* "10/11/26" is a typo, not the year 2026 — and an impossible day is not a date.
+*/
+function parseTyped$1(text, locale) {
+	const order = patternOrder(locale);
+	if (order.length !== 3) return null;
+	const groups = text.split(/\D+/u).filter((group) => group !== "");
+	let digits;
+	if (groups.length === order.length) digits = groups;
+	else if (groups.length === 1) {
+		const run = groups[0];
+		const total = order.reduce((sum, field) => sum + FIELD_DIGITS[field], 0);
+		if (run.length !== total) return null;
+		let at = 0;
+		digits = order.map((field) => {
+			const slice = run.slice(at, at + FIELD_DIGITS[field]);
+			at += FIELD_DIGITS[field];
+			return slice;
+		});
+	} else return null;
+	const date = {
+		year: 0,
+		month: 0,
+		day: 0
+	};
+	for (let i = 0; i < order.length; i++) {
+		const field = order[i];
+		const digit = digits[i];
+		if (field === "year" ? digit.length !== FIELD_DIGITS.year : digit.length > FIELD_DIGITS[field]) return null;
+		date[field] = Number(digit);
+	}
+	return parseIso(toIso(date)) === null ? null : toIso(date);
+}
+/** The typed text for an ISO date, in the locale's numeric pattern. */
+function formatTyped(iso, locale) {
+	const date = parseIso(iso);
+	return date === null ? "" : numericFormat(locale).format(toUtc(date));
+}
+/**
+* The locale's first day of the week through `Intl.Locale`'s week info where the engine
+* has it (Hermes often does not), else Sunday, as the doc says.
+*/
+function firstDayOfWeek(locale) {
+	try {
+		const resolved = new Intl.Locale(locale);
+		const info = typeof resolved.getWeekInfo === "function" ? resolved.getWeekInfo() : resolved.weekInfo;
+		if (info !== void 0) return info.firstDay % DAYS_PER_WEEK;
+	} catch {}
+	return 0;
+}
+function startOf(value) {
+	if (value === void 0) return "";
+	return typeof value === "string" ? value : value.start;
+}
+function endOf(value) {
+	if (value === void 0) return "";
+	return typeof value === "string" ? value : value.end;
+}
+/**
+* The DOM mirror of today's state for react-native-web: the web contract marks today with
+* aria-current="date" (aria-selected is not allowed on a button); Pressable's types omit aria-current.
+*/
+const TODAY_ATTRS = { "aria-current": "date" };
+/**
+* One day of the grid. `Pressable` sees no key events on native, so there is no roving
+* tabindex here: every day is its own focus stop, reached by swipe. The fill is a layer
+* whose opacity animates over `transition` (react-native-web has no native driver, so
+* `useNativeDriver` stays false), which is how "background-color animates" reads on this
+* platform; the today ring is an inset ring and switches at once.
+*/
+function DayCell({ iso, day, label, outsideMonth, selected, inRange, today, disabled, daySize, dayRadius, dayFontSize, dayHover, fontFamily, lineHeight, disabledOpacity, duration, onPress }) {
+	const { tokens: t } = useTheme();
+	const reducedMotion = useReducedMotion();
+	const [hovered, setHovered] = React.useState(false);
+	const [focused, setFocused] = React.useState(false);
+	const fill = selected ? t.colorControlSelectedBackground : inRange ? t.colorBackgroundStrong : hovered && !disabled ? dayHover : void 0;
+	const target = fill === void 0 ? 0 : 1;
+	const fillOpacity = React.useRef(new Animated.Value(target)).current;
+	const shown = React.useRef(target);
+	React.useEffect(() => {
+		if (shown.current === target) return;
+		shown.current = target;
+		if (reducedMotion || duration === 0) {
+			fillOpacity.setValue(target);
+			return;
+		}
+		Animated.timing(fillOpacity, {
+			toValue: target,
+			duration,
+			easing: toEasing(t.motionEasingStandard),
+			useNativeDriver: false
+		}).start();
+	}, [
+		target,
+		fillOpacity,
+		reducedMotion,
+		duration,
+		t
+	]);
+	const cellStyle = React.useMemo(() => ({
+		width: daySize,
+		height: daySize,
+		borderRadius: dayRadius,
+		alignItems: "center",
+		justifyContent: "center",
+		opacity: disabled ? disabledOpacity : 1
+	}), [
+		daySize,
+		dayRadius,
+		disabled,
+		disabledOpacity
+	]);
+	const ringColor = focused ? t.colorBorderFocus : today ? t.colorControlSelectedBackground : void 0;
+	return /* @__PURE__ */ React.createElement(Pressable, {
+		testID: "DatePicker.day",
+		accessibilityRole: "button",
+		accessibilityLabel: label,
+		accessibilityState: {
+			selected,
+			disabled
+		},
+		"aria-label": label,
+		"aria-selected": selected,
+		"aria-disabled": disabled,
+		...today ? TODAY_ATTRS : void 0,
+		style: cellStyle,
+		onHoverIn: () => setHovered(true),
+		onHoverOut: () => setHovered(false),
+		onFocus: () => setFocused(true),
+		onBlur: () => setFocused(false),
+		onPress: () => {
+			if (!disabled) onPress(iso);
+		}
+	}, /* @__PURE__ */ React.createElement(Animated.View, {
+		pointerEvents: "none",
+		style: [StyleSheet.absoluteFill, {
+			backgroundColor: fill,
+			borderRadius: dayRadius,
+			opacity: fillOpacity
+		}]
+	}), ringColor === void 0 ? null : /* @__PURE__ */ React.createElement(View, {
+		pointerEvents: "none",
+		style: [StyleSheet.absoluteFill, {
+			borderWidth: t.borderWidthFocus,
+			borderColor: ringColor,
+			borderRadius: dayRadius
+		}]
+	}), /* @__PURE__ */ React.createElement(Text$1, { style: {
+		color: selected ? t.colorControlSelectedForeground : outsideMonth ? t.colorForegroundMuted : t.colorForeground,
+		fontFamily,
+		fontSize: dayFontSize,
+		lineHeight: toLineHeight(dayFontSize, lineHeight)
+	} }, day));
+}
+/**
+* DatePicker — two ways to say the same date: type it, or find it on a calendar. Both
+* produce a plain ISO date (`2026-09-10`), never a timestamp, because a delivery date or
+* a birthday has no time zone to get wrong.
+*
+* When to use: any date the user chooses — due dates, bookings, dates of birth, report
+* periods (`range`). Set `min`, `max` and `isDateDisabled` whenever they exist, so the
+* calendar shows what is possible instead of validating after the fact. Not for a
+* date-and-time, a month or year alone (Select), or relative choices.
+*
+* React Native has no core date picker and the package takes no date dependency (only
+* `react-native-svg`, for Icon), so the calendar is the system's own grid here as on
+* every other platform: a `TextInput` (`keyboardType="number-pad"`) parsed against the
+* locale's pattern, a ghost `Button` with the "calendar" glyph, and a `BottomSheet`
+* (`height="content"`, `heading={label}`) holding the header, the 7-column grid of
+* `daySize` `Pressable` days and the Today/Clear footer. The `popover` part is that
+* sheet: only `calendarInset` is forwarded (to its `inset` override) and `calendarSurface`
+* is realised by the sheet's own locked surface.
+*
+* Native has no grid or gridcell role and `Pressable` sees no keys, so there is no roving
+* tabindex and no Arrow, Page, Home or End handling: every day is its own focus stop
+* reached by swipe, and the prev/next month Buttons stand in for PageUp/PageDown.
+* `TextInputKeyPressEvent` carries no modifier flags, so Alt+ArrowDown cannot be told
+* from ArrowDown and both simply open the calendar. Focus on open lands on the sheet's
+* first focusable element rather than the selected day, and focus on close returns
+* through BottomSheet's own FocusScope, since Button exposes no node handle to focus by
+* hand; only the displayed month follows the value.
+*
+* There is no native invalid state, so the error is appended to the input's
+* `accessibilityHint` after `description` and announced through an assertive live region
+* (Android) with `AccessibilityInfo.announceForAccessibility` on iOS. The label is a
+* `Text` — React Native has no `<label>` — and `hideLabel` drops it, leaving the name in
+* `accessibilityLabel`. Button and Select take no `testID`, so each composed part is
+* wrapped in a `View` this component owns carrying `testID="DatePicker.<part>"`.
+*
+* Inside a Form the field registers by `name` with the start's ISO string; a range adds
+* a second field, `name-end`, holding the end, and only `name` reports the combined
+* message so one message is never read twice.
+*/
+function DatePicker({ label, name, value, defaultValue, open, range = false, min, max, isDateDisabled, locale, showWeekNumbers = false, placeholder, description, required = false, hideLabel = false, size = "md", disabled = false, error, overrides, ref, onChange, onOpenChange }) {
+	const { tokens: t } = useTheme();
+	const form = useFormContext();
+	const fieldset = useFieldsetContext();
+	const resolvedLocale = locale ?? deviceLocale();
+	const pattern = React.useMemo(() => localePattern(resolvedLocale), [resolvedLocale]);
+	const weekStart = React.useMemo(() => firstDayOfWeek(resolvedLocale), [resolvedLocale]);
+	const fullFormat = React.useMemo(() => new Intl.DateTimeFormat(resolvedLocale, {
+		dateStyle: "full",
+		timeZone: "UTC"
+	}), [resolvedLocale]);
+	const monthFormat = React.useMemo(() => new Intl.DateTimeFormat(resolvedLocale, {
+		month: "long",
+		timeZone: "UTC"
+	}), [resolvedLocale]);
+	const weekdayFormat = React.useMemo(() => new Intl.DateTimeFormat(resolvedLocale, {
+		weekday: "short",
+		timeZone: "UTC"
+	}), [resolvedLocale]);
+	const startInputRef = React.useRef(null);
+	const endInputRef = React.useRef(null);
+	const [internalValue, setInternalValue] = React.useState(defaultValue);
+	const [internalOpen, setInternalOpen] = React.useState(false);
+	const [focusedInput, setFocusedInput] = React.useState(null);
+	/** The first pick of a range: shown only in the calendar until the end is picked. */
+	const [pendingStart, setPendingStart] = React.useState(null);
+	const currentValue = value ?? internalValue;
+	const startIso = startOf(currentValue);
+	const endIso = endOf(currentValue);
+	const isOpen = open ?? internalOpen;
+	const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
+	const [startText, setStartText] = React.useState(() => formatTyped(startOf(defaultValue ?? value), resolvedLocale));
+	const [endText, setEndText] = React.useState(() => formatTyped(endOf(defaultValue ?? value), resolvedLocale));
+	React.useEffect(() => {
+		if (focusedInput !== "start") setStartText(formatTyped(startIso, resolvedLocale));
+	}, [
+		startIso,
+		focusedInput,
+		resolvedLocale
+	]);
+	React.useEffect(() => {
+		if (focusedInput !== "end") setEndText(formatTyped(endIso, resolvedLocale));
+	}, [
+		endIso,
+		focusedInput,
+		resolvedLocale
+	]);
+	const today = todayIso();
+	const [viewMonth, setViewMonth] = React.useState(() => {
+		const anchor = parseIso(startOf(defaultValue ?? value)) ?? parseIso(today);
+		return {
+			year: anchor.year,
+			month: anchor.month,
+			day: 1
+		};
+	});
+	/** Which input a keyboard open came from; the calendar Button always opens on the start. */
+	const openAnchor = React.useRef("start");
+	const isDayDisabled = React.useCallback((iso) => {
+		if (min !== void 0 && min !== "" && iso < min) return true;
+		if (max !== void 0 && max !== "" && iso > max) return true;
+		return isDateDisabled?.(iso) ?? false;
+	}, [
+		min,
+		max,
+		isDateDisabled
+	]);
+	const changeOpen = (next) => {
+		if (next === isOpen || next && isDisabled) return;
+		if (open === void 0) setInternalOpen(next);
+		onOpenChange?.(next);
+	};
+	const anchorMonth = React.useRef({
+		startIso,
+		endIso,
+		today
+	});
+	anchorMonth.current = {
+		startIso,
+		endIso,
+		today
+	};
+	React.useEffect(() => {
+		if (!isOpen) {
+			setPendingStart(null);
+			return;
+		}
+		const current = anchorMonth.current;
+		const anchor = parseIso(openAnchor.current === "end" ? current.endIso : current.startIso) ?? parseIso(current.today);
+		setViewMonth({
+			year: anchor.year,
+			month: anchor.month,
+			day: 1
+		});
+		openAnchor.current = "start";
+	}, [isOpen]);
+	const monthName = monthFormat.format(toUtc(viewMonth));
+	const yearName = String(viewMonth.year);
+	const gridLabel = COPY$27.gridLabel(label, monthName, yearName);
+	const announced = React.useRef(gridLabel);
+	React.useEffect(() => {
+		if (isOpen && announced.current !== gridLabel) AccessibilityInfo.announceForAccessibility(gridLabel);
+		announced.current = gridLabel;
+	}, [isOpen, gridLabel]);
+	const ownError = error !== void 0 && error !== "" ? error : void 0;
+	const validateTexts = React.useCallback((start, end) => {
+		if (isDisabled) return null;
+		if (ownError !== void 0) return ownError;
+		const startEmpty = start.trim() === "";
+		const endEmpty = end.trim() === "";
+		if (required && (range ? startEmpty && endEmpty : startEmpty)) return COPY$27.required(label);
+		const startDate = startEmpty ? null : parseTyped$1(start, resolvedLocale);
+		const endDate = range && !endEmpty ? parseTyped$1(end, resolvedLocale) : null;
+		if (!startEmpty && startDate === null || range && !endEmpty && endDate === null) return COPY$27.invalid(label, pattern);
+		if (range && startEmpty !== endEmpty) return required ? COPY$27.required(label) : null;
+		if (startDate === null) return null;
+		const ends = range && endDate !== null ? [startDate, endDate] : [startDate];
+		if (min !== void 0 && min !== "" && ends.some((iso) => iso < min)) return COPY$27.tooEarly(label, formatTyped(min, resolvedLocale));
+		if (max !== void 0 && max !== "" && ends.some((iso) => iso > max)) return COPY$27.tooLate(label, formatTyped(max, resolvedLocale));
+		if (range && endDate !== null && endDate < startDate) return COPY$27.rangeOrder;
+		return null;
+	}, [
+		isDisabled,
+		ownError,
+		range,
+		required,
+		label,
+		resolvedLocale,
+		pattern,
+		min,
+		max
+	]);
+	const formErrors = form?.errors;
+	const formMarked = formErrors !== void 0 && Object.prototype.hasOwnProperty.call(formErrors, name);
+	const formError = formErrors?.[name];
+	const derivedError = formMarked ? validateTexts(startText, endText) ?? void 0 : void 0;
+	const displayedError = ownError ?? (formError !== void 0 && formError !== "" ? formError : derivedError);
+	const summarised = form !== null && form.errorSummary;
+	const isInvalid = displayedError !== void 0;
+	const focusField = React.useCallback(() => {
+		startInputRef.current?.focus();
+		const node = startInputRef.current === null ? null : findNodeHandle(startInputRef.current);
+		if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+	}, []);
+	const latest = React.useRef({
+		startIso,
+		endIso,
+		startText,
+		endText,
+		isDisabled,
+		validateTexts,
+		focusField
+	});
+	latest.current = {
+		startIso,
+		endIso,
+		startText,
+		endText,
+		isDisabled,
+		validateTexts,
+		focusField
+	};
+	const startHandle = React.useMemo(() => ({
+		label,
+		getValue: () => latest.current.isDisabled || latest.current.startIso === "" ? void 0 : latest.current.startIso,
+		validate: () => latest.current.validateTexts(latest.current.startText, latest.current.endText),
+		focus: () => latest.current.focusField()
+	}), [label]);
+	const endHandle = React.useMemo(() => ({
+		label,
+		getValue: () => latest.current.isDisabled || latest.current.endIso === "" ? void 0 : latest.current.endIso,
+		validate: () => null,
+		focus: () => endInputRef.current?.focus()
+	}), [label]);
+	const register = form?.register;
+	const unregister = form?.unregister;
+	const endName = `${name}-end`;
+	React.useEffect(() => {
+		if (register === void 0 || unregister === void 0 || isDisabled) return;
+		register(name, startHandle);
+		if (range) register(endName, endHandle);
+		return () => {
+			unregister(name);
+			if (range) unregister(endName);
+		};
+	}, [
+		register,
+		unregister,
+		name,
+		endName,
+		range,
+		startHandle,
+		endHandle,
+		isDisabled
+	]);
+	React.useEffect(() => {
+		if (Platform.OS === "ios" && !summarised && displayedError !== void 0) AccessibilityInfo.announceForAccessibility(displayedError);
+	}, [displayedError, summarised]);
+	const reportValidity = (start, end, on) => {
+		if (form !== null && (form.validateMode === on || form.validateMode === "change" || form.submitFailed)) form.reportValidity(name, validateTexts(start, end));
+	};
+	const commit = (next) => {
+		if (value === void 0) setInternalValue(next);
+		onChange?.(next);
+	};
+	/** A pick or Clear shows the formatted value at once, whether or not an input has focus. */
+	const showValue = (start, end) => {
+		setStartText(formatTyped(start, resolvedLocale));
+		setEndText(formatTyped(end, resolvedLocale));
+	};
+	const pickDay = (iso) => {
+		if (isDayDisabled(iso)) return;
+		if (!range) {
+			showValue(iso, "");
+			commit(iso);
+			changeOpen(false);
+			return;
+		}
+		if (pendingStart === null || iso < pendingStart) {
+			setPendingStart(iso);
+			return;
+		}
+		const next = {
+			start: pendingStart,
+			end: iso
+		};
+		setPendingStart(null);
+		showValue(next.start, next.end);
+		commit(next);
+		changeOpen(false);
+	};
+	const handleClear = () => {
+		setPendingStart(null);
+		showValue("", "");
+		commit(void 0);
+		reportValidity("", "", "change");
+	};
+	const handleTyped = (next, which) => {
+		const nextStart = which === "start" ? next : startText;
+		const nextEnd = which === "end" ? next : endText;
+		if (which === "start") setStartText(next);
+		else setEndText(next);
+		reportValidity(nextStart, nextEnd, "change");
+		const typed = parseTyped$1(next, resolvedLocale);
+		if (typed === null) return;
+		const parsed = parseIso(typed);
+		setViewMonth({
+			year: parsed.year,
+			month: parsed.month,
+			day: 1
+		});
+		if (!range) {
+			if (typed !== startIso) commit(typed);
+			return;
+		}
+		const other = which === "start" ? parseTyped$1(nextEnd, resolvedLocale) : parseTyped$1(nextStart, resolvedLocale);
+		if (other === null) return;
+		const value2 = which === "start" ? {
+			start: typed,
+			end: other
+		} : {
+			start: other,
+			end: typed
+		};
+		if (value2.start !== startIso || value2.end !== endIso) commit(value2);
+	};
+	const handleInputKeyPress = (event, which) => {
+		if (event.nativeEvent.key === "ArrowDown" && !isOpen) {
+			openAnchor.current = which;
+			changeOpen(true);
+		}
+	};
+	const gridStart = React.useMemo(() => {
+		const first = {
+			year: viewMonth.year,
+			month: viewMonth.month,
+			day: 1
+		};
+		return addDays(first, -((weekdayOf(first) - weekStart + DAYS_PER_WEEK) % DAYS_PER_WEEK));
+	}, [viewMonth, weekStart]);
+	const weeks = React.useMemo(() => {
+		const rows = [];
+		for (let week = 0; week < WEEKS_SHOWN; week++) {
+			const row = [];
+			for (let index = 0; index < DAYS_PER_WEEK; index++) row.push(addDays(gridStart, week * DAYS_PER_WEEK + index));
+			rows.push(row);
+		}
+		return rows;
+	}, [gridStart]);
+	const weekdayNames = React.useMemo(() => Array.from({ length: DAYS_PER_WEEK }, (_unused, index) => weekdayFormat.format(toUtc(addDays(gridStart, index)))), [weekdayFormat, gridStart]);
+	const shownStart = range && pendingStart !== null ? pendingStart : startIso;
+	const shownEnd = range && pendingStart !== null ? "" : range ? endIso : "";
+	const monthOptions = React.useMemo(() => Array.from({ length: 12 }, (_unused, index) => ({
+		value: String(index + 1),
+		label: monthFormat.format(toUtc({
+			year: viewMonth.year,
+			month: index + 1,
+			day: 1
+		}))
+	})), [monthFormat, viewMonth.year]);
+	const yearOptions = React.useMemo(() => {
+		const currentYear = parseIso(today).year;
+		const lowest = Math.min(parseIso(min ?? "")?.year ?? currentYear - YEARS_BACK, viewMonth.year);
+		const highest = Math.max(parseIso(max ?? "")?.year ?? currentYear + YEARS_FORWARD, viewMonth.year);
+		return Array.from({ length: highest - lowest + 1 }, (_unused, index) => ({
+			value: String(lowest + index),
+			label: String(lowest + index)
+		}));
+	}, [
+		today,
+		min,
+		max,
+		viewMonth.year
+	]);
+	const goToMonth = (year, month) => {
+		setViewMonth(fromUtc(Date.UTC(year, month - 1, 1)));
+	};
+	const borderWidth = overrides?.borderWidth ? resolveToken(t, overrides.borderWidth) : t.borderWidthThin;
+	const borderInvalid = overrides?.borderInvalid ? resolveToken(t, overrides.borderInvalid) : t.colorBorderDanger;
+	const radius = overrides?.radius ? resolveToken(t, overrides.radius) : t.radiusMd;
+	const paddingInline = overrides?.paddingInline ? resolveToken(t, overrides.paddingInline) : t[PADDING_INLINE_TOKEN$2[size]];
+	const paddingBlock = overrides?.paddingBlock ? resolveToken(t, overrides.paddingBlock) : t[PADDING_BLOCK_TOKEN$3[size]];
+	const fontSize = overrides?.fontSize ? resolveToken(t, overrides.fontSize) : t[FONT_SIZE_TOKEN$3[size]];
+	const calendarGap = overrides?.calendarGap ? resolveToken(t, overrides.calendarGap) : t.layoutGapNormal;
+	const headerGap = overrides?.headerGap ? resolveToken(t, overrides.headerGap) : t.layoutGapTight;
+	const footerGap = overrides?.footerGap ? resolveToken(t, overrides.footerGap) : t.layoutGapTight;
+	const dayGap = overrides?.dayGap ? resolveToken(t, overrides.dayGap) : t.space0;
+	const dayRadius = overrides?.dayRadius ? resolveToken(t, overrides.dayRadius) : t.radiusMd;
+	const dayHover = overrides?.dayHover ? resolveToken(t, overrides.dayHover) : t.colorActionGhostBackgroundHover;
+	const partGap = overrides?.partGap ? resolveToken(t, overrides.partGap) : t.space1;
+	const fieldGap = overrides?.fieldGap ? resolveToken(t, overrides.fieldGap) : t.space2;
+	const dayFontSize = overrides?.dayFontSize ? resolveToken(t, overrides.dayFontSize) : t.fontSizeSm;
+	const fontFamily = overrides?.fontFamily ? resolveToken(t, overrides.fontFamily) : t.fontFamilyBody;
+	const lineHeight = overrides?.lineHeight ? resolveToken(t, overrides.lineHeight) : t.fontLineHeightNormal;
+	const disabledOpacity = overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled;
+	const transition = overrides?.transition ? resolveToken(t, overrides.transition) : t.motionDurationFast;
+	const daySize = t.sizeTargetComfortable;
+	const helperOverrides = {
+		fontSize: overrides?.helperSize,
+		fontFamily: overrides?.fontFamily
+	};
+	const labelOverrides = {
+		fontSize: overrides?.fontSize,
+		fontWeight: overrides?.labelWeight,
+		fontFamily: overrides?.fontFamily,
+		lineHeight: overrides?.lineHeight
+	};
+	const titleOverrides = {
+		fontSize: overrides?.monthTitleSize,
+		fontWeight: overrides?.monthTitleWeight
+	};
+	const weekdayOverrides = {
+		fontSize: overrides?.weekdaySize,
+		fontWeight: overrides?.weekdayWeight,
+		fontFamily: overrides?.fontFamily
+	};
+	const weekNumberOverrides = {
+		fontSize: overrides?.weekNumberSize,
+		fontWeight: overrides?.weekNumberWeight,
+		fontFamily: overrides?.fontFamily
+	};
+	const sheetOverrides = overrides?.calendarInset === void 0 ? void 0 : { inset: overrides.calendarInset };
+	const focusRingWidth = t.borderWidthFocus;
+	const inputStyle = (which) => {
+		const focused = focusedInput === which;
+		const currentBorderWidth = focused ? focusRingWidth : borderWidth;
+		const growth = currentBorderWidth - borderWidth;
+		return {
+			flex: 1,
+			minHeight: t[MIN_TARGET_TOKEN$2[size]],
+			paddingHorizontal: Math.max(0, paddingInline - growth),
+			paddingVertical: Math.max(0, paddingBlock - growth),
+			borderWidth: currentBorderWidth,
+			borderColor: isInvalid ? borderInvalid : focused ? t.colorBorderFocus : t.colorBorderStrong,
+			borderRadius: radius,
+			backgroundColor: t.colorBackground,
+			color: t.colorForeground,
+			fontFamily,
+			fontSize,
+			lineHeight: toLineHeight(fontSize, lineHeight)
+		};
+	};
+	const groupStyle = React.useMemo(() => ({
+		flexDirection: "column",
+		gap: partGap,
+		opacity: isDisabled ? disabledOpacity : 1
+	}), [
+		partGap,
+		isDisabled,
+		disabledOpacity
+	]);
+	const visibleLabel = required ? `${label}${COPY$27.requiredIndicator}` : label;
+	const accessibleName = fieldset === null ? visibleLabel : `${fieldset.legend}, ${visibleLabel}`;
+	const hint = [description, displayedError].filter((part) => part !== void 0 && part !== "").join(" ");
+	const fieldPlaceholder = placeholder ?? pattern;
+	const buttonSize = size === "sm" ? "sm" : "md";
+	const dayLabel = (iso, selected) => {
+		const parts = [fullFormat.format(toUtc(parseIso(iso)))];
+		if (iso === today) parts.push(COPY$27.todayLabel);
+		if (selected) parts.push(COPY$27.selected);
+		return parts.join(", ");
+	};
+	const renderInput = (which) => {
+		const isEnd = which === "end";
+		const name2 = range ? `${accessibleName}, ${isEnd ? COPY$27.endLabel : COPY$27.startLabel}` : accessibleName;
+		return /* @__PURE__ */ React.createElement(TextInput, {
+			ref: isEnd ? endInputRef : startInputRef,
+			testID: "DatePicker.input",
+			style: inputStyle(which),
+			value: isEnd ? endText : startText,
+			placeholder: fieldPlaceholder,
+			placeholderTextColor: t.colorForegroundMuted,
+			editable: !isDisabled,
+			keyboardType: "number-pad",
+			accessibilityLabel: name2,
+			accessibilityHint: hint === "" ? void 0 : hint,
+			accessibilityState: { disabled: isDisabled },
+			"aria-label": name2,
+			"aria-disabled": isDisabled,
+			onChangeText: (next) => handleTyped(next, which),
+			onKeyPress: (event) => handleInputKeyPress(event, which),
+			onFocus: () => setFocusedInput(which),
+			onBlur: () => {
+				setFocusedInput(null);
+				showValue(startIso, endIso);
+				reportValidity(startText, endText, "blur");
+			}
+		});
+	};
+	const footer = /* @__PURE__ */ React.createElement(View, {
+		testID: "DatePicker.footer",
+		style: {
+			flexDirection: "row",
+			justifyContent: "flex-end",
+			gap: footerGap
+		}
+	}, /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.todayButton" }, /* @__PURE__ */ React.createElement(Button, {
+		label: COPY$27.today,
+		variant: "ghost",
+		size: "sm",
+		disabled: isDayDisabled(today),
+		onPress: () => pickDay(today)
+	})), /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.clearButton" }, /* @__PURE__ */ React.createElement(Button, {
+		label: COPY$27.clear,
+		variant: "ghost",
+		size: "sm",
+		onPress: handleClear
+	})));
+	return /* @__PURE__ */ React.createElement(View, {
+		ref,
+		testID: "DatePicker",
+		style: groupStyle,
+		"aria-disabled": isDisabled
+	}, hideLabel ? null : /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.label" }, /* @__PURE__ */ React.createElement(Text, {
+		size,
+		weight: "medium",
+		overrides: labelOverrides
+	}, visibleLabel)), description === void 0 || description === "" ? null : /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.description" }, /* @__PURE__ */ React.createElement(Text, {
+		size: "sm",
+		tone: "muted",
+		overrides: helperOverrides
+	}, description)), /* @__PURE__ */ React.createElement(View, {
+		testID: "DatePicker.field",
+		style: {
+			flexDirection: "row",
+			alignItems: "center",
+			gap: fieldGap
+		}
+	}, renderInput("start"), range ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Text$1, {
+		accessibilityElementsHidden: true,
+		importantForAccessibility: "no",
+		style: {
+			color: t.colorForegroundMuted,
+			fontFamily,
+			fontSize
+		}
+	}, RANGE_SEPARATOR), renderInput("end")) : null, /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.calendarButton" }, /* @__PURE__ */ React.createElement(Button, {
+		label: range ? COPY$27.openRange : COPY$27.open,
+		variant: "ghost",
+		iconOnly: true,
+		size: buttonSize,
+		expanded: isOpen,
+		disabled: isDisabled,
+		leadingIcon: /* @__PURE__ */ React.createElement(Icon, {
+			name: "calendar",
+			color: t.colorActionGhostForeground
+		}),
+		onPress: () => changeOpen(true)
+	}))), displayedError === void 0 ? null : /* @__PURE__ */ React.createElement(View, {
+		testID: "DatePicker.errorMessage",
+		accessibilityLiveRegion: summarised ? "none" : "assertive",
+		"aria-live": summarised ? "off" : "assertive"
+	}, /* @__PURE__ */ React.createElement(Text, {
+		size: "sm",
+		tone: "danger",
+		overrides: helperOverrides
+	}, displayedError)), isOpen ? /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.popover" }, /* @__PURE__ */ React.createElement(BottomSheet, {
+		open: true,
+		heading: label,
+		height: "content",
+		footer,
+		onClose: () => changeOpen(false),
+		overrides: sheetOverrides
+	}, /* @__PURE__ */ React.createElement(View, { style: { gap: calendarGap } }, /* @__PURE__ */ React.createElement(View, {
+		testID: "DatePicker.header",
+		style: {
+			flexDirection: "row",
+			alignItems: "center",
+			gap: headerGap
+		}
+	}, /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.prevMonthButton" }, /* @__PURE__ */ React.createElement(Button, {
+		label: COPY$27.previousMonth,
+		variant: "ghost",
+		iconOnly: true,
+		size: "sm",
+		leadingIcon: /* @__PURE__ */ React.createElement(Icon, {
+			name: "chevron-left",
+			color: t.colorActionGhostForeground
+		}),
+		onPress: () => goToMonth(viewMonth.year, viewMonth.month - 1)
+	})), /* @__PURE__ */ React.createElement(FormContext.Provider, { value: null }, /* @__PURE__ */ React.createElement(View, {
+		testID: "DatePicker.monthSelect",
+		style: { flex: 1 }
+	}, /* @__PURE__ */ React.createElement(Select, {
+		label: COPY$27.month,
+		name: "month",
+		hideLabel: true,
+		size: "sm",
+		options: monthOptions,
+		value: String(viewMonth.month),
+		overrides: titleOverrides,
+		onChange: (next) => {
+			if (typeof next === "string") goToMonth(viewMonth.year, Number(next));
+		}
+	})), /* @__PURE__ */ React.createElement(View, {
+		testID: "DatePicker.yearSelect",
+		style: { flex: 1 }
+	}, /* @__PURE__ */ React.createElement(Select, {
+		label: COPY$27.year,
+		name: "year",
+		hideLabel: true,
+		size: "sm",
+		options: yearOptions,
+		value: String(viewMonth.year),
+		overrides: titleOverrides,
+		onChange: (next) => {
+			if (typeof next === "string") goToMonth(Number(next), viewMonth.month);
+		}
+	}))), /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.nextMonthButton" }, /* @__PURE__ */ React.createElement(Button, {
+		label: COPY$27.nextMonth,
+		variant: "ghost",
+		iconOnly: true,
+		size: "sm",
+		leadingIcon: /* @__PURE__ */ React.createElement(Icon, {
+			name: "chevron-right",
+			color: t.colorActionGhostForeground
+		}),
+		onPress: () => goToMonth(viewMonth.year, viewMonth.month + 1)
+	}))), /* @__PURE__ */ React.createElement(View, {
+		testID: "DatePicker.grid",
+		accessibilityLabel: gridLabel,
+		"aria-label": gridLabel,
+		style: { gap: dayGap }
+	}, /* @__PURE__ */ React.createElement(View, { style: {
+		flexDirection: "row",
+		gap: dayGap
+	} }, showWeekNumbers ? /* @__PURE__ */ React.createElement(View, { style: {
+		width: daySize,
+		alignItems: "center"
+	} }, /* @__PURE__ */ React.createElement(Text, {
+		size: "xs",
+		tone: "muted",
+		weight: "medium",
+		overrides: weekdayOverrides
+	}, COPY$27.weekNumber)) : null, weekdayNames.map((weekday) => /* @__PURE__ */ React.createElement(View, {
+		key: weekday,
+		testID: "DatePicker.weekdayHeader",
+		style: {
+			width: daySize,
+			alignItems: "center"
+		}
+	}, /* @__PURE__ */ React.createElement(Text, {
+		size: "xs",
+		tone: "muted",
+		weight: "medium",
+		overrides: weekdayOverrides
+	}, weekday)))), weeks.map((week) => {
+		const first = week[0];
+		return /* @__PURE__ */ React.createElement(View, {
+			key: toIso(first),
+			style: {
+				flexDirection: "row",
+				gap: dayGap
+			}
+		}, showWeekNumbers ? /* @__PURE__ */ React.createElement(View, {
+			testID: "DatePicker.weekNumber",
+			accessible: true,
+			accessibilityLabel: `${COPY$27.weekNumber} ${isoWeekOf(first)}`,
+			"aria-label": `${COPY$27.weekNumber} ${isoWeekOf(first)}`,
+			style: {
+				width: daySize,
+				alignItems: "center",
+				justifyContent: "center"
+			}
+		}, /* @__PURE__ */ React.createElement(Text, {
+			size: "xs",
+			tone: "muted",
+			weight: "regular",
+			overrides: weekNumberOverrides
+		}, isoWeekOf(first))) : null, week.map((date) => {
+			const iso = toIso(date);
+			const isEnd = iso === shownStart || shownEnd !== "" && iso === shownEnd;
+			const between = shownStart !== "" && shownEnd !== "" && iso > shownStart && iso < shownEnd;
+			return /* @__PURE__ */ React.createElement(DayCell, {
+				key: iso,
+				iso,
+				day: date.day,
+				label: dayLabel(iso, isEnd || between),
+				outsideMonth: date.month !== viewMonth.month,
+				selected: isEnd,
+				inRange: between,
+				today: iso === today,
+				disabled: isDayDisabled(iso),
+				daySize,
+				dayRadius,
+				dayFontSize,
+				dayHover,
+				fontFamily,
+				lineHeight,
+				disabledOpacity,
+				duration: transition,
+				onPress: pickDay
+			});
+		}));
+	}))))) : null);
 }
 //#endregion
 //#region src/NumberInput.tsx
@@ -1314,7 +3527,7 @@ const MIN_TARGET_TOKEN$1 = {
 };
 /** PageUp/PageDown move by this many steps. */
 const PAGE_STEPS$1 = 10;
-const COPY$29 = {
+const COPY$26 = {
 	increment: "Increase",
 	decrement: "Decrease",
 	required: (label) => `${label} is required.`,
@@ -1328,10 +3541,10 @@ const COPY$29 = {
 /** Only the two actions the adjustable role defines; their labels are the stepper copy. */
 const STEP_ACTIONS = [{
 	name: "increment",
-	label: COPY$29.increment
+	label: COPY$26.increment
 }, {
 	name: "decrement",
-	label: COPY$29.decrement
+	label: COPY$26.decrement
 }];
 /** The locale's decimal separator, accepted alongside "." when typing. */
 const LOCALE_DECIMAL = (() => {
@@ -1376,7 +3589,7 @@ function hasDigit(text) {
 	return /[0-9]/.test(text);
 }
 /** A number once the text forms one; a lone "-" or "." is not yet a number. */
-function parseTyped$1(text) {
+function parseTyped(text) {
 	if (!hasDigit(text)) return;
 	const n = Number(text);
 	return Number.isFinite(n) ? n : void 0;
@@ -1446,7 +3659,7 @@ function NumberInput({ label, name, value, defaultValue, min, max, step = 1, pre
 	const resolvedPrecision = Math.max(0, Math.round(precision ?? decimalPlaces(step)));
 	const currencyMissing = format === "currency" && (currency === void 0 || currency === "");
 	React.useEffect(() => {
-		if (__DEV__ && currencyMissing) console.warn(`NumberInput: ${COPY$29.currencyMissing}`);
+		if (__DEV__ && currencyMissing) console.warn(`NumberInput: ${COPY$26.currencyMissing}`);
 	}, [currencyMissing]);
 	const unitValid = React.useMemo(() => format === "unit" && unit !== void 0 && unit !== "" && isValidUnit(unit), [format, unit]);
 	const unitFallback = format === "unit" && unit !== void 0 && unit !== "" && !unitValid;
@@ -1480,16 +3693,16 @@ function NumberInput({ label, name, value, defaultValue, min, max, step = 1, pre
 	]);
 	const formatNumber = (num) => formatter.format(format === "percent" ? num / 100 : num);
 	const prefixText = format === "currency" || leadingText === "" ? void 0 : leadingText;
-	const suffixText = trailingText !== void 0 && trailingText !== "" ? trailingText : unitFallback ? unit : void 0;
+	const suffixText = format === "percent" ? void 0 : trailingText !== void 0 && trailingText !== "" ? trailingText : unitFallback ? unit : void 0;
 	React.useEffect(() => {
 		if (typeof value !== "number") return;
 		const raw = rawRef.current;
-		if (raw !== null && parseTyped$1(raw) !== value) setRawText(null);
+		if (raw !== null && parseTyped(raw) !== value) setRawText(null);
 	}, [value]);
 	const validateValue = (candidate, nonNumeric, rangeMessage) => {
 		if (error !== void 0 && error !== "") return error;
-		if (required && candidate === void 0 && !nonNumeric) return COPY$29.required(label);
-		if (invalid || nonNumeric) return COPY$29.invalid(label);
+		if (required && candidate === void 0 && !nonNumeric) return COPY$26.required(label);
+		if (invalid || nonNumeric) return COPY$26.invalid(label);
 		return rangeMessage;
 	};
 	const latest = React.useRef({
@@ -1532,7 +3745,7 @@ function NumberInput({ label, name, value, defaultValue, min, max, step = 1, pre
 	const formError = formErrors?.[name];
 	const ownError = error !== void 0 && error !== "" ? error : void 0;
 	const markedInvalid = invalid || formMarked;
-	const derivedError = markedInvalid ? required && currentValue === void 0 ? COPY$29.required(label) : COPY$29.invalid(label) : textInvalid ? COPY$29.invalid(label) : clampMessage ?? void 0;
+	const derivedError = markedInvalid && currentValue === void 0 ? required && !textInvalid ? COPY$26.required(label) : COPY$26.invalid(label) : textInvalid ? COPY$26.invalid(label) : clampMessage ?? void 0;
 	const displayedError = ownError ?? (formError !== void 0 && formError !== "" ? formError : derivedError);
 	const isInvalid = markedInvalid || displayedError !== void 0;
 	const summarised = form !== null && form.errorSummary;
@@ -1567,16 +3780,16 @@ function NumberInput({ label, name, value, defaultValue, min, max, step = 1, pre
 		if (!dirtyRef.current) return;
 		dirtyRef.current = false;
 		const raw = rawRef.current ?? "";
-		const parsed = parseTyped$1(raw);
+		const parsed = parseTyped(raw);
 		let final;
 		let rangeMessage = null;
 		if (parsed !== void 0) {
 			const rounded = roundToPrecision(parsed, resolvedPrecision);
 			final = clampValue(rounded, min, max);
 			if (final !== rounded) {
-				if (min !== void 0 && max !== void 0) rangeMessage = COPY$29.outOfRange(label, formatNumber(min), formatNumber(max));
-				else if (min !== void 0) rangeMessage = COPY$29.outOfRangeMin(label, formatNumber(min));
-				else if (max !== void 0) rangeMessage = COPY$29.outOfRangeMax(label, formatNumber(max));
+				if (min !== void 0 && max !== void 0) rangeMessage = COPY$26.outOfRange(label, formatNumber(min), formatNumber(max));
+				else if (min !== void 0) rangeMessage = COPY$26.outOfRangeMin(label, formatNumber(min));
+				else if (max !== void 0) rangeMessage = COPY$26.outOfRangeMax(label, formatNumber(max));
 			}
 		}
 		const nonNumeric = raw !== "" && parsed === void 0;
@@ -1588,7 +3801,7 @@ function NumberInput({ label, name, value, defaultValue, min, max, step = 1, pre
 		const sanitized = sanitizeTyped(text);
 		dirtyRef.current = true;
 		setRawText(sanitized);
-		const parsed = parseTyped$1(sanitized);
+		const parsed = parseTyped(sanitized);
 		if (parsed === void 0 && sanitized !== "") return;
 		setNumber(parsed, false, null);
 	};
@@ -1621,7 +3834,8 @@ function NumberInput({ label, name, value, defaultValue, min, max, step = 1, pre
 		commitTyped();
 		form?.submit();
 	};
-	const visibleLabel = required ? `${label}${COPY$29.requiredIndicator}` : label;
+	const visibleLabel = required ? `${label}${COPY$26.requiredIndicator}` : label;
+	const hint = [description, displayedError].filter((part) => part !== void 0 && part !== "").join(" ");
 	const accessibleName = fieldset !== null ? `${fieldset.legend}, ${visibleLabel}` : visibleLabel;
 	const borderInvalidColor = overrides?.borderInvalid ? resolveToken(t, overrides.borderInvalid) : t.colorBorderDanger;
 	const borderWidth = overrides?.borderWidth ? resolveToken(t, overrides.borderWidth) : t.borderWidthThin;
@@ -1737,10 +3951,12 @@ function NumberInput({ label, name, value, defaultValue, min, max, step = 1, pre
 		testID: "NumberInput.input",
 		accessibilityRole: "adjustable",
 		accessibilityLabel: accessibleName,
-		accessibilityHint: description === "" ? void 0 : description,
+		"aria-label": accessibleName,
+		accessibilityHint: hint === "" ? void 0 : hint,
 		accessibilityState: { disabled: isDisabled },
 		"aria-disabled": isDisabled,
 		accessibilityValue: { text: valueText },
+		"aria-valuetext": valueText,
 		accessibilityActions: STEP_ACTIONS,
 		onAccessibilityAction: handleAccessibilityAction,
 		keyboardType,
@@ -1765,7 +3981,7 @@ function NumberInput({ label, name, value, defaultValue, min, max, step = 1, pre
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no"
 	}, suffixText) : null), hideSteppers ? null : /* @__PURE__ */ React.createElement(View, { style: steppersStyle }, /* @__PURE__ */ React.createElement(View, { testID: "NumberInput.decrementButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$29.decrement,
+		label: COPY$26.decrement,
 		variant: "ghost",
 		size: "sm",
 		iconOnly: true,
@@ -1776,7 +3992,7 @@ function NumberInput({ label, name, value, defaultValue, min, max, step = 1, pre
 		disabled: isDisabled || atMin,
 		onPress: () => stepBy(-1)
 	})), /* @__PURE__ */ React.createElement(View, { testID: "NumberInput.incrementButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$29.increment,
+		label: COPY$26.increment,
 		variant: "ghost",
 		size: "sm",
 		iconOnly: true,
@@ -1794,874 +4010,6 @@ function NumberInput({ label, name, value, defaultValue, min, max, step = 1, pre
 		tone: "danger",
 		overrides: helperOverrides
 	}, displayedError)) : null);
-}
-//#endregion
-//#region src/Link.tsx
-const COPY$28 = { externalSuffix: " (opens in new tab)" };
-/** `copy.externalSuffix`, exposed so composites (e.g. `Card`) can reproduce a Link's accessible name when they move it onto a wrapping element. */
-const LINK_EXTERNAL_SUFFIX = COPY$28.externalSuffix;
-const IS_WEB$1 = Platform.OS === "web";
-/**
-* Link — takes people somewhere. Buttons do things; links navigate.
-*
-* When to use: Use a Link for any navigation: to another screen, to an external
-* site, or inline inside body text. Use `external` whenever the destination leaves
-* the product, so people are warned before they lose their place. Do not use a Link
-* to trigger an action — that is a `ghost` Button.
-*
-* Renders `Text` with `accessibilityRole="link"` so it flows inline inside a parent
-* `Text`; standalone it is its own line. `accessibilityLabel` is the label plus
-* `copy.externalSuffix` when `external`, or the `accessibilityLabel` prop when a
-* wrapping parent (Tooltip) sets one. `onPress(href)` fires first when provided;
-* returning `false` cancels any `Linking` hand-off. For a non-`external` link the
-* handler is the navigation and `Linking.openURL(href)` is only the fallback without
-* one; an `external` link opens through `Linking` after the handler as well.
-* On react-native-web the Text receives `href` (plus `hrefAttrs` target/rel when
-* `external`) and renders a real anchor: the browser navigates, `Linking` is not
-* called, and a handler returning `false` calls `preventDefault`.
-* `accessibilityHint`, `onFocus`, `onBlur`, `onHoverIn`, `onHoverOut` and `onLongPress`
-* are forwarded to the native element, so a wrapping Tooltip can attach to this Link.
-* Link exposes no `ref`. Standalone, the Link sets the body typography via Text's
-* helpers since there is no cascade; nested in a system `Text` (detected through
-* `TextStyleContext`) it inherits.
-*
-* There is no hover or visited state on native, so `colorHover` styles the pressed
-* state (`colorVisited` unused) and the color crossfades over `transition` (eased
-* with `motion.easing.standard`, skipped under reduced motion). RN cannot set
-* underline offset or thickness, and nested `Text` ignores margins, so
-* `underlineThickness`, `underlineOffset` and `externalIconGap` have no effect on
-* this platform and are excluded from `LinkOverridableBinding`; a literal space
-* separates the label from the external glyph instead. `Text` has no focus events,
-* so the focus ring is the platform's own (`focusRing*` not applied); react-native-web
-* renders a real anchor with the browser's focus outline. The external glyph is the
-* shared `Icon` (`name="external"`, `inline`); with `tone: default` it receives the
-* link color, swapping instantly on press, and with `tone: inherit` it receives no
-* color and resolves the enclosing Text's color itself. The link is never disabled:
-* a destination that is not available is rendered as Text.
-*/
-function Link({ href, label, external = false, tone = "default", overrides, accessibilityLabel, accessibilityHint, onFocus, onBlur, onHoverIn, onHoverOut, onLongPress, onPress }) {
-	const { tokens: t } = useTheme();
-	const { nested } = React.useContext(TextStyleContext);
-	const reducedMotion = useReducedMotion();
-	const [pressed, setPressed] = React.useState(false);
-	const transitionDuration = overrides?.transition ? resolveToken(t, overrides.transition) : t.motionDurationFast;
-	const highlight = React.useRef(new Animated.Value(0)).current;
-	React.useEffect(() => {
-		if (tone === "inherit") return;
-		const toValue = pressed ? 1 : 0;
-		if (reducedMotion) {
-			highlight.setValue(toValue);
-			return;
-		}
-		const animation = Animated.timing(highlight, {
-			toValue,
-			duration: transitionDuration,
-			easing: toEasing(t.motionEasingStandard),
-			useNativeDriver: false
-		});
-		animation.start();
-		return () => animation.stop();
-	}, [
-		pressed,
-		reducedMotion,
-		highlight,
-		transitionDuration,
-		t.motionEasingStandard,
-		tone
-	]);
-	const animatedColor = highlight.interpolate({
-		inputRange: [0, 1],
-		outputRange: [t.colorLink, t.colorLinkHover]
-	});
-	const handlePress = (event) => {
-		const result = onPress?.(href);
-		if (IS_WEB$1) {
-			if (result === false) event.preventDefault();
-			return;
-		}
-		if (result === false) return;
-		if (external || onPress === void 0) Promise.resolve(Linking.openURL(href)).catch(() => void 0);
-	};
-	const forwardedProps = {
-		onFocus,
-		onBlur,
-		onHoverIn,
-		onHoverOut
-	};
-	if (IS_WEB$1) {
-		forwardedProps.href = href;
-		if (external) forwardedProps.hrefAttrs = {
-			target: "_blank",
-			rel: "noopener noreferrer"
-		};
-	}
-	const typography = nested ? { textDecorationLine: "underline" } : {
-		textDecorationLine: "underline",
-		fontFamily: t.fontFamilyBody,
-		fontWeight: toFontWeight(t.fontWeightRegular),
-		fontSize: t.fontSizeMd,
-		lineHeight: toLineHeight(t.fontSizeMd, t.fontLineHeightNormal)
-	};
-	const colorStyle = tone === "inherit" ? nested ? null : { color: t.colorForeground } : { color: animatedColor };
-	return /* @__PURE__ */ React.createElement(Animated.Text, {
-		testID: "Link",
-		accessibilityRole: "link",
-		accessibilityLabel: accessibilityLabel ?? (external ? `${label}${COPY$28.externalSuffix}` : label),
-		accessibilityHint,
-		allowFontScaling: true,
-		onPress: handlePress,
-		onPressIn: () => setPressed(true),
-		onPressOut: () => setPressed(false),
-		onLongPress,
-		...forwardedProps,
-		style: [typography, colorStyle]
-	}, label, external ? " " : null, external ? /* @__PURE__ */ React.createElement(Icon, {
-		name: "external",
-		inline: true,
-		color: tone === "inherit" ? void 0 : pressed ? t.colorLinkHover : t.colorLink
-	}) : null);
-}
-//#endregion
-//#region src/Form.tsx
-/**
-* copy.* — used verbatim. `summaryHeading` is selected by `Intl.PluralRules` on `count`;
-* `summaryHeadingOne` and `invalidSummary` are not rendered on React Native and are kept
-* here so the doc's copy block stays complete on this platform.
-*/
-const COPY$27 = {
-	summaryHeading: {
-		one: "1 problem with this form",
-		other: "{count} problems with this form"
-	},
-	summaryHeadingOne: "1 problem with this form",
-	invalidSummary: "This form has errors."
-};
-function summaryHeading(count, locale) {
-	return (new Intl.PluralRules(locale).select(count) === "one" ? COPY$27.summaryHeading.one : COPY$27.summaryHeading.other).replace("{count}", String(count));
-}
-/** A null, empty-string or empty-array value contributes no key, so fields need not normalise. */
-function isEmptyValue$1(value) {
-	return value === void 0 || value === null || value === "" || Array.isArray(value) && value.length === 0;
-}
-/**
-* Form — the container that makes fields behave as a group.
-*
-* When to use: Use Form whenever two or more fields are submitted together, and for any
-* single field whose submission has consequences (sign-in, search with side effects). Pass
-* the submit and cancel Buttons in `actions`, primary first. Give the form a `label` when
-* the screen contains more than one. Do not use it for instant-apply settings, do not nest
-* forms, and do not use it as a layout container — that is Stack.
-*
-* There is no form element on native. Form renders a `View` with `role="form"` (a landmark
-* only on react-native-web; `accessibilityLabel` is the native alternative) and provides a
-* context: each field calls `register(name, { label, getValue, validate, focus })` in mount
-* order (disabled fields do not register), a Button with `type: submit` calls `submit()`,
-* non-last Inputs get `returnKeyType="next"` and the last one's return key submits.
-*
-* On a failed submission `onInvalid` fires, the summary is announced
-* (`accessibilityLiveRegion="assertive"` for Android, `announceForAccessibility` on iOS —
-* the heading followed by each item joined with '. ', once per failed submit) and
-* accessibility focus moves to the summary heading, or to the first invalid field when
-* `errorSummary` is off. Items are in field order at the failed submit; an error a later
-* blur or change finds is appended. Each item is a `Link` (`tone: inherit`, nested in a
-* danger `Text`, which is how the danger color reaches it) that focuses its field and
-* returns `false` so nothing opens; an item whose field has since unmounted stays as plain
-* danger text with no link.
-*/
-function Form({ children, actions, name: _name, label, validate = "submit", disabled = false, errorSummary = true, overrides, ref, onSubmit, onInvalid }) {
-	const { tokens: t } = useTheme();
-	const handles = React.useRef(/* @__PURE__ */ new Map());
-	const labels = React.useRef(/* @__PURE__ */ new Map());
-	const orderRef = React.useRef([]);
-	const [order, setOrder] = React.useState([]);
-	const [errors, setErrors] = React.useState({});
-	const [submitFailed, setSubmitFailed] = React.useState(false);
-	const submitFailedRef = React.useRef(false);
-	const [summaryOrder, setSummaryOrder] = React.useState([]);
-	const [pluralLocale, setPluralLocale] = React.useState(void 0);
-	const [failedAttempt, setFailedAttempt] = React.useState(0);
-	const headingRef = React.useRef(null);
-	const latest = React.useRef({
-		disabled,
-		errorSummary,
-		onSubmit,
-		onInvalid
-	});
-	latest.current = {
-		disabled,
-		errorSummary,
-		onSubmit,
-		onInvalid
-	};
-	const register = React.useCallback((fieldName, handle) => {
-		handles.current.set(fieldName, handle);
-		labels.current.set(fieldName, handle.label ?? "");
-		if (!orderRef.current.includes(fieldName)) {
-			orderRef.current = [...orderRef.current, fieldName];
-			setOrder(orderRef.current);
-		}
-	}, []);
-	const unregister = React.useCallback((fieldName) => {
-		handles.current.delete(fieldName);
-		if (orderRef.current.includes(fieldName)) {
-			orderRef.current = orderRef.current.filter((registered) => registered !== fieldName);
-			setOrder(orderRef.current);
-		}
-	}, []);
-	const reportValidity = React.useCallback((fieldName, error) => {
-		setErrors((prev) => {
-			if (error === null) {
-				if (!(fieldName in prev)) return prev;
-				const next = { ...prev };
-				delete next[fieldName];
-				return next;
-			}
-			return prev[fieldName] === error ? prev : {
-				...prev,
-				[fieldName]: error
-			};
-		});
-		if (error !== null && submitFailedRef.current) setSummaryOrder((prev) => prev.includes(fieldName) ? prev : [...prev, fieldName]);
-	}, []);
-	const submit = React.useCallback(() => {
-		if (latest.current.disabled) return;
-		const nextErrors = {};
-		const values = {};
-		let firstInvalid = null;
-		for (const fieldName of orderRef.current) {
-			const handle = handles.current.get(fieldName);
-			if (handle === void 0) continue;
-			const error = handle.validate();
-			if (error !== null) {
-				nextErrors[fieldName] = error;
-				if (firstInvalid === null) firstInvalid = handle;
-			}
-			const value = handle.getValue();
-			if (!isEmptyValue$1(value)) values[fieldName] = value;
-		}
-		setErrors(nextErrors);
-		if (firstInvalid !== null) {
-			submitFailedRef.current = true;
-			setSubmitFailed(true);
-			setSummaryOrder(orderRef.current.filter((fieldName) => fieldName in nextErrors));
-			setPluralLocale(new Intl.PluralRules().resolvedOptions().locale);
-			latest.current.onInvalid?.(nextErrors);
-			if (latest.current.errorSummary) setFailedAttempt((attempt) => attempt + 1);
-			else firstInvalid.focus();
-			return;
-		}
-		submitFailedRef.current = false;
-		setSubmitFailed(false);
-		setSummaryOrder([]);
-		latest.current.onSubmit?.(values);
-	}, []);
-	const focusField = React.useCallback((fieldName) => {
-		handles.current.get(fieldName)?.focus();
-	}, []);
-	const validateMode = submitFailed ? "change" : validate;
-	const contextValue = React.useMemo(() => ({
-		register,
-		unregister,
-		submit,
-		focusField,
-		reportValidity,
-		disabled,
-		validateMode,
-		submitFailed,
-		errorSummary,
-		errors,
-		order
-	}), [
-		register,
-		unregister,
-		submit,
-		focusField,
-		reportValidity,
-		disabled,
-		validateMode,
-		submitFailed,
-		errorSummary,
-		errors,
-		order
-	]);
-	const errorEntries = summaryOrder.filter((fieldName) => errors[fieldName] !== void 0).map((fieldName) => {
-		const message = errors[fieldName] ?? "";
-		const fieldLabel = labels.current.get(fieldName) ?? "";
-		return {
-			name: fieldName,
-			text: message !== "" ? message : fieldLabel !== "" ? fieldLabel : fieldName,
-			registered: handles.current.has(fieldName)
-		};
-	});
-	const showSummary = errorSummary && submitFailed && errorEntries.length > 0;
-	const heading = summaryHeading(errorEntries.length, pluralLocale);
-	const announcementRef = React.useRef("");
-	announcementRef.current = showSummary ? [heading, ...errorEntries.map((entry) => entry.text)].join(". ") : "";
-	React.useEffect(() => {
-		if (failedAttempt === 0) return;
-		const node = findNodeHandle(headingRef.current);
-		if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
-		if (Platform.OS === "ios" && announcementRef.current !== "") AccessibilityInfo.announceForAccessibility(announcementRef.current);
-	}, [failedAttempt]);
-	const styles = React.useMemo(() => {
-		const gap = overrides?.gap ? resolveToken(t, overrides.gap) : t.layoutGapLoose;
-		return {
-			container: {
-				flexDirection: "column",
-				gap
-			},
-			fields: {
-				flexDirection: "column",
-				gap
-			},
-			actions: { alignItems: "flex-start" },
-			summary: {
-				flexDirection: "column",
-				borderStyle: "solid",
-				borderWidth: overrides?.errorSummaryBorderWidth ? resolveToken(t, overrides.errorSummaryBorderWidth) : t.borderWidthThin,
-				borderColor: overrides?.errorSummaryBorder ? resolveToken(t, overrides.errorSummaryBorder) : t.colorBorderDanger,
-				borderRadius: overrides?.errorSummaryRadius ? resolveToken(t, overrides.errorSummaryRadius) : t.radiusMd,
-				backgroundColor: t.colorBackgroundSubtle,
-				padding: overrides?.errorSummaryPadding ? resolveToken(t, overrides.errorSummaryPadding) : t.spaceMd
-			}
-		};
-	}, [
-		t,
-		overrides?.gap,
-		overrides?.errorSummaryBorder,
-		overrides?.errorSummaryBorderWidth,
-		overrides?.errorSummaryRadius,
-		overrides?.errorSummaryPadding
-	]);
-	const summaryGapOverrides = { gap: overrides?.errorSummaryGap };
-	return /* @__PURE__ */ React.createElement(FormContext.Provider, { value: contextValue }, /* @__PURE__ */ React.createElement(View, {
-		ref,
-		testID: "Form",
-		role: "form",
-		accessibilityLabel: label,
-		accessibilityState: { disabled },
-		style: styles.container
-	}, showSummary ? /* @__PURE__ */ React.createElement(View, {
-		testID: "Form.errorSummary",
-		accessibilityLiveRegion: "assertive",
-		style: styles.summary
-	}, /* @__PURE__ */ React.createElement(Stack, {
-		gap: "tight",
-		overrides: summaryGapOverrides
-	}, /* @__PURE__ */ React.createElement(Text, {
-		ref: headingRef,
-		tone: "danger",
-		weight: "semibold"
-	}, heading), /* @__PURE__ */ React.createElement(Stack, {
-		gap: "tight",
-		overrides: summaryGapOverrides
-	}, errorEntries.map((entry) => entry.registered ? /* @__PURE__ */ React.createElement(Text, {
-		key: entry.name,
-		tone: "danger"
-	}, /* @__PURE__ */ React.createElement(Link, {
-		href: entry.name,
-		label: entry.text,
-		tone: "inherit",
-		onPress: () => {
-			handles.current.get(entry.name)?.focus();
-			return false;
-		}
-	})) : /* @__PURE__ */ React.createElement(Text, {
-		key: entry.name,
-		tone: "danger"
-	}, entry.text))))) : null, /* @__PURE__ */ React.createElement(View, {
-		testID: "Form.fields",
-		style: styles.fields
-	}, children), /* @__PURE__ */ React.createElement(View, {
-		testID: "Form.actions",
-		style: styles.actions
-	}, actions)));
-}
-//#endregion
-//#region src/Box.tsx
-const INSET_TOKEN = {
-	none: "layoutInsetNone",
-	sm: "layoutInsetSm",
-	md: "layoutInsetMd",
-	lg: "layoutInsetLg",
-	xl: "layoutInsetXl"
-};
-const SURFACE_TOKEN = {
-	default: "colorBackground",
-	subtle: "colorBackgroundSubtle",
-	strong: "colorBackgroundStrong"
-};
-const RADIUS_TOKEN = {
-	none: "radiusNone",
-	sm: "radiusSm",
-	md: "radiusMd",
-	lg: "radiusLg",
-	full: "radiusFull"
-};
-/**
-* Box — a surface: padding around a group of content, a background under it, a border,
-* rounded corners. It has no opinions about what is inside and no spacing between its
-* children (that is Stack's job), and it never carries margin of its own.
-*
-* Renders a `View` with paddingVertical/paddingHorizontal from `layout.inset.*`,
-* backgroundColor from `color.background.*` (literal `transparent` for `surface: none`,
-* so the parent's shows through), borderWidth/borderColor when `border`, and borderRadius
-* from `radius.*`. It adds no accessibility role of its own; `radius` does not clip
-* (a child that should be clipped clips itself). The `element` prop is web/Lit only —
-* React Native has no sectioning elements, so the `nav`/`article` semantics those
-* builds render have no counterpart here; use Landmark for a page region.
-*/
-function Box({ children, inset = "none", insetBlock, insetInline, surface = "none", border = false, radius = "none", overrides, ref }) {
-	const { tokens: t } = useTheme();
-	const style = React.useMemo(() => {
-		const blockInset = insetBlock ?? inset;
-		const inlineInset = insetInline ?? inset;
-		const next = {
-			paddingVertical: overrides?.paddingBlock ? resolveToken(t, overrides.paddingBlock) : t[INSET_TOKEN[blockInset]],
-			paddingHorizontal: overrides?.paddingInline ? resolveToken(t, overrides.paddingInline) : t[INSET_TOKEN[inlineInset]],
-			borderRadius: radius !== "none" && overrides?.radius ? resolveToken(t, overrides.radius) : t[RADIUS_TOKEN[radius]]
-		};
-		next.backgroundColor = surface === "none" ? "transparent" : t[SURFACE_TOKEN[surface]];
-		if (border) {
-			next.borderWidth = overrides?.borderWidth ? resolveToken(t, overrides.borderWidth) : t.borderWidthThin;
-			next.borderColor = overrides?.border ? resolveToken(t, overrides.border) : t.colorBorder;
-		}
-		return next;
-	}, [
-		t,
-		inset,
-		insetBlock,
-		insetInline,
-		surface,
-		border,
-		radius,
-		overrides
-	]);
-	return /* @__PURE__ */ React.createElement(View, {
-		ref,
-		style,
-		testID: "Box"
-	}, children);
-}
-//#endregion
-//#region src/Checkbox.tsx
-const COPY$26 = {
-	required: (label) => `${label} is required.`,
-	invalid: (label) => `${label} is not valid.`,
-	requiredIndicator: " (required)"
-};
-/**
-* Checkbox — a single yes/no choice that the user makes and then submits, as
-* opposed to a Switch, which takes effect the moment it is flipped.
-*
-* When to use: Use a Checkbox for one independent option ("Remember me"), for terms
-* and consent (`required`), or several, each with its own `name`, when the user may
-* pick any number of items. Use `indeterminate` on a "select all" parent when only some
-* of its children are checked. Do not use it for a setting that applies immediately
-* (Switch) or to pick exactly one option (RadioGroup).
-*
-* There is no checkbox in core React Native. Renders a `Pressable` row with
-* `accessibilityRole="checkbox"`, `accessibilityLabel`, `accessibilityHint={description}`
-* and `accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}`, mirrored
-* to `aria-checked` (and, on react-native-web, `aria-disabled` set on the DOM node) because
-* react-native-web renders only the aria-* forms and `role="checkbox"` requires `aria-checked`.
-* `disabled` is never passed to `Pressable` itself — that would drop the row from the tab order —
-* so a disabled checkbox stays focusable and is announced as disabled while a press guard blocks
-* the toggle. It contains the drawn control (the `check`/`dash` `Icon`) and the label and
-* description, so the whole row — control, label or description — is the hit area and
-* never drops below the comfortable target. The row aligns to the start of the cross
-* axis and pads (minTarget − labelSize × lineHeight) / 2 above and below, so a single
-* line is exactly the comfortable target tall while a wrapping label or a description
-* grows it downwards with the control still centred on the label's first line (as
-* Switch). Space on a hardware keyboard is handled by the platform once the role is
-* set. The fill and border color cross-fade over `transition` with
-* `motion.easing.standard` (skipped under reduced motion); the indicator is not
-* animated — the check and dash Icons are mounted and unmounted, so they appear,
-* disappear and swap instantly. While pressed an unchecked, enabled box shows the
-* selected fill at `pressedOverlay` as an overlay inside the box, so the border does
-* not fade. Border color is invalid, then selected, then rest: focus draws the border
-* at the larger of `focusRingWidth` and `controlBorderWidth` and never hides
-* `controlBorderInvalid`, as in Input. Toggling an indeterminate checkbox clears the
-* mixed state until `indeterminate` changes value again. Inside a Form the control
-* registers by `name` and submits its checked state as a boolean (`value` is not used
-* on native); the error slot shows `error`, else the Form's message, else — only while
-* `invalid` — `copy.required` (required and unchecked) or `copy.invalid`, as in Input,
-* and `validate: blur` means on change. The error sits below the row, outside the hit
-* area, indented by controlSize + gap so it lines up with the label.
-* `disabledOpacity` dims the control and label, not the description or error. Inside a
-* Fieldset the group's `disabled` applies and the legend prefixes the accessibility
-* label. Errors are announced as in Input.
-*/
-function Checkbox({ label, hideLabel = false, name, value = "on", checked, defaultChecked = false, indeterminate = false, disabled = false, required = false, invalid = false, description, error, overrides, onChange, ref }) {
-	const { tokens: t } = useTheme();
-	const form = useFormContext();
-	const fieldset = useFieldsetContext();
-	const reducedMotion = useReducedMotion();
-	const pressableRef = React.useRef(null);
-	const [internalChecked, setInternalChecked] = React.useState(defaultChecked);
-	const [mixedCleared, setMixedCleared] = React.useState(false);
-	const [focused, setFocused] = React.useState(false);
-	React.useEffect(() => {
-		setMixedCleared(false);
-	}, [indeterminate]);
-	const isChecked = checked ?? internalChecked;
-	const isMixed = indeterminate && !mixedCleared;
-	const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
-	const formError = form?.errors[name];
-	const derivedError = invalid ? required && !isChecked ? COPY$26.required(label) : COPY$26.invalid(label) : void 0;
-	const displayedError = error !== void 0 && error !== "" ? error : formError ?? derivedError;
-	const isInvalid = invalid || displayedError !== void 0;
-	const summarised = form !== null && form.errorSummary;
-	const validateValue = React.useCallback((candidate) => {
-		if (error !== void 0 && error !== "") return error;
-		if (required && !candidate) return COPY$26.required(label);
-		if (invalid) return COPY$26.invalid(label);
-		return null;
-	}, [
-		error,
-		required,
-		invalid,
-		label
-	]);
-	const latest = React.useRef({
-		isChecked,
-		value,
-		validateValue
-	});
-	latest.current = {
-		isChecked,
-		value,
-		validateValue
-	};
-	const handle = React.useMemo(() => ({
-		getValue: () => latest.current.isChecked,
-		validate: () => latest.current.validateValue(latest.current.isChecked),
-		focus: () => {
-			const node = pressableRef.current === null ? null : findNodeHandle(pressableRef.current);
-			if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
-		}
-	}), []);
-	const register = form?.register;
-	const unregister = form?.unregister;
-	React.useEffect(() => {
-		if (register === void 0 || unregister === void 0 || isDisabled) return;
-		register(name, handle);
-		return () => unregister(name);
-	}, [
-		register,
-		unregister,
-		name,
-		handle,
-		isDisabled
-	]);
-	React.useEffect(() => {
-		if (Platform.OS === "ios" && !summarised && displayedError !== void 0) AccessibilityInfo.announceForAccessibility(displayedError);
-	}, [displayedError, summarised]);
-	React.useEffect(() => {
-		if (Platform.OS !== "web") return;
-		const node = pressableRef.current;
-		if (node === null) return;
-		if (isDisabled) node.setAttribute("aria-disabled", "true");
-		else node.removeAttribute("aria-disabled");
-	}, [isDisabled]);
-	const handlePress = () => {
-		if (isDisabled) return;
-		const next = !isChecked;
-		if (checked === void 0) setInternalChecked(next);
-		if (isMixed) setMixedCleared(true);
-		onChange?.(next);
-		if (form !== null && form.validateMode !== "submit") form.reportValidity(name, validateValue(next));
-	};
-	const visibleLabel = required ? `${label}${COPY$26.requiredIndicator}` : label;
-	const accessibleName = fieldset !== null ? `${fieldset.legend}, ${visibleLabel}` : visibleLabel;
-	const filled = isChecked || isMixed;
-	const controlBackground = overrides?.controlBackground ? resolveToken(t, overrides.controlBackground) : t.colorControlBackground;
-	const controlBorderWidth = overrides?.controlBorderWidth ? resolveToken(t, overrides.controlBorderWidth) : t.borderWidthThin;
-	const pressedOverlay = overrides?.pressedOverlay ? resolveToken(t, overrides.pressedOverlay) : t.opacityDisabled;
-	const controlBorderInvalid = overrides?.controlBorderInvalid ? resolveToken(t, overrides.controlBorderInvalid) : t.colorBorderDanger;
-	const controlSize = overrides?.controlSize ? resolveToken(t, overrides.controlSize) : t.space5;
-	const controlRadius = overrides?.controlRadius ? resolveToken(t, overrides.controlRadius) : t.radiusSm;
-	const gap = overrides?.gap ? resolveToken(t, overrides.gap) : t.space2;
-	const partGap = overrides?.partGap ? resolveToken(t, overrides.partGap) : t.space1;
-	const labelSize = overrides?.labelSize ? resolveToken(t, overrides.labelSize) : t.fontSizeMd;
-	const lineHeight = overrides?.lineHeight ? resolveToken(t, overrides.lineHeight) : t.fontLineHeightNormal;
-	const disabledOpacity = overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled;
-	const transitionDuration = overrides?.transition ? resolveToken(t, overrides.transition) : t.motionDurationFast;
-	const fillAnim = React.useRef(new Animated.Value(filled ? 1 : 0)).current;
-	React.useEffect(() => {
-		const toValue = filled ? 1 : 0;
-		if (reducedMotion) {
-			fillAnim.setValue(toValue);
-			return;
-		}
-		Animated.timing(fillAnim, {
-			toValue,
-			duration: transitionDuration,
-			easing: toEasing(t.motionEasingStandard),
-			useNativeDriver: false
-		}).start();
-	}, [
-		filled,
-		reducedMotion,
-		fillAnim,
-		transitionDuration,
-		t.motionEasingStandard
-	]);
-	const animatedBackground = fillAnim.interpolate({
-		inputRange: [0, 1],
-		outputRange: [controlBackground, t.colorControlSelectedBackground]
-	});
-	const animatedBorderColor = fillAnim.interpolate({
-		inputRange: [0, 1],
-		outputRange: [t.colorControlBorder, t.colorControlSelectedBackground]
-	});
-	const rootStyle = {
-		flexDirection: "column",
-		gap: partGap
-	};
-	const firstLine = toLineHeight(labelSize, lineHeight);
-	const rowStyle = {
-		flexDirection: "row",
-		alignItems: "flex-start",
-		gap,
-		minHeight: t.sizeTargetComfortable,
-		paddingVertical: Math.max(0, (t.sizeTargetComfortable - firstLine) / 2)
-	};
-	const controlSlotStyle = {
-		height: firstLine,
-		justifyContent: "center"
-	};
-	const dimStyle = { opacity: isDisabled ? disabledOpacity : 1 };
-	const controlStyle = {
-		width: controlSize,
-		height: controlSize,
-		borderRadius: controlRadius,
-		borderWidth: focused ? Math.max(t.borderWidthFocus, controlBorderWidth) : controlBorderWidth,
-		borderColor: isInvalid ? controlBorderInvalid : focused ? t.colorBorderFocus : animatedBorderColor,
-		backgroundColor: animatedBackground,
-		overflow: "hidden",
-		alignItems: "center",
-		justifyContent: "center",
-		opacity: dimStyle.opacity
-	};
-	const overlayStyle = ({ pressed }) => ({
-		...StyleSheet.absoluteFill,
-		backgroundColor: t.colorControlSelectedBackground,
-		opacity: pressed && !filled && !isDisabled ? pressedOverlay : 0
-	});
-	const textColumnStyle = {
-		flex: 1,
-		flexDirection: "column",
-		gap: partGap
-	};
-	const errorStyle = { paddingStart: controlSize + gap };
-	const typographyOverrides = {
-		fontFamily: overrides?.fontFamily,
-		lineHeight: overrides?.lineHeight
-	};
-	const helperOverrides = {
-		...typographyOverrides,
-		fontSize: overrides?.helperSize
-	};
-	return /* @__PURE__ */ React.createElement(View, {
-		ref,
-		testID: "Checkbox",
-		style: rootStyle
-	}, /* @__PURE__ */ React.createElement(Pressable, {
-		ref: pressableRef,
-		accessibilityRole: "checkbox",
-		accessibilityLabel: accessibleName,
-		accessibilityHint: description,
-		accessibilityState: {
-			checked: isMixed ? "mixed" : isChecked,
-			disabled: isDisabled
-		},
-		"aria-checked": isMixed ? "mixed" : isChecked,
-		onPress: handlePress,
-		onFocus: () => setFocused(true),
-		onBlur: () => setFocused(false),
-		style: rowStyle
-	}, (state) => /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(View, { style: controlSlotStyle }, /* @__PURE__ */ React.createElement(Animated.View, {
-		testID: "Checkbox.control",
-		style: controlStyle,
-		accessibilityElementsHidden: true,
-		importantForAccessibility: "no"
-	}, /* @__PURE__ */ React.createElement(View, { style: overlayStyle(state) }), filled ? /* @__PURE__ */ React.createElement(View, { testID: "Checkbox.indicator" }, /* @__PURE__ */ React.createElement(Icon, {
-		name: isMixed ? "dash" : "check",
-		size: "xs",
-		overrides: { color: "color.control.selectedForeground" }
-	})) : null)), /* @__PURE__ */ React.createElement(View, { style: textColumnStyle }, hideLabel ? null : /* @__PURE__ */ React.createElement(View, {
-		testID: "Checkbox.label",
-		style: dimStyle
-	}, /* @__PURE__ */ React.createElement(Text, {
-		size: "md",
-		weight: "regular",
-		tone: "default",
-		overrides: {
-			...typographyOverrides,
-			fontSize: overrides?.labelSize,
-			fontWeight: overrides?.labelWeight
-		}
-	}, visibleLabel)), description !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "Checkbox.description" }, /* @__PURE__ */ React.createElement(Text, {
-		size: "sm",
-		tone: "muted",
-		overrides: helperOverrides
-	}, description)) : null))), displayedError !== void 0 ? /* @__PURE__ */ React.createElement(View, {
-		accessibilityLiveRegion: summarised ? "none" : "assertive",
-		testID: "Checkbox.errorMessage",
-		style: errorStyle
-	}, /* @__PURE__ */ React.createElement(Text, {
-		size: "sm",
-		tone: "danger",
-		overrides: helperOverrides
-	}, displayedError)) : null);
-}
-//#endregion
-//#region src/Switch.tsx
-/**
-* Switch — a light switch: flip it and the thing happens. That immediacy separates
-* it from a Checkbox, which records a choice to be submitted later.
-*
-* When to use: Use a Switch for a binary setting that applies as soon as it changes
-* and can be undone by flipping it back: notifications, dark mode, "show archived".
-* Use it in settings lists with `labelPosition: start` so the switches sit at the
-* row end. If a form of switches must have a Save button, they are checkboxes.
-*
-* Uses the native `Switch` with `accessibilityRole="switch"` (native only — on
-* react-native-web the rendered `<input type="checkbox" role="switch">` already carries
-* the role, and a second one on its container would have no state and a focusable
-* descendant), `accessibilityLabel`, `accessibilityHint={description}`,
-* `accessibilityState={{ checked, disabled }}`,
-* `trackColor={{ false: trackOff, true: trackOn }}`, `thumbColor` and
-* `ios_backgroundColor={trackOff}`. The row is a `Pressable` with `accessible={false}`
-* and `tabIndex={-1}` that toggles the value, so label and description are part of the
-* target while the Switch stays the single focusable element; the row is at least the comfortable
-* target tall with no padding, and centres its content in that height, so a one-line
-* row sits in the middle while a wrapping label or a description grows it downwards
-* with the track still on the label's first line. Track and thumb sizes, radius, thumb travel, its animation (and reduced
-* motion) and the focus indicator are the OS values. With `name` inside a Form the
-* switch registers and contributes a boolean; it has no error state by design. Inside
-* a Fieldset the group's `disabled` applies and the legend prefixes the label.
-*/
-function Switch({ label, name, checked, defaultChecked = false, disabled = false, description, labelPosition = "start", overrides, onValueChange, ref }) {
-	const { tokens: t } = useTheme();
-	const form = useFormContext();
-	const fieldset = useFieldsetContext();
-	const switchRef = React.useRef(null);
-	const [internalChecked, setInternalChecked] = React.useState(defaultChecked);
-	const rootRef = React.useRef(null);
-	React.useImperativeHandle(ref, () => rootRef.current, []);
-	const isChecked = checked ?? internalChecked;
-	const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
-	const accessibleName = fieldset !== null ? `${fieldset.legend}, ${label}` : label;
-	const latest = React.useRef({ isChecked });
-	latest.current = { isChecked };
-	const handle = React.useMemo(() => ({
-		getValue: () => latest.current.isChecked,
-		validate: () => null,
-		focus: () => {
-			const node = switchRef.current === null ? null : findNodeHandle(switchRef.current);
-			if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
-		}
-	}), []);
-	const register = form?.register;
-	const unregister = form?.unregister;
-	React.useEffect(() => {
-		if (register === void 0 || unregister === void 0 || name === void 0 || isDisabled) return;
-		register(name, handle);
-		return () => unregister(name);
-	}, [
-		register,
-		unregister,
-		name,
-		handle,
-		isDisabled
-	]);
-	React.useEffect(() => {
-		if (Platform.OS !== "web") return;
-		const node = rootRef.current;
-		if (node === null) return;
-		if (isDisabled) node.setAttribute("aria-disabled", "true");
-		else node.removeAttribute("aria-disabled");
-	}, [isDisabled]);
-	const setValue = (next) => {
-		if (isDisabled || next === isChecked) return;
-		if (checked === void 0) setInternalChecked(next);
-		onValueChange?.(next);
-	};
-	const gap = overrides?.gap ? resolveToken(t, overrides.gap) : t.space3;
-	const partGap = overrides?.partGap ? resolveToken(t, overrides.partGap) : t.space1;
-	const disabledOpacity = overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled;
-	const labelSize = overrides?.labelSize ? resolveToken(t, overrides.labelSize) : t.fontSizeMd;
-	const lineHeight = overrides?.lineHeight ? resolveToken(t, overrides.lineHeight) : t.fontLineHeightNormal;
-	const rowStyle = {
-		justifyContent: "center",
-		minHeight: t.sizeTargetComfortable,
-		opacity: isDisabled ? disabledOpacity : 1
-	};
-	const contentStyle = {
-		flexDirection: "row",
-		alignItems: "flex-start",
-		gap
-	};
-	const trackSlotStyle = {
-		height: toLineHeight(labelSize, lineHeight),
-		justifyContent: "center"
-	};
-	const textColumnStyle = {
-		flex: 1,
-		flexDirection: "column",
-		gap: partGap
-	};
-	const typographyOverrides = {
-		fontFamily: overrides?.fontFamily,
-		lineHeight: overrides?.lineHeight
-	};
-	const helperOverrides = {
-		...typographyOverrides,
-		fontSize: overrides?.helperSize
-	};
-	const labelColumn = /* @__PURE__ */ React.createElement(View, { style: textColumnStyle }, /* @__PURE__ */ React.createElement(View, { testID: "Switch.label" }, /* @__PURE__ */ React.createElement(Text, {
-		size: "md",
-		weight: "regular",
-		tone: "default",
-		overrides: {
-			...typographyOverrides,
-			fontSize: overrides?.labelSize,
-			fontWeight: overrides?.labelWeight
-		}
-	}, label)), description !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "Switch.description" }, /* @__PURE__ */ React.createElement(Text, {
-		size: "sm",
-		tone: "muted",
-		overrides: helperOverrides
-	}, description)) : null);
-	return /* @__PURE__ */ React.createElement(Pressable, {
-		ref: rootRef,
-		testID: "Switch",
-		accessible: false,
-		tabIndex: -1,
-		onPress: () => setValue(!isChecked),
-		style: rowStyle
-	}, /* @__PURE__ */ React.createElement(View, { style: contentStyle }, labelPosition === "start" ? labelColumn : null, /* @__PURE__ */ React.createElement(View, { style: trackSlotStyle }, /* @__PURE__ */ React.createElement(Switch$1, {
-		ref: switchRef,
-		testID: "Switch.track",
-		accessibilityRole: Platform.OS === "web" ? void 0 : "switch",
-		accessibilityLabel: accessibleName,
-		accessibilityHint: description,
-		accessibilityState: {
-			checked: isChecked,
-			disabled: isDisabled
-		},
-		value: isChecked,
-		disabled: isDisabled,
-		trackColor: {
-			false: t.colorControlTrackOff,
-			true: t.colorControlSelectedBackground
-		},
-		thumbColor: t.colorControlSelectedForeground,
-		ios_backgroundColor: t.colorControlTrackOff,
-		onValueChange: setValue
-	})), labelPosition === "end" ? labelColumn : null));
 }
 //#endregion
 //#region src/RadioGroup.tsx
@@ -2705,20 +4053,25 @@ function Radio({ option, index, total, selected, optionDisabled, invalid, radioR
 		sizes.transitionDuration,
 		t.motionEasingStandard
 	]);
+	const firstLine = toLineHeight(sizes.labelSize, sizes.lineHeight);
 	const rowStyle = {
 		flexDirection: "row",
 		alignItems: "flex-start",
 		gap: sizes.optionGap,
 		minHeight: t.sizeTargetComfortable,
-		paddingVertical: sizes.optionPaddingBlock,
+		paddingVertical: Math.max(sizes.optionPaddingBlock, (t.sizeTargetComfortable - firstLine) / 2),
 		opacity: optionDisabled ? sizes.disabledOpacity : 1
+	};
+	const controlSlotStyle = {
+		height: firstLine,
+		justifyContent: "center"
 	};
 	const controlStyle = {
 		width: sizes.controlSize,
 		height: sizes.controlSize,
 		borderRadius: sizes.controlRadius,
 		borderWidth: focused ? t.borderWidthFocus : sizes.controlBorderWidth,
-		borderColor: focused ? t.colorBorderFocus : invalid ? sizes.controlBorderInvalid : selectAnim.interpolate({
+		borderColor: invalid ? sizes.controlBorderInvalid : focused ? t.colorBorderFocus : selectAnim.interpolate({
 			inputRange: [0, 1],
 			outputRange: [t.colorControlBorder, t.colorControlSelectedBackground]
 		}),
@@ -2745,6 +4098,7 @@ function Radio({ option, index, total, selected, optionDisabled, invalid, radioR
 		testID: "RadioGroup.radio",
 		accessibilityRole: "radio",
 		accessibilityLabel: accessibleName,
+		"aria-label": accessibleName,
 		accessibilityState: {
 			checked: selected,
 			disabled: optionDisabled
@@ -2757,14 +4111,15 @@ function Radio({ option, index, total, selected, optionDisabled, invalid, radioR
 		onFocus: () => setFocused(true),
 		onBlur: () => setFocused(false),
 		style: rowStyle
-	}, /* @__PURE__ */ React.createElement(Animated.View, {
+	}, /* @__PURE__ */ React.createElement(View, { style: controlSlotStyle }, /* @__PURE__ */ React.createElement(Animated.View, {
 		style: controlStyle,
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no"
 	}, /* @__PURE__ */ React.createElement(Animated.View, {
 		testID: "RadioGroup.radioIndicator",
 		style: dotStyle
-	})), /* @__PURE__ */ React.createElement(View, { style: textColumnStyle }, /* @__PURE__ */ React.createElement(View, { testID: "RadioGroup.radioLabel" }, /* @__PURE__ */ React.createElement(Text, {
+	}))), /* @__PURE__ */ React.createElement(View, { style: textColumnStyle }, /* @__PURE__ */ React.createElement(View, { testID: "RadioGroup.radioLabel" }, /* @__PURE__ */ React.createElement(Text, {
 		size: "md",
 		weight: "regular",
 		tone: "default",
@@ -2856,7 +4211,10 @@ function RadioGroup({ label, name, options, value, defaultValue, orientation = "
 		handle,
 		isDisabled
 	]);
+	const announcedError = React.useRef(displayedError);
 	React.useEffect(() => {
+		if (announcedError.current === displayedError) return;
+		announcedError.current = displayedError;
 		if (Platform.OS === "ios" && !summarised && displayedError !== void 0) AccessibilityInfo.announceForAccessibility(displayedError);
 	}, [displayedError, summarised]);
 	const select = (next) => {
@@ -2878,7 +4236,9 @@ function RadioGroup({ label, name, options, value, defaultValue, orientation = "
 		optionTextGap: overrides?.optionTextGap ? resolveToken(t, overrides.optionTextGap) : t.space1,
 		optionGap: overrides?.optionGap ? resolveToken(t, overrides.optionGap) : t.space2,
 		disabledOpacity: overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled,
-		transitionDuration: overrides?.transition ? resolveToken(t, overrides.transition) : t.motionDurationFast
+		transitionDuration: overrides?.transition ? resolveToken(t, overrides.transition) : t.motionDurationFast,
+		labelSize: overrides?.labelSize ? resolveToken(t, overrides.labelSize) : t.fontSizeMd,
+		lineHeight: overrides?.lineHeight ? resolveToken(t, overrides.lineHeight) : t.fontLineHeightNormal
 	};
 	const listGap = overrides?.listGap ? resolveToken(t, overrides.listGap) : t.space2;
 	const groupStyle = {
@@ -2913,8 +4273,10 @@ function RadioGroup({ label, name, options, value, defaultValue, orientation = "
 		testID: "RadioGroup",
 		accessibilityRole: "radiogroup",
 		accessibilityLabel: accessibleName,
+		"aria-label": accessibleName,
 		accessibilityHint: description,
 		accessibilityState: { disabled: isDisabled },
+		"aria-disabled": isDisabled,
 		style: groupStyle
 	}, /* @__PURE__ */ React.createElement(View, { testID: "RadioGroup.legend" }, /* @__PURE__ */ React.createElement(Text, {
 		size: "md",
@@ -2948,7 +4310,1834 @@ function RadioGroup({ label, name, options, value, defaultValue, orientation = "
 	}, displayedError)) : null);
 }
 //#endregion
+//#region src/Slider.tsx
+const COPY$24 = {
+	minimumLabel: (label) => `${label} minimum`,
+	maximumLabel: (label) => `${label} maximum`,
+	rangeText: (low, high) => `${low} – ${high}`,
+	required: (label) => `${label} is required.`,
+	invalid: (label) => `${label} is not valid.`,
+	pageUpAction: "Increase by a page",
+	pageDownAction: "Decrease by a page",
+	homeAction: "Set to minimum",
+	endAction: "Set to maximum"
+};
+/**
+* `increment`/`decrement` are the standard adjustable actions (VoiceOver swipe, TalkBack
+* volume keys) and take no label. PageUp/PageDown/Home/End have no native gesture, so they
+* are custom actions in the platform's Actions menu, labelled from copy.
+*/
+const THUMB_ACTIONS = [
+	{ name: "increment" },
+	{ name: "decrement" },
+	{
+		name: "pageUp",
+		label: COPY$24.pageUpAction
+	},
+	{
+		name: "pageDown",
+		label: COPY$24.pageDownAction
+	},
+	{
+		name: "home",
+		label: COPY$24.homeAction
+	},
+	{
+		name: "end",
+		label: COPY$24.endAction
+	}
+];
+/** PageUp/PageDown move by ten steps. */
+const PAGE_STEPS = 10;
+function clamp$3(value, min, max) {
+	return Math.min(max, Math.max(min, value));
+}
+function percentOf(value, min, max) {
+	if (max <= min) return 0;
+	return clamp$3((value - min) / (max - min), 0, 1);
+}
+function isSameSliderValue(a, b) {
+	if (Array.isArray(a) || Array.isArray(b)) return Array.isArray(a) && Array.isArray(b) && a[0] === b[0] && a[1] === b[1];
+	return a === b;
+}
+/** Removes floating-point drift from step arithmetic (0.1 + 0.2) so values stay on the step grid. */
+function tidy(value) {
+	return Math.round(value * 1e9) / 1e9;
+}
+/** Snaps a pointer position: to the nearest mark with `snapToMarks`, otherwise to the step grid. */
+function snapValue(raw, min, max, step, snapMarks) {
+	const clamped = clamp$3(raw, min, max);
+	if (snapMarks !== void 0 && snapMarks.length > 0) {
+		let nearest = snapMarks[0].value;
+		for (const mark of snapMarks) if (Math.abs(clamped - mark.value) < Math.abs(clamped - nearest)) nearest = mark.value;
+		return clamp$3(nearest, min, max);
+	}
+	if (step <= 0) return clamped;
+	const onGrid = clamp$3(tidy(min + Math.round((clamped - min) / step) * step), min, max);
+	return max - clamped < Math.abs(clamped - onGrid) ? max : onGrid;
+}
+/** Ten steps in `direction`; with `snapToMarks`, the next mark, and past the last mark the bound. */
+function pagedValue(current, direction, min, max, step, snapMarks) {
+	if (snapMarks !== void 0 && snapMarks.length > 0) {
+		const sorted = snapMarks.map((mark) => mark.value).sort((a, b) => a - b);
+		return clamp$3((direction > 0 ? sorted.find((v) => v > current) : sorted.reverse().find((v) => v < current)) ?? (direction > 0 ? max : min), min, max);
+	}
+	return clamp$3(tidy(current + direction * step * PAGE_STEPS), min, max);
+}
+function resolveOr(t, ref, fallback) {
+	return ref ? resolveToken(t, ref) : fallback;
+}
+/** Fades `visible` in and out over the `transition` binding, or snaps when motion is reduced. */
+function useFade(visible, reducedMotion, duration, easing) {
+	const anim = React.useRef(new Animated.Value(visible ? 1 : 0)).current;
+	const target = React.useRef(visible ? 1 : 0);
+	React.useEffect(() => {
+		const toValue = visible ? 1 : 0;
+		if (toValue === target.current) return;
+		target.current = toValue;
+		if (reducedMotion) {
+			anim.setValue(toValue);
+			return;
+		}
+		Animated.timing(anim, {
+			toValue,
+			duration,
+			easing: toEasing(easing),
+			useNativeDriver: false
+		}).start();
+	}, [
+		visible,
+		reducedMotion,
+		anim,
+		duration,
+		easing
+	]);
+	return anim;
+}
+/**
+* One thumb: a `View` (not `Pressable`) carrying a `PanResponder`'s handlers directly, since
+* spreading `panHandlers` onto `Pressable` fights its own responder. The adjustable role and
+* accessibility actions are the non-gesture path; the drag is additive. A `latest` ref keeps
+* the responder's closures current without recreating the `PanResponder` mid-gesture.
+*/
+function SliderThumb({ kind, value, fraction, min, max, disabled, pressed, accessibilityLabel, accessibilityHint, formatValue, showBubble, bubbleTypography, reducedMotion, labelledBy, webProps, onGrant, onDrag, onRelease, onAction, styleTokens: st, ref }) {
+	const [focused, setFocused] = React.useState(false);
+	const [focusVisible, setFocusVisible] = React.useState(false);
+	const pointerRef = React.useRef(false);
+	const latest = React.useRef({
+		disabled,
+		onGrant,
+		onDrag,
+		onRelease,
+		minTarget: st.minTarget
+	});
+	latest.current = {
+		disabled,
+		onGrant,
+		onDrag,
+		onRelease,
+		minTarget: st.minTarget
+	};
+	const panResponder = React.useRef(PanResponder.create({
+		onStartShouldSetPanResponder: () => {
+			pointerRef.current = true;
+			return !latest.current.disabled;
+		},
+		onMoveShouldSetPanResponder: () => !latest.current.disabled,
+		onPanResponderTerminationRequest: () => false,
+		onPanResponderGrant: (evt) => latest.current.onGrant(kind, evt.nativeEvent.locationX - latest.current.minTarget / 2),
+		onPanResponderMove: (_evt, gesture) => latest.current.onDrag(gesture.dx),
+		onPanResponderRelease: () => latest.current.onRelease(),
+		onPanResponderTerminate: () => latest.current.onRelease()
+	})).current;
+	const handleAccessibilityAction = (event) => {
+		if (!latest.current.disabled) onAction(kind, event.nativeEvent.actionName);
+	};
+	const haloAnim = useFade(pressed, reducedMotion, st.transitionDuration, st.motionEasingStandard);
+	const bubbleAnim = useFade(showBubble && (pressed || focused), reducedMotion, st.transitionDuration, st.motionEasingStandard);
+	const haloSize = st.thumbSize + st.haloSpread * 2;
+	const ringSize = st.thumbSize + (st.focusRingWidth + st.focusRingWidth) * 2;
+	const hitStyle = {
+		position: "absolute",
+		start: `${fraction * 100}%`,
+		top: "50%",
+		width: st.minTarget,
+		height: st.minTarget,
+		marginTop: -(st.minTarget / 2),
+		marginStart: -(st.minTarget / 2),
+		alignItems: "center",
+		justifyContent: "center"
+	};
+	const haloStyle = {
+		position: "absolute",
+		width: haloSize,
+		height: haloSize,
+		borderRadius: haloSize / 2,
+		backgroundColor: st.haloColor,
+		opacity: haloAnim.interpolate({
+			inputRange: [0, 1],
+			outputRange: [0, st.haloOpacity]
+		})
+	};
+	const ringStyle = {
+		position: "absolute",
+		width: ringSize,
+		height: ringSize,
+		borderRadius: ringSize / 2,
+		borderWidth: st.focusRingWidth,
+		borderColor: st.focusRing
+	};
+	const knobStyle = {
+		width: st.thumbSize,
+		height: st.thumbSize,
+		borderRadius: st.thumbSize / 2,
+		backgroundColor: st.thumbColor,
+		borderWidth: st.thumbBorderWidth,
+		borderColor: st.thumbBorderColor,
+		...st.thumbShadow
+	};
+	const bubbleStripStyle = {
+		position: "absolute",
+		bottom: st.minTarget + st.bubbleOffset,
+		start: "-200%",
+		end: "-200%",
+		alignItems: "center"
+	};
+	const bubbleStyle = {
+		paddingVertical: st.bubblePaddingBlock,
+		paddingHorizontal: st.bubblePaddingInline,
+		borderRadius: st.bubbleRadius,
+		backgroundColor: st.bubbleSurface,
+		opacity: bubbleAnim
+	};
+	const valueText = formatValue(value);
+	return /* @__PURE__ */ React.createElement(View, {
+		ref,
+		testID: "Slider.thumb",
+		accessible: true,
+		focusable: true,
+		accessibilityRole: "adjustable",
+		accessibilityLabel,
+		accessibilityHint,
+		accessibilityValue: {
+			min,
+			max,
+			now: value,
+			text: valueText
+		},
+		accessibilityState: { disabled },
+		"aria-label": accessibilityLabel,
+		"aria-labelledby": labelledBy,
+		"aria-valuemin": min,
+		"aria-valuemax": max,
+		"aria-valuenow": value,
+		"aria-valuetext": valueText,
+		"aria-disabled": disabled ? true : void 0,
+		accessibilityActions: THUMB_ACTIONS,
+		onAccessibilityAction: handleAccessibilityAction,
+		onFocus: () => {
+			setFocused(true);
+			setFocusVisible(!pointerRef.current);
+		},
+		onBlur: () => {
+			setFocused(false);
+			setFocusVisible(false);
+			pointerRef.current = false;
+		},
+		...webProps,
+		...panResponder.panHandlers,
+		style: hitStyle
+	}, showBubble ? /* @__PURE__ */ React.createElement(View, {
+		pointerEvents: "none",
+		style: bubbleStripStyle
+	}, /* @__PURE__ */ React.createElement(Animated.View, {
+		testID: "Slider.bubble",
+		accessibilityElementsHidden: true,
+		importantForAccessibility: "no-hide-descendants",
+		"aria-hidden": true,
+		style: bubbleStyle
+	}, /* @__PURE__ */ React.createElement(TextForegroundContext.Provider, { value: st.bubbleText }, /* @__PURE__ */ React.createElement(Text, {
+		size: "sm",
+		tone: "default",
+		overrides: bubbleTypography
+	}, valueText)))) : null, /* @__PURE__ */ React.createElement(Animated.View, {
+		pointerEvents: "none",
+		style: haloStyle
+	}), focusVisible ? /* @__PURE__ */ React.createElement(View, {
+		pointerEvents: "none",
+		style: ringStyle
+	}) : null, /* @__PURE__ */ React.createElement(View, {
+		pointerEvents: "none",
+		style: knobStyle
+	}));
+}
+/**
+* Slider — a bounded numeric value (or, with `range`, a minimum and a maximum) chosen by
+* feel: the thumb sits on the value, the fill shows how much, and every value the drag
+* reaches is also reachable through the adjustable accessibility actions.
+*
+* When to use: a bounded value where approximate is fine and the scale has meaning across
+* its whole width — volume, brightness, a price range. Use `range` for "between" filters,
+* `marks` for meaningful stops, and pair with a NumberInput (`showValue: never`) when exact
+* entry also matters. Not for exact values, more than about a hundred steps without marks,
+* or two or three discrete choices.
+*
+* Each thumb is its own adjustable element: increment/decrement move by `step`; PageUp,
+* PageDown, Home and End are custom actions labelled from copy. Dragging a thumb, or
+* pressing and dragging anywhere on the track area (which moves the nearest thumb), snaps to
+* `step`, or to the marks with `snapToMarks`. `onValueChange` fires on every change,
+* `onSlidingComplete` once per interaction (release, or each accessibility action), and
+* neither fires when the value did not change. A range's thumbs cannot cross; each thumb's
+* `accessibilityValue` min/max is the live constraint from the other. `disabled` (or a
+* disabled Form or Fieldset) dims the whole slider with `disabledOpacity` and leaves it
+* readable but inert. Inside a Form the field registers once: its value as a decimal
+* string, or a range as two strings; `validate: blur` runs when an interaction ends.
+* Hardware-keyboard keys are not handled on native; the accessibility actions cover them.
+*/
+function Slider({ label, name, min = 0, max = 100, step = 1, snapToMarks = false, required = false, invalid = false, value, defaultValue, range = false, formatValue = String, showValue = "always", marks, disabled = false, description, error, overrides, onValueChange, onSlidingComplete, ref }) {
+	const { tokens: t } = useTheme();
+	const form = useFormContext();
+	const fieldset = useFieldsetContext();
+	const reducedMotion = useReducedMotion();
+	const rtl = I18nManager.isRTL;
+	const baseId = React.useId();
+	const labelId = `${baseId}-label`;
+	const descriptionId = `${baseId}-description`;
+	const errorId = `${baseId}-error`;
+	const snapMarks = snapToMarks && marks !== void 0 && marks.length > 0 ? marks : void 0;
+	const given = range ? Array.isArray(defaultValue) ? defaultValue : [min, max] : typeof defaultValue === "number" ? defaultValue : min;
+	const fallback = Array.isArray(given) ? [clamp$3(given[0], min, max), clamp$3(given[1], min, max)] : clamp$3(given, min, max);
+	const [internalValue, setInternalValue] = React.useState(fallback);
+	const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
+	const currentValue = value ?? internalValue;
+	React.useEffect(() => {
+		if (__DEV__ && !(max > min)) console.warn(`Slider: max (${max}) must be greater than min (${min}).`);
+	}, [min, max]);
+	const singleValue = !range && typeof currentValue === "number" ? clamp$3(currentValue, min, max) : min;
+	const [rangeLowRaw, rangeHighRaw] = range && Array.isArray(currentValue) ? currentValue : [min, max];
+	const rangeLow = clamp$3(Math.min(rangeLowRaw, rangeHighRaw), min, max);
+	const rangeHigh = clamp$3(Math.max(rangeLowRaw, rangeHighRaw), min, max);
+	const normalized = range ? [rangeLow, rangeHigh] : singleValue;
+	const [activeKind, setActiveKind] = React.useState(null);
+	const gesture = React.useRef(null);
+	const trackWidthRef = React.useRef(0);
+	const reportedRef = React.useRef(normalized);
+	if (gesture.current === null) reportedRef.current = normalized;
+	const validateValue = (candidate) => {
+		if (error !== void 0 && error !== "") return error;
+		if (required && isSameSliderValue(candidate, fallback)) return COPY$24.required(label);
+		if (invalid) return COPY$24.invalid(label);
+		return null;
+	};
+	/** Bounds for a thumb: the scale, narrowed by the other thumb in a range. */
+	const boundsFor = (kind) => {
+		const base = reportedRef.current;
+		if (!Array.isArray(base)) return [min, max];
+		return kind === "min" ? [min, base[1]] : [base[0], max];
+	};
+	const valueOf = (kind) => {
+		const base = reportedRef.current;
+		return Array.isArray(base) ? kind === "max" ? base[1] : base[0] : base;
+	};
+	const report = (kind, next) => {
+		const base = reportedRef.current;
+		const [lo, hi] = boundsFor(kind);
+		const bounded = clamp$3(next, lo, hi);
+		const nextValue = Array.isArray(base) ? kind === "min" ? [bounded, base[1]] : [base[0], bounded] : bounded;
+		if (isSameSliderValue(nextValue, base)) return;
+		reportedRef.current = nextValue;
+		if (value === void 0) setInternalValue(nextValue);
+		onValueChange?.(nextValue);
+		if (form !== null && form.validateMode === "change") form.reportValidity(name, validateValue(nextValue));
+	};
+	/** Ends an interaction that began at `start`: reports it only if it changed the value. */
+	const complete = (start) => {
+		const final = reportedRef.current;
+		if (isSameSliderValue(start, final)) return;
+		onSlidingComplete?.(final);
+		if (form !== null && form.validateMode !== "submit") form.reportValidity(name, validateValue(final));
+	};
+	const rawFromDx = (origin, dx) => {
+		const width = trackWidthRef.current;
+		return width <= 0 ? origin : origin + (rtl ? -dx : dx) / width * (max - min);
+	};
+	const beginGesture = (kind, origin) => {
+		gesture.current = {
+			kind,
+			origin,
+			start: reportedRef.current
+		};
+		setActiveKind(kind);
+	};
+	const dragGesture = (dx) => {
+		const g = gesture.current;
+		if (g !== null) report(g.kind, snapValue(rawFromDx(g.origin, dx), min, max, step, snapMarks));
+	};
+	const endGesture = () => {
+		const g = gesture.current;
+		gesture.current = null;
+		setActiveKind(null);
+		if (g !== null) complete(g.start);
+	};
+	const handleAction = (kind, action) => {
+		const current = valueOf(kind);
+		const [lo, hi] = boundsFor(kind);
+		let next;
+		switch (action) {
+			case "increment":
+				next = tidy(current + step);
+				break;
+			case "decrement":
+				next = tidy(current - step);
+				break;
+			case "pageUp":
+				next = pagedValue(current, 1, min, max, step, snapMarks);
+				break;
+			case "pageDown":
+				next = pagedValue(current, -1, min, max, step, snapMarks);
+				break;
+			case "home":
+				next = lo;
+				break;
+			case "end":
+				next = hi;
+				break;
+			default: return;
+		}
+		const start = reportedRef.current;
+		report(kind, next);
+		complete(start);
+	};
+	/** The thumb a track press at `raw` moves: in a range, the nearer one (ties go to the low thumb). */
+	const nearestKind = (raw) => {
+		const base = reportedRef.current;
+		if (!Array.isArray(base)) return "single";
+		const [low, high] = base;
+		if (raw <= low) return "min";
+		if (raw >= high) return "max";
+		return raw - low <= high - raw ? "min" : "max";
+	};
+	/**
+	* The thumb a press inside a thumb's hit area drags. When both range thumbs share a value the
+	* upper one paints on top and receives every press, so the press side decides: before the
+	* value (logical, mirrored in right-to-left) the low thumb, after it the high thumb, exactly on
+	* it the low thumb.
+	*/
+	const grabbedKind = (kind, offset) => {
+		const base = reportedRef.current;
+		if (!Array.isArray(base) || base[0] !== base[1]) return kind;
+		return (rtl ? -offset : offset) > 0 ? "max" : "min";
+	};
+	const latest = React.useRef({
+		isDisabled,
+		rtl,
+		min,
+		max,
+		nearestKind,
+		beginGesture,
+		dragGesture,
+		endGesture
+	});
+	latest.current = {
+		isDisabled,
+		rtl,
+		min,
+		max,
+		nearestKind,
+		beginGesture,
+		dragGesture,
+		endGesture
+	};
+	const trackResponder = React.useRef(PanResponder.create({
+		onStartShouldSetPanResponder: () => !latest.current.isDisabled,
+		onPanResponderTerminationRequest: () => false,
+		onPanResponderGrant: (evt) => {
+			const width = trackWidthRef.current;
+			if (width <= 0) return;
+			const cur = latest.current;
+			const x = cur.rtl ? width - evt.nativeEvent.locationX : evt.nativeEvent.locationX;
+			const raw = cur.min + x / width * (cur.max - cur.min);
+			cur.beginGesture(cur.nearestKind(raw), raw);
+			cur.dragGesture(0);
+		},
+		onPanResponderMove: (_evt, g) => latest.current.dragGesture(g.dx),
+		onPanResponderRelease: () => latest.current.endGesture(),
+		onPanResponderTerminate: () => latest.current.endGesture()
+	})).current;
+	const handleTrackLayout = (event) => {
+		trackWidthRef.current = event.nativeEvent.layout.width;
+	};
+	const firstThumbRef = React.useRef(null);
+	const latestForm = React.useRef({
+		normalized,
+		validateValue,
+		label
+	});
+	latestForm.current = {
+		normalized,
+		validateValue,
+		label
+	};
+	const handle = React.useMemo(() => ({
+		get label() {
+			return latestForm.current.label;
+		},
+		getValue: () => {
+			const current = latestForm.current.normalized;
+			return Array.isArray(current) ? [String(current[0]), String(current[1])] : String(current);
+		},
+		validate: () => latestForm.current.validateValue(latestForm.current.normalized),
+		focus: () => {
+			const node = firstThumbRef.current;
+			const nodeHandle = node === null ? null : findNodeHandle(node);
+			if (nodeHandle != null) AccessibilityInfo.setAccessibilityFocus(nodeHandle);
+		}
+	}), []);
+	const register = form?.register;
+	const unregister = form?.unregister;
+	React.useEffect(() => {
+		if (register === void 0 || unregister === void 0 || isDisabled) return;
+		register(name, handle);
+		return () => unregister(name);
+	}, [
+		register,
+		unregister,
+		name,
+		handle,
+		isDisabled
+	]);
+	const formError = form?.errors[name];
+	const displayedError = error !== void 0 && error !== "" ? error : formError !== void 0 ? formError : invalid ? COPY$24.invalid(label) : void 0;
+	const summarised = form !== null && form.errorSummary;
+	React.useEffect(() => {
+		if (Platform.OS === "ios" && !summarised && displayedError !== void 0) AccessibilityInfo.announceForAccessibility(displayedError);
+	}, [displayedError, summarised]);
+	const trackColor = resolveOr(t, overrides?.track, t.colorBackgroundStrong);
+	const trackHeight = resolveOr(t, overrides?.trackHeight, t.space1);
+	const trackRadius = resolveOr(t, overrides?.trackRadius, t.radiusFull);
+	const markColor = resolveOr(t, overrides?.mark, t.colorBorderStrong);
+	const markSize = resolveOr(t, overrides?.markSize, t.space2);
+	const markLabelSize = resolveOr(t, overrides?.markLabelSize, t.fontSizeXs);
+	const markLabelGap = resolveOr(t, overrides?.markLabelGap, t.space1);
+	const partGap = resolveOr(t, overrides?.partGap, t.space1);
+	const labelGap = resolveOr(t, overrides?.labelGap, t.space2);
+	const trackPaddingBlock = resolveOr(t, overrides?.trackPaddingBlock, t.space3);
+	const disabledOpacity = resolveOr(t, overrides?.disabledOpacity, t.opacityDisabled);
+	const controlSelected = t.colorControlSelectedBackground;
+	const thumbStyleTokens = {
+		thumbSize: resolveOr(t, overrides?.thumbSize, t.space5),
+		thumbBorderWidth: t.borderWidthFocus,
+		thumbColor: resolveOr(t, overrides?.thumb, t.colorControlBackground),
+		thumbBorderColor: controlSelected,
+		thumbShadow: resolveOr(t, overrides?.thumbShadow, t.shadowRaised),
+		haloColor: controlSelected,
+		haloSpread: resolveOr(t, overrides?.haloSpread, t.space2),
+		haloOpacity: resolveOr(t, overrides?.thumbActiveScale, t.opacityDisabled),
+		minTarget: t.sizeTargetComfortable,
+		focusRing: t.colorBorderFocus,
+		focusRingWidth: t.borderWidthFocus,
+		bubbleSurface: t.colorInverseSurface,
+		bubbleText: t.colorInverseForeground,
+		bubbleRadius: resolveOr(t, overrides?.bubbleRadius, t.radiusSm),
+		bubblePaddingBlock: resolveOr(t, overrides?.bubblePaddingBlock, t.space1),
+		bubblePaddingInline: resolveOr(t, overrides?.bubblePaddingInline, t.space2),
+		bubbleOffset: resolveOr(t, overrides?.bubbleOffset, t.space1),
+		motionEasingStandard: t.motionEasingStandard,
+		transitionDuration: resolveOr(t, overrides?.transition, t.motionDurationFast)
+	};
+	const displayValueText = range ? COPY$24.rangeText(formatValue(rangeLow), formatValue(rangeHigh)) : formatValue(singleValue);
+	const markList = marks ?? [];
+	const markLabels = markList.filter((mark) => mark.label !== void 0);
+	const fontFamily = overrides?.fontFamily;
+	const helperTypography = {
+		fontFamily,
+		fontSize: overrides?.helperSize
+	};
+	const valueTypography = {
+		fontFamily,
+		fontSize: overrides?.valueSize
+	};
+	const hasError = displayedError !== void 0;
+	const hasDescription = description !== void 0 && description !== "";
+	const webThumbProps = Platform.OS === "web" ? {
+		"aria-orientation": "horizontal",
+		"aria-invalid": invalid || hasError ? "true" : void 0,
+		"aria-required": required ? "true" : void 0,
+		"aria-describedby": hasError ? errorId : hasDescription ? descriptionId : void 0
+	} : {};
+	const thumbShared = {
+		disabled: isDisabled,
+		accessibilityHint: hasError ? displayedError : hasDescription ? description : void 0,
+		webProps: webThumbProps,
+		formatValue,
+		showBubble: showValue === "hover",
+		bubbleTypography: valueTypography,
+		reducedMotion,
+		onGrant: (kind, offset) => {
+			const grabbed = grabbedKind(kind, offset);
+			beginGesture(grabbed, valueOf(grabbed));
+		},
+		onDrag: dragGesture,
+		onRelease: endGesture,
+		onAction: handleAction,
+		styleTokens: thumbStyleTokens
+	};
+	const lowFraction = percentOf(rangeLow, min, max);
+	const highFraction = percentOf(rangeHigh, min, max);
+	const singleFraction = percentOf(singleValue, min, max);
+	return /* @__PURE__ */ React.createElement(View, {
+		ref,
+		testID: "Slider",
+		"aria-disabled": isDisabled ? true : void 0,
+		style: {
+			flexDirection: "column",
+			gap: partGap,
+			opacity: isDisabled ? disabledOpacity : 1
+		}
+	}, /* @__PURE__ */ React.createElement(View, { style: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "baseline",
+		gap: labelGap,
+		zIndex: 1
+	} }, /* @__PURE__ */ React.createElement(View, {
+		testID: "Slider.label",
+		nativeID: labelId
+	}, /* @__PURE__ */ React.createElement(Text, {
+		size: "md",
+		weight: "medium",
+		tone: "default",
+		overrides: {
+			fontFamily,
+			fontSize: overrides?.fontSize,
+			fontWeight: overrides?.labelWeight
+		}
+	}, label)), showValue === "always" ? /* @__PURE__ */ React.createElement(View, {
+		testID: "Slider.valueText",
+		accessibilityElementsHidden: true,
+		importantForAccessibility: "no-hide-descendants"
+	}, /* @__PURE__ */ React.createElement(Text, {
+		size: "sm",
+		tone: "default",
+		overrides: valueTypography
+	}, displayValueText)) : null), /* @__PURE__ */ React.createElement(View, { style: {
+		flexDirection: "column",
+		gap: markLabelGap
+	} }, /* @__PURE__ */ React.createElement(View, {
+		style: {
+			justifyContent: "center",
+			paddingVertical: trackPaddingBlock
+		},
+		onLayout: handleTrackLayout,
+		...trackResponder.panHandlers
+	}, /* @__PURE__ */ React.createElement(View, {
+		testID: "Slider.track",
+		pointerEvents: "none",
+		style: {
+			height: trackHeight,
+			borderRadius: trackRadius,
+			backgroundColor: trackColor,
+			overflow: "hidden"
+		}
+	}, /* @__PURE__ */ React.createElement(View, {
+		testID: "Slider.fill",
+		style: {
+			position: "absolute",
+			start: range ? `${lowFraction * 100}%` : 0,
+			width: `${(range ? highFraction - lowFraction : singleFraction) * 100}%`,
+			height: trackHeight,
+			borderRadius: trackRadius,
+			backgroundColor: controlSelected
+		}
+	})), markList.length > 0 ? /* @__PURE__ */ React.createElement(View, {
+		testID: "Slider.tickMarks",
+		pointerEvents: "none",
+		accessibilityElementsHidden: true,
+		importantForAccessibility: "no-hide-descendants",
+		style: {
+			position: "absolute",
+			top: 0,
+			bottom: 0,
+			start: 0,
+			end: 0
+		}
+	}, markList.map((mark) => /* @__PURE__ */ React.createElement(View, {
+		key: mark.value,
+		style: {
+			position: "absolute",
+			start: `${percentOf(mark.value, min, max) * 100}%`,
+			top: "50%",
+			width: markSize,
+			height: markSize,
+			marginStart: -(markSize / 2),
+			marginTop: -(markSize / 2),
+			borderRadius: markSize / 2,
+			backgroundColor: markColor
+		}
+	}))) : null, range ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(SliderThumb, {
+		...thumbShared,
+		ref: firstThumbRef,
+		kind: "min",
+		value: rangeLow,
+		fraction: lowFraction,
+		min,
+		max: rangeHigh,
+		pressed: activeKind === "min",
+		accessibilityLabel: COPY$24.minimumLabel(label),
+		labelledBy: void 0
+	}), /* @__PURE__ */ React.createElement(SliderThumb, {
+		...thumbShared,
+		kind: "max",
+		value: rangeHigh,
+		fraction: highFraction,
+		min: rangeLow,
+		max,
+		pressed: activeKind === "max",
+		accessibilityLabel: COPY$24.maximumLabel(label),
+		labelledBy: void 0
+	})) : /* @__PURE__ */ React.createElement(SliderThumb, {
+		...thumbShared,
+		ref: firstThumbRef,
+		kind: "single",
+		value: singleValue,
+		fraction: singleFraction,
+		min,
+		max,
+		pressed: activeKind === "single",
+		accessibilityLabel: label,
+		labelledBy: labelId
+	})), markLabels.length > 0 ? /* @__PURE__ */ React.createElement(View, {
+		accessibilityElementsHidden: true,
+		importantForAccessibility: "no-hide-descendants",
+		"aria-hidden": true,
+		style: {
+			height: toLineHeight(markLabelSize, t.fontLineHeightNormal),
+			zIndex: 1
+		}
+	}, markLabels.map((mark) => /* @__PURE__ */ React.createElement(View, {
+		key: mark.value,
+		style: {
+			position: "absolute",
+			start: `${percentOf(mark.value, min, max) * 100}%`,
+			transform: [{ translateX: rtl ? "50%" : "-50%" }]
+		}
+	}, /* @__PURE__ */ React.createElement(Text, {
+		size: "xs",
+		tone: "muted",
+		overrides: {
+			fontFamily,
+			fontSize: overrides?.markLabelSize
+		}
+	}, mark.label)))) : null), hasDescription ? /* @__PURE__ */ React.createElement(View, {
+		testID: "Slider.description",
+		nativeID: descriptionId,
+		style: { zIndex: 1 }
+	}, /* @__PURE__ */ React.createElement(Text, {
+		size: "sm",
+		tone: "muted",
+		overrides: helperTypography
+	}, description)) : null, hasError ? /* @__PURE__ */ React.createElement(View, {
+		testID: "Slider.errorMessage",
+		nativeID: errorId,
+		accessibilityLiveRegion: summarised ? "none" : "assertive",
+		style: { zIndex: 1 }
+	}, /* @__PURE__ */ React.createElement(Text, {
+		size: "sm",
+		tone: "danger",
+		overrides: helperTypography
+	}, displayedError)) : null);
+}
+//#endregion
+//#region src/Switch.tsx
+/**
+* Switch — a light switch: flip it and the thing happens. That immediacy separates
+* it from a Checkbox, which records a choice to be submitted later.
+*
+* When to use: Use a Switch for a binary setting that applies as soon as it changes
+* and can be undone by flipping it back: notifications, dark mode, "show archived".
+* Use it in settings lists with `labelPosition: start` so the switches sit at the
+* row end. If a form of switches must have a Save button, they are checkboxes.
+*
+* Uses the native `Switch` with `accessibilityRole="switch"` (native only — on
+* react-native-web the rendered `<input type="checkbox" role="switch">` already carries
+* the role, and a second one on its container would have no state and a focusable
+* descendant), `accessibilityLabel`, `accessibilityHint={description}`,
+* `accessibilityState={{ checked, disabled }}`,
+* `trackColor={{ false: trackOff, true: trackOn }}`, `thumbColor` and
+* `ios_backgroundColor={trackOff}`. The row is a `Pressable` with `accessible={false}`
+* and `tabIndex={-1}` that toggles the value, so label and description are part of the
+* target while the Switch stays the single focusable element; the row is at least the comfortable
+* target tall with no padding, and centres its content in that height, so a one-line
+* row sits in the middle while a wrapping label or a description grows it downwards
+* with the track still on the label's first line. Track and thumb sizes, radius, thumb travel, its animation (and reduced
+* motion) and the focus indicator are the OS values. With `name` inside a Form the
+* switch registers and contributes a boolean; it has no error state by design. Inside
+* a Fieldset the group's `disabled` applies and the legend prefixes the label.
+*/
+function Switch({ label, name, checked, defaultChecked = false, disabled = false, description, labelPosition = "start", overrides, onValueChange, ref }) {
+	const { tokens: t } = useTheme();
+	const form = useFormContext();
+	const fieldset = useFieldsetContext();
+	const switchRef = React.useRef(null);
+	const [internalChecked, setInternalChecked] = React.useState(defaultChecked);
+	const rootRef = React.useRef(null);
+	React.useImperativeHandle(ref, () => rootRef.current, []);
+	const isChecked = checked ?? internalChecked;
+	const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
+	const accessibleName = fieldset !== null ? `${fieldset.legend}, ${label}` : label;
+	const latest = React.useRef({
+		isChecked,
+		isDisabled,
+		label
+	});
+	latest.current = {
+		isChecked,
+		isDisabled,
+		label
+	};
+	const handle = React.useMemo(() => ({
+		get label() {
+			return latest.current.label;
+		},
+		getValue: () => latest.current.isChecked,
+		isDisabled: () => latest.current.isDisabled,
+		validate: () => null,
+		focus: () => {
+			const node = switchRef.current === null ? null : findNodeHandle(switchRef.current);
+			if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+		}
+	}), []);
+	const register = form?.register;
+	const unregister = form?.unregister;
+	React.useEffect(() => {
+		if (register === void 0 || unregister === void 0 || name === void 0) return;
+		register(name, handle);
+		return () => unregister(name);
+	}, [
+		register,
+		unregister,
+		name,
+		handle
+	]);
+	const registeredDisabled = React.useRef(isDisabled);
+	React.useEffect(() => {
+		if (registeredDisabled.current === isDisabled) return;
+		registeredDisabled.current = isDisabled;
+		if (name !== void 0) register?.(name, handle);
+	}, [
+		register,
+		name,
+		handle,
+		isDisabled
+	]);
+	React.useEffect(() => {
+		if (Platform.OS !== "web") return;
+		const node = rootRef.current;
+		if (node === null) return;
+		if (isDisabled) node.setAttribute("aria-disabled", "true");
+		else node.removeAttribute("aria-disabled");
+	}, [isDisabled]);
+	const setValue = (next) => {
+		if (isDisabled || next === isChecked) return;
+		if (checked === void 0) setInternalChecked(next);
+		onValueChange?.(next);
+	};
+	const gap = overrides?.gap ? resolveToken(t, overrides.gap) : t.space3;
+	const partGap = overrides?.partGap ? resolveToken(t, overrides.partGap) : t.space1;
+	const disabledOpacity = overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled;
+	const labelSize = overrides?.labelSize ? resolveToken(t, overrides.labelSize) : t.fontSizeMd;
+	const lineHeight = overrides?.lineHeight ? resolveToken(t, overrides.lineHeight) : t.fontLineHeightNormal;
+	const rowStyle = {
+		justifyContent: "center",
+		minHeight: t.sizeTargetComfortable,
+		opacity: isDisabled ? disabledOpacity : 1
+	};
+	const contentStyle = {
+		flexDirection: "row",
+		alignItems: "flex-start",
+		gap
+	};
+	const trackSlotStyle = {
+		height: toLineHeight(labelSize, lineHeight),
+		justifyContent: "center"
+	};
+	const textColumnStyle = {
+		flex: 1,
+		flexDirection: "column",
+		gap: partGap
+	};
+	const webThumbProps = Platform.OS === "web" ? { activeThumbColor: t.colorControlSelectedForeground } : {};
+	const typographyOverrides = {
+		fontFamily: overrides?.fontFamily,
+		lineHeight: overrides?.lineHeight
+	};
+	const helperOverrides = {
+		...typographyOverrides,
+		fontSize: overrides?.helperSize
+	};
+	const labelColumn = /* @__PURE__ */ React.createElement(View, { style: textColumnStyle }, /* @__PURE__ */ React.createElement(View, { testID: "Switch.label" }, /* @__PURE__ */ React.createElement(Text, {
+		size: "md",
+		weight: "regular",
+		tone: "default",
+		overrides: {
+			...typographyOverrides,
+			fontSize: overrides?.labelSize,
+			fontWeight: overrides?.labelWeight
+		}
+	}, label)), description !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "Switch.description" }, /* @__PURE__ */ React.createElement(Text, {
+		size: "sm",
+		tone: "muted",
+		overrides: helperOverrides
+	}, description)) : null);
+	return /* @__PURE__ */ React.createElement(Pressable, {
+		ref: rootRef,
+		testID: "Switch",
+		accessible: false,
+		tabIndex: -1,
+		onPress: () => setValue(!isChecked),
+		style: rowStyle
+	}, /* @__PURE__ */ React.createElement(View, { style: contentStyle }, labelPosition === "start" ? labelColumn : null, /* @__PURE__ */ React.createElement(View, { style: trackSlotStyle }, /* @__PURE__ */ React.createElement(Switch$1, {
+		ref: switchRef,
+		testID: "Switch.track",
+		accessibilityRole: Platform.OS === "web" ? void 0 : "switch",
+		accessibilityLabel: accessibleName,
+		accessibilityHint: description,
+		accessibilityState: {
+			checked: isChecked,
+			disabled: isDisabled
+		},
+		"aria-label": Platform.OS === "web" ? void 0 : accessibleName,
+		"aria-checked": Platform.OS === "web" ? void 0 : isChecked,
+		"aria-disabled": Platform.OS === "web" ? void 0 : isDisabled,
+		...webThumbProps,
+		value: isChecked,
+		disabled: isDisabled,
+		trackColor: {
+			false: t.colorControlTrackOff,
+			true: t.colorControlSelectedBackground
+		},
+		thumbColor: t.colorControlSelectedForeground,
+		ios_backgroundColor: t.colorControlTrackOff,
+		onValueChange: setValue
+	})), labelPosition === "end" ? labelColumn : null));
+}
+//#endregion
+//#region src/Fieldset.tsx
+/** `null` outside of a Fieldset so every field works standalone. */
+const FieldsetContext = React.createContext(null);
+function useFieldsetContext() {
+	return React.useContext(FieldsetContext);
+}
+const COPY$23 = { requiredIndicator: " (required)" };
+/**
+* `fieldsGap` reaches the Stack only as a token path through its own `overrides.gap`,
+* always sent (the override, else `layout.gap.{gap}`); the Stack gets no `gap` prop.
+*/
+const FIELDS_GAP_TOKEN = {
+	tight: "layout.gap.tight",
+	normal: "layout.gap.normal",
+	loose: "layout.gap.loose"
+};
+/**
+* The components that read `FieldsetContext` — a "field" for the required indicator is a
+* direct child of one of these types. Read at render time only: every one of them imports
+* `useFieldsetContext` from this module, so the references resolve once both have loaded.
+*/
+function isFieldType(type) {
+	return type === Input || type === NumberInput || type === Checkbox || type === Switch || type === RadioGroup || type === Select || type === Slider || type === DatePicker;
+}
+/**
+* The direct child fields, with fragments flattened so `<>{street}{city}</>` counts as
+* two children rather than one. A plain Text or decorative View beside the fields is not
+* a field and neither counts nor suppresses the indicator.
+*/
+function collectFields(children, out) {
+	React.Children.forEach(children, (child) => {
+		if (!React.isValidElement(child)) return;
+		if (child.type === React.Fragment) {
+			collectFields(child.props.children, out);
+			return;
+		}
+		if (isFieldType(child.type)) out.push(child);
+	});
+}
+/**
+* Fieldset — how a form says "these belong together." A screen-reader user moving
+* into "Street" hears "Shipping address, Street" and knows where they are.
+*
+* When to use: Use a Fieldset whenever two or more fields share a name a user would
+* say aloud — an address, a card, a start and end date. Give it a `description` when
+* the group needs a rule, and put cross-field errors on the group rather than on one
+* field. Do not wrap a whole form in it (the Form's `label` names the form), use it
+* for a single field, or nest one inside a RadioGroup, which already is a fieldset.
+*
+* Renders a `View` that is NOT `accessible` (so children stay individually
+* reachable) with `role="group"`, `accessibilityLabel` (the legend, with
+* `copy.requiredIndicator` appended when every direct child field is `required`)
+* and `accessibilityHint={description}`. The legend is plain `Text` — not a header
+* trait, which would put it in the headings rotor. The fields render in a `Stack`
+* that is sized only through its own `overrides.gap` (the override, else
+* `layout.gap.{gap}`); `FieldsetContext` carries the legend and `disabled` to Input,
+* Checkbox, Switch and RadioGroup, which render disabled and prefix the legend into
+* their label. Children are never cloned; a non-field child gets no association.
+* `disabled` dims only the legend and description with `opacity.disabled` — the
+* fields dim themselves, and the group error is never dimmed. Those two dimmed
+* Views also carry `aria-disabled`, which is what reaches the DOM under
+* react-native-web (`accessibilityState` is dropped there) and what stops a
+* checker reading dimmed-because-inapplicable text as failing contrast. The group
+* error is announced as in Input (`accessibilityLiveRegion` on Android,
+* `announceForAccessibility` on iOS), once when it appears, and not at all inside a
+* Form with its own error summary; native has no invalid state, so the error text
+* alone identifies it.
+*/
+function Fieldset({ legend, children, description, error, disabled = false, gap = "normal", overrides, ref }) {
+	const { tokens: t } = useTheme();
+	const hasError = error !== void 0 && error !== "";
+	const hasDescription = description !== void 0 && description !== "";
+	const form = useFormContext();
+	const summarised = form !== null && form.errorSummary;
+	const baseId = React.useId();
+	const descriptionId = `${baseId}-description`;
+	const errorId = `${baseId}-error`;
+	const hadError = React.useRef(false);
+	React.useEffect(() => {
+		if (hasError && !hadError.current && Platform.OS === "ios" && !summarised) AccessibilityInfo.announceForAccessibility(error);
+		hadError.current = hasError;
+	}, [
+		hasError,
+		error,
+		summarised
+	]);
+	const fieldElements = [];
+	collectFields(children, fieldElements);
+	const visibleLegend = fieldElements.length > 0 && fieldElements.every((child) => child.props.required === true) ? `${legend}${COPY$23.requiredIndicator}` : legend;
+	const contextValue = React.useMemo(() => ({
+		legend,
+		disabled
+	}), [legend, disabled]);
+	const groupStyle = React.useMemo(() => ({
+		flexDirection: "column",
+		gap: overrides?.partGap ? resolveToken(t, overrides.partGap) : t.layoutGapTight
+	}), [t, overrides?.partGap]);
+	const dimStyle = React.useMemo(() => disabled ? { opacity: overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled } : void 0, [
+		t,
+		disabled,
+		overrides?.disabledOpacity
+	]);
+	const typographyOverrides = {
+		fontFamily: overrides?.fontFamily,
+		lineHeight: overrides?.lineHeight
+	};
+	const legendOverrides = {
+		...typographyOverrides,
+		fontSize: overrides?.legendSize,
+		fontWeight: overrides?.legendWeight
+	};
+	const helperOverrides = {
+		...typographyOverrides,
+		fontSize: overrides?.helperSize
+	};
+	const webGroupProps = Platform.OS === "web" ? {
+		"aria-invalid": hasError ? "true" : void 0,
+		"aria-describedby": [hasDescription ? descriptionId : void 0, hasError ? errorId : void 0].filter((part) => part !== void 0).join(" ") || void 0
+	} : {};
+	return /* @__PURE__ */ React.createElement(View, {
+		ref,
+		testID: "Fieldset",
+		role: "group",
+		accessibilityLabel: visibleLegend,
+		"aria-label": visibleLegend,
+		accessibilityHint: hasDescription ? description : void 0,
+		style: groupStyle,
+		...webGroupProps
+	}, /* @__PURE__ */ React.createElement(View, {
+		testID: "Fieldset.legend",
+		style: dimStyle,
+		"aria-disabled": disabled
+	}, /* @__PURE__ */ React.createElement(Text, {
+		tone: "default",
+		size: "md",
+		weight: "medium",
+		overrides: legendOverrides
+	}, visibleLegend)), hasDescription ? /* @__PURE__ */ React.createElement(View, {
+		id: descriptionId,
+		testID: "Fieldset.description",
+		style: dimStyle,
+		"aria-disabled": disabled
+	}, /* @__PURE__ */ React.createElement(Text, {
+		tone: "muted",
+		size: "sm",
+		overrides: helperOverrides
+	}, description)) : null, /* @__PURE__ */ React.createElement(View, { testID: "Fieldset.fields" }, /* @__PURE__ */ React.createElement(FieldsetContext.Provider, { value: contextValue }, /* @__PURE__ */ React.createElement(Stack, { overrides: { gap: overrides?.fieldsGap ?? FIELDS_GAP_TOKEN[gap] } }, children))), hasError ? /* @__PURE__ */ React.createElement(View, {
+		id: errorId,
+		accessibilityLiveRegion: summarised ? "none" : "assertive",
+		testID: "Fieldset.errorMessage"
+	}, /* @__PURE__ */ React.createElement(Text, {
+		tone: "danger",
+		size: "sm",
+		overrides: helperOverrides
+	}, error)) : null);
+}
+//#endregion
+//#region src/Input.tsx
+/** The component's user-facing strings, from the doc's `copy` block. */
+const COPY$22 = {
+	required: (label) => `${label} is required.`,
+	invalid: (label) => `${label} is not valid.`,
+	requiredIndicator: " (required)"
+};
+/**
+* `longPressDelay`: how long a press on the TextInput is held before the forwarded
+* `onLongPress` fires — the Pressable default, which TextInput lacks.
+*/
+const LONG_PRESS_DELAY = 500;
+const KEYBOARD_TYPE = {
+	text: "default",
+	email: "email-address",
+	password: "default",
+	number: "numeric",
+	search: "default",
+	tel: "phone-pad",
+	url: "url"
+};
+const CONTENT_TYPE = {
+	text: "none",
+	email: "emailAddress",
+	password: "password",
+	number: "none",
+	search: "none",
+	tel: "telephoneNumber",
+	url: "URL"
+};
+/** Types whose value is never a sentence: no autocapitalisation and no autocorrection. */
+const LITERAL_TYPES = [
+	"email",
+	"password",
+	"url"
+];
+/** `font.size.{size}` — the field text and the label, so the label follows `size`. */
+const FONT_SIZE_TOKEN$1 = {
+	sm: "fontSizeSm",
+	md: "fontSizeMd"
+};
+const PADDING_INLINE_TOKEN = {
+	sm: "space2",
+	md: "spaceMd"
+};
+const PADDING_BLOCK_TOKEN$1 = {
+	sm: "space1",
+	md: "spaceSm"
+};
+/** `minTarget` / `minTargetSm`: both locked, so the sm floor is always `size.target.min`. */
+const MIN_TARGET_TOKEN = {
+	sm: "sizeTargetMin",
+	md: "sizeTargetComfortable"
+};
+/**
+* Input — collects a single line of text.
+*
+* When to use: Use Input for names, emails, passwords, search terms, and short
+* free-text values. Choose `type` for the value so the touch keyboard matches.
+* Provide `description` when the format matters ("Use the email you signed up
+* with"). Do not use `placeholder` as the label; it vanishes as soon as the user
+* types.
+*
+* Renders a group `View` (`testID="Input"`) holding the label, description, the
+* `TextInput` and the error message, separated by `partGap`. There is no label
+* element on native: `label` is rendered as the system `Text` at `weight="medium"`
+* and is also the field's `accessibilityLabel`, and `description` becomes its
+* `accessibilityHint` (a hint forwarded by a parent is appended after it, joined
+* with a space; a forwarded `accessibilityLabel` replaces the name outright). A
+* Fieldset legend still prefixes the name ("Shipping address, Street").
+* `hideLabel` drops the label Text entirely, so the `label` part has no native
+* home while hidden and the name lives only in `accessibilityLabel`.
+*
+* `required` appends `copy.requiredIndicator` to the visible label and to the
+* accessible name — there is no required accessibility state on native. The error
+* is announced through `accessibilityLiveRegion` (Android) and
+* `AccessibilityInfo.announceForAccessibility` (iOS) rather than `role="alert"`,
+* and both are suppressed inside a Form that renders its own error summary.
+*
+* `disabled` uses `editable={false}` with `accessibilityState.disabled`: iOS
+* cannot keep a non-editable TextInput focusable, so a disabled field is not
+* focusable on native and the state is announced instead. react-native-web drops
+* `accessibilityState`, so it is mirrored as `aria-disabled` on both the TextInput
+* and the group View that carries `disabledOpacity` — the group is what makes a
+* web accessibility checker treat the dimmed label and value as disabled.
+*
+* The field's border *is* its focus ring: on focus it widens to `focusRingWidth`
+* in `color.border.focus` while the padding shrinks by the difference so nothing
+* shifts, and when the field is both invalid and focused the danger color stays so
+* the error is never hidden by focus. Native swaps the border instantly, so the
+* `transition` binding is accepted for parity with web and has no effect here.
+*
+* Inside a Form the field registers by `name`, submits its string value, and takes
+* `returnKeyType`/`onSubmitEditing` from the Form's field order (next field, or
+* submit on the last). Validation precedence is `error`, then `required`
+* (`copy.required`), then `invalid` (`copy.invalid`); the error slot shows `error`,
+* else the Form's message for this field, else — only while invalid — the derived
+* copy, so an untouched empty required field flags nothing.
+*
+* TextInput has no hover or long-press handlers: `onHoverIn`/`onHoverOut` map to
+* `onPointerEnter`/`onPointerLeave`, and `onLongPress` is timed from `onPressIn`
+* over `longPressDelay` unless `onPressOut` comes first.
+*/
+function Input({ label, name, value, defaultValue, placeholder, description, type = "text", required = false, disabled = false, invalid = false, error, hideLabel = false, size = "md", overrides, ref, accessibilityHint, accessibilityLabel, onChangeText, onFocus, onBlur, onHoverIn, onHoverOut, onPressOut, onLongPress }) {
+	const { tokens: t } = useTheme();
+	const form = useFormContext();
+	const fieldset = useFieldsetContext();
+	const inputRef = React.useRef(null);
+	const [internalValue, setInternalValue] = React.useState(defaultValue ?? "");
+	const [focused, setFocused] = React.useState(false);
+	const currentValue = value ?? internalValue;
+	const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
+	const formErrors = form?.errors;
+	const formMarked = formErrors !== void 0 && Object.prototype.hasOwnProperty.call(formErrors, name);
+	const formError = formErrors?.[name];
+	const ownError = error !== void 0 && error !== "" ? error : void 0;
+	const isInvalid = ownError !== void 0 || invalid || formMarked;
+	const derivedError = isInvalid ? required && currentValue === "" ? COPY$22.required(label) : COPY$22.invalid(label) : void 0;
+	const displayedError = ownError ?? (formError !== void 0 && formError !== "" ? formError : derivedError);
+	const summarised = form !== null && form.errorSummary;
+	const validateValue = React.useCallback((candidate) => {
+		if (isDisabled) return null;
+		if (error !== void 0 && error !== "") return error;
+		if (required && candidate === "") return COPY$22.required(label);
+		if (invalid) return COPY$22.invalid(label);
+		return null;
+	}, [
+		isDisabled,
+		error,
+		required,
+		invalid,
+		label
+	]);
+	const focusField = React.useCallback(() => {
+		inputRef.current?.focus();
+		const node = inputRef.current === null ? null : findNodeHandle(inputRef.current);
+		if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+	}, []);
+	const latest = React.useRef({
+		currentValue,
+		isDisabled,
+		validateValue,
+		focusField
+	});
+	latest.current = {
+		currentValue,
+		isDisabled,
+		validateValue,
+		focusField
+	};
+	const handle = React.useMemo(() => ({
+		label,
+		getValue: () => latest.current.isDisabled || latest.current.currentValue === "" ? void 0 : latest.current.currentValue,
+		isDisabled: () => latest.current.isDisabled,
+		validate: () => latest.current.validateValue(latest.current.currentValue),
+		focus: () => latest.current.focusField()
+	}), [label]);
+	const register = form?.register;
+	const unregister = form?.unregister;
+	React.useEffect(() => {
+		if (register === void 0 || unregister === void 0) return;
+		register(name, handle);
+		return () => unregister(name);
+	}, [
+		register,
+		unregister,
+		name,
+		handle
+	]);
+	const registeredDisabled = React.useRef(isDisabled);
+	React.useEffect(() => {
+		if (registeredDisabled.current === isDisabled) return;
+		registeredDisabled.current = isDisabled;
+		register?.(name, handle);
+	}, [
+		register,
+		name,
+		handle,
+		isDisabled
+	]);
+	React.useEffect(() => {
+		if (Platform.OS === "ios" && !summarised && displayedError !== void 0) AccessibilityInfo.announceForAccessibility(displayedError);
+	}, [displayedError, summarised]);
+	const longPressTimer = React.useRef(null);
+	const cancelLongPress = React.useCallback(() => {
+		if (longPressTimer.current !== null) {
+			clearTimeout(longPressTimer.current);
+			longPressTimer.current = null;
+		}
+	}, []);
+	React.useEffect(() => cancelLongPress, [cancelLongPress]);
+	const borderWidth = overrides?.borderWidth ? resolveToken(t, overrides.borderWidth) : t.borderWidthThin;
+	const borderInvalid = overrides?.borderInvalid ? resolveToken(t, overrides.borderInvalid) : t.colorBorderDanger;
+	const radius = overrides?.radius ? resolveToken(t, overrides.radius) : t.radiusMd;
+	const paddingInline = overrides?.paddingInline ? resolveToken(t, overrides.paddingInline) : t[PADDING_INLINE_TOKEN[size]];
+	const paddingBlock = overrides?.paddingBlock ? resolveToken(t, overrides.paddingBlock) : t[PADDING_BLOCK_TOKEN$1[size]];
+	const partGap = overrides?.partGap ? resolveToken(t, overrides.partGap) : t.space1;
+	const fontFamily = overrides?.fontFamily ? resolveToken(t, overrides.fontFamily) : t.fontFamilyBody;
+	const fontSize = overrides?.fontSize ? resolveToken(t, overrides.fontSize) : t[FONT_SIZE_TOKEN$1[size]];
+	const lineHeight = overrides?.lineHeight ? resolveToken(t, overrides.lineHeight) : t.fontLineHeightNormal;
+	const disabledOpacity = overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled;
+	const focusRingWidth = t.borderWidthFocus;
+	const currentBorderWidth = focused ? focusRingWidth : borderWidth;
+	const borderGrowth = currentBorderWidth - borderWidth;
+	const borderColor = isInvalid ? borderInvalid : focused ? t.colorBorderFocus : t.colorBorderStrong;
+	const groupStyle = React.useMemo(() => ({
+		flexDirection: "column",
+		gap: partGap,
+		opacity: isDisabled ? disabledOpacity : 1
+	}), [
+		partGap,
+		isDisabled,
+		disabledOpacity
+	]);
+	const fieldStyle = React.useMemo(() => ({
+		minHeight: t[MIN_TARGET_TOKEN[size]],
+		paddingHorizontal: Math.max(0, paddingInline - borderGrowth),
+		paddingVertical: Math.max(0, paddingBlock - borderGrowth),
+		borderWidth: currentBorderWidth,
+		borderColor,
+		borderRadius: radius,
+		backgroundColor: t.colorBackground,
+		color: t.colorForeground,
+		fontFamily,
+		fontSize,
+		lineHeight: toLineHeight(fontSize, lineHeight)
+	}), [
+		t,
+		size,
+		paddingInline,
+		paddingBlock,
+		borderGrowth,
+		currentBorderWidth,
+		borderColor,
+		radius,
+		fontFamily,
+		fontSize,
+		lineHeight
+	]);
+	const labelOverrides = {
+		fontSize: overrides?.fontSize,
+		fontWeight: overrides?.labelWeight,
+		fontFamily: overrides?.fontFamily,
+		lineHeight: overrides?.lineHeight
+	};
+	const helperOverrides = {
+		fontSize: overrides?.helperSize,
+		fontFamily: overrides?.fontFamily,
+		lineHeight: overrides?.lineHeight
+	};
+	const visibleLabel = required ? `${label}${COPY$22.requiredIndicator}` : label;
+	const ownName = accessibilityLabel ?? visibleLabel;
+	const accessibleName = fieldset === null ? ownName : `${fieldset.legend}, ${ownName}`;
+	const hint = [description, accessibilityHint].filter((part) => part !== void 0 && part !== "").join(" ");
+	const order = form?.order ?? [];
+	const index = order.indexOf(name);
+	const isLastField = index === -1 || index === order.length - 1;
+	const handleSubmitEditing = () => {
+		if (form === null) return;
+		const next = order[index + 1];
+		if (isLastField || next === void 0) form.submit();
+		else form.focusField(next);
+	};
+	const handleChangeText = (next) => {
+		if (value === void 0) setInternalValue(next);
+		onChangeText?.(next);
+		if (form !== null && (form.validateMode === "change" || form.submitFailed)) form.reportValidity(name, validateValue(next));
+	};
+	const handleBlur = () => {
+		setFocused(false);
+		if (form !== null && (form.validateMode === "blur" || form.validateMode === "change" || form.submitFailed)) form.reportValidity(name, validateValue(currentValue));
+		onBlur?.();
+	};
+	const literalType = LITERAL_TYPES.includes(type);
+	return /* @__PURE__ */ React.createElement(View, {
+		ref,
+		testID: "Input",
+		style: groupStyle,
+		"aria-disabled": isDisabled
+	}, hideLabel ? null : /* @__PURE__ */ React.createElement(View, { testID: "Input.label" }, /* @__PURE__ */ React.createElement(Text, {
+		size,
+		weight: "medium",
+		overrides: labelOverrides
+	}, visibleLabel)), description === void 0 || description === "" ? null : /* @__PURE__ */ React.createElement(View, { testID: "Input.description" }, /* @__PURE__ */ React.createElement(Text, {
+		size: "sm",
+		tone: "muted",
+		overrides: helperOverrides
+	}, description)), /* @__PURE__ */ React.createElement(TextInput, {
+		ref: inputRef,
+		testID: "Input.field",
+		style: fieldStyle,
+		value: currentValue,
+		placeholder,
+		placeholderTextColor: t.colorForegroundMuted,
+		editable: !isDisabled,
+		keyboardType: KEYBOARD_TYPE[type],
+		textContentType: CONTENT_TYPE[type],
+		secureTextEntry: type === "password",
+		autoCapitalize: literalType ? "none" : void 0,
+		autoCorrect: literalType ? false : void 0,
+		accessibilityLabel: accessibleName,
+		"aria-label": accessibleName,
+		accessibilityHint: hint === "" ? void 0 : hint,
+		accessibilityState: { disabled: isDisabled },
+		"aria-disabled": isDisabled,
+		returnKeyType: form === null ? void 0 : isLastField ? "done" : "next",
+		onSubmitEditing: form === null ? void 0 : handleSubmitEditing,
+		onChangeText: handleChangeText,
+		onFocus: () => {
+			setFocused(true);
+			onFocus?.();
+		},
+		onBlur: handleBlur,
+		onPointerEnter: onHoverIn,
+		onPointerLeave: onHoverOut,
+		onPressIn: () => {
+			if (onLongPress === void 0) return;
+			cancelLongPress();
+			longPressTimer.current = setTimeout(() => {
+				longPressTimer.current = null;
+				onLongPress();
+			}, LONG_PRESS_DELAY);
+		},
+		onPressOut: () => {
+			cancelLongPress();
+			onPressOut?.();
+		}
+	}), displayedError === void 0 ? null : /* @__PURE__ */ React.createElement(View, {
+		testID: "Input.errorMessage",
+		accessibilityLiveRegion: summarised ? "none" : "assertive"
+	}, /* @__PURE__ */ React.createElement(Text, {
+		size: "sm",
+		tone: "danger",
+		overrides: helperOverrides
+	}, displayedError)));
+}
+//#endregion
+//#region src/Link.tsx
+const COPY$21 = { externalSuffix: " (opens in new tab)" };
+/** `copy.externalSuffix`, exposed so composites (e.g. `Card`) can reproduce a Link's accessible name when they move it onto a wrapping element. */
+const LINK_EXTERNAL_SUFFIX = COPY$21.externalSuffix;
+const IS_WEB$1 = Platform.OS === "web";
+/**
+* Link — takes people somewhere. Buttons do things; links navigate.
+*
+* When to use: Use a Link for any navigation: to another screen, to an external
+* site, or inline inside body text. Use `external` whenever the destination leaves
+* the product, so people are warned before they lose their place. Do not use a Link
+* to trigger an action — that is a `ghost` Button.
+*
+* Renders `Text` with `accessibilityRole="link"` so it flows inline inside a parent
+* `Text`; standalone it is its own line. `accessibilityLabel` is the label plus
+* `copy.externalSuffix` when `external`, or the `accessibilityLabel` prop when a
+* wrapping parent (Tooltip) sets one. `onPress(href)` fires first when provided;
+* returning `false` cancels any `Linking` hand-off. For a non-`external` link the
+* handler is the navigation and `Linking.openURL(href)` is only the fallback without
+* one; an `external` link opens through `Linking` after the handler as well.
+* On react-native-web the Text receives `href` (plus `hrefAttrs` target/rel when
+* `external`) and renders a real anchor: the browser navigates, `Linking` is not
+* called, and a handler returning `false` calls `preventDefault`.
+* `accessibilityHint`, `onFocus`, `onBlur`, `onHoverIn`, `onHoverOut` and `onLongPress`
+* are forwarded to the native element, so a wrapping Tooltip can attach to this Link.
+* Link exposes no `ref`. Standalone, the Link sets the body typography via Text's
+* helpers since there is no cascade; nested in a system `Text` (detected through
+* `TextStyleContext`) it inherits.
+*
+* There is no hover or visited state on native, so `colorHover` styles the pressed
+* state (`colorVisited` unused) and the color crossfades over `transition` (eased
+* with `motion.easing.standard`, skipped under reduced motion). RN cannot set
+* underline offset or thickness, and nested `Text` ignores margins, so
+* `underlineThickness`, `underlineOffset` and `externalIconGap` have no effect on
+* this platform and are excluded from `LinkOverridableBinding`; a literal space
+* separates the label from the external glyph instead. `Text` has no focus events,
+* so the focus ring is the platform's own (`focusRing*` not applied); react-native-web
+* renders a real anchor with the browser's focus outline. The external glyph is the
+* shared `Icon` (`name="external"`, `inline`); with `tone: default` it receives the
+* link color, swapping instantly on press, and with `tone: inherit` it receives no
+* color and resolves the enclosing Text's color itself. The link is never disabled:
+* a destination that is not available is rendered as Text.
+*/
+function Link({ href, label, external = false, tone = "default", current = false, overrides, accessibilityLabel, accessibilityHint, onFocus, onBlur, onHoverIn, onHoverOut, onLongPress, onPress }) {
+	const { tokens: t } = useTheme();
+	const { nested } = React.useContext(TextStyleContext);
+	const reducedMotion = useReducedMotion();
+	const [pressed, setPressed] = React.useState(false);
+	const transitionDuration = overrides?.transition ? resolveToken(t, overrides.transition) : t.motionDurationFast;
+	const highlight = React.useRef(new Animated.Value(0)).current;
+	React.useEffect(() => {
+		if (tone === "inherit") return;
+		const toValue = pressed ? 1 : 0;
+		if (reducedMotion) {
+			highlight.setValue(toValue);
+			return;
+		}
+		const animation = Animated.timing(highlight, {
+			toValue,
+			duration: transitionDuration,
+			easing: toEasing(t.motionEasingStandard),
+			useNativeDriver: false
+		});
+		animation.start();
+		return () => animation.stop();
+	}, [
+		pressed,
+		reducedMotion,
+		highlight,
+		transitionDuration,
+		t.motionEasingStandard,
+		tone
+	]);
+	const animatedColor = highlight.interpolate({
+		inputRange: [0, 1],
+		outputRange: [t.colorLink, t.colorLinkHover]
+	});
+	const handlePress = (event) => {
+		const result = onPress?.(href);
+		if (IS_WEB$1) {
+			if (result === false) event.preventDefault();
+			return;
+		}
+		if (result === false) return;
+		if (external || onPress === void 0) Promise.resolve(Linking.openURL(href)).catch(() => void 0);
+	};
+	const forwardedProps = {
+		onFocus,
+		onBlur,
+		onHoverIn,
+		onHoverOut
+	};
+	if (current) forwardedProps["aria-current"] = "page";
+	if (IS_WEB$1) {
+		forwardedProps.href = href;
+		if (external) forwardedProps.hrefAttrs = {
+			target: "_blank",
+			rel: "noopener noreferrer"
+		};
+	}
+	const name = accessibilityLabel ?? (external ? `${label}${COPY$21.externalSuffix}` : label);
+	const typography = nested ? { textDecorationLine: "underline" } : {
+		textDecorationLine: "underline",
+		fontFamily: t.fontFamilyBody,
+		fontWeight: toFontWeight(t.fontWeightRegular),
+		fontSize: t.fontSizeMd,
+		lineHeight: toLineHeight(t.fontSizeMd, t.fontLineHeightNormal)
+	};
+	const colorStyle = tone === "inherit" ? nested ? null : { color: t.colorForeground } : { color: animatedColor };
+	return /* @__PURE__ */ React.createElement(Animated.Text, {
+		testID: "Link",
+		accessibilityRole: "link",
+		accessibilityLabel: name,
+		"aria-label": name,
+		accessibilityState: current ? { selected: true } : void 0,
+		accessibilityHint,
+		allowFontScaling: true,
+		onPress: handlePress,
+		onPressIn: () => setPressed(true),
+		onPressOut: () => setPressed(false),
+		onLongPress,
+		...forwardedProps,
+		style: [typography, colorStyle]
+	}, label, external ? " " : null, external ? /* @__PURE__ */ React.createElement(Icon, {
+		name: "external",
+		inline: true,
+		color: tone === "inherit" ? void 0 : pressed ? t.colorLinkHover : t.colorLink
+	}) : null);
+}
+//#endregion
+//#region src/Form.tsx
+/**
+* copy.* — used verbatim. `summaryHeading` is selected by `Intl.PluralRules` on `count`;
+* `summaryHeadingOne` and `invalidSummary` are not rendered on React Native and are kept
+* here so the doc's copy block stays complete on this platform.
+*/
+const COPY$20 = {
+	summaryHeading: {
+		one: "1 problem with this form",
+		other: "{count} problems with this form"
+	},
+	summaryHeadingOne: "1 problem with this form",
+	invalidSummary: "This form has errors."
+};
+function summaryHeading(count, locale) {
+	return (new Intl.PluralRules(locale).select(count) === "one" ? COPY$20.summaryHeading.one : COPY$20.summaryHeading.other).replace("{count}", String(count));
+}
+/** A null, empty-string or empty-array value contributes no key, so fields need not normalise. */
+function isEmptyValue(value) {
+	return value === void 0 || value === null || value === "" || Array.isArray(value) && value.length === 0;
+}
+/**
+* errorSummaryLineHeight — locked at `font.lineHeight.normal`, the binding that keeps the
+* item Links above the target floor. There is no cascade on native, so the box cannot set a
+* line height its Texts inherit: it is handed to each summary Text instead, and the item
+* Links take it from the Text they are nested in.
+*/
+const SUMMARY_LINE_HEIGHT = { lineHeight: "font.lineHeight.normal" };
+/**
+* Form — the container that makes fields behave as a group.
+*
+* When to use: Use Form whenever two or more fields are submitted together, and for any
+* single field whose submission has consequences (sign-in, search with side effects). Pass
+* the submit and cancel Buttons in `actions`, primary first. Give the form a `label` when
+* the screen contains more than one. Do not use it for instant-apply settings, do not nest
+* forms, and do not use it as a layout container — that is Stack.
+*
+* There is no form element on native. Form renders a `View` with `role="form"` (a landmark
+* only on react-native-web; `accessibilityLabel` is the native alternative) and provides a
+* context: each field calls `register(name, { label, getValue, isDisabled, validate, focus })`
+* in mount order, a Button with `type: submit` calls `submit()`, non-last Inputs get
+* `returnKeyType="next"` and the last one's return key submits. A disabled field is left out
+* of the values, out of validation and out of `order`, so the previous field's "next" key
+* skips past it.
+*
+* On a failed submission `onInvalid` fires, the summary is announced
+* (`accessibilityLiveRegion="assertive"` for Android, `announceForAccessibility` on iOS —
+* the heading followed by each item joined with '. ', once per failed submit) and
+* accessibility focus moves to the summary heading, or to the first invalid field when
+* `errorSummary` is off. Items are in field order at the failed submit; an error a later
+* blur or change finds is appended. Each item is a `Link` (`tone: inherit`, nested in a
+* danger `Text`, which is how the danger color reaches it) that focuses its field and
+* returns `false` so nothing opens; an item whose field has since unmounted stays as plain
+* danger text with no link.
+*/
+function Form({ children, actions, name: _name, label, validate = "submit", disabled = false, errorSummary = true, overrides, ref, onSubmit, onInvalid }) {
+	const { tokens: t } = useTheme();
+	const handles = React.useRef(/* @__PURE__ */ new Map());
+	const labels = React.useRef(/* @__PURE__ */ new Map());
+	const orderRef = React.useRef([]);
+	const [order, setOrder] = React.useState([]);
+	const [errors, setErrors] = React.useState({});
+	const [submitFailed, setSubmitFailed] = React.useState(false);
+	const submitFailedRef = React.useRef(false);
+	const [summaryOrder, setSummaryOrder] = React.useState([]);
+	const [pluralLocale, setPluralLocale] = React.useState(void 0);
+	const [failedAttempt, setFailedAttempt] = React.useState(0);
+	const headingRef = React.useRef(null);
+	const latest = React.useRef({
+		disabled,
+		errorSummary,
+		onSubmit,
+		onInvalid
+	});
+	latest.current = {
+		disabled,
+		errorSummary,
+		onSubmit,
+		onInvalid
+	};
+	const syncOrder = React.useCallback(() => {
+		const next = orderRef.current.filter((fieldName) => handles.current.get(fieldName)?.isDisabled?.() !== true);
+		setOrder((prev) => prev.length === next.length && prev.every((fieldName, index) => fieldName === next[index]) ? prev : next);
+	}, []);
+	const register = React.useCallback((fieldName, handle) => {
+		handles.current.set(fieldName, handle);
+		labels.current.set(fieldName, handle.label ?? "");
+		if (!orderRef.current.includes(fieldName)) orderRef.current = [...orderRef.current, fieldName];
+		syncOrder();
+	}, [syncOrder]);
+	const unregister = React.useCallback((fieldName) => {
+		handles.current.delete(fieldName);
+		if (orderRef.current.includes(fieldName)) orderRef.current = orderRef.current.filter((registered) => registered !== fieldName);
+		syncOrder();
+	}, [syncOrder]);
+	const reportValidity = React.useCallback((fieldName, error) => {
+		setErrors((prev) => {
+			if (error === null) {
+				if (!(fieldName in prev)) return prev;
+				const next = { ...prev };
+				delete next[fieldName];
+				return next;
+			}
+			return prev[fieldName] === error ? prev : {
+				...prev,
+				[fieldName]: error
+			};
+		});
+		if (error !== null && submitFailedRef.current) setSummaryOrder((prev) => prev.includes(fieldName) ? prev : [...prev, fieldName]);
+	}, []);
+	const submit = React.useCallback(() => {
+		if (latest.current.disabled) return;
+		const nextErrors = {};
+		const values = {};
+		let firstInvalid = null;
+		for (const fieldName of orderRef.current) {
+			const handle = handles.current.get(fieldName);
+			if (handle === void 0 || handle.isDisabled?.() === true) continue;
+			const error = handle.validate();
+			if (error !== null) {
+				nextErrors[fieldName] = error;
+				if (firstInvalid === null) firstInvalid = handle;
+			}
+			const value = handle.getValue();
+			if (!isEmptyValue(value)) values[fieldName] = value;
+		}
+		setErrors(nextErrors);
+		if (firstInvalid !== null) {
+			submitFailedRef.current = true;
+			setSubmitFailed(true);
+			setSummaryOrder(orderRef.current.filter((fieldName) => fieldName in nextErrors));
+			setPluralLocale(new Intl.PluralRules().resolvedOptions().locale);
+			latest.current.onInvalid?.(nextErrors);
+			if (latest.current.errorSummary) setFailedAttempt((attempt) => attempt + 1);
+			else firstInvalid.focus();
+			return;
+		}
+		submitFailedRef.current = false;
+		setSubmitFailed(false);
+		setSummaryOrder([]);
+		latest.current.onSubmit?.(values);
+	}, []);
+	const focusField = React.useCallback((fieldName) => {
+		handles.current.get(fieldName)?.focus();
+	}, []);
+	const validateMode = submitFailed ? "change" : validate;
+	const contextValue = React.useMemo(() => ({
+		register,
+		unregister,
+		submit,
+		focusField,
+		reportValidity,
+		disabled,
+		validateMode,
+		submitFailed,
+		errorSummary,
+		errors,
+		order
+	}), [
+		register,
+		unregister,
+		submit,
+		focusField,
+		reportValidity,
+		disabled,
+		validateMode,
+		submitFailed,
+		errorSummary,
+		errors,
+		order
+	]);
+	const errorEntries = summaryOrder.filter((fieldName) => errors[fieldName] !== void 0).map((fieldName) => {
+		const message = errors[fieldName] ?? "";
+		const fieldLabel = labels.current.get(fieldName) ?? "";
+		return {
+			name: fieldName,
+			text: message !== "" ? message : fieldLabel !== "" ? fieldLabel : fieldName,
+			registered: handles.current.has(fieldName)
+		};
+	});
+	const renderedAttempt = React.useRef(0);
+	const summaryWithheld = React.useRef(false);
+	if (renderedAttempt.current !== failedAttempt) {
+		renderedAttempt.current = failedAttempt;
+		summaryWithheld.current = !errorEntries.some((entry) => entry.registered);
+	}
+	const showSummary = errorSummary && submitFailed && errorEntries.length > 0 && !summaryWithheld.current;
+	const heading = summaryHeading(errorEntries.length, pluralLocale);
+	const announcementRef = React.useRef("");
+	announcementRef.current = showSummary ? [heading, ...errorEntries.map((entry) => entry.text)].join(". ") : "";
+	React.useEffect(() => {
+		if (failedAttempt === 0 || summaryWithheld.current) return;
+		const node = findNodeHandle(headingRef.current);
+		if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+		if (Platform.OS === "ios" && announcementRef.current !== "") AccessibilityInfo.announceForAccessibility(announcementRef.current);
+	}, [failedAttempt]);
+	const styles = React.useMemo(() => {
+		const gap = overrides?.gap ? resolveToken(t, overrides.gap) : t.layoutGapLoose;
+		return {
+			container: {
+				flexDirection: "column",
+				gap
+			},
+			fields: {
+				flexDirection: "column",
+				gap
+			},
+			actions: { alignItems: "flex-start" },
+			summary: {
+				flexDirection: "column",
+				borderStyle: "solid",
+				borderWidth: overrides?.errorSummaryBorderWidth ? resolveToken(t, overrides.errorSummaryBorderWidth) : t.borderWidthThin,
+				borderColor: overrides?.errorSummaryBorder ? resolveToken(t, overrides.errorSummaryBorder) : t.colorBorderDanger,
+				borderRadius: overrides?.errorSummaryRadius ? resolveToken(t, overrides.errorSummaryRadius) : t.radiusMd,
+				backgroundColor: t.colorBackgroundSubtle,
+				padding: overrides?.errorSummaryPadding ? resolveToken(t, overrides.errorSummaryPadding) : t.spaceMd
+			}
+		};
+	}, [
+		t,
+		overrides?.gap,
+		overrides?.errorSummaryBorder,
+		overrides?.errorSummaryBorderWidth,
+		overrides?.errorSummaryRadius,
+		overrides?.errorSummaryPadding
+	]);
+	const summaryGapOverrides = { gap: overrides?.errorSummaryGap };
+	return /* @__PURE__ */ React.createElement(FormContext.Provider, { value: contextValue }, /* @__PURE__ */ React.createElement(View, {
+		ref,
+		testID: "Form",
+		role: "form",
+		accessibilityLabel: label,
+		"aria-label": label,
+		accessibilityState: { disabled },
+		"aria-disabled": disabled,
+		style: styles.container
+	}, showSummary ? /* @__PURE__ */ React.createElement(View, {
+		testID: "Form.errorSummary",
+		accessibilityLiveRegion: "assertive",
+		style: styles.summary
+	}, /* @__PURE__ */ React.createElement(Stack, {
+		gap: "tight",
+		overrides: summaryGapOverrides
+	}, /* @__PURE__ */ React.createElement(Text, {
+		ref: headingRef,
+		tone: "danger",
+		weight: "semibold",
+		overrides: SUMMARY_LINE_HEIGHT
+	}, heading), /* @__PURE__ */ React.createElement(Stack, {
+		gap: "tight",
+		overrides: summaryGapOverrides
+	}, errorEntries.map((entry) => entry.registered ? /* @__PURE__ */ React.createElement(Text, {
+		key: entry.name,
+		tone: "danger",
+		overrides: SUMMARY_LINE_HEIGHT
+	}, /* @__PURE__ */ React.createElement(Link, {
+		href: entry.name,
+		label: entry.text,
+		tone: "inherit",
+		onPress: () => {
+			handles.current.get(entry.name)?.focus();
+			return false;
+		}
+	})) : /* @__PURE__ */ React.createElement(Text, {
+		key: entry.name,
+		tone: "danger",
+		overrides: SUMMARY_LINE_HEIGHT
+	}, entry.text))))) : null, /* @__PURE__ */ React.createElement(View, {
+		testID: "Form.fields",
+		style: styles.fields
+	}, children), /* @__PURE__ */ React.createElement(View, {
+		testID: "Form.actions",
+		style: styles.actions
+	}, actions)));
+}
+//#endregion
 //#region src/Disclosure.tsx
+/** Each overridable binding's default token, the one place its path is written. */
+const DEFAULT_TOKEN$1 = {
+	triggerPaddingBlock: "space.sm",
+	triggerPaddingInline: "space.sm",
+	triggerGap: "space.2",
+	triggerFontFamily: "font.family.body",
+	triggerFontSize: "font.size.md",
+	triggerFontWeight: "font.weight.medium",
+	triggerLineHeight: "font.lineHeight.normal",
+	triggerRadius: "radius.md",
+	panelPaddingBlock: "space.sm",
+	panelPaddingInline: "space.sm",
+	disabledOpacity: "opacity.disabled",
+	transition: "motion.duration.base"
+};
 /** Chevron rotation: pointing along the reading direction when closed, down when open. */
 const CHEVRON_CLOSED = "0deg";
 const CHEVRON_OPEN = "90deg";
@@ -2973,7 +6162,7 @@ const CHEVRON_OPEN_RTL = "-90deg";
 * `chevron-left` under `I18nManager.isRTL` and rotates over `transition`, snapping
 * under reduced motion.
 */
-function Disclosure({ summary, children, open, defaultOpen = false, disabled = false, keepMounted = false, headingLevel, onToggle, overrides, ref }) {
+function Disclosure({ summary, children, open, defaultOpen = false, disabled = false, keepMounted = false, fullWidth = false, headingLevel, onToggle, overrides, ref }) {
 	const { tokens: t } = useTheme();
 	const reducedMotion = useReducedMotion();
 	const rtl = I18nManager.isRTL;
@@ -2991,6 +6180,8 @@ function Disclosure({ summary, children, open, defaultOpen = false, disabled = f
 		if (disabled) node.setAttribute("aria-disabled", "true");
 		else node.removeAttribute("aria-disabled");
 	}, [disabled]);
+	const onToggleRef = React.useRef(onToggle);
+	onToggleRef.current = onToggle;
 	const previousOpenRef = React.useRef(isOpen);
 	const selfEmittedRef = React.useRef(null);
 	const pendingPressRef = React.useRef(false);
@@ -3002,21 +6193,23 @@ function Disclosure({ summary, children, open, defaultOpen = false, disabled = f
 		const pressed = pendingPressRef.current;
 		pendingPressRef.current = false;
 		if (isControlled) {
-			if (!echo) onToggle?.(isOpen, "controlled");
-		} else if (pressed) onToggle?.(isOpen, "pointer");
-	}, [isOpen]);
-	const triggerPaddingBlock = overrides?.triggerPaddingBlock ? resolveToken(t, overrides.triggerPaddingBlock) : t.spaceSm;
-	const triggerPaddingInline = overrides?.triggerPaddingInline ? resolveToken(t, overrides.triggerPaddingInline) : t.spaceSm;
-	const triggerGap = overrides?.triggerGap ? resolveToken(t, overrides.triggerGap) : t.space2;
-	const triggerFontFamily = overrides?.triggerFontFamily ? resolveToken(t, overrides.triggerFontFamily) : t.fontFamilyBody;
-	const triggerFontSize = overrides?.triggerFontSize ? resolveToken(t, overrides.triggerFontSize) : t.fontSizeMd;
-	const triggerFontWeight = overrides?.triggerFontWeight ? resolveToken(t, overrides.triggerFontWeight) : t.fontWeightMedium;
-	const triggerLineHeight = overrides?.triggerLineHeight ? resolveToken(t, overrides.triggerLineHeight) : t.fontLineHeightNormal;
-	const triggerRadius = overrides?.triggerRadius ? resolveToken(t, overrides.triggerRadius) : t.radiusMd;
-	const panelPaddingBlock = overrides?.panelPaddingBlock ? resolveToken(t, overrides.panelPaddingBlock) : t.spaceSm;
-	const panelPaddingInline = overrides?.panelPaddingInline ? resolveToken(t, overrides.panelPaddingInline) : t.spaceSm;
-	const disabledOpacity = overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled;
-	const transitionDuration = overrides?.transition ? resolveToken(t, overrides.transition) : t.motionDurationBase;
+			if (!echo) onToggleRef.current?.(isOpen, "controlled");
+		} else if (pressed) onToggleRef.current?.(isOpen, "pointer");
+	}, [isOpen, isControlled]);
+	const tokenFor = (binding) => overrides?.[binding] ?? DEFAULT_TOKEN$1[binding];
+	const triggerPaddingBlock = resolveToken(t, tokenFor("triggerPaddingBlock"));
+	const triggerPaddingInline = resolveToken(t, tokenFor("triggerPaddingInline"));
+	const triggerGap = resolveToken(t, tokenFor("triggerGap"));
+	const triggerFontFamily = resolveToken(t, tokenFor("triggerFontFamily"));
+	const triggerFontSizeToken = tokenFor("triggerFontSize");
+	const triggerFontSize = resolveToken(t, triggerFontSizeToken);
+	const triggerFontWeight = resolveToken(t, tokenFor("triggerFontWeight"));
+	const triggerLineHeight = resolveToken(t, tokenFor("triggerLineHeight"));
+	const triggerRadius = resolveToken(t, tokenFor("triggerRadius"));
+	const panelPaddingBlock = resolveToken(t, tokenFor("panelPaddingBlock"));
+	const panelPaddingInline = resolveToken(t, tokenFor("panelPaddingInline"));
+	const disabledOpacity = resolveToken(t, tokenFor("disabledOpacity"));
+	const transitionDuration = resolveToken(t, tokenFor("transition"));
 	const animationReadyRef = React.useRef(false);
 	React.useEffect(() => {
 		const toValue = isOpen ? 1 : 0;
@@ -3052,7 +6245,7 @@ function Disclosure({ summary, children, open, defaultOpen = false, disabled = f
 	const triggerStyle = ({ pressed }) => ({
 		flexDirection: "row",
 		alignItems: "center",
-		alignSelf: "flex-start",
+		alignSelf: fullWidth ? "stretch" : "flex-start",
 		gap: triggerGap,
 		minHeight: t.sizeTargetMin,
 		minWidth: t.sizeTargetMin,
@@ -3089,6 +6282,7 @@ function Disclosure({ summary, children, open, defaultOpen = false, disabled = f
 		testID: "Disclosure.trigger",
 		accessibilityRole: "button",
 		accessibilityLabel: summary,
+		"aria-label": summary,
 		accessibilityState: {
 			expanded: isOpen,
 			disabled
@@ -3106,7 +6300,7 @@ function Disclosure({ summary, children, open, defaultOpen = false, disabled = f
 	}, /* @__PURE__ */ React.createElement(Icon, {
 		name: rtl ? "chevron-left" : "chevron-right",
 		color: t.colorForegroundMuted,
-		overrides: { size: overrides?.triggerFontSize ?? "font.size.md" }
+		overrides: { size: triggerFontSizeToken }
 	})), /* @__PURE__ */ React.createElement(Text$1, {
 		accessibilityRole: headingLevel !== void 0 ? "header" : void 0,
 		style: summaryStyle
@@ -3119,7 +6313,7 @@ function Disclosure({ summary, children, open, defaultOpen = false, disabled = f
 }
 //#endregion
 //#region src/Alert.tsx
-const COPY$24 = { dismissLabel: "Dismiss" };
+const COPY$19 = { dismissLabel: "Dismiss" };
 const TONE_TOKENS = {
 	info: {
 		background: "colorStatusInfoBackground",
@@ -3143,7 +6337,7 @@ const TONE_TOKENS = {
 	}
 };
 /** `icon` binding, forwarded to the Icon as `overrides.color`. */
-const ICON_COLOR = {
+const ICON_COLOR$1 = {
 	info: "color.status.info.icon",
 	success: "color.status.success.icon",
 	warning: "color.status.warning.icon",
@@ -3185,9 +6379,15 @@ function Alert({ tone = "info", heading, children, live = "status", dismissible 
 	const hasHeading = heading !== void 0 && heading !== "";
 	const isTextBody = typeof children === "string" || typeof children === "number";
 	const announcement = [heading, isTextBody ? String(children) : void 0].filter((part) => part !== void 0 && part !== "").join(". ");
+	const liveRef = React.useRef(live);
 	React.useEffect(() => {
-		if (Platform.OS === "ios" && live !== "off" && announcement !== "") AccessibilityInfo.announceForAccessibility(announcement);
-	}, [announcement, live]);
+		liveRef.current = live;
+	}, [live]);
+	React.useEffect(() => {
+		if (Platform.OS === "ios" && liveRef.current !== "off" && announcement !== "") AccessibilityInfo.announceForAccessibility(announcement);
+	}, [announcement]);
+	const liveRegion = live === "alert" ? "assertive" : live === "status" ? "polite" : void 0;
+	const label = announcement !== "" ? announcement : void 0;
 	const bodyLineHeight = toLineHeight(fontSize, lineHeightMultiplier);
 	const headingLineHeight = toLineHeight(headingSize, lineHeightMultiplier);
 	const containerStyle = {
@@ -3229,8 +6429,10 @@ function Alert({ tone = "info", heading, children, live = "status", dismissible 
 		ref,
 		testID: "Alert",
 		accessibilityRole: live === "alert" ? "alert" : void 0,
-		accessibilityLiveRegion: live === "alert" ? "assertive" : live === "status" ? "polite" : void 0,
-		accessibilityLabel: announcement !== "" ? announcement : void 0,
+		accessibilityLiveRegion: liveRegion,
+		"aria-live": liveRegion,
+		accessibilityLabel: label,
+		"aria-label": label,
 		style: containerStyle
 	}, /* @__PURE__ */ React.createElement(View, {
 		testID: "Alert.icon",
@@ -3238,7 +6440,7 @@ function Alert({ tone = "info", heading, children, live = "status", dismissible 
 	}, /* @__PURE__ */ React.createElement(Icon, {
 		name: tone,
 		overrides: {
-			color: ICON_COLOR[tone],
+			color: ICON_COLOR$1[tone],
 			size: iconSizeRef
 		}
 	})), /* @__PURE__ */ React.createElement(View, { style: contentStyle }, hasHeading ? /* @__PURE__ */ React.createElement(Text$1, {
@@ -3249,7 +6451,7 @@ function Alert({ tone = "info", heading, children, live = "status", dismissible 
 		testID: "Alert.dismissButton",
 		style: dismissStyle
 	}, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$24.dismissLabel,
+		label: COPY$19.dismissLabel,
 		variant: "ghost",
 		size: "sm",
 		iconOnly: true,
@@ -3301,23 +6503,27 @@ function Landmark({ role, label, children, ref }) {
 	}, [role, name]);
 	const nativeRole = role === "search" ? void 0 : role;
 	const legacyRole = role === "search" ? "search" : void 0;
+	const accessibleName = LABELLED_ROLES.has(role) ? name : void 0;
 	const content = typeof children === "string" || typeof children === "number" ? /* @__PURE__ */ React.createElement(Text, null, children) : React.Children.map(children, (child) => typeof child === "string" || typeof child === "number" ? /* @__PURE__ */ React.createElement(Text, null, child) : child);
 	return /* @__PURE__ */ React.createElement(View, {
 		ref,
 		testID: "Landmark",
 		role: nativeRole,
 		accessibilityRole: legacyRole,
-		accessibilityLabel: LABELLED_ROLES.has(role) ? name : void 0
+		accessibilityLabel: accessibleName,
+		"aria-label": accessibleName
 	}, content);
 }
 //#endregion
 //#region src/Breadcrumb.tsx
-const COPY$23 = {
+const COPY$18 = {
 	separator: "/",
 	expandLabel: "Show all pages",
 	navLabel: "Breadcrumb",
 	current: "current page"
 };
+/** react-native-web mirror of `accessibilityState.selected` for the current page. */
+const CURRENT_PAGE_ATTRS = { "aria-current": "page" };
 /** Trails longer than this collapse (when `collapse` is on). */
 const COLLAPSE_ABOVE = 4;
 /** How many trailing items stay visible when collapsed. */
@@ -3347,7 +6553,7 @@ const COLLAPSED_TAIL = 2;
 * activating it reveals the hidden items one-way and moves accessibility focus to the
 * first revealed item's `View` (hardware-keyboard focus cannot be moved to a Text link).
 */
-function Breadcrumb({ items, label = COPY$23.navLabel, collapse = true, overrides, onNavigate, ref }) {
+function Breadcrumb({ items, label = COPY$18.navLabel, collapse = true, overrides, onNavigate, ref }) {
 	const { tokens: t } = useTheme();
 	const [expanded, setExpanded] = React.useState(false);
 	const firstRevealedRef = React.useRef(null);
@@ -3417,8 +6623,9 @@ function Breadcrumb({ items, label = COPY$23.navLabel, collapse = true, override
 		testID: "Breadcrumb.separator",
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no",
+		"aria-hidden": true,
 		style: styles.separator
-	}, COPY$23.separator);
+	}, COPY$18.separator);
 	const nodes = [];
 	items.forEach((item, index) => {
 		if (collapsed && index > 0 && index < tailStart) {
@@ -3427,7 +6634,7 @@ function Breadcrumb({ items, label = COPY$23.navLabel, collapse = true, override
 				testID: "Breadcrumb.item",
 				style: styles.item
 			}, separator(), /* @__PURE__ */ React.createElement(View, { testID: "Breadcrumb.expand" }, /* @__PURE__ */ React.createElement(Button, {
-				label: COPY$23.expandLabel,
+				label: COPY$18.expandLabel,
 				variant: "ghost",
 				size: "sm",
 				iconOnly: true,
@@ -3443,13 +6650,17 @@ function Breadcrumb({ items, label = COPY$23.navLabel, collapse = true, override
 			return;
 		}
 		let content;
-		if (index === lastIndex) content = /* @__PURE__ */ React.createElement(Text$1, {
-			testID: "Breadcrumb.current",
-			accessibilityState: { selected: true },
-			accessibilityLabel: `${item.label}, ${COPY$23.current}`,
-			style: styles.current
-		}, item.label);
-		else if (item.href === void 0 || item.href === "") content = /* @__PURE__ */ React.createElement(Text$1, { style: styles.plain }, item.label);
+		if (index === lastIndex) {
+			const currentName = `${item.label}, ${COPY$18.current}`;
+			content = /* @__PURE__ */ React.createElement(Text$1, {
+				testID: "Breadcrumb.current",
+				accessibilityState: { selected: true },
+				accessibilityLabel: currentName,
+				"aria-label": currentName,
+				...CURRENT_PAGE_ATTRS,
+				style: styles.current
+			}, item.label);
+		} else if (item.href === void 0 || item.href === "") content = /* @__PURE__ */ React.createElement(Text$1, { style: styles.plain }, item.label);
 		else {
 			const href = item.href;
 			content = /* @__PURE__ */ React.createElement(View, { testID: "Breadcrumb.link" }, /* @__PURE__ */ React.createElement(Text, { overrides: linkTextOverrides }, /* @__PURE__ */ React.createElement(Link, {
@@ -3471,6 +6682,7 @@ function Breadcrumb({ items, label = COPY$23.navLabel, collapse = true, override
 		testID: "Breadcrumb",
 		role: "navigation",
 		accessibilityLabel: label,
+		"aria-label": label,
 		style: styles.nav
 	}, nodes);
 }
@@ -3482,6 +6694,8 @@ const FILL_TOKEN$1 = {
 	warning: "colorStatusWarningIcon",
 	danger: "colorStatusDangerIcon"
 };
+/** Invalid min/max pairs already warned about, for the life of the process: a second Meter with the same bad range, or a remount, stays silent. */
+const warnedRanges$1 = /* @__PURE__ */ new Set();
 /**
 * Meter — shows how much of something there is against a known scale. Its shape is
 * a bar because people read fullness at a glance; its meaning is the number.
@@ -3508,14 +6722,17 @@ function Meter({ value, min = 0, max = 100, label, valueText, tone = "info", hid
 	const safeMin = Number.isFinite(min) ? min : 0;
 	const safeMax = Number.isFinite(max) ? max : 100;
 	const validRange = safeMax > safeMin;
-	const warnedRef = React.useRef(null);
 	React.useEffect(() => {
 		if (!__DEV__ || validRange) return;
 		const key = `${safeMin}/${safeMax}`;
-		if (warnedRef.current === key) return;
-		warnedRef.current = key;
+		if (warnedRanges$1.has(key)) return;
+		warnedRanges$1.add(key);
 		console.warn(`Meter: \`max\` (${safeMax}) must be greater than \`min\` (${safeMin}).`);
-	});
+	}, [
+		validRange,
+		safeMin,
+		safeMax
+	]);
 	const clamped = validRange ? Math.min(safeMax, Math.max(safeMin, Number.isFinite(value) ? value : safeMin)) : safeMin;
 	const fraction = validRange ? (clamped - safeMin) / (safeMax - safeMin) : 0;
 	const percentText = new Intl.NumberFormat(void 0, {
@@ -3570,6 +6787,7 @@ function Meter({ value, min = 0, max = 100, label, valueText, tone = "info", hid
 				gap: labelGap
 			},
 			labelWrapper: { flexShrink: 1 },
+			valueWrapper: { flexShrink: 0 },
 			track: {
 				height: trackHeight,
 				borderRadius: radius,
@@ -3595,8 +6813,10 @@ function Meter({ value, min = 0, max = 100, label, valueText, tone = "info", hid
 		ref,
 		testID: "Meter",
 		accessible: true,
+		focusable: false,
 		role: "meter",
 		accessibilityLabel: label,
+		"aria-label": label,
 		accessibilityValue: {
 			min: safeMin,
 			max: safeMax,
@@ -3624,7 +6844,10 @@ function Meter({ value, min = 0, max = 100, label, valueText, tone = "info", hid
 			fontFamily: overrides?.fontFamily,
 			lineHeight: overrides?.lineHeight
 		}
-	}, label)), hideValue ? null : /* @__PURE__ */ React.createElement(View, { testID: "Meter.valueText" }, /* @__PURE__ */ React.createElement(Text, {
+	}, label)), hideValue ? null : /* @__PURE__ */ React.createElement(View, {
+		testID: "Meter.valueText",
+		style: styles.valueWrapper
+	}, /* @__PURE__ */ React.createElement(Text, {
 		size: "sm",
 		tone: "muted",
 		overrides: {
@@ -3658,12 +6881,23 @@ const HOVER_BACKGROUND = {
 	subtle: "colorBackgroundStrong"
 };
 const DomView = View;
-/** A bare string or number cannot sit in a native View: it goes inside the system Text. */
-function wrapText(node, key) {
-	return typeof node === "string" || typeof node === "number" ? /* @__PURE__ */ React.createElement(Text, { key }, node) : node;
+/** A slot renders its row when it holds content: `undefined`, `null` and `false` are absent, `0` and `''` are content. */
+function isPresent(node) {
+	return node !== void 0 && node !== null && node !== false;
 }
-function renderBody(children) {
-	return Array.isArray(children) ? children.map((child, index) => wrapText(child, index)) : wrapText(children);
+/** A bare string or number cannot sit in a native View: it goes inside the system Text. */
+function wrapText(node) {
+	return typeof node === "string" || typeof node === "number" ? /* @__PURE__ */ React.createElement(Text, null, node) : node;
+}
+/**
+* Arrays and Fragments are flattened before the wrap, exactly as they are when the
+* interactive target is looked for, so a string directly inside a top-level Fragment is
+* wrapped too.
+*/
+function renderSlot(children) {
+	const items = flattenTopLevel(children);
+	if (items.length === 1) return wrapText(items[0]);
+	return items.map((item, index) => /* @__PURE__ */ React.createElement(React.Fragment, { key: index }, wrapText(item)));
 }
 /**
 * The body's top-level children, with arrays and Fragments spliced in: a Link inside a
@@ -3740,7 +6974,7 @@ function scanTopLevel(children, form) {
 		}
 	}
 	if (count !== 1) return {
-		content: renderBody(children),
+		content: renderSlot(children),
 		target: null,
 		count
 	};
@@ -3805,7 +7039,7 @@ function Card({ children, heading, headingLevel = "3", headerActions, footer, in
 	const background = t[BACKGROUND[surface]];
 	const hoverBackground = t[HOVER_BACKGROUND[surface]];
 	const scanned = React.useMemo(() => interactive ? scanTopLevel(children, form) : {
-		content: renderBody(children),
+		content: renderSlot(children),
 		target: null,
 		count: 1
 	}, [
@@ -3834,8 +7068,8 @@ function Card({ children, heading, headingLevel = "3", headerActions, footer, in
 		scanned.count
 	]);
 	const hasHeading = heading !== void 0 && heading !== "";
-	const hasHeaderActions = headerActions !== void 0 && headerActions !== null;
-	const hasFooter = footer !== void 0 && footer !== null;
+	const hasHeaderActions = isPresent(headerActions);
+	const hasFooter = isPresent(footer);
 	const scriptFocusable = focusable && !interactive;
 	const ringReserved = isInteractive || scriptFocusable;
 	const restingBorder = surface === "default" ? borderColor : "transparent";
@@ -3879,10 +7113,10 @@ function Card({ children, heading, headingLevel = "3", headerActions, footer, in
 	}, heading)) : null, hasHeaderActions ? /* @__PURE__ */ React.createElement(View, {
 		style: actionsStyle,
 		testID: "Card.headerActions"
-	}, headerActions) : null) : null, /* @__PURE__ */ React.createElement(View, { testID: "Card.body" }, scanned.content), hasFooter ? /* @__PURE__ */ React.createElement(View, {
+	}, renderSlot(headerActions)) : null) : null, /* @__PURE__ */ React.createElement(View, { testID: "Card.body" }, scanned.content), hasFooter ? /* @__PURE__ */ React.createElement(View, {
 		style: footerStyle,
 		testID: "Card.footer"
-	}, footer) : null);
+	}, renderSlot(footer)) : null);
 	if (target === null) return /* @__PURE__ */ React.createElement(DomView, {
 		ref,
 		style: surfaceStyle,
@@ -3897,7 +7131,9 @@ function Card({ children, heading, headingLevel = "3", headerActions, footer, in
 		ref,
 		accessibilityRole: target.role,
 		accessibilityLabel: target.label,
+		"aria-label": target.label,
 		accessibilityState: { disabled: target.disabled },
+		"aria-disabled": target.disabled,
 		onPress: () => {
 			if (!target.disabled) target.activate();
 		},
@@ -3981,14 +7217,15 @@ const SPACING_TOKEN = {
 * segments and makes the line meaningful rather than furniture.
 *
 * The line is an inner `View` `border.width.thin` thick along the cross axis in
-* `color.border` (vertical: `alignSelf: 'stretch'` to the row height), inside a root `View`
-* that carries `spacing` as padding on that axis. `spacing: none` renders no space, so
+* `color.border`, inside a root `View` that carries `spacing` as padding on that axis;
+* root and line both `alignSelf: 'stretch'` in either orientation, so a divider in a parent
+* that does not stretch its children still draws. `spacing: none` renders no space, so
 * `overrides.spacing` is a no-op there. There is no `separator` role on React Native:
 * a decorative root hides itself and its line (`accessibilityElementsHidden` +
 * `importantForAccessibility="no-hide-descendants"`); a labelled root is a row (`gap` from
 * `labelGap`) of two hidden line Views around `Text size="sm" tone="muted"`, which is read.
-* The label Text sits in a plain View carrying the `Divider.label` hook, since Text takes
-* no `testID`. `labelSize`/`fontFamily` overrides reach Text's `fontSize`/`fontFamily`.
+* The label Text sits in a plain unflexed View carrying the `Divider.label` hook, since Text
+* takes no `testID`. `labelSize`/`fontFamily` overrides reach Text's `fontSize`/`fontFamily`.
 */
 function Divider({ orientation = "horizontal", label, semantic = false, spacing = "none", overrides, ref }) {
 	const { tokens: t } = useTheme();
@@ -4033,6 +7270,7 @@ function Divider({ orientation = "horizontal", label, semantic = false, spacing 
 				backgroundColor: color
 			} : {
 				height: thickness,
+				alignSelf: "stretch",
 				backgroundColor: color
 			},
 			segment: {
@@ -4081,72 +7319,8 @@ function Divider({ orientation = "horizontal", label, semantic = false, spacing 
 	}));
 }
 //#endregion
-//#region src/FocusScope.tsx
-/** Whatever `TextInput` is focused right now — the one "what is focused" React Native exposes. */
-function currentlyFocusedInput() {
-	try {
-		return TextInput.State.currentlyFocusedInput() ?? null;
-	} catch {
-		return null;
-	}
-}
-/**
-* FocusScope — the smallest possible answer to the hardest accessibility bug: focus
-* that escapes a modal, or never comes back from one. It has no appearance and no
-* opinion about what is inside it.
-*
-* When to use: consumers rarely render it directly; Dialog, AlertDialog, BottomSheet
-* and ActionSheet declare it in their composition. Render it yourself only when
-* building a new modal surface the system does not have yet, with `trapped` on and a
-* dismiss control of your own — or with `trapped: false` for a non-modal panel that
-* should still move focus in and restore it on close. Do not trap focus in anything
-* that is not modal, and do not use it for composites (menus, tab lists).
-*
-* Renders a `View` with `accessibilityViewIsModal={trapped && active}` so VoiceOver
-* and TalkBack ignore siblings while the scope is the active one; a paused outer
-* scope therefore does not hide a nested Menu. On react-native-web the prop is
-* omitted: it would render `aria-modal` on a role-less div, and the composing
-* overlay's own dialog carries `aria-modal` there. There is no Tab order to confine
-* on native, so hardware-keyboard Tab is not wrapped (a platform limit, on
-* react-native-web too) and `onEscapeAttempt` never fires; screen-reader users are
-* kept inside by `accessibilityViewIsModal` instead. `autoFocus` runs once after
-* mount and calls `AccessibilityInfo.setAccessibilityFocus` on the wrapper for
-* `first`, `last` and `container` alike — children cannot be walked for a focusable
-* descendant — so the screen reader reads the scope from its top; only `none` skips
-* it. iOS VoiceOver may ignore focus on a non-`accessible` View; that is a platform
-* limit, and `accessibilityViewIsModal` is the accessibility alternative.
-* `restoreFocus` runs once on unmount and focuses `returnFocusTo` when given,
-* otherwise the `TextInput` that was focused when the scope first rendered; there is
-* no document order on native, so when that opener is gone nothing is restored. The
-* wrapper sets no `role`, `accessibilityRole` or `accessibilityLabel`, and never
-* handles Escape or the back button — the overlay owns dismissal.
-*/
-function FocusScope({ children, trapped = true, autoFocus = "first", restoreFocus = true, returnFocusTo, active = true, onEscapeAttempt, ref }) {
-	const wrapperRef = React.useRef(null);
-	React.useImperativeHandle(ref, () => wrapperRef.current, []);
-	const [capturedOpener] = React.useState(() => restoreFocus && returnFocusTo === void 0 ? currentlyFocusedInput() : null);
-	React.useEffect(() => {
-		if (autoFocus !== "none") {
-			const node = wrapperRef.current === null ? null : findNodeHandle(wrapperRef.current);
-			if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
-		}
-		return () => {
-			if (!restoreFocus) return;
-			const opener = returnFocusTo !== void 0 ? returnFocusTo.current : capturedOpener;
-			const node = opener == null ? null : findNodeHandle(opener);
-			if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
-		};
-	}, []);
-	return /* @__PURE__ */ React.createElement(View, {
-		ref: wrapperRef,
-		collapsable: false,
-		accessibilityViewIsModal: Platform.OS === "web" ? void 0 : trapped && active,
-		testID: "FocusScope"
-	}, children);
-}
-//#endregion
 //#region src/Dialog.tsx
-const COPY$22 = { closeLabel: "Close" };
+const COPY$17 = { closeLabel: "Close" };
 /**
 * Dialog — interrupts for one task and gives the screen back when it is done or
 * abandoned.
@@ -4174,6 +7348,7 @@ function Dialog({ open, heading, description, children, footer, hideHeading = fa
 	const [mounted, setMounted] = React.useState(open);
 	if (open && !mounted) setMounted(true);
 	const progress = React.useRef(new Animated.Value(0)).current;
+	const rise = React.useRef(new Animated.Value(0)).current;
 	const surfaceRef = React.useRef(null);
 	const titleGroupRef = React.useRef(null);
 	const closeButtonRef = React.useRef(null);
@@ -4212,16 +7387,18 @@ function Dialog({ open, heading, description, children, footer, hideHeading = fa
 		if (open) {
 			if (reducedMotion || enterDuration === 0) {
 				progress.setValue(1);
+				rise.setValue(1);
 				focusInitial();
 				const frame = requestAnimationFrame(() => onOpened?.());
 				return () => cancelAnimationFrame(frame);
 			}
-			const animation = Animated.timing(progress, {
+			const enterConfig = {
 				toValue: 1,
 				duration: enterDuration,
 				easing: toEasing(t.motionEasingStandard),
 				useNativeDriver: false
-			});
+			};
+			const animation = Animated.parallel([Animated.timing(progress, enterConfig), Animated.timing(rise, enterConfig)]);
 			animation.start(({ finished }) => {
 				if (finished) {
 					focusInitial();
@@ -4230,9 +7407,13 @@ function Dialog({ open, heading, description, children, footer, hideHeading = fa
 			});
 			return () => animation.stop();
 		}
-		if (reducedMotion || exitDuration === 0) {
+		const unmount = () => {
 			progress.setValue(0);
+			rise.setValue(0);
 			setMounted(false);
+		};
+		if (reducedMotion || exitDuration === 0) {
+			unmount();
 			return;
 		}
 		const animation = Animated.timing(progress, {
@@ -4242,7 +7423,7 @@ function Dialog({ open, heading, description, children, footer, hideHeading = fa
 			useNativeDriver: false
 		});
 		animation.start(({ finished }) => {
-			if (finished) setMounted(false);
+			if (finished) unmount();
 		});
 		return () => animation.stop();
 	}, [
@@ -4280,7 +7461,7 @@ function Dialog({ open, heading, description, children, footer, hideHeading = fa
 		borderRadius: radius,
 		...shadow,
 		opacity: progress,
-		transform: [{ translateY: progress.interpolate({
+		transform: [{ translateY: rise.interpolate({
 			inputRange: [0, 1],
 			outputRange: [t.space2, 0]
 		}) }]
@@ -4333,7 +7514,9 @@ function Dialog({ open, heading, description, children, footer, hideHeading = fa
 		style: surfaceStyle,
 		role: "dialog",
 		accessibilityViewIsModal: true,
+		"aria-modal": true,
 		accessibilityLabel: heading,
+		"aria-label": heading,
 		accessibilityHint: description,
 		onAccessibilityEscape: handleEscape,
 		testID: "Dialog"
@@ -4344,7 +7527,7 @@ function Dialog({ open, heading, description, children, footer, hideHeading = fa
 		ref: titleGroupRef,
 		style: titleGroupStyle
 	}, !hideHeading ? /* @__PURE__ */ React.createElement(Heading, { level: "2" }, heading) : null, description !== void 0 ? /* @__PURE__ */ React.createElement(Text, { tone: "muted" }, description) : null), dismissible ? /* @__PURE__ */ React.createElement(View, { ref: closeButtonRef }, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$22.closeLabel,
+		label: COPY$17.closeLabel,
 		variant: "ghost",
 		size: "sm",
 		iconOnly: true,
@@ -4375,7 +7558,7 @@ function Dialog({ open, heading, description, children, footer, hideHeading = fa
 }
 //#endregion
 //#region src/AlertDialog.tsx
-const COPY$21 = { cancelLabel: "Cancel" };
+const COPY$16 = { cancelLabel: "Cancel" };
 const TONE = {
 	danger: {
 		icon: "color.status.danger.icon",
@@ -4398,7 +7581,7 @@ const TONE = {
 * that destroys data, spends money, or cannot be undone.
 *
 * A native `Modal` (`transparent`, `animationType="none"` — the component animates
-* itself, `statusBarTranslucent`). The scrim is a plain `View` with no press handler
+* itself, `statusBarTranslucent`). The scrim is an `Animated.View` with no press handler
 * or responder, so a stray tap reaches nothing, and there is no close button: the
 * only ways out are Cancel and Confirm. Android back (`onRequestClose`) and the
 * VoiceOver escape gesture report `onCancel('escape')`. Inside a `FocusScope`
@@ -4409,6 +7592,11 @@ const TONE = {
 * the question is read; Cancel precedes Confirm in the accessibility order. The tone
 * Icon is decorative and colored through its own `overrides.color`. Scroll lock has
 * no native meaning and is not implemented. Rooted in a Modal, it exposes no ref.
+*
+* The surface is capped at window height − 2 × gutter and scrolls itself past that (a
+* `ScrollView` holding the whole column), so nothing is pinned. The exit is a fade only;
+* the rise plays on enter. In development an open dialog with an empty `heading`,
+* `description` or `confirmLabel` warns once.
 *
 * `inset` is applied once each way so nothing doubles between parts: the surface column
 * carries the block padding, the icon-and-text row and the footer wrapper the inline
@@ -4421,10 +7609,25 @@ function AlertDialog({ open, heading, description, tone = "danger", confirmLabel
 	const reducedMotion = useReducedMotion();
 	const { height: windowHeight } = useWindowDimensions();
 	const toneEntry = TONE[tone];
+	const headingId = React.useId();
+	const descriptionId = React.useId();
 	const [mounted, setMounted] = React.useState(open);
 	if (open && !mounted) setMounted(true);
 	const progress = React.useRef(new Animated.Value(0)).current;
+	const riseProgress = React.useRef(new Animated.Value(0)).current;
 	const headingRef = React.useRef(null);
+	const warnedEmpty = React.useRef(false);
+	React.useEffect(() => {
+		if (__DEV__ && open && !warnedEmpty.current && (!heading || !description || !confirmLabel)) {
+			warnedEmpty.current = true;
+			console.warn("AlertDialog: `heading`, `description` and `confirmLabel` are required and must not be empty; an empty `heading` removes the accessible name.");
+		}
+	}, [
+		open,
+		heading,
+		description,
+		confirmLabel
+	]);
 	const scrimColor = overrides?.scrim ? resolveToken(t, overrides.scrim) : t.colorOverlayScrim;
 	const borderColor = overrides?.border ? resolveToken(t, overrides.border) : t.colorBorder;
 	const borderWidth = overrides?.borderWidth ? resolveToken(t, overrides.borderWidth) : t.borderWidthThin;
@@ -4449,23 +7652,29 @@ function AlertDialog({ open, heading, description, tone = "danger", confirmLabel
 		if (open) {
 			if (reducedMotion || enterDuration === 0) {
 				progress.setValue(1);
+				riseProgress.setValue(1);
 				focusHeading();
 				return;
 			}
-			const animation = Animated.timing(progress, {
+			const enterConfig = {
 				toValue: 1,
 				duration: enterDuration,
 				easing: toEasing(t.motionEasingStandard),
 				useNativeDriver: false
-			});
+			};
+			const animation = Animated.parallel([Animated.timing(progress, enterConfig), Animated.timing(riseProgress, enterConfig)]);
 			animation.start(({ finished }) => {
 				if (finished) focusHeading();
 			});
 			return () => animation.stop();
 		}
-		if (reducedMotion || exitDuration === 0) {
+		const unmount = () => {
 			progress.setValue(0);
+			riseProgress.setValue(0);
 			setMounted(false);
+		};
+		if (reducedMotion || exitDuration === 0) {
+			unmount();
 			return;
 		}
 		const animation = Animated.timing(progress, {
@@ -4475,7 +7684,7 @@ function AlertDialog({ open, heading, description, tone = "danger", confirmLabel
 			useNativeDriver: false
 		});
 		animation.start(({ finished }) => {
-			if (finished) setMounted(false);
+			if (finished) unmount();
 		});
 		return () => animation.stop();
 	}, [
@@ -4513,7 +7722,7 @@ function AlertDialog({ open, heading, description, tone = "danger", confirmLabel
 		borderRadius: radius,
 		...shadow,
 		opacity: progress,
-		transform: [{ translateY: progress.interpolate({
+		transform: [{ translateY: riseProgress.interpolate({
 			inputRange: [0, 1],
 			outputRange: [rise, 0]
 		}) }]
@@ -4524,7 +7733,10 @@ function AlertDialog({ open, heading, description, tone = "danger", confirmLabel
 		borderWidth,
 		borderColor,
 		backgroundColor: t.colorOverlaySurface,
-		overflow: "hidden",
+		overflow: "hidden"
+	};
+	const scrollStyle = { flexShrink: 1 };
+	const columnStyle = {
 		paddingVertical: inset,
 		gap: partGap
 	};
@@ -4539,6 +7751,7 @@ function AlertDialog({ open, heading, description, tone = "danger", confirmLabel
 		gap: textGap
 	};
 	const footerStyle = { paddingHorizontal: inset };
+	const webSurfaceProps = Platform.OS === "web" ? { "aria-describedby": descriptionId } : {};
 	const iconOverrides = {
 		color: toneEntry.icon,
 		size: overrides?.iconSize ?? "font.size.lg"
@@ -4568,21 +7781,33 @@ function AlertDialog({ open, heading, description, tone = "danger", confirmLabel
 		style: surfaceStyle,
 		role: "alertdialog",
 		accessibilityViewIsModal: true,
+		"aria-modal": true,
 		accessibilityLabel: heading,
+		"aria-label": heading,
+		"aria-labelledby": headingId,
 		accessibilityHint: description,
 		onAccessibilityEscape: handleEscape,
-		testID: "AlertDialog.surface"
+		testID: "AlertDialog.surface",
+		...webSurfaceProps
+	}, /* @__PURE__ */ React.createElement(ScrollView, {
+		style: scrollStyle,
+		contentContainerStyle: columnStyle
 	}, /* @__PURE__ */ React.createElement(View, { style: contentRowStyle }, /* @__PURE__ */ React.createElement(View, {
 		testID: "AlertDialog.icon",
 		accessibilityElementsHidden: true,
-		importantForAccessibility: "no-hide-descendants"
+		importantForAccessibility: "no-hide-descendants",
+		"aria-hidden": true
 	}, /* @__PURE__ */ React.createElement(Icon, {
 		name: toneEntry.glyph,
 		overrides: iconOverrides
 	})), /* @__PURE__ */ React.createElement(View, { style: textGroupStyle }, /* @__PURE__ */ React.createElement(View, {
 		ref: headingRef,
+		nativeID: headingId,
 		testID: "AlertDialog.heading"
-	}, /* @__PURE__ */ React.createElement(Heading, { level: "2" }, heading)), /* @__PURE__ */ React.createElement(View, { testID: "AlertDialog.description" }, /* @__PURE__ */ React.createElement(Text, { tone: "muted" }, description)))), /* @__PURE__ */ React.createElement(View, {
+	}, /* @__PURE__ */ React.createElement(Heading, { level: "2" }, heading)), /* @__PURE__ */ React.createElement(View, {
+		nativeID: descriptionId,
+		testID: "AlertDialog.description"
+	}, /* @__PURE__ */ React.createElement(Text, { tone: "muted" }, description)))), /* @__PURE__ */ React.createElement(View, {
 		style: footerStyle,
 		testID: "AlertDialog.footer"
 	}, /* @__PURE__ */ React.createElement(Stack, {
@@ -4591,7 +7816,7 @@ function AlertDialog({ open, heading, description, tone = "danger", confirmLabel
 		justify: "end",
 		overrides: footerOverrides
 	}, /* @__PURE__ */ React.createElement(View, { testID: "AlertDialog.cancelButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: cancelLabel ?? COPY$21.cancelLabel,
+		label: cancelLabel ?? COPY$16.cancelLabel,
 		variant: "secondary",
 		size: "md",
 		onPress: handleCancelPress
@@ -4601,436 +7826,70 @@ function AlertDialog({ open, heading, description, tone = "danger", confirmLabel
 		size: "md",
 		disabled: confirmDisabled,
 		onPress: handleConfirmPress
-	}))))))))));
-}
-//#endregion
-//#region src/BottomSheet.tsx
-const COPY$20 = { closeLabel: "Close" };
-/** Schema constants without a token; `dragSlop` has one (`space.1`) and is read from the theme. */
-const CONSTANTS$2 = {
-	dismissDistance: .25,
-	dismissVelocity: 1.5
-};
-const DIALOG_BINDINGS = [
-	"scrim",
-	"shadow",
-	"radius",
-	"inset",
-	"partGap",
-	"headerGap",
-	"footerGap",
-	"layer",
-	"enter",
-	"exit"
-];
-/**
-* BottomSheet — the phone's dialog. Rises from the edge the thumb can reach, keeps the
-* page visible behind a scrim, and goes away with a swipe, a tap outside, the close
-* button or Escape.
-*
-* At window width <= `layout.maxWidth.prose`: a native `Modal` (`transparent`,
-* `animationType="none"` — the component animates itself, `statusBarTranslucent`) holding
-* a scrim `Pressable` and, inside a `FocusScope` (`trapped`, `autoFocus="first"`,
-* `restoreFocus`), an `Animated.View` surface anchored to the bottom with `role="dialog"`,
-* `accessibilityViewIsModal` and `accessibilityLabel={heading}`. It slides up with `enter`
-* and `motion.easing.standard` and down with `exit` and `motion.easing.exit`, instantly
-* under reduced motion. Android back (`onRequestClose`) and the VoiceOver escape gesture
-* report `onClose('escape')`, even when not dismissible. `autoFocus="first"` lands on the
-* scope wrapper rather than a real control — FocusScope's own documented native limit —
-* so the screen reader reads the sheet from the top, which is the intended result.
-*
-* A `PanResponder` on the header (handle and heading row, never the body `ScrollView`,
-* whatever its scroll position) claims a move once it passes `dragSlop` (`space.1`)
-* downward, so a tap on the close button still activates it; the offset counts from where
-* the slop was crossed, so the surface does not jump. It follows the finger even under
-* reduced motion, since the drag is user-driven. On release past `dismissDistance` of the
-* measured sheet height, or faster than `dismissVelocity` between the last two move
-* samples, it fires `onDragDismiss` then `onClose('drag')` and holds the released offset
-* until the consumer's update renders: `open` false plays the normal exit from there,
-* `open` still true springs back over `exit` with `motion.easing.standard`. The handle is
-* decorative, not a focus stop, and rendered only when the gesture is live.
-*
-* `inset` is applied once each way so nothing doubles between parts: the surface column
-* carries the block padding (`headerPaddingTop` at the top when the handle is rendered,
-* `inset` otherwise; `inset` at the bottom), the header and footer wrappers the inline
-* padding, and the body `Box` receives it as `overrides.paddingInline` with zero block
-* padding of its own. The bottom safe-area inset is an empty `SafeAreaView` after the last
-* part, whose column gap is cancelled so the only space it adds is its own inset; RN core
-* has no Android safe-area API, and the Modal is not `navigationBarTranslucent`, so
-* Android adds none.
-*
-* The closeButton part is a View sized to `size.target.comfortable`; the Button's own
-* hitSlop already extends its hit area to that target, so the wrapper's extra area
-* activates it. Scroll lock has no native meaning — a Modal has no page behind it to
-* scroll — and is not implemented. Above the breakpoint the component renders
-* `Dialog size="md"` alone, with no wrapping View, so the root testID there is Dialog's.
-* The Modal is its own window, so no ref is exposed; callers ref their trigger.
-*/
-function BottomSheet({ open, heading, hideHeading = false, children, footer, height = "content", dismissible = true, dragToDismiss = true, onClose, onDragDismiss, overrides }) {
-	const { tokens: t } = useTheme();
-	const reducedMotion = useReducedMotion();
-	const { height: windowHeight, width: windowWidth } = useWindowDimensions();
-	const [mounted, setMounted] = React.useState(open);
-	if (open && !mounted) setMounted(true);
-	const [dragReleases, setDragReleases] = React.useState(0);
-	const progress = React.useRef(new Animated.Value(0)).current;
-	const dragY = React.useRef(new Animated.Value(0)).current;
-	const sheetHeightRef = React.useRef(0);
-	const samplesRef = React.useRef([]);
-	const grantDyRef = React.useRef(0);
-	const scrimColor = overrides?.scrim ? resolveToken(t, overrides.scrim) : t.colorOverlayScrim;
-	const shadow = overrides?.shadow ? resolveToken(t, overrides.shadow) : t.shadowOverlay;
-	const radius = overrides?.radius ? resolveToken(t, overrides.radius) : t.radiusLg;
-	const handleHeight = overrides?.handleHeight ? resolveToken(t, overrides.handleHeight) : t.space1;
-	const handleWidth = overrides?.handleWidth ? resolveToken(t, overrides.handleWidth) : t.space10;
-	const handleRadius = overrides?.handleRadius ? resolveToken(t, overrides.handleRadius) : t.radiusFull;
-	const headerPaddingTop = overrides?.headerPaddingTop ? resolveToken(t, overrides.headerPaddingTop) : t.spaceSm;
-	const handleGap = overrides?.handleGap ? resolveToken(t, overrides.handleGap) : t.layoutGapTight;
-	const headerGap = overrides?.headerGap ? resolveToken(t, overrides.headerGap) : t.layoutGapNormal;
-	const inset = overrides?.inset ? resolveToken(t, overrides.inset) : t.layoutInsetLg;
-	const partGap = overrides?.partGap ? resolveToken(t, overrides.partGap) : t.layoutGapLoose;
-	const layer = overrides?.layer ? resolveToken(t, overrides.layer) : t.layerSheet;
-	const enterDuration = overrides?.enter ? resolveToken(t, overrides.enter) : t.motionDurationBase;
-	const exitDuration = overrides?.exit ? resolveToken(t, overrides.exit) : t.motionDurationFast;
-	const dragSlop = t.space1;
-	const isWide = windowWidth > t.layoutMaxWidthProse;
-	const canDrag = dragToDismiss && dismissible;
-	const springBack = () => {
-		if (reducedMotion || exitDuration === 0) {
-			dragY.setValue(0);
-			return;
-		}
-		Animated.timing(dragY, {
-			toValue: 0,
-			duration: exitDuration,
-			easing: toEasing(t.motionEasingStandard),
-			useNativeDriver: false
-		}).start();
-	};
-	React.useEffect(() => {
-		if (!mounted) return;
-		if (open) {
-			dragY.setValue(0);
-			if (reducedMotion || enterDuration === 0) {
-				progress.setValue(1);
-				return;
-			}
-			const animation = Animated.timing(progress, {
-				toValue: 1,
-				duration: enterDuration,
-				easing: toEasing(t.motionEasingStandard),
-				useNativeDriver: false
-			});
-			animation.start();
-			return () => animation.stop();
-		}
-		if (reducedMotion || exitDuration === 0) {
-			progress.setValue(0);
-			setMounted(false);
-			return;
-		}
-		const animation = Animated.timing(progress, {
-			toValue: 0,
-			duration: exitDuration,
-			easing: toEasing(t.motionEasingExit),
-			useNativeDriver: false
-		});
-		animation.start(({ finished }) => {
-			if (finished) setMounted(false);
-		});
-		return () => animation.stop();
-	}, [
-		open,
-		mounted,
-		reducedMotion
-	]);
-	React.useEffect(() => {
-		if (dragReleases > 0 && open) springBack();
-	}, [dragReleases]);
-	const latest = React.useRef({
-		dragSlop,
-		windowHeight,
-		onClose,
-		onDragDismiss,
-		springBack
-	});
-	latest.current = {
-		dragSlop,
-		windowHeight,
-		onClose,
-		onDragDismiss,
-		springBack
-	};
-	const panResponder = React.useRef(null);
-	if (panResponder.current === null) {
-		const claims = (_, g) => g.dy > latest.current.dragSlop && Math.abs(g.dy) > Math.abs(g.dx);
-		panResponder.current = PanResponder.create({
-			onMoveShouldSetPanResponderCapture: claims,
-			onMoveShouldSetPanResponder: claims,
-			onPanResponderGrant: (_, g) => {
-				samplesRef.current = [];
-				grantDyRef.current = g.dy;
-			},
-			onPanResponderMove: (event, g) => {
-				const offset = Math.max(0, g.dy - grantDyRef.current);
-				dragY.setValue(offset);
-				const sample = {
-					dy: offset,
-					time: event.nativeEvent.timestamp
-				};
-				samplesRef.current = [samplesRef.current[samplesRef.current.length - 1] ?? sample, sample];
-			},
-			onPanResponderRelease: (_, g) => {
-				const offset = Math.max(0, g.dy - grantDyRef.current);
-				const [previous, last] = samplesRef.current;
-				const elapsed = previous !== void 0 && last !== void 0 ? last.time - previous.time : 0;
-				const velocity = previous !== void 0 && last !== void 0 && elapsed > 0 ? Math.max(0, (last.dy - previous.dy) / elapsed) : 0;
-				if (!(offset > (sheetHeightRef.current > 0 ? sheetHeightRef.current : latest.current.windowHeight) * CONSTANTS$2.dismissDistance || velocity > CONSTANTS$2.dismissVelocity)) {
-					latest.current.springBack();
-					return;
-				}
-				latest.current.onDragDismiss?.();
-				latest.current.onClose?.("drag");
-				setDragReleases((count) => count + 1);
-			},
-			onPanResponderTerminate: () => latest.current.springBack()
-		});
-	}
-	if (isWide) {
-		let dialogOverrides;
-		if (overrides) {
-			dialogOverrides = {};
-			for (const binding of DIALOG_BINDINGS) if (overrides[binding] !== void 0) dialogOverrides[binding] = overrides[binding];
-		}
-		return /* @__PURE__ */ React.createElement(Dialog, {
-			open,
-			heading,
-			hideHeading,
-			size: "md",
-			dismissible,
-			footer,
-			onClose,
-			overrides: dialogOverrides
-		}, children);
-	}
-	if (!mounted) return null;
-	const handleScrimPress = () => {
-		if (dismissible) onClose?.("scrim");
-	};
-	const handleCloseButtonPress = () => {
-		onClose?.("close-button");
-	};
-	const handleEscape = () => {
-		onClose?.("escape");
-	};
-	const handleSurfaceLayout = (event) => {
-		sheetHeightRef.current = event.nativeEvent.layout.height;
-	};
-	const showHeader = canDrag || !hideHeading || dismissible;
-	const hostStyle = { flex: 1 };
-	const scrimStyle = {
-		...StyleSheet.absoluteFill,
-		backgroundColor: scrimColor,
-		opacity: progress
-	};
-	const anchorStyle = {
-		flex: 1,
-		justifyContent: "flex-end",
-		zIndex: layer
-	};
-	const fullInset = Platform.OS === "android" ? Math.max(t.layoutGutter, StatusBar.currentHeight ?? 0) : t.layoutGutter;
-	const surfaceStyle = {
-		width: "100%",
-		height: {
-			content: void 0,
-			half: windowHeight * .5,
-			full: windowHeight - fullInset
-		}[height],
-		maxHeight: height === "content" ? windowHeight * .9 : void 0,
-		borderTopLeftRadius: radius,
-		borderTopRightRadius: radius,
-		...shadow,
-		backgroundColor: t.colorOverlaySurface,
-		overflow: "hidden",
-		gap: partGap,
-		paddingTop: canDrag ? headerPaddingTop : inset,
-		paddingBottom: inset,
-		transform: [{ translateY: Animated.add(progress.interpolate({
-			inputRange: [0, 1],
-			outputRange: [windowHeight, 0]
-		}), dragY) }]
-	};
-	const headerStyle = {
-		paddingHorizontal: inset,
-		gap: handleGap
-	};
-	const handleStyle = {
-		alignSelf: "center",
-		width: handleWidth,
-		height: handleHeight,
-		borderRadius: handleRadius,
-		backgroundColor: t.colorForegroundMuted
-	};
-	const headingRowStyle = {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: hideHeading ? "flex-end" : "space-between",
-		gap: headerGap
-	};
-	const headingStyle = { flexShrink: 1 };
-	const closeButtonStyle = {
-		minWidth: t.sizeTargetComfortable,
-		minHeight: t.sizeTargetComfortable,
-		alignItems: "center",
-		justifyContent: "center"
-	};
-	const bodyStyle = {
-		flexShrink: 1,
-		flexGrow: height === "content" ? 0 : 1
-	};
-	const footerStyle = { paddingHorizontal: inset };
-	const safeAreaStyle = { marginTop: -partGap };
-	return /* @__PURE__ */ React.createElement(Modal, {
-		visible: true,
-		transparent: true,
-		animationType: "none",
-		onRequestClose: handleEscape,
-		statusBarTranslucent: true
-	}, /* @__PURE__ */ React.createElement(View, { style: hostStyle }, /* @__PURE__ */ React.createElement(Animated.View, { style: scrimStyle }, /* @__PURE__ */ React.createElement(Pressable, {
-		style: StyleSheet.absoluteFill,
-		onPress: handleScrimPress,
-		accessible: false,
-		testID: "BottomSheet.scrim"
-	})), /* @__PURE__ */ React.createElement(View, {
-		style: anchorStyle,
-		pointerEvents: "box-none"
-	}, /* @__PURE__ */ React.createElement(FocusScope, {
-		trapped: true,
-		active: open,
-		autoFocus: "first",
-		restoreFocus: true
-	}, /* @__PURE__ */ React.createElement(Animated.View, {
-		style: surfaceStyle,
-		onLayout: handleSurfaceLayout,
-		role: "dialog",
-		accessibilityViewIsModal: true,
-		accessibilityLabel: heading,
-		onAccessibilityEscape: handleEscape,
-		testID: "BottomSheet"
-	}, showHeader ? /* @__PURE__ */ React.createElement(View, {
-		...canDrag ? panResponder.current.panHandlers : void 0,
-		style: headerStyle,
-		testID: "BottomSheet.header"
-	}, canDrag ? /* @__PURE__ */ React.createElement(View, {
-		style: handleStyle,
-		accessibilityElementsHidden: true,
-		importantForAccessibility: "no",
-		testID: "BottomSheet.handle"
-	}) : null, /* @__PURE__ */ React.createElement(View, { style: headingRowStyle }, !hideHeading ? /* @__PURE__ */ React.createElement(View, {
-		style: headingStyle,
-		testID: "BottomSheet.heading"
-	}, /* @__PURE__ */ React.createElement(Heading, { level: "2" }, heading)) : null, dismissible ? /* @__PURE__ */ React.createElement(View, {
-		style: closeButtonStyle,
-		testID: "BottomSheet.closeButton"
-	}, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$20.closeLabel,
-		variant: "ghost",
-		size: "sm",
-		iconOnly: true,
-		leadingIcon: /* @__PURE__ */ React.createElement(Icon, {
-			name: "close",
-			color: t.colorActionGhostForeground
-		}),
-		onPress: handleCloseButtonPress
-	})) : null)) : null, /* @__PURE__ */ React.createElement(ScrollView, {
-		style: bodyStyle,
-		keyboardShouldPersistTaps: "handled",
-		testID: "BottomSheet.body"
-	}, /* @__PURE__ */ React.createElement(Box, {
-		inset: "none",
-		overrides: { paddingInline: overrides?.inset ?? "layout.inset.lg" }
-	}, children)), footer !== void 0 ? /* @__PURE__ */ React.createElement(View, {
-		style: footerStyle,
-		testID: "BottomSheet.footer"
-	}, /* @__PURE__ */ React.createElement(Stack, {
-		direction: "horizontal",
-		justify: "end",
-		overrides: { gap: overrides?.footerGap ?? "layout.gap.tight" }
-	}, footer)) : null, /* @__PURE__ */ React.createElement(SafeAreaView, { style: safeAreaStyle }))))));
+	})))))))))));
 }
 //#endregion
 //#region src/ActionSheet.tsx
-const COPY$19 = {
+const COPY$15 = {
 	cancelLabel: "Cancel",
 	defaultLabel: "Actions"
 };
 /** Schema constants without a token; `dragSlop` has one (`space.1`) and is read from the theme. */
 const CONSTANTS$1 = {
 	dismissDistance: .25,
-	dismissVelocity: 1.5
+	dismissVelocity: 1.5,
+	contentCap: .9
 };
 /**
-* ActionSheet — "what can I do with this?" A short list of verbs for one item,
-* reached from an overflow button or a long-press, with the dangerous ones grouped
-* last and an explicit Cancel because thumbs miss.
+* ActionSheet — "what can I do with this?" A short list of verbs for one item, reached
+* from an overflow button or a long-press, with the dangerous ones grouped last and an
+* explicit Cancel because thumbs miss.
 *
 * When to use: contextual actions on an item — share, rename, duplicate, delete —
 * opened from an overflow `Button` (`iconOnly`, label "More actions") or a long-press.
 * Keep it to what fits without scrolling; more than eight actions means the item needs
-* its own screen. Put destructive actions last with `tone: "danger"`. Not for
-* navigation, for settings with state, for choosing a value, or for confirming — a
-* danger row opens an `AlertDialog`, it does not itself confirm.
+* its own screen. Not for navigation, for settings with state, for choosing a value, or
+* for confirming — a danger row opens an `AlertDialog`, it does not itself confirm.
 *
 * Renders a native `Modal` (`visible`, `transparent`, `onRequestClose`,
 * `statusBarTranslucent`) holding a scrim `Pressable` and, inside a `FocusScope`
 * (`trapped`, `restoreFocus`, `autoFocus="none"`, `active` following `open`), an
-* `Animated.View` surface anchored to the bottom that carries `testID="ActionSheet"`,
-* `role="menu"`, `accessibilityViewIsModal` and
-* `accessibilityLabel={heading ?? copy.defaultLabel}` — there is no separate
-* `ActionSheet.surface`. It slides up with `enter` and `motion.easing.standard` and
-* down with `exit` and `motion.easing.exit`, the scrim fading with the same duration
-* and easing, instantly under reduced motion. The sheet sizes to its content up to 90%
-* of the window and the list scrolls inside it.
+* `Animated.View` surface anchored to the bottom carrying `testID="ActionSheet"` and
+* `accessibilityViewIsModal`. The `list` — the scroll region, so the header and Cancel
+* row stay pinned — carries `role="menu"` and the accessible name
+* (`heading ?? copy.defaultLabel`); the heading and the Cancel row are outside it. The
+* surface slides up with `enter` and `motion.easing.standard` and down with `exit` and
+* `motion.easing.exit`, the scrim fading with the same duration and easing, instantly
+* under reduced motion. Once the enter ends, accessibility focus moves to the first
+* enabled row in display order (the default group, then danger).
 *
-* The heading composes `Text` (`size="sm"`, `tone="muted"`) with `fontFamily`,
-* `titleSize` and `lineHeight` always passed through its `overrides` as the resolved
-* token — the default or the caller's — since `Text` otherwise sets its own; `Icon`
-* draws each row's glyph and `Button` (`variant="secondary"`) the Cancel row, each in a
-* wrapping View carrying the part's testID. Rows are `Pressable`s with `role="menuitem"`
-* and `accessibilityState={{ disabled }}`; a press guard, not the native `disabled`
-* prop, makes a disabled row inert so it stays reachable and is announced as disabled.
-* Once the enter transition ends, accessibility focus moves to the first enabled action
-* in display order (the default group, then danger). Two dividers, two rules: the
-* danger-group divider sits among the rows as `role="separator"` and is drawn only when
-* both groups exist; the cancel divider sits above the Cancel row whenever that row is
-* rendered and is hidden from assistive technology.
+* Rows are `Pressable`s with `role="menuitem"` and `accessibilityState={{ disabled }}`;
+* a press guard, not the native `disabled` prop, makes a disabled row inert so it stays
+* reachable and is announced as disabled. Choosing an action never closes the sheet
+* itself. The danger-group divider sits among the rows as `role="separator"` when both
+* groups exist; the cancel divider sits above the Cancel row and is hidden from
+* assistive technology.
 *
-* A `PanResponder` on the header (handle and heading) claims a move once it passes
-* `dragSlop` (`space.1`) downward, so a tap is not a drag and nothing fires; the offset
-* counts from where the slop was crossed, so the surface does not jump, and it follows
-* the finger even under reduced motion. On release past `dismissDistance` of the
-* measured surface height, or faster than `dismissVelocity` between the last two move
-* samples (from `nativeEvent.timestamp`, not PanResponder's averaged `vy`), it fires
-* `onClose('drag')` and holds the released offset until the consumer's update renders:
+* A `PanResponder` on the header (handle and heading) claims a move past `dragSlop`
+* (`space.1`) downward; on release past `dismissDistance` of the surface height, or
+* faster than `dismissVelocity` between the last two move samples, it fires
+* `onClose('drag')` and holds the released offset until the consumer's next render:
 * `open` false plays the exit from there, `open` still true springs back over `exit`
-* with `motion.easing.standard`. `dismissible={false}` removes the handle, the drag, the
-* Cancel row and its divider and makes the scrim inert; `onRequestClose` (Android back,
-* a hardware Escape) and the VoiceOver escape gesture always report `onClose('escape')`.
-* Choosing an action never closes the sheet itself.
+* with `motion.easing.standard`. `onRequestClose` (Android back, a hardware Escape) and
+* the VoiceOver escape gesture always report `onClose('escape')`.
 *
-* Native limits: `Pressable` has no key events, so there are no arrow keys, no Home/End
-* and no roving tabindex — each row is its own accessibility focus stop reached by swipe
-* and Enter/Space are the platform's own activation. There is no wide presentation: the
-* package's `Menu` renders its own trigger and cannot anchor to an external element, so
-* tablets above `maxWidth` get the sheet too and `maxWidth` has no effect here. Rooted
-* in a native `Modal`, the sheet exposes no ref; callers ref their opener.
+* Native limits: no arrow keys, Home/End or roving tabindex (`Pressable` has no key
+* events) — each row is its own accessibility focus stop. No wide presentation: `Menu`
+* cannot anchor to an external element, so `maxWidth` has no effect. No ref and no
+* focus restore: the Modal hides the opener from FocusScope, so a caller that needs
+* focus back exactly moves it in its `onClose`.
 */
 function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, onAction, onClose, overrides }) {
 	const { tokens: t } = useTheme();
 	const reducedMotion = useReducedMotion();
 	const { height: windowHeight } = useWindowDimensions();
-	const resolvedCancelLabel = cancelLabel ?? COPY$19.cancelLabel;
-	const accessibleName = heading ?? COPY$19.defaultLabel;
+	const resolvedCancelLabel = cancelLabel ?? COPY$15.cancelLabel;
+	const accessibleName = heading ?? COPY$15.defaultLabel;
 	const [mounted, setMounted] = React.useState(open);
 	if (open && !mounted) setMounted(true);
 	const [dragReleases, setDragReleases] = React.useState(0);
@@ -5060,7 +7919,6 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 	const enterDuration = overrides?.enter ? resolveToken(t, overrides.enter) : t.motionDurationBase;
 	const exitDuration = overrides?.exit ? resolveToken(t, overrides.exit) : t.motionDurationFast;
 	const dragSlop = t.space1;
-	const canDrag = dismissible;
 	const defaultActions = actions.filter((action) => action.tone !== "danger");
 	const dangerActions = actions.filter((action) => action.tone === "danger");
 	const focusFirstEnabledAction = () => {
@@ -5072,38 +7930,53 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 	const springBack = () => {
 		if (reducedMotion || exitDuration === 0) {
 			dragY.setValue(0);
+			if (open) progress.setValue(1);
 			return;
 		}
-		Animated.timing(dragY, {
+		const config = {
 			toValue: 0,
 			duration: exitDuration,
 			easing: toEasing(t.motionEasingStandard),
 			useNativeDriver: false
-		}).start();
+		};
+		const toRest = [Animated.timing(dragY, config)];
+		if (open) toRest.push(Animated.timing(progress, {
+			...config,
+			toValue: 1
+		}));
+		Animated.parallel(toRest).start();
 	};
 	React.useEffect(() => {
 		if (!mounted) return;
 		if (open) {
-			dragY.setValue(0);
 			if (reducedMotion || enterDuration === 0) {
 				progress.setValue(1);
+				dragY.setValue(0);
 				focusFirstEnabledAction();
 				return;
 			}
-			const animation = Animated.timing(progress, {
+			const enterConfig = {
 				toValue: 1,
 				duration: enterDuration,
 				easing: toEasing(t.motionEasingStandard),
 				useNativeDriver: false
-			});
+			};
+			const animation = Animated.parallel([Animated.timing(progress, enterConfig), Animated.timing(dragY, {
+				...enterConfig,
+				toValue: 0
+			})]);
 			animation.start(({ finished }) => {
 				if (finished) focusFirstEnabledAction();
 			});
 			return () => animation.stop();
 		}
-		if (reducedMotion || exitDuration === 0) {
+		const unmount = () => {
 			progress.setValue(0);
+			dragY.setValue(0);
 			setMounted(false);
+		};
+		if (reducedMotion || exitDuration === 0) {
+			unmount();
 			return;
 		}
 		const animation = Animated.timing(progress, {
@@ -5113,7 +7986,7 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 			useNativeDriver: false
 		});
 		animation.start(({ finished }) => {
-			if (finished) setMounted(false);
+			if (finished) unmount();
 		});
 		return () => animation.stop();
 	}, [
@@ -5125,12 +7998,14 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 		if (dragReleases > 0 && open) springBack();
 	}, [dragReleases]);
 	const latest = React.useRef({
+		open,
 		dragSlop,
 		windowHeight,
 		onClose,
 		springBack
 	});
 	latest.current = {
+		open,
 		dragSlop,
 		windowHeight,
 		onClose,
@@ -5145,6 +8020,7 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 			onPanResponderGrant: (_, g) => {
 				samplesRef.current = [];
 				grantDyRef.current = g.dy;
+				progress.stopAnimation();
 			},
 			onPanResponderMove: (event, g) => {
 				const offset = Math.max(0, g.dy - grantDyRef.current);
@@ -5160,7 +8036,7 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 				const [previous, last] = samplesRef.current;
 				const elapsed = previous !== void 0 && last !== void 0 ? last.time - previous.time : 0;
 				const velocity = previous !== void 0 && last !== void 0 && elapsed > 0 ? Math.max(0, (last.dy - previous.dy) / elapsed) : 0;
-				if (!(offset > (surfaceHeightRef.current > 0 ? surfaceHeightRef.current : latest.current.windowHeight) * CONSTANTS$1.dismissDistance || velocity > CONSTANTS$1.dismissVelocity)) {
+				if (!(offset > (surfaceHeightRef.current > 0 ? surfaceHeightRef.current : latest.current.windowHeight) * CONSTANTS$1.dismissDistance || velocity > CONSTANTS$1.dismissVelocity) || !latest.current.open) {
 					latest.current.springBack();
 					return;
 				}
@@ -5199,7 +8075,7 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 	};
 	const surfaceStyle = {
 		width: "100%",
-		maxHeight: windowHeight * .9,
+		maxHeight: windowHeight * CONSTANTS$1.contentCap,
 		borderTopLeftRadius: radius,
 		borderTopRightRadius: radius,
 		...shadow,
@@ -5257,6 +8133,7 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 		if (node) itemRefs.current.set(id, node);
 		else itemRefs.current.delete(id);
 	};
+	const iconOverrides = { size: overrides?.itemIconSize ?? "font.size.md" };
 	const renderAction = (action) => {
 		const danger = action.tone === "danger";
 		return /* @__PURE__ */ React.createElement(ActionSheetItemRow, {
@@ -5266,6 +8143,7 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 			rowStyle: itemRowStyle,
 			labelStyle: itemLabelStyle(danger),
 			iconColor: danger ? t.colorForegroundDanger : t.colorForeground,
+			iconOverrides,
 			onActivate: handleActionPress
 		});
 	};
@@ -5274,6 +8152,7 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 		fontSize: overrides?.titleSize ?? "font.size.sm",
 		lineHeight: overrides?.lineHeight ?? "font.lineHeight.normal"
 	};
+	const canDrag = dismissible;
 	const showHeader = canDrag || heading !== void 0;
 	return /* @__PURE__ */ React.createElement(Modal, {
 		visible: true,
@@ -5297,9 +8176,7 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 	}, /* @__PURE__ */ React.createElement(Animated.View, {
 		style: surfaceStyle,
 		onLayout: handleSurfaceLayout,
-		role: "menu",
 		accessibilityViewIsModal: true,
-		accessibilityLabel: accessibleName,
 		onAccessibilityEscape: handleEscape,
 		testID: "ActionSheet"
 	}, showHeader ? /* @__PURE__ */ React.createElement(View, {
@@ -5310,6 +8187,7 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 		style: handleStyle,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no",
+		"aria-hidden": true,
 		testID: "ActionSheet.handle"
 	}) : null, heading !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "ActionSheet.heading" }, /* @__PURE__ */ React.createElement(Text, {
 		size: "sm",
@@ -5317,6 +8195,9 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 		overrides: headingOverrides
 	}, heading)) : null) : null, /* @__PURE__ */ React.createElement(ScrollView, {
 		style: listStyle,
+		role: "menu",
+		accessibilityLabel: accessibleName,
+		"aria-label": accessibleName,
 		testID: "ActionSheet.list"
 	}, defaultActions.map(renderAction), dangerActions.length > 0 && defaultActions.length > 0 ? /* @__PURE__ */ React.createElement(View, {
 		style: dividerStyle,
@@ -5325,7 +8206,8 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 	}) : null, dangerActions.map(renderAction)), dismissible ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(View, {
 		style: dividerStyle,
 		accessibilityElementsHidden: true,
-		importantForAccessibility: "no",
+		importantForAccessibility: "no-hide-descendants",
+		"aria-hidden": true,
 		testID: "ActionSheet.divider"
 	}), /* @__PURE__ */ React.createElement(View, {
 		style: cancelRowStyle,
@@ -5337,7 +8219,7 @@ function ActionSheet({ open, heading, actions, dismissible = true, cancelLabel, 
 	}))) : null)))));
 }
 /** One action row. Its own component so focus and hover state do not re-render the whole list. */
-function ActionSheetItemRow({ action, registerRef, rowStyle, labelStyle, iconColor, onActivate }) {
+function ActionSheetItemRow({ action, registerRef, rowStyle, labelStyle, iconColor, iconOverrides, onActivate }) {
 	const [focused, setFocused] = React.useState(false);
 	const [hovered, setHovered] = React.useState(false);
 	const disabled = action.disabled === true;
@@ -5345,7 +8227,9 @@ function ActionSheetItemRow({ action, registerRef, rowStyle, labelStyle, iconCol
 		ref: registerRef,
 		role: "menuitem",
 		accessibilityLabel: action.label,
+		"aria-label": action.label,
 		accessibilityState: { disabled },
+		"aria-disabled": disabled,
 		onPress: () => {
 			if (!disabled) onActivate(action.id);
 		},
@@ -5357,11 +8241,13 @@ function ActionSheetItemRow({ action, registerRef, rowStyle, labelStyle, iconCol
 		testID: "ActionSheet.item"
 	}, action.icon !== void 0 ? /* @__PURE__ */ React.createElement(View, {
 		accessibilityElementsHidden: true,
-		importantForAccessibility: "no",
+		importantForAccessibility: "no-hide-descendants",
+		"aria-hidden": true,
 		testID: "ActionSheet.itemIcon"
 	}, /* @__PURE__ */ React.createElement(Icon, {
 		name: action.icon,
-		color: iconColor
+		color: iconColor,
+		overrides: iconOverrides
 	})) : null, /* @__PURE__ */ React.createElement(Text$1, { style: labelStyle }, action.label));
 }
 //#endregion
@@ -5411,11 +8297,13 @@ function computeMenuPosition(anchor, popupWidth, popupHeight, placement, windowS
 	const spaceAbove = anchor.y;
 	if (vertical === "bottom" && spaceBelow < popupHeight + offset && spaceAbove > spaceBelow) vertical = "top";
 	else if (vertical === "top" && spaceAbove < popupHeight + offset && spaceBelow > spaceAbove) vertical = "bottom";
-	const preferredLeft = (I18nManager.isRTL ? horiz === "end" : horiz === "start") ? anchor.x : anchor.x + anchor.width - popupWidth;
-	const maxLeft = Math.max(gutter, windowSize.width - gutter - popupWidth);
-	const left = Math.min(Math.max(preferredLeft, gutter), maxLeft);
+	const rtl = I18nManager.isRTL;
+	const preferredLeft = (rtl ? horiz === "end" : horiz === "start") ? anchor.x : anchor.x + anchor.width - popupWidth;
+	const maxLeft = windowSize.width - gutter - popupWidth;
+	const left = maxLeft < gutter ? rtl ? maxLeft : gutter : Math.min(Math.max(preferredLeft, gutter), maxLeft);
+	const preferredTop = vertical === "bottom" ? anchor.y + anchor.height + offset : anchor.y - offset - popupHeight;
 	return {
-		top: vertical === "bottom" ? anchor.y + anchor.height + offset : anchor.y - offset - popupHeight,
+		top: Math.max(gutter, Math.min(preferredTop, windowSize.height - gutter - popupHeight)),
 		left,
 		side: vertical
 	};
@@ -5433,11 +8321,13 @@ function computeMenuPosition(anchor, popupWidth, popupHeight, placement, windowS
 * At or below `layout.maxWidth.prose` (phones) the popup is the package's `ActionSheet`
 * with the items flattened: group labels, separators and shortcut hints are dropped.
 * Above it (tablets and react-native-web) a transparent `Modal` holds a
-* full-screen scrim `Pressable` and a popup `View` (`role="menu"`) positioned from the
-* trigger's (or `anchor`'s) `measureInWindow()` rect: the block side flips on overflow
-* against `useWindowDimensions()`, the inline side never does and is shifted to stay
-* `gutter` from each edge. The list scrolls within `maxHeight`, itself capped at the
-* window height less a `gutter` at each edge. The popup fades and
+* full-screen transparent backdrop `Pressable` (not a scrim) and a popup `View`
+* (`role="menu"`) positioned from the trigger's (or `anchor`'s) `measureInWindow()` rect:
+* the block side flips on overflow against `useWindowDimensions()`, the inline side never
+* does and is shifted to stay `gutter` from each edge. The popup is capped at `maxHeight`,
+* itself capped at the window height less a `gutter` at each edge, and the list scrolls
+* inside it. The popup is held at opacity 0 until both the anchor and its own layout have
+* been measured, so it never jumps from a placeholder width. It then fades and
 * slides `enterDistance` from the trigger side over `enter`; under reduced motion it
 * appears at once. The Modal is not modal: nothing is trapped, the backdrop closes.
 *
@@ -5477,7 +8367,7 @@ function Menu({ label, items, triggerVariant = "ghost", triggerIcon = "chevron-d
 	const popupOffset = overrides?.popupOffset ? resolveToken(t, overrides.popupOffset) : t.space1;
 	const maxHeightCap = overrides?.maxHeight ? resolveToken(t, overrides.maxHeight) : t.layoutMaxWidthProse;
 	const gutter = overrides?.gutter ? resolveToken(t, overrides.gutter) : t.layoutGutter;
-	const minWidth = overrides?.minWidth ? resolveToken(t, overrides.minWidth) : t.space20 * 2.5;
+	const minWidth = (overrides?.minWidth ? resolveToken(t, overrides.minWidth) : t.space20) * 2.5;
 	const itemPaddingBlock = overrides?.itemPaddingBlock ? resolveToken(t, overrides.itemPaddingBlock) : t.spaceSm;
 	const itemPaddingInline = overrides?.itemPaddingInline ? resolveToken(t, overrides.itemPaddingInline) : t.spaceMd;
 	const itemGap = overrides?.itemGap ? resolveToken(t, overrides.itemGap) : t.layoutGapNormal;
@@ -5632,13 +8522,14 @@ function Menu({ label, items, triggerVariant = "ghost", triggerIcon = "chevron-d
 		left: 0,
 		side: placement.startsWith("top") ? "top" : "bottom"
 	};
-	const maxListHeight = Math.max(0, Math.min(maxHeightCap, windowSize.height - 2 * gutter));
+	const popupMaxHeight = Math.max(0, Math.min(maxHeightCap, windowSize.height - 2 * gutter));
 	const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
 	const popupStyle = {
 		position: "absolute",
 		top: position.top,
 		left: position.left,
 		minWidth: popupMinWidth,
+		maxHeight: popupMaxHeight,
 		borderRadius: radius,
 		borderWidth,
 		borderColor: border,
@@ -5650,6 +8541,10 @@ function Menu({ label, items, triggerVariant = "ghost", triggerIcon = "chevron-d
 			inputRange: [0, 1],
 			outputRange: [position.side === "bottom" ? -enterDistance : enterDistance, 0]
 		}) }]
+	};
+	const listStyle = {
+		flexGrow: 0,
+		flexShrink: 1
 	};
 	const listContentStyle = { padding: popupPadding };
 	const groupLabelStyle = {
@@ -5717,6 +8612,7 @@ function Menu({ label, items, triggerVariant = "ghost", triggerIcon = "chevron-d
 			key,
 			role: "group",
 			accessibilityLabel: node.group,
+			"aria-label": node.group,
 			testID: "Menu.group"
 		}, /* @__PURE__ */ React.createElement(Text$1, {
 			style: groupLabelStyle,
@@ -5734,15 +8630,16 @@ function Menu({ label, items, triggerVariant = "ghost", triggerIcon = "chevron-d
 		style: StyleSheet.absoluteFill,
 		onPress: () => closeMenu("outside"),
 		accessible: false,
-		testID: "Menu.scrim"
+		testID: "Menu.backdrop"
 	}), /* @__PURE__ */ React.createElement(Animated.View, {
 		style: popupStyle,
 		onLayout: handlePopupLayout,
 		role: "menu",
 		accessibilityLabel: label,
+		"aria-label": label,
 		testID: "Menu.popup"
 	}, /* @__PURE__ */ React.createElement(ScrollView, {
-		style: { maxHeight: maxListHeight },
+		style: listStyle,
 		contentContainerStyle: listContentStyle,
 		testID: "Menu.list"
 	}, items.map((item, index) => renderNode(item, String(index))))))));
@@ -5755,8 +8652,11 @@ function MenuActionRow({ action, registerRef, rowStyle, labelStyle, shortcutStyl
 	return /* @__PURE__ */ React.createElement(Pressable, {
 		ref: registerRef,
 		role: "menuitem",
+		accessibilityRole: "menuitem",
 		accessibilityLabel: action.label,
+		"aria-label": action.label,
 		accessibilityState: { disabled },
+		"aria-disabled": disabled,
 		onPress: () => {
 			if (!disabled) onActivate(action.id);
 		},
@@ -5767,6 +8667,7 @@ function MenuActionRow({ action, registerRef, rowStyle, labelStyle, shortcutStyl
 		style: ({ pressed }) => rowStyle(!disabled && (focused || pressed || hovered), focused, disabled),
 		testID: "Menu.item"
 	}, action.icon !== void 0 ? /* @__PURE__ */ React.createElement(View, {
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no",
 		testID: "Menu.itemIcon"
@@ -5778,6 +8679,7 @@ function MenuActionRow({ action, registerRef, rowStyle, labelStyle, shortcutStyl
 		style: labelStyle
 	}, action.label), action.shortcut !== void 0 ? /* @__PURE__ */ React.createElement(Text$1, {
 		style: shortcutStyle,
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no",
 		testID: "Menu.itemShortcut"
@@ -5792,7 +8694,7 @@ const TEXT_DEFAULT$1 = {
 };
 /** Module-level "warm until" timestamp shared by every Tooltip: after one hides, a sibling hovered within `warmWindow` shows with no delay. */
 let warmUntil = 0;
-function clamp$3(value, min, max) {
+function clamp$2(value, min, max) {
 	return Math.max(min, Math.min(value, max));
 }
 /**
@@ -5810,7 +8712,7 @@ function computeBubblePosition(placement, trigger, bubble, windowSize, offset) {
 		else if (!onLeft && spaceRight < bubble.width + offset && spaceLeft >= bubble.width + offset) onLeft = true;
 		const left = onLeft ? trigger.x - offset - bubble.width : trigger.x + trigger.width + offset;
 		return {
-			top: clamp$3(trigger.y + trigger.height / 2 - bubble.height / 2, 0, windowSize.height - bubble.height) - trigger.y,
+			top: clamp$2(trigger.y + trigger.height / 2 - bubble.height / 2, 0, windowSize.height - bubble.height) - trigger.y,
 			left: left - trigger.x
 		};
 	}
@@ -5820,7 +8722,7 @@ function computeBubblePosition(placement, trigger, bubble, windowSize, offset) {
 	if (below && spaceBelow < bubble.height + offset && spaceAbove > spaceBelow) below = false;
 	else if (!below && spaceAbove < bubble.height + offset && spaceBelow > spaceAbove) below = true;
 	const top = below ? trigger.y + trigger.height + offset : trigger.y - offset - bubble.height;
-	const left = clamp$3(trigger.x + trigger.width / 2 - bubble.width / 2, 0, windowSize.width - bubble.width);
+	const left = clamp$2(trigger.x + trigger.width / 2 - bubble.width / 2, 0, windowSize.width - bubble.width);
 	return {
 		top: top - trigger.y,
 		left: left - trigger.x
@@ -6125,8 +9027,10 @@ function Tooltip({ content, children, placement = "top", describes = true, open:
 		testID: "Tooltip.popup",
 		onLayout: handleBubbleLayout,
 		pointerEvents: Platform.OS === "web" ? "auto" : "none",
-		onPointerEnter: handleBubbleEnter,
-		onPointerLeave: handleBubbleLeave,
+		...Platform.OS === "web" ? {
+			onPointerEnter: handleBubbleEnter,
+			onPointerLeave: handleBubbleLeave
+		} : {},
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no-hide-descendants",
 		"aria-hidden": true,
@@ -6138,25 +9042,21 @@ function Tooltip({ content, children, placement = "top", describes = true, open:
 }
 //#endregion
 //#region src/Popover.tsx
-const COPY$18 = { closeLabel: "Close" };
+const COPY$14 = { closeLabel: "Close" };
 /**
-* Popover's own default token for each shared binding. The sheet is given Popover's
-* resolved value — this default or the caller's override — rather than falling back to
-* BottomSheet's own defaults, so the phone presentation matches the anchored one.
+* Popover's own default token for each binding the sheet always receives: Popover's
+* resolved value — this default or the caller's override — so the sheet's surface
+* matches the anchored panel.
 */
 const SHEET_DEFAULTS = {
 	shadow: "shadow.overlay",
 	radius: "radius.md",
 	inset: "layout.inset.md",
-	partGap: "layout.gap.normal",
-	enter: "motion.duration.fast",
-	exit: "motion.duration.fast"
+	partGap: "layout.gap.normal"
 };
-const SHEET_BINDINGS = [
-	"shadow",
-	"radius",
-	"inset",
-	"partGap",
+/** Forwarded only when the caller overrode them, so the sheet otherwise keeps its own layer and durations. */
+const SHEET_OVERRIDE_ONLY = [
+	"layer",
 	"enter",
 	"exit"
 ];
@@ -6172,39 +9072,42 @@ const RESTORE_REASONS = /* @__PURE__ */ new Set([
 	"escape",
 	"close-button"
 ]);
-function clamp$2(value, min, max) {
+function clamp$1(value, min, max) {
 	return Math.min(Math.max(value, min), Math.max(min, max));
 }
 /**
-* Places the panel from the trigger's window rect for `placement`: flips the main
-* axis when the preferred side overflows and shifts along the cross axis to stay in
-* the window. Returns the panel edge that faces the trigger (arrow and slide side).
+* Places the panel from the trigger's window rect for `placement`. The main axis flips
+* only when the preferred side overflows and the opposite side fits within `gutter`;
+* otherwise it stays (and may overflow) while the cross axis shifts to keep `gutter`
+* from each window edge. Returns the panel edge that faces the trigger (arrow and slide side).
 */
-function computePopoverPosition(trigger, panelWidth, panelHeight, placement, windowSize, offset) {
+function computePopoverPosition(trigger, panelWidth, panelHeight, placement, windowSize, offset, gutter) {
 	const rtl = I18nManager.isRTL;
 	if (placement === "start" || placement === "end") {
 		let onLeft = rtl ? placement === "end" : placement === "start";
+		const need = panelWidth + offset + gutter;
 		const spaceLeft = trigger.x;
 		const spaceRight = windowSize.width - (trigger.x + trigger.width);
-		if (onLeft && spaceLeft < panelWidth + offset && spaceRight > spaceLeft) onLeft = false;
-		else if (!onLeft && spaceRight < panelWidth + offset && spaceLeft > spaceRight) onLeft = true;
-		const left = clamp$2(onLeft ? trigger.x - offset - panelWidth : trigger.x + trigger.width + offset, offset, windowSize.width - panelWidth - offset);
+		if (onLeft && spaceLeft < need && spaceRight >= need) onLeft = false;
+		else if (!onLeft && spaceRight < need && spaceLeft >= need) onLeft = true;
+		const left = onLeft ? trigger.x - offset - panelWidth : trigger.x + trigger.width + offset;
 		return {
-			top: clamp$2(trigger.y + trigger.height / 2 - panelHeight / 2, offset, windowSize.height - panelHeight - offset),
+			top: clamp$1(trigger.y + trigger.height / 2 - panelHeight / 2, gutter, windowSize.height - panelHeight - gutter),
 			left,
 			edge: onLeft ? "right" : "left"
 		};
 	}
 	const [side, align] = placement.split("-");
 	let vertical = side;
+	const need = panelHeight + offset + gutter;
 	const spaceBelow = windowSize.height - (trigger.y + trigger.height);
 	const spaceAbove = trigger.y;
-	if (vertical === "bottom" && spaceBelow < panelHeight + offset && spaceAbove > spaceBelow) vertical = "top";
-	else if (vertical === "top" && spaceAbove < panelHeight + offset && spaceBelow > spaceAbove) vertical = "bottom";
+	if (vertical === "bottom" && spaceBelow < need && spaceAbove >= need) vertical = "top";
+	else if (vertical === "top" && spaceAbove < need && spaceBelow >= need) vertical = "bottom";
 	let left;
 	if (align === void 0) left = trigger.x + trigger.width / 2 - panelWidth / 2;
 	else left = (rtl ? align === "end" : align === "start") ? trigger.x : trigger.x + trigger.width - panelWidth;
-	left = clamp$2(left, offset, windowSize.width - panelWidth - offset);
+	left = clamp$1(left, gutter, windowSize.width - panelWidth - gutter);
 	return {
 		top: vertical === "bottom" ? trigger.y + trigger.height + offset : trigger.y - offset - panelHeight,
 		left,
@@ -6265,12 +9168,15 @@ function arrowEdgeStyle(edge, arrowSize, borderWidth, panel) {
 * The trigger is cloned with the toggle `onPress` and Button's `expanded`, so the
 * state is announced. At or below `layout.maxWidth.prose` (phones) the panel is the
 * package's `BottomSheet` with `height="content"`, titled by `heading`, else the
-* trigger's `accessibleName`, else its string `label`; there it is always modal and
-* always shows its close button, and it is handed Popover's own shadow, radius, inset,
-* partGap, enter and exit tokens. Above the breakpoint (tablets, react-native-web) a
+* trigger's `accessibleName`, else its `accessibilityLabel`, else its string `label`;
+* there it is always modal and always shows its close button, and it is handed
+* Popover's resolved shadow, radius, inset and partGap, plus layer, enter and exit only
+* when the caller overrode them. The Modal exposes no ref, so Popover takes no `ref`:
+* callers ref their trigger. Above the breakpoint (tablets, react-native-web) a
 * transparent `Modal` holds a full-screen transparent backdrop `Pressable` (no scrim,
 * even when `modal`) and a `role="dialog"` panel positioned from the trigger's
-* `measureInWindow()` rect, flipped and shifted to stay in the window. The panel
+* `measureInWindow()` rect, flipped and shifted to keep `gutter` from the window edges,
+* its width clamped to `min(maxWidth, window − 2 × gutter)`. The panel
 * composes `FocusScope` (`trapped` when `modal`, `active` following `open`), `Heading`,
 * `Button` for the close control and `Box` for the body. It fades and slides
 * `enterDistance` from the trigger side over `enter` (motion.easing.standard) and fades
@@ -6280,14 +9186,15 @@ function arrowEdgeStyle(edge, arrowSize, borderWidth, panel) {
 * closes; a backdrop tap closes when not `modal`; the close button when `dismissible`.
 * Closing by the trigger, Escape or the close button returns accessibility focus to the
 * trigger once `open` goes false; an outside tap does not. On open, focus lands on the
-* body wrapper — native has no descendant walker to find the first control.
+* body wrapper — native has no descendant walker to find the first control — unless
+* `initialFocus` is `none`.
 *
 * Acknowledged native limits: `Modal` intercepts every touch behind it, so non-modal
 * means only "tapping outside closes"; Pressable sees no key events, so Tab never
 * leaves the panel and `tab-out` is never reported; the panel is measured once per
 * open and does not follow a scrolling page; the arrow is centered on the panel edge.
 */
-function Popover({ trigger, children, heading, headingLevel = "3", open, placement = "bottom", modal = false, showArrow = false, dismissible = true, onOpenChange, overrides, ref }) {
+function Popover({ trigger, children, heading, headingLevel = "3", open, placement = "bottom", modal = false, showArrow = false, dismissible = true, initialFocus = "first", onOpenChange, overrides }) {
 	const { tokens: t } = useTheme();
 	const reducedMotion = useReducedMotion();
 	const windowSize = useWindowDimensions();
@@ -6312,17 +9219,27 @@ function Popover({ trigger, children, heading, headingLevel = "3", open, placeme
 	const partGap = overrides?.partGap ? resolveToken(t, overrides.partGap) : t.layoutGapNormal;
 	const offset = overrides?.offset ? resolveToken(t, overrides.offset) : t.space2;
 	const arrowSize = overrides?.arrowSize ? resolveToken(t, overrides.arrowSize) : t.space2;
-	const maxWidth = overrides?.maxWidth ? resolveToken(t, overrides.maxWidth) : t.layoutMaxWidthProse;
+	const gutter = overrides?.gutter ? resolveToken(t, overrides.gutter) : t.layoutGutter;
+	const maxWidthToken = overrides?.maxWidth ? resolveToken(t, overrides.maxWidth) : t.layoutMaxWidthProse;
+	const maxWidth = Math.max(0, Math.min(maxWidthToken, windowSize.width - 2 * gutter));
 	const layer = overrides?.layer ? resolveToken(t, overrides.layer) : t.layerDropdown;
 	const enterDuration = overrides?.enter ? resolveToken(t, overrides.enter) : t.motionDurationFast;
 	const enterDistance = overrides?.enterDistance ? resolveToken(t, overrides.enterDistance) : t.space1;
 	const exitDuration = overrides?.exit ? resolveToken(t, overrides.exit) : t.motionDurationFast;
 	const surfaceColor = t.colorOverlaySurface;
-	const triggerProps = trigger.props;
-	const triggerName = typeof triggerProps.accessibleName === "string" ? triggerProps.accessibleName : typeof triggerProps.label === "string" ? triggerProps.label : void 0;
+	const triggerIsElement = React.isValidElement(trigger) && trigger.type !== React.Fragment;
+	const triggerProps = triggerIsElement ? trigger.props : {};
+	const triggerName = [
+		triggerProps.accessibleName,
+		triggerProps.accessibilityLabel,
+		triggerProps.label
+	].find((name) => typeof name === "string" && name !== "");
 	const accessibleName = heading ?? triggerName;
 	React.useEffect(() => {
-		if (__DEV__ && accessibleName === void 0) console.warn("Popover: without `heading`, the trigger needs an `accessibleName` or a string `label` to name the panel; the panel has no accessible name.");
+		if (__DEV__ && !triggerIsElement) console.warn("Popover: `trigger` must be exactly one element (not a fragment, a string or nothing); it is cloned with the toggle handler, so any other trigger never opens the panel.");
+	}, [triggerIsElement]);
+	React.useEffect(() => {
+		if (__DEV__ && accessibleName === void 0) console.warn("Popover: without `heading`, the trigger needs an `accessibleName`, `accessibilityLabel` or string `label` to name the panel; the panel has no accessible name.");
 	}, [accessibleName]);
 	const focusNode = React.useCallback((node) => {
 		const handle = node ? findNodeHandle(node) : null;
@@ -6375,9 +9292,12 @@ function Popover({ trigger, children, heading, headingLevel = "3", open, placeme
 		if (isOpen) {
 			if (triggerRect === null || panelSize === null || hasEnteredRef.current) return void 0;
 			hasEnteredRef.current = true;
+			const focusIn = () => {
+				if (initialFocus === "first") focusNode(bodyRef.current);
+			};
 			if (reducedMotion) {
 				progress.setValue(1);
-				focusNode(bodyRef.current);
+				focusIn();
 				return;
 			}
 			const animation = Animated.timing(progress, {
@@ -6387,7 +9307,7 @@ function Popover({ trigger, children, heading, headingLevel = "3", open, placeme
 				useNativeDriver: false
 			});
 			animation.start(({ finished }) => {
-				if (finished) focusNode(bodyRef.current);
+				if (finished) focusIn();
 			});
 			return () => animation.stop();
 		}
@@ -6419,20 +9339,23 @@ function Popover({ trigger, children, heading, headingLevel = "3", open, placeme
 		panelSize,
 		reducedMotion
 	]);
-	const clonedTrigger = React.cloneElement(trigger, {
+	const clonedTrigger = triggerIsElement ? React.cloneElement(trigger, {
 		onPress: handleTriggerPress,
 		expanded: isOpen
-	});
+	}) : trigger;
 	const triggerView = /* @__PURE__ */ React.createElement(View, {
 		ref: triggerRef,
-		collapsable: false,
-		testID: "Popover.trigger"
+		collapsable: false
 	}, clonedTrigger);
 	if (isPhoneWidth) {
-		const sheetOverrides = {};
-		for (const binding of SHEET_BINDINGS) sheetOverrides[binding] = overrides?.[binding] ?? SHEET_DEFAULTS[binding];
-		if (overrides?.layer !== void 0) sheetOverrides.layer = overrides.layer;
-		return /* @__PURE__ */ React.createElement(View, { ref }, triggerView, /* @__PURE__ */ React.createElement(BottomSheet, {
+		const sheetOverrides = {
+			shadow: overrides?.shadow ?? SHEET_DEFAULTS.shadow,
+			radius: overrides?.radius ?? SHEET_DEFAULTS.radius,
+			inset: overrides?.inset ?? SHEET_DEFAULTS.inset,
+			partGap: overrides?.partGap ?? SHEET_DEFAULTS.partGap
+		};
+		for (const binding of SHEET_OVERRIDE_ONLY) if (overrides?.[binding] !== void 0) sheetOverrides[binding] = overrides[binding];
+		return /* @__PURE__ */ React.createElement(View, null, triggerView, /* @__PURE__ */ React.createElement(BottomSheet, {
 			open: isOpen,
 			heading: accessibleName ?? "",
 			height: "content",
@@ -6440,7 +9363,7 @@ function Popover({ trigger, children, heading, headingLevel = "3", open, placeme
 			overrides: sheetOverrides
 		}, children));
 	}
-	const position = triggerRect !== null ? computePopoverPosition(triggerRect, panelSize?.width ?? maxWidth, panelSize?.height ?? 0, placement, windowSize, offset) : null;
+	const position = triggerRect !== null ? computePopoverPosition(triggerRect, panelSize?.width ?? maxWidth, panelSize?.height ?? 0, placement, windowSize, offset, gutter) : null;
 	const edge = position?.edge ?? "top";
 	const slideFrom = edge === "top" || edge === "left" ? -enterDistance : enterDistance;
 	const slide = progress.interpolate({
@@ -6482,7 +9405,7 @@ function Popover({ trigger, children, heading, headingLevel = "3", open, placeme
 		transform: [{ rotate: "45deg" }],
 		...arrowEdgeStyle(edge, arrowSize, borderWidth, panelSize)
 	};
-	return /* @__PURE__ */ React.createElement(View, { ref }, triggerView, /* @__PURE__ */ React.createElement(Modal, {
+	return /* @__PURE__ */ React.createElement(View, null, triggerView, /* @__PURE__ */ React.createElement(Modal, {
 		visible: mounted,
 		transparent: true,
 		animationType: "none",
@@ -6505,13 +9428,15 @@ function Popover({ trigger, children, heading, headingLevel = "3", open, placeme
 		onLayout: handlePanelLayout,
 		role: "dialog",
 		accessibilityLabel: accessibleName,
+		"aria-label": accessibleName,
 		accessibilityViewIsModal: modal,
+		"aria-modal": modal,
 		testID: "Popover"
 	}, /* @__PURE__ */ React.createElement(View, { style: surfaceStyle }, heading !== void 0 || dismissible ? /* @__PURE__ */ React.createElement(View, { style: headerStyle }, heading !== void 0 ? /* @__PURE__ */ React.createElement(View, {
 		style: styles.heading,
 		testID: "Popover.heading"
 	}, /* @__PURE__ */ React.createElement(Heading, { level: headingLevel }, heading)) : null, dismissible ? /* @__PURE__ */ React.createElement(View, { testID: "Popover.closeButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$18.closeLabel,
+		label: COPY$14.closeLabel,
 		variant: "ghost",
 		size: "sm",
 		iconOnly: true,
@@ -6538,7 +9463,7 @@ const styles = StyleSheet.create({
 });
 //#endregion
 //#region src/Toast.tsx
-const COPY$17 = {
+const COPY$13 = {
 	dismissLabel: "Dismiss",
 	regionLabel: "Notifications"
 };
@@ -6568,10 +9493,6 @@ const TEXT_DEFAULT = {
 	fontSize: "font.size.md",
 	lineHeight: "font.lineHeight.normal"
 };
-/**
-* Set by a `ToastProvider` when `dismiss()` asks a shown toast to leave, so it runs its
-* exit transition before reporting. `null` outside a provider and while the toast stays.
-*/
 const ToastExitContext = React.createContext(null);
 /**
 * Toast — says "done" and gets out of the way. Confirms an action just taken,
@@ -6592,8 +9513,9 @@ const ToastExitContext = React.createContext(null);
 * (Android). iOS ignores live regions, so the message is announced once on mount
 * (queued for polite tones, interrupting for `danger`).
 *
-* The toast rises and fades in over `enter` and fades out over `exit` before
-* `onDismiss` fires; both are instant under reduced motion. A timer dismisses it after
+* The toast rises and fades in over `enter`, and sinks and fades out over `exit`;
+* `onDismiss` fires as the exit begins and the toast renders nothing once it ends. Both
+* are instant under reduced motion. A timer dismisses it after
 * the effective duration unless that is `persistent` — which it always is once
 * `actionLabel` is set or `tone` is `danger` (a `__DEV__` warning flags the mismatch).
 * The timer pauses while the toast is touched and while the app is not in the
@@ -6624,12 +9546,17 @@ function Toast({ message, tone = "neutral", actionLabel, duration: durationProp,
 	const isDismissible = effectiveDuration === "persistent" ? true : dismissible;
 	const icon = TONE_ICON[tone];
 	const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
-	const [dismissReason, setDismissReason] = React.useState(null);
+	const [exiting, setExiting] = React.useState(false);
+	const [exited, setExited] = React.useState(false);
 	const dismissedRef = React.useRef(false);
+	const onDismissRef = React.useRef(onDismiss);
+	onDismissRef.current = onDismiss;
+	const exitContext = React.useContext(ToastExitContext);
 	const requestDismiss = React.useCallback((reason) => {
 		if (dismissedRef.current) return;
 		dismissedRef.current = true;
-		setDismissReason(reason);
+		setExiting(true);
+		onDismissRef.current?.(reason);
 	}, []);
 	React.useEffect(() => {
 		if (__DEV__ && forcedPersistent && (durationProp === "short" || durationProp === "long")) console.warn(`Toast: \`duration: ${durationProp}\` is ignored — a toast with an action or \`tone: danger\` is persistent until dismissed.`);
@@ -6641,10 +9568,13 @@ function Toast({ message, tone = "neutral", actionLabel, duration: durationProp,
 		}
 	}, []);
 	const totalDurationRef = React.useRef(effectiveDuration === "persistent" ? null : t.motionDurationLoop * DURATION_MULTIPLIER[effectiveDuration]);
-	const exitSignal = React.useContext(ToastExitContext);
+	const providerExiting = exitContext?.exiting === true;
 	React.useEffect(() => {
-		if (exitSignal !== null) requestDismiss(exitSignal);
-	}, [exitSignal, requestDismiss]);
+		if (providerExiting && !dismissedRef.current) {
+			dismissedRef.current = true;
+			setExiting(true);
+		}
+	}, [providerExiting]);
 	const remainingRef = React.useRef(totalDurationRef.current ?? 0);
 	const timerStartRef = React.useRef(0);
 	const timerRef = React.useRef(null);
@@ -6706,11 +9636,15 @@ function Toast({ message, tone = "neutral", actionLabel, duration: durationProp,
 		animation.start();
 		return () => animation.stop();
 	}, []);
+	const finishExit = React.useCallback(() => {
+		setExited(true);
+		exitContext?.onExited();
+	}, [exitContext]);
 	React.useEffect(() => {
-		if (dismissReason === null) return;
+		if (!exiting) return;
 		stopTimer();
 		if (reducedMotion || !(exitDuration > 0)) {
-			onDismiss?.(dismissReason);
+			finishExit();
 			return;
 		}
 		const animation = Animated.timing(progress, {
@@ -6720,10 +9654,10 @@ function Toast({ message, tone = "neutral", actionLabel, duration: durationProp,
 			useNativeDriver: false
 		});
 		animation.start(({ finished }) => {
-			if (finished) onDismiss?.(dismissReason);
+			if (finished) finishExit();
 		});
 		return () => animation.stop();
-	}, [dismissReason]);
+	}, [exiting]);
 	const handleAction = () => {
 		if (dismissedRef.current) return;
 		onAction?.();
@@ -6734,6 +9668,7 @@ function Toast({ message, tone = "neutral", actionLabel, duration: durationProp,
 		alignItems: "center",
 		gap,
 		maxWidth,
+		minHeight: t.sizeTargetMin,
 		paddingVertical: paddingBlock,
 		paddingHorizontal: paddingInline,
 		borderRadius: radius,
@@ -6758,18 +9693,23 @@ function Toast({ message, tone = "neutral", actionLabel, duration: durationProp,
 		for (const binding of Object.keys(TEXT_DEFAULT)) next[binding] = overrides?.[binding] ?? TEXT_DEFAULT[binding];
 		return next;
 	}, [overrides]);
+	if (exited) return null;
+	const live = tone === "danger" ? "assertive" : "polite";
 	return /* @__PURE__ */ React.createElement(Animated.View, {
 		testID: "Toast",
 		style: toastStyle,
 		accessibilityRole: tone === "danger" ? "alert" : void 0,
-		accessibilityLiveRegion: tone === "danger" ? "assertive" : "polite",
+		accessibilityLiveRegion: live,
+		"aria-live": live,
 		accessibilityLabel: message,
+		"aria-label": message,
 		onTouchStart: () => pause("touch"),
 		onTouchEnd: () => resume("touch"),
 		onTouchCancel: () => resume("touch")
-	}, icon !== null ? /* @__PURE__ */ React.createElement(View, {
+	}, /* @__PURE__ */ React.createElement(TextForegroundContext.Provider, { value: t.colorInverseForeground }, icon !== null ? /* @__PURE__ */ React.createElement(View, {
 		testID: "Toast.icon",
 		style: iconCellStyle,
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no"
 	}, /* @__PURE__ */ React.createElement(Icon, {
@@ -6778,17 +9718,17 @@ function Toast({ message, tone = "neutral", actionLabel, duration: durationProp,
 	})) : null, /* @__PURE__ */ React.createElement(View, {
 		testID: "Toast.message",
 		style: messageStyle
-	}, /* @__PURE__ */ React.createElement(TextForegroundContext.Provider, { value: t.colorInverseForeground }, /* @__PURE__ */ React.createElement(Text, {
+	}, /* @__PURE__ */ React.createElement(Text, {
 		size: "md",
 		overrides: textOverrides
-	}, message))), actionLabel !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "Toast.actionButton" }, /* @__PURE__ */ React.createElement(Button, {
+	}, message)), actionLabel !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "Toast.actionButton" }, /* @__PURE__ */ React.createElement(Button, {
 		label: actionLabel,
 		variant: "ghost",
 		size: "sm",
 		inverse: true,
 		onPress: handleAction
 	})) : null, isDismissible ? /* @__PURE__ */ React.createElement(View, { testID: "Toast.dismissButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$17.dismissLabel,
+		label: COPY$13.dismissLabel,
 		variant: "ghost",
 		size: "sm",
 		iconOnly: true,
@@ -6798,7 +9738,7 @@ function Toast({ message, tone = "neutral", actionLabel, duration: durationProp,
 			overrides: { color: "color.inverse.link" }
 		}),
 		onPress: () => requestDismiss("dismiss-button")
-	})) : null);
+	})) : null));
 }
 const ToastContext = React.createContext(null);
 /** The mounted `ToastProvider`'s dispatcher, so the module-level `toast()` works outside React. */
@@ -6819,37 +9759,52 @@ function ToastProvider({ children, overrides }) {
 		entriesRef.current = next;
 		setEntries(next);
 	}, []);
-	/** Removes an entry and reports `reason` to its caller; a no-op when it is already gone. */
-	const settle = React.useCallback((id, reason) => {
-		const entry = entriesRef.current.find((candidate) => candidate.id === id);
-		if (entry === void 0) return;
-		commit(entriesRef.current.filter((candidate) => candidate.id !== id));
+	/** Reports `reason` to the entry's caller: its `onDismiss`, then the promise. */
+	const report = (entry, reason) => {
 		entry.options.onDismiss?.(reason);
 		entry.resolve({ reason });
+	};
+	/**
+	* The toast began to leave (`onDismiss` from the toast itself): report at once and mark it
+	* exiting; it stays mounted until its exit transition ends.
+	*/
+	const handleDismiss = React.useCallback((id, reason) => {
+		const entry = entriesRef.current.find((candidate) => candidate.id === id);
+		if (entry === void 0 || entry.exiting) return;
+		commit(entriesRef.current.map((candidate) => candidate === entry ? {
+			...candidate,
+			exiting: true
+		} : candidate));
+		report(entry, reason);
+	}, [commit]);
+	/** The exit transition ended: remove the toast. */
+	const remove = React.useCallback((id) => {
+		commit(entriesRef.current.filter((candidate) => candidate.id !== id));
 	}, [commit]);
 	const toast = React.useCallback((options) => new Promise((resolve) => {
 		counterRef.current += 1;
 		const id = options.toastId ?? `toast-${counterRef.current}`;
-		settle(id, "replaced");
-		const next = [...entriesRef.current, {
+		const replaced = entriesRef.current.find((candidate) => candidate.id === id);
+		const next = [...entriesRef.current.filter((candidate) => candidate !== replaced), {
 			id,
 			options,
 			resolve,
-			exiting: null
+			exiting: false
 		}];
-		const staying = next.filter((candidate) => candidate.exiting === null);
+		const staying = next.filter((candidate) => !candidate.exiting);
 		const evicted = staying.length > MAX_TOASTS ? staying[0] : void 0;
 		commit(evicted === void 0 ? next : next.filter((candidate) => candidate !== evicted));
-		if (evicted !== void 0) {
-			evicted.options.onDismiss?.("replaced");
-			evicted.resolve({ reason: "replaced" });
-		}
-	}), [commit, settle]);
+		if (replaced !== void 0 && !replaced.exiting) report(replaced, "replaced");
+		if (evicted !== void 0) report(evicted, "replaced");
+	}), [commit]);
 	const dismiss = React.useCallback((toastId) => {
-		commit(entriesRef.current.map((entry) => (toastId === void 0 || entry.id === toastId) && entry.exiting === null ? {
+		const leaving = entriesRef.current.filter((entry) => (toastId === void 0 || entry.id === toastId) && !entry.exiting);
+		if (leaving.length === 0) return;
+		commit(entriesRef.current.map((entry) => leaving.includes(entry) ? {
 			...entry,
-			exiting: "programmatic"
+			exiting: true
 		} : entry));
+		for (const entry of leaving) report(entry, "programmatic");
 	}, [commit]);
 	const value = React.useMemo(() => ({
 		toast,
@@ -6876,13 +9831,17 @@ function ToastProvider({ children, overrides }) {
 		style: regionStyle,
 		pointerEvents: "box-none",
 		role: "region",
-		accessibilityLabel: COPY$17.regionLabel
+		accessibilityLabel: COPY$13.regionLabel,
+		"aria-label": COPY$13.regionLabel
 	}, entries.map((entry) => /* @__PURE__ */ React.createElement(ToastExitContext.Provider, {
 		key: entry.id,
-		value: entry.exiting
+		value: {
+			exiting: entry.exiting,
+			onExited: () => remove(entry.id)
+		}
 	}, /* @__PURE__ */ React.createElement(Toast, {
 		...entry.options,
-		onDismiss: (reason) => settle(entry.id, reason)
+		onDismiss: (reason) => handleDismiss(entry.id, reason)
 	})))));
 }
 /** Returns `{ toast, dismiss }` bound to the nearest `ToastProvider`. Warns and no-ops without one. */
@@ -6905,9 +9864,16 @@ function toast(options) {
 	}
 	return activeDispatch.toast(options);
 }
+/** Dismisses the toast with this `toastId`, or every toast when called with no id, with reason `programmatic`. A no-op without a mounted `ToastProvider`. */
+function dismiss(toastId) {
+	activeDispatch?.dismiss(toastId);
+}
 //#endregion
 //#region src/SidePanel.tsx
-const COPY$16 = { closeLabel: "Close" };
+const COPY$12 = {
+	closeLabel: "Close",
+	expanded: "Expanded"
+};
 /** Schema constants without a token; `dragSlop` (`space.1`) and `edgeZone` (`size.target.comfortable`) have one and are read from the theme. */
 const CONSTANTS = {
 	dismissDistance: .25,
@@ -6971,7 +9937,8 @@ function pushSample(samples, sample) {
 * reproduced under `Modal`, which intercepts every touch, so only tap-outside-to-close is
 * possible; there is no Tab order to stitch or wrap; the Modal window itself stands in for
 * the inert page and scroll lock has no meaning, with `accessibilityViewIsModal` confining
-* screen-reader users. `role` is not exposed in overlay mode, no ref is exposed at all, and
+* screen-reader users. `role` is not exposed in overlay mode (a modal panel is a `dialog`,
+* a non-modal one carries only its label), no ref is exposed at all, and
 * crossing the persistent breakpoint changes the root between `Modal` and `View`, so the
 * children remount and lose their state.
 */
@@ -7017,14 +9984,21 @@ function SidePanel({ trigger, open, heading, hideHeading = false, children, foot
 	const springBack = () => {
 		if (reducedMotion || exitDuration === 0) {
 			dragX.setValue(0);
+			if (isOpen) progress.setValue(1);
 			return;
 		}
-		Animated.timing(dragX, {
+		const config = {
 			toValue: 0,
 			duration: exitDuration,
 			easing: toEasing(t.motionEasingStandard),
 			useNativeDriver: false
-		}).start();
+		};
+		const toRest = [Animated.timing(dragX, config)];
+		if (isOpen) toRest.push(Animated.timing(progress, {
+			...config,
+			toValue: 1
+		}));
+		Animated.parallel(toRest).start();
 	};
 	React.useEffect(() => {
 		if (isPersistentActive || !mounted) return;
@@ -7130,6 +10104,7 @@ function SidePanel({ trigger, open, heading, hideHeading = false, children, foot
 			onPanResponderGrant: (_, g) => {
 				samplesRef.current = [];
 				grantAwayRef.current = latest.current.isPhysicalLeft ? -g.dx : g.dx;
+				progress.stopAnimation();
 			},
 			onPanResponderMove: (event, g) => {
 				const offset = Math.max(0, away(g));
@@ -7150,8 +10125,12 @@ function SidePanel({ trigger, open, heading, hideHeading = false, children, foot
 			onPanResponderTerminate: () => latest.current.springBack()
 		});
 	}
-	const triggerChild = React.isValidElement(trigger) ? trigger : null;
-	if (__DEV__ && trigger !== void 0 && triggerChild === null) console.warn("SidePanel: `trigger` must be a single element so it can carry the toggle and the expanded state. It is rendered as given, but it will not open or close the panel.");
+	const triggerChild = React.isValidElement(trigger) && trigger.type !== React.Fragment ? trigger : null;
+	const warnedTriggerRef = React.useRef(false);
+	if (__DEV__ && trigger !== void 0 && triggerChild === null && !warnedTriggerRef.current) {
+		warnedTriggerRef.current = true;
+		console.warn("SidePanel: `trigger` must be a single element (not a fragment or a string) so it can carry the toggle and the expanded state. It is rendered as given, but it will not open or close the panel.");
+	}
 	const clonedTrigger = triggerChild !== null ? React.cloneElement(triggerChild, {
 		onPress: (event) => {
 			triggerChild.props.onPress?.(event);
@@ -7185,8 +10164,6 @@ function SidePanel({ trigger, open, heading, hideHeading = false, children, foot
 		const sidebarStyle = {
 			width: widthToken,
 			backgroundColor: t.colorOverlaySurface,
-			gap: partGap,
-			paddingVertical: inset,
 			...isPhysicalLeft ? {
 				borderRightWidth: borderWidth,
 				borderRightColor: borderColor
@@ -7195,16 +10172,24 @@ function SidePanel({ trigger, open, heading, hideHeading = false, children, foot
 				borderLeftColor: borderColor
 			}
 		};
+		const sidebarColumnStyle = {
+			gap: partGap,
+			paddingVertical: inset
+		};
 		const sidebarHeaderStyle = { paddingHorizontal: inset };
 		return /* @__PURE__ */ React.createElement(View, {
 			style: sidebarStyle,
 			role,
 			accessibilityLabel: heading,
+			"aria-label": heading,
 			testID: "SidePanel"
+		}, /* @__PURE__ */ React.createElement(View, {
+			style: sidebarColumnStyle,
+			testID: "SidePanel.focusScope"
 		}, headingPart !== null ? /* @__PURE__ */ React.createElement(View, {
 			style: sidebarHeaderStyle,
 			testID: "SidePanel.header"
-		}, headingPart) : null, /* @__PURE__ */ React.createElement(View, { testID: "SidePanel.body" }, bodyPart), footerPart);
+		}, headingPart) : null, /* @__PURE__ */ React.createElement(View, { testID: "SidePanel.body" }, bodyPart), footerPart));
 	}
 	const hostStyle = { flex: 1 };
 	const scrimStyle = {
@@ -7237,7 +10222,7 @@ function SidePanel({ trigger, open, heading, hideHeading = false, children, foot
 	};
 	const headerStyle = {
 		flexDirection: "row",
-		alignItems: "flex-start",
+		alignItems: "center",
 		justifyContent: hideHeading ? "flex-end" : "space-between",
 		gap: headerGap,
 		paddingHorizontal: inset
@@ -7275,8 +10260,11 @@ function SidePanel({ trigger, open, heading, hideHeading = false, children, foot
 	}, /* @__PURE__ */ React.createElement(Animated.View, {
 		style: surfaceStyle,
 		onLayout: handleSurfaceLayout,
+		role: modal ? "dialog" : void 0,
 		accessibilityViewIsModal: modal,
+		"aria-modal": modal,
 		accessibilityLabel: heading,
+		"aria-label": heading,
 		onAccessibilityEscape: handleEscape,
 		testID: "SidePanel.surface"
 	}, /* @__PURE__ */ React.createElement(SafeAreaView, { style: safeAreaStyle }, /* @__PURE__ */ React.createElement(View, {
@@ -7292,7 +10280,7 @@ function SidePanel({ trigger, open, heading, hideHeading = false, children, foot
 		onTouchStart: handleCloseTouchStart,
 		testID: "SidePanel.closeButton"
 	}, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$16.closeLabel,
+		label: COPY$12.closeLabel,
 		variant: "ghost",
 		iconOnly: true,
 		leadingIcon: /* @__PURE__ */ React.createElement(Icon, {
@@ -7368,7 +10356,7 @@ function useSidePanelEdgeSwipe({ side = "start", enabled = true, onOpen }) {
 }
 //#endregion
 //#region src/Tabs.tsx
-const COPY$15 = { position: (index, total) => "{index} of {total}".replace("{index}", String(index)).replace("{total}", String(total)) };
+const COPY$11 = { position: (index, total) => "{index} of {total}".replace("{index}", String(index)).replace("{total}", String(total)) };
 /** Wraps one tab's content. Rendered by `Tabs`, never directly. */
 function TabPanel({ children }) {
 	return /* @__PURE__ */ React.createElement(React.Fragment, null, children);
@@ -7384,6 +10372,13 @@ function collectPanels(children) {
 	return panels;
 }
 const isWeb$2 = Platform.OS === "web";
+/** The computed writing direction of a react-native-web DOM node, or `undefined` off the web. */
+function readDirection$1(node) {
+	const getComputedStyle = globalThis.getComputedStyle;
+	if (!isWeb$2 || node == null || getComputedStyle === void 0) return;
+	const direction = getComputedStyle(node).direction;
+	return direction === void 0 || direction === "" ? void 0 : direction === "rtl";
+}
 /**
 * Tabs — one region of a screen showing one of several equal-standing views.
 *
@@ -7456,13 +10451,25 @@ function Tabs({ tabs, children, label, value, defaultValue, activation = "automa
 	const scrollRef = React.useRef(null);
 	const scrollOffsetRef = React.useRef(0);
 	const viewportSizeRef = React.useRef(0);
+	const listWidthRef = React.useRef(0);
 	const focusedIdRef = React.useRef(void 0);
-	const updateIndicator = React.useCallback((id) => {
+	const [focusedId, setFocusedId] = React.useState(void 0);
+	const updateIndicator = React.useCallback((id, animate) => {
+		if (id === void 0 || !tabs.some((tab) => tab.id === id)) {
+			indicatorOffset.stopAnimation();
+			indicatorExtent.stopAnimation();
+			indicatorOffset.setValue(0);
+			indicatorExtent.setValue(0);
+			hasMeasuredIndicatorRef.current = false;
+			return;
+		}
 		const layout = tabLayoutsRef.current.get(id);
 		if (!layout) return;
-		const offset = isHorizontal ? layout.x : layout.y;
+		const offset = isHorizontal ? rtl ? listWidthRef.current - layout.x - layout.width : layout.x : layout.y;
 		const extent = isHorizontal ? layout.width : layout.height;
-		if (reducedMotion || !hasMeasuredIndicatorRef.current) {
+		if (!animate || reducedMotion || !hasMeasuredIndicatorRef.current) {
+			indicatorOffset.stopAnimation();
+			indicatorExtent.stopAnimation();
 			indicatorOffset.setValue(offset);
 			indicatorExtent.setValue(extent);
 			hasMeasuredIndicatorRef.current = true;
@@ -7481,7 +10488,9 @@ function Tabs({ tabs, children, label, value, defaultValue, activation = "automa
 			useNativeDriver: false
 		})]).start();
 	}, [
+		tabs,
 		isHorizontal,
+		rtl,
 		reducedMotion,
 		transitionDuration,
 		t.motionEasingStandard,
@@ -7515,10 +10524,12 @@ function Tabs({ tabs, children, label, value, defaultValue, activation = "automa
 		isHorizontal,
 		reducedMotion
 	]);
+	const previousValueRef = React.useRef(currentValue);
 	React.useEffect(() => {
-		if (currentValue === void 0) return;
-		updateIndicator(currentValue);
-		scrollSelectedIntoView(currentValue);
+		const moved = previousValueRef.current !== currentValue;
+		previousValueRef.current = currentValue;
+		updateIndicator(currentValue, moved);
+		if (currentValue !== void 0) scrollSelectedIntoView(currentValue);
 	}, [
 		currentValue,
 		updateIndicator,
@@ -7526,13 +10537,17 @@ function Tabs({ tabs, children, label, value, defaultValue, activation = "automa
 	]);
 	const handleTabLayout = (id, event) => {
 		const { x, y, width, height } = event.nativeEvent.layout;
+		const firstMeasure = !tabLayoutsRef.current.has(id);
 		tabLayoutsRef.current.set(id, {
 			x,
 			y,
 			width,
 			height
 		});
-		if (id === currentValue) updateIndicator(id);
+		if (id === currentValue) {
+			updateIndicator(id, false);
+			if (firstMeasure) scrollSelectedIntoView(id);
+		}
 	};
 	const handleScroll = (event) => {
 		const { x, y } = event.nativeEvent.contentOffset;
@@ -7541,6 +10556,12 @@ function Tabs({ tabs, children, label, value, defaultValue, activation = "automa
 	const handleViewportLayout = (event) => {
 		const { width, height } = event.nativeEvent.layout;
 		viewportSizeRef.current = isHorizontal ? width : height;
+	};
+	const handleListLayout = (event) => {
+		const { width } = event.nativeEvent.layout;
+		if (width === listWidthRef.current) return;
+		listWidthRef.current = width;
+		if (rtl && isHorizontal) updateIndicator(currentValue, false);
 	};
 	const selectTab = (id) => {
 		const tab = tabs.find((candidate) => candidate.id === id);
@@ -7554,8 +10575,9 @@ function Tabs({ tabs, children, label, value, defaultValue, activation = "automa
 		if (enabled.length === 0 || key === void 0) return;
 		const fromId = focusedIdRef.current ?? currentValue;
 		const fromIndex = enabled.findIndex((tab) => tab.id === fromId);
-		const nextKey = isHorizontal ? rtl ? "ArrowLeft" : "ArrowRight" : "ArrowDown";
-		const prevKey = isHorizontal ? rtl ? "ArrowRight" : "ArrowLeft" : "ArrowUp";
+		const isRtl = readDirection$1(event.currentTarget) ?? rtl;
+		const nextKey = isHorizontal ? isRtl ? "ArrowLeft" : "ArrowRight" : "ArrowDown";
+		const prevKey = isHorizontal ? isRtl ? "ArrowRight" : "ArrowLeft" : "ArrowUp";
 		let targetIndex;
 		if (key === nextKey) targetIndex = fromIndex < 0 ? 0 : (fromIndex + 1) % enabled.length;
 		else if (key === prevKey) targetIndex = fromIndex <= 0 ? enabled.length - 1 : fromIndex - 1;
@@ -7588,11 +10610,12 @@ function Tabs({ tabs, children, label, value, defaultValue, activation = "automa
 		badgeWeight,
 		badgeSize
 	};
-	const tabStopId = tabs.some((tab) => tab.id === currentValue && tab.disabled !== true) ? currentValue : firstEnabledId;
+	const isEnabledId = (id) => tabs.some((tab) => tab.id === id && tab.disabled !== true);
+	const tabStopId = isEnabledId(focusedId) ? focusedId : isEnabledId(currentValue) ? currentValue : firstEnabledId;
 	const tabButtons = tabs.map((tab, index) => /* @__PURE__ */ React.createElement(TabButton, {
 		key: tab.id,
 		tab,
-		position: COPY$15.position(index + 1, tabs.length),
+		position: COPY$11.position(index + 1, tabs.length),
 		selected: tab.id === currentValue,
 		tabStop: tab.id === tabStopId,
 		fill,
@@ -7602,6 +10625,7 @@ function Tabs({ tabs, children, label, value, defaultValue, activation = "automa
 		onMeasured: handleTabLayout,
 		onFocusChange: (id, focused) => {
 			focusedIdRef.current = focused ? id : focusedIdRef.current === id ? void 0 : focusedIdRef.current;
+			setFocusedId(focusedIdRef.current);
 		},
 		registerRef: (id, instance) => {
 			if (instance) tabRefs.current.set(id, instance);
@@ -7615,31 +10639,29 @@ function Tabs({ tabs, children, label, value, defaultValue, activation = "automa
 		gap: listGap,
 		position: "relative",
 		borderBottomWidth: isHorizontal ? listBorderWidth : 0,
-		borderRightWidth: !isHorizontal && !rtl ? listBorderWidth : 0,
-		borderLeftWidth: !isHorizontal && rtl ? listBorderWidth : 0,
+		borderEndWidth: isHorizontal ? 0 : listBorderWidth,
 		borderColor: listBorderColor
 	};
 	const indicatorStyle = isHorizontal ? {
 		position: "absolute",
 		bottom: 0,
-		left: 0,
+		start: indicatorOffset,
 		height: indicatorThickness,
 		width: indicatorExtent,
-		backgroundColor: indicatorColor,
-		transform: [{ translateX: indicatorOffset }]
+		backgroundColor: indicatorColor
 	} : {
 		position: "absolute",
-		top: 0,
-		...rtl ? { left: 0 } : { right: 0 },
+		top: indicatorOffset,
+		end: 0,
 		width: indicatorThickness,
 		height: indicatorExtent,
-		backgroundColor: indicatorColor,
-		transform: [{ translateY: indicatorOffset }]
+		backgroundColor: indicatorColor
 	};
 	const indicator = /* @__PURE__ */ React.createElement(Animated.View, {
 		style: indicatorStyle,
 		testID: "Tabs.indicator",
 		pointerEvents: "none",
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no"
 	});
@@ -7654,15 +10676,23 @@ function Tabs({ tabs, children, label, value, defaultValue, activation = "automa
 		style: { flexGrow: 0 }
 	}, /* @__PURE__ */ React.createElement(View, {
 		...keyProps,
+		onLayout: handleListLayout,
+		role: "tablist",
 		accessibilityRole: "tablist",
 		accessibilityLabel: label,
+		"aria-label": label,
 		testID: "Tabs.tablist",
 		style: listContentStyle
 	}, tabButtons, indicator)) : /* @__PURE__ */ React.createElement(View, {
-		onLayout: handleViewportLayout,
+		onLayout: (event) => {
+			handleViewportLayout(event);
+			handleListLayout(event);
+		},
 		...keyProps,
+		role: "tablist",
 		accessibilityRole: "tablist",
 		accessibilityLabel: label,
+		"aria-label": label,
 		testID: "Tabs.tablist",
 		style: listContentStyle
 	}, tabButtons, indicator);
@@ -7679,7 +10709,9 @@ function Tabs({ tabs, children, label, value, defaultValue, activation = "automa
 		return /* @__PURE__ */ React.createElement(View, {
 			key: tab.id,
 			testID: "Tabs.panel",
+			role: "tabpanel",
 			accessibilityLabel: tab.label,
+			"aria-label": tab.label,
 			style: { display: selected ? "flex" : "none" },
 			accessibilityElementsHidden: !selected,
 			importantForAccessibility: selected ? "auto" : "no-hide-descendants"
@@ -7739,13 +10771,16 @@ function TabButton({ tab, position, selected, tabStop, fill, horizontal, styleTo
 			nodeRef.current = instance;
 			registerRef(tab.id, instance);
 		},
+		role: "tab",
 		accessibilityRole: "tab",
 		accessibilityLabel: accessibleName,
+		"aria-label": accessibleName,
 		accessibilityState: {
 			selected,
 			disabled
 		},
 		"aria-selected": selected,
+		"aria-disabled": disabled,
 		accessibilityValue: { text: position },
 		onPress: () => {
 			if (!disabled) onSelect(tab.id);
@@ -7765,6 +10800,7 @@ function TabButton({ tab, position, selected, tabStop, fill, horizontal, styleTo
 		testID: "Tabs.tab"
 	}, tab.icon !== void 0 ? /* @__PURE__ */ React.createElement(View, {
 		testID: "Tabs.tabIcon",
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no"
 	}, /* @__PURE__ */ React.createElement(Icon, {
@@ -7778,17 +10814,28 @@ function TabButton({ tab, position, selected, tabStop, fill, horizontal, styleTo
 	}, tab.label), tab.badge !== void 0 ? /* @__PURE__ */ React.createElement(Text$1, {
 		testID: "Tabs.tabBadge",
 		style: badgeStyle,
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no"
 	}, tab.badge) : null);
 }
 //#endregion
 //#region src/SegmentedControl.tsx
-const FONT_SIZE = {
+const FONT_SIZE$1 = {
 	sm: "fontSizeSm",
 	md: "fontSizeMd"
 };
+/** segmentColor / segmentSelectedColor as token refs, for the Icon's `overrides.color`. */
+const COLOR = "color.foreground.muted";
+const SELECTED_COLOR = "color.foreground.strong";
 const isWeb$1 = Platform.OS === "web";
+/** The computed writing direction of a react-native-web DOM node, or `undefined` off the web. */
+function readDirection(node) {
+	const getComputedStyle = globalThis.getComputedStyle;
+	if (!isWeb$1 || node == null || getComputedStyle === void 0) return;
+	const direction = getComputedStyle(node).direction;
+	return direction === void 0 || direction === "" ? void 0 : direction === "rtl";
+}
 /**
 * SegmentedControl — switches a mode: list or grid, day or week, metric or imperial.
 * Exactly one segment is always selected and choosing one takes effect at once; there
@@ -7821,7 +10868,6 @@ const isWeb$1 = Platform.OS === "web";
 function SegmentedControl({ label, options, value, defaultValue, iconOnly = false, size = "md", fill = false, onChange, overrides, ref }) {
 	const { tokens: t } = useTheme();
 	const reducedMotion = useReducedMotion();
-	const rtl = I18nManager.isRTL;
 	const enabledOptions = options.filter((option) => option.disabled !== true);
 	const firstEnabledValue = enabledOptions[0]?.value;
 	const isControlled = value !== void 0;
@@ -7848,7 +10894,7 @@ function SegmentedControl({ label, options, value, defaultValue, iconOnly = fals
 	const segmentSpacing = overrides?.segmentSpacing ? resolveToken(t, overrides.segmentSpacing) : t.space0;
 	const selectedWeight = overrides?.selectedWeight ? resolveToken(t, overrides.selectedWeight) : t.fontWeightSemibold;
 	const fontFamily = overrides?.fontFamily ? resolveToken(t, overrides.fontFamily) : t.fontFamilyBody;
-	const fontSize = overrides?.fontSize ? resolveToken(t, overrides.fontSize) : t[FONT_SIZE[size]];
+	const fontSize = overrides?.fontSize ? resolveToken(t, overrides.fontSize) : t[FONT_SIZE$1[size]];
 	const fontWeight = overrides?.fontWeight ? resolveToken(t, overrides.fontWeight) : t.fontWeightMedium;
 	const lineHeightMultiplier = overrides?.lineHeight ? resolveToken(t, overrides.lineHeight) : t.fontLineHeightNormal;
 	const transitionDuration = overrides?.transition ? resolveToken(t, overrides.transition) : t.motionDurationFast;
@@ -7924,6 +10970,7 @@ function SegmentedControl({ label, options, value, defaultValue, iconOnly = fals
 		if (enabledOptions.length === 0 || key === void 0) return;
 		const fromValue = focusedValueRef.current ?? tabStopValue;
 		const fromIndex = enabledOptions.findIndex((option) => option.value === fromValue);
+		const rtl = readDirection(event.currentTarget) ?? I18nManager.isRTL;
 		const nextKeys = rtl ? ["ArrowLeft", "ArrowDown"] : ["ArrowRight", "ArrowDown"];
 		const prevKeys = rtl ? ["ArrowRight", "ArrowUp"] : ["ArrowLeft", "ArrowUp"];
 		let targetIndex;
@@ -7981,13 +11028,16 @@ function SegmentedControl({ label, options, value, defaultValue, iconOnly = fals
 		ref,
 		...keyProps,
 		testID: "SegmentedControl",
+		role: "radiogroup",
 		accessibilityRole: "radiogroup",
 		accessibilityLabel: label,
+		"aria-label": label,
 		style: groupStyle
 	}, hasSelectedOption ? /* @__PURE__ */ React.createElement(Animated.View, {
 		testID: "SegmentedControl.indicator",
 		style: pillStyle,
 		pointerEvents: "none",
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no-hide-descendants"
 	}) : null, options.map((option) => /* @__PURE__ */ React.createElement(Segment, {
@@ -8055,8 +11105,10 @@ function Segment({ option, selected, tabStop, iconOnly, fill, styleTokens: s, on
 			registerRef(option.value, instance);
 		},
 		testID: "SegmentedControl.segment",
+		role: "radio",
 		accessibilityRole: "radio",
 		accessibilityLabel: showLabel ? void 0 : option.label,
+		"aria-label": showLabel ? void 0 : option.label,
 		accessibilityState: {
 			checked: selected,
 			disabled
@@ -8077,12 +11129,13 @@ function Segment({ option, selected, tabStop, iconOnly, fill, styleTokens: s, on
 		style: rowStyle
 	}, showIcon ? /* @__PURE__ */ React.createElement(View, {
 		testID: "SegmentedControl.segmentIcon",
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no"
 	}, /* @__PURE__ */ React.createElement(Icon, {
 		name: option.icon,
 		size: s.iconSize,
-		color: foreground
+		overrides: { color: selected ? SELECTED_COLOR : COLOR }
 	})) : null, !showLabel ? null : /* @__PURE__ */ React.createElement(Text$1, {
 		numberOfLines: 1,
 		style: labelStyle,
@@ -8090,869 +11143,9 @@ function Segment({ option, selected, tabStop, iconOnly, fill, styleTokens: s, on
 	}, option.label));
 }
 //#endregion
-//#region src/Listbox.tsx
-const COPY$14 = {
-	empty: "No options",
-	required: "{label} is required.",
-	invalid: "{label} is not valid.",
-	selectedCount: "{count} selected",
-	loading: "Loading…"
-};
-function withLabel(template, label) {
-	return template.replace("{label}", label);
-}
-const isWeb = Platform.OS === "web";
-/**
-* One option row. Owned as its own component so the node can be given `aria-disabled` on
-* react-native-web: its `Pressable` overwrites any `aria-disabled` passed in with its own
-* (absent) `disabled` prop, exactly as Button, Checkbox, RadioGroup and SegmentedControl record,
-* and passing Pressable's `disabled` instead would drop the row out of the accessibility tree —
-* which the press guard exists to avoid. The attribute is also what keeps a dimmed disabled row
-* out of axe's contrast check (WCAG 1.4.3 exempts inactive components, and `opacity.disabled`
-* over `color.foreground` cannot reach 4.5:1).
-*/
-function ListboxOptionRow({ option, selected, optionDisabled, multiple, hint, webProps, rowStyle, labelStyle, descriptionStyle, textColumnStyle, onPress, onFocus, onBlur, onHoverIn, registerRef }) {
-	const nodeRef = React.useRef(null);
-	const accessibleLabel = option.description !== void 0 ? `${option.label}. ${option.description}` : option.label;
-	React.useEffect(() => {
-		if (!isWeb) return;
-		const node = nodeRef.current;
-		if (node === null) return;
-		if (optionDisabled) node.setAttribute("aria-disabled", "true");
-		else node.removeAttribute("aria-disabled");
-	}, [optionDisabled]);
-	return /* @__PURE__ */ React.createElement(Pressable, {
-		...webProps,
-		ref: (instance) => {
-			nodeRef.current = instance;
-			registerRef(instance);
-		},
-		accessibilityRole: isWeb ? void 0 : "menuitem",
-		accessibilityLabel: accessibleLabel,
-		accessibilityHint: hint,
-		accessibilityState: {
-			selected,
-			checked: multiple ? selected : void 0,
-			disabled: optionDisabled
-		},
-		onPress,
-		onFocus,
-		onBlur,
-		onHoverIn,
-		style: rowStyle,
-		testID: "Listbox.option"
-	}, multiple ? /* @__PURE__ */ React.createElement(View, {
-		style: { opacity: selected ? 1 : 0 },
-		testID: "Listbox.optionCheck"
-	}, /* @__PURE__ */ React.createElement(Icon, {
-		name: "check",
-		size: "sm",
-		overrides: { color: "color.control.selectedBackground" }
-	})) : null, option.icon !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "Listbox.optionIcon" }, /* @__PURE__ */ React.createElement(Icon, {
-		name: option.icon,
-		size: "sm"
-	})) : null, /* @__PURE__ */ React.createElement(View, { style: textColumnStyle }, /* @__PURE__ */ React.createElement(Text$1, {
-		numberOfLines: 1,
-		style: labelStyle,
-		testID: "Listbox.optionLabel"
-	}, option.label), option.description !== void 0 ? /* @__PURE__ */ React.createElement(Text$1, {
-		numberOfLines: 1,
-		style: descriptionStyle,
-		testID: "Listbox.optionDescription"
-	}, option.description) : null));
-}
-function isGroup$3(item) {
-	return "group" in item;
-}
-/** Rows in display order; groups flatten into a label row followed by their options, and empty groups are omitted. */
-function flattenRows(items) {
-	const rows = [];
-	items.forEach((item, itemIndex) => {
-		if (isGroup$3(item)) {
-			if (item.options.length === 0) return;
-			rows.push({
-				kind: "group",
-				key: `group-${itemIndex}`,
-				label: item.group
-			});
-			item.options.forEach((option, optionIndex) => rows.push({
-				kind: "option",
-				key: `${itemIndex}-${optionIndex}-${option.value}`,
-				option
-			}));
-		} else rows.push({
-			kind: "option",
-			key: `${itemIndex}-${item.value}`,
-			option: item
-		});
-	});
-	return rows;
-}
-function flattenOptions$2(items) {
-	const options = [];
-	items.forEach((item) => {
-		if (isGroup$3(item)) options.push(...item.options);
-		else options.push(item);
-	});
-	return options;
-}
-function toSelectedArray(selection) {
-	if (Array.isArray(selection)) return selection;
-	return selection !== void 0 && selection !== "" ? [selection] : [];
-}
-/** `initialActiveValue` when it names an enabled option, else the first selected, else the first enabled. */
-function resolveInitialActive(items, initialActiveValue, selection) {
-	const enabled = flattenOptions$2(items).filter((option) => option.disabled !== true);
-	if (initialActiveValue !== void 0 && enabled.some((option) => option.value === initialActiveValue)) return initialActiveValue;
-	const selected = toSelectedArray(selection);
-	return enabled.find((option) => selected.includes(option.value))?.value ?? enabled[0]?.value ?? null;
-}
-/**
-* Listbox — the engine behind a picker: the list a Select's popup or a Combobox's
-* suggestions renders, so all of them behave identically, including for multi-select.
-*
-* Renders a `FlatList` (virtualised) of `Pressable` rows with
-* `accessibilityRole="menuitem"` (native has no listbox/option roles) and
-* `accessibilityState={{ selected, checked, disabled }}` (`checked` only with `multiple`).
-* Find the list by its accessible label, never by role. Groups are plain label rows, not
-* the header trait. `maxVisible` becomes `maxHeight` from the token formula: rows ×
-* (max(minTarget, fontSize × lineHeight + 2 × optionPaddingBlock) + 2 × focusRingWidth),
-* plus 2 × listPadding, plus 2 × borderWidth when not `embedded`; never measured. Each row
-* is its own accessibility stop and a tap is the selection: arrows, Home/End, Page keys,
-* typeahead, Shift+Arrow and Ctrl+A have no native form, and `selectionFollowsFocus` and
-* `typeaheadReset` have no runtime effect. The active row (focused, hovered, or
-* pre-highlighted) gets `color.background.subtle`; focus draws a `color.border.focus`
-* border that is always reserved. Selection shows by weight, and with `multiple` by the
-* check (an invisible slot when unselected, so labels align). Inside a Form the list
-* registers by `name`; the message below it follows `error` → Form error →
-* `copy.required` / `copy.invalid`, and a failed submit moves accessibility focus to the
-* first selected row, else the first enabled one.
-*/
-function Listbox({ label, options, multiple = false, value, defaultValue, selectionFollowsFocus: _selectionFollowsFocus = true, required = false, invalid = false, error, embedded = false, initialActiveValue, loading = false, disabled = false, name, emptyMessage, maxVisible = "8", overrides, ref, onChange, onActiveChange }) {
-	const { tokens: t } = useTheme();
-	const form = useFormContext();
-	const instanceId = React.useId();
-	const emptyId = `${instanceId}empty`;
-	const errorId = `${instanceId}error`;
-	const listRef = React.useRef(null);
-	const rowRefs = React.useRef(/* @__PURE__ */ new Map());
-	const [internalValue, setInternalValue] = React.useState(defaultValue);
-	const [activeValue, setActiveValue] = React.useState(() => resolveInitialActive(options, initialActiveValue, value ?? defaultValue));
-	const [focusedValue, setFocusedValue] = React.useState(null);
-	const isControlled = value !== void 0;
-	const currentValue = isControlled ? value : internalValue;
-	const isDisabled = disabled || (form?.disabled ?? false);
-	const orderedOptions = React.useMemo(() => flattenOptions$2(options), [options]);
-	const orderedValues = React.useMemo(() => orderedOptions.map((option) => option.value), [orderedOptions]);
-	const rows = React.useMemo(() => flattenRows(options), [options]);
-	const selectedValues = multiple ? toSelectedArray(currentValue) : [];
-	const selectedValue = !multiple && typeof currentValue === "string" ? currentValue : void 0;
-	const nothingSelected = multiple ? selectedValues.length === 0 : selectedValue === void 0 || selectedValue === "";
-	const lastInitialActive = React.useRef(initialActiveValue);
-	React.useEffect(() => {
-		if (lastInitialActive.current === initialActiveValue) return;
-		lastInitialActive.current = initialActiveValue;
-		if (focusedValue === null) setActiveValue(resolveInitialActive(options, initialActiveValue, currentValue));
-	}, [
-		initialActiveValue,
-		options,
-		currentValue,
-		focusedValue
-	]);
-	const hasError = error !== void 0 && error !== "";
-	const formError = name !== void 0 ? form?.errors[name] : void 0;
-	const isInvalid = invalid || hasError || formError !== void 0;
-	const displayedError = hasError ? error : formError ?? (invalid ? withLabel(required && nothingSelected ? COPY$14.required : COPY$14.invalid, label) : void 0);
-	const validateValue = React.useCallback((candidate) => {
-		if (error !== void 0 && error !== "") return error;
-		if (required && toSelectedArray(candidate).length === 0) return withLabel(COPY$14.required, label);
-		if (invalid) return withLabel(COPY$14.invalid, label);
-		return null;
-	}, [
-		required,
-		label,
-		error,
-		invalid
-	]);
-	const focusTargets = React.useRef({
-		orderedOptions,
-		selectedValues,
-		selectedValue,
-		multiple
-	});
-	focusTargets.current = {
-		orderedOptions,
-		selectedValues,
-		selectedValue,
-		multiple
-	};
-	const focusField = React.useCallback(() => {
-		const { orderedOptions: all, selectedValues: many, selectedValue: one, multiple: isMultiple } = focusTargets.current;
-		const selected = isMultiple ? many : one !== void 0 && one !== "" ? [one] : [];
-		const target = all.find((option) => selected.includes(option.value)) ?? all.find((option) => option.disabled !== true);
-		const row = target === void 0 ? void 0 : rowRefs.current.get(target.value);
-		const node = findNodeHandle(row ?? listRef.current);
-		if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
-	}, []);
-	const latest = React.useRef({
-		currentValue,
-		validateValue,
-		label
-	});
-	latest.current = {
-		currentValue,
-		validateValue,
-		label
-	};
-	const handle = React.useMemo(() => ({
-		get label() {
-			return latest.current.label;
-		},
-		getValue: () => {
-			const current = latest.current.currentValue;
-			if (multiple) {
-				const selected = toSelectedArray(current);
-				return selected.length > 0 ? selected : void 0;
-			}
-			return typeof current === "string" && current !== "" ? current : void 0;
-		},
-		validate: () => latest.current.validateValue(latest.current.currentValue),
-		focus: focusField
-	}), [multiple, focusField]);
-	const register = form?.register;
-	const unregister = form?.unregister;
-	React.useEffect(() => {
-		if (register === void 0 || unregister === void 0 || name === void 0 || isDisabled) return;
-		register(name, handle);
-		return () => unregister(name);
-	}, [
-		register,
-		unregister,
-		name,
-		handle,
-		isDisabled
-	]);
-	const commit = (next) => {
-		if (!isControlled) setInternalValue(next);
-		onChange?.(next);
-		if (form !== null && name !== void 0 && form.validateMode !== "submit") form.reportValidity(name, validateValue(next));
-	};
-	const selectOption = (option) => {
-		if (isDisabled || option.disabled === true) return;
-		if (multiple) {
-			const nextSet = new Set(selectedValues);
-			if (nextSet.has(option.value)) nextSet.delete(option.value);
-			else nextSet.add(option.value);
-			commit(orderedValues.filter((v) => nextSet.has(v)));
-			return;
-		}
-		if (option.value === selectedValue) return;
-		commit(option.value);
-	};
-	const handleFocusOption = (optionValue) => {
-		setFocusedValue(optionValue);
-		if (isDisabled) return;
-		setActiveValue(optionValue);
-		onActiveChange?.(optionValue);
-	};
-	const handleBlurOption = (optionValue) => {
-		setFocusedValue((prev) => prev === optionValue ? null : prev);
-		if (!isDisabled && activeValue === optionValue) {
-			setActiveValue(null);
-			onActiveChange?.(null);
-		}
-	};
-	const handleHoverOption = (optionValue) => {
-		if (isDisabled || optionValue === activeValue) return;
-		setActiveValue(optionValue);
-		onActiveChange?.(optionValue);
-	};
-	const border = overrides?.border ? resolveToken(t, overrides.border) : t.colorBorderStrong;
-	const borderInvalid = overrides?.borderInvalid ? resolveToken(t, overrides.borderInvalid) : t.colorBorderDanger;
-	const partGap = overrides?.partGap ? resolveToken(t, overrides.partGap) : t.space1;
-	const borderWidth = overrides?.borderWidth ? resolveToken(t, overrides.borderWidth) : t.borderWidthThin;
-	const radius = overrides?.radius ? resolveToken(t, overrides.radius) : t.radiusMd;
-	const listPadding = overrides?.listPadding ? resolveToken(t, overrides.listPadding) : t.space1;
-	const optionPaddingBlock = overrides?.optionPaddingBlock ? resolveToken(t, overrides.optionPaddingBlock) : t.spaceSm;
-	const optionPaddingInline = overrides?.optionPaddingInline ? resolveToken(t, overrides.optionPaddingInline) : t.spaceMd;
-	const optionGap = overrides?.optionGap ? resolveToken(t, overrides.optionGap) : t.layoutGapNormal;
-	const optionRadius = overrides?.optionRadius ? resolveToken(t, overrides.optionRadius) : t.radiusSm;
-	const optionDescriptionSize = overrides?.optionDescriptionSize ? resolveToken(t, overrides.optionDescriptionSize) : t.fontSizeSm;
-	const optionWeight = overrides?.optionWeight ? resolveToken(t, overrides.optionWeight) : t.fontWeightRegular;
-	const optionSelectedWeight = overrides?.optionSelectedWeight ? resolveToken(t, overrides.optionSelectedWeight) : t.fontWeightMedium;
-	const groupLabelSize = overrides?.groupLabelSize ? resolveToken(t, overrides.groupLabelSize) : t.fontSizeXs;
-	const groupLabelWeight = overrides?.groupLabelWeight ? resolveToken(t, overrides.groupLabelWeight) : t.fontWeightSemibold;
-	const groupLabelPaddingBlock = overrides?.groupLabelPaddingBlock ? resolveToken(t, overrides.groupLabelPaddingBlock) : t.space1;
-	const fontFamily = overrides?.fontFamily ? resolveToken(t, overrides.fontFamily) : t.fontFamilyBody;
-	const fontSize = overrides?.fontSize ? resolveToken(t, overrides.fontSize) : t.fontSizeMd;
-	const lineHeightMultiplier = overrides?.lineHeight ? resolveToken(t, overrides.lineHeight) : t.fontLineHeightNormal;
-	const disabledOpacity = overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled;
-	const rowHeight = Math.max(t.sizeTargetMin, toLineHeight(fontSize, lineHeightMultiplier) + 2 * optionPaddingBlock) + 2 * t.borderWidthFocus;
-	const rowCount = maxVisible === "all" ? null : Number(maxVisible);
-	const maxHeight = rowCount === null ? void 0 : rowCount * rowHeight + 2 * listPadding + (embedded ? 0 : 2 * borderWidth);
-	const placeholderText = loading ? COPY$14.loading : emptyMessage ?? COPY$14.empty;
-	const rootStyle = {
-		flexDirection: "column",
-		gap: partGap
-	};
-	const listStyle = {
-		flexGrow: 0,
-		...embedded ? null : {
-			borderWidth,
-			borderColor: isInvalid ? borderInvalid : border,
-			borderRadius: radius,
-			backgroundColor: t.colorBackground,
-			overflow: "hidden"
-		},
-		...maxHeight !== void 0 ? { maxHeight } : null,
-		opacity: isDisabled ? disabledOpacity : 1
-	};
-	const listContentStyle = { padding: listPadding };
-	const groupLabelStyle = {
-		paddingHorizontal: optionPaddingInline,
-		paddingVertical: groupLabelPaddingBlock,
-		fontFamily,
-		fontSize: groupLabelSize,
-		fontWeight: toFontWeight(groupLabelWeight),
-		lineHeight: toLineHeight(groupLabelSize, lineHeightMultiplier),
-		color: t.colorForegroundMuted
-	};
-	const optionRowStyle = (active, focused, optionDisabled) => ({
-		flexDirection: "row",
-		alignItems: "flex-start",
-		gap: optionGap,
-		minHeight: t.sizeTargetMin + 2 * t.borderWidthFocus,
-		paddingVertical: optionPaddingBlock,
-		paddingHorizontal: optionPaddingInline,
-		borderRadius: optionRadius,
-		backgroundColor: active && !isDisabled ? t.colorBackgroundSubtle : "transparent",
-		borderWidth: t.borderWidthFocus,
-		borderColor: focused ? t.colorBorderFocus : "transparent",
-		opacity: optionDisabled && !isDisabled ? disabledOpacity : 1
-	});
-	const optionLabelStyle = (selected) => ({
-		flexShrink: 1,
-		fontFamily,
-		fontSize,
-		fontWeight: toFontWeight(selected ? optionSelectedWeight : optionWeight),
-		lineHeight: toLineHeight(fontSize, lineHeightMultiplier),
-		color: t.colorForeground
-	});
-	const optionDescriptionStyle = {
-		flexShrink: 1,
-		fontFamily,
-		fontSize: optionDescriptionSize,
-		lineHeight: toLineHeight(optionDescriptionSize, lineHeightMultiplier),
-		color: t.colorForegroundMuted
-	};
-	const optionTextColumnStyle = {
-		flexShrink: 1,
-		flexDirection: "column"
-	};
-	const emptyRowStyle = {
-		paddingVertical: optionPaddingBlock,
-		paddingHorizontal: optionPaddingInline
-	};
-	const isEmpty = rows.length === 0;
-	const webListProps = isWeb ? {
-		role: "listbox",
-		"aria-multiselectable": multiple ? "true" : void 0,
-		"aria-invalid": isInvalid ? "true" : void 0,
-		"aria-required": required ? "true" : void 0,
-		"aria-disabled": isDisabled ? "true" : void 0,
-		"aria-busy": loading ? "true" : void 0,
-		"aria-describedby": [isEmpty ? emptyId : void 0, displayedError !== void 0 ? errorId : void 0].filter((part) => part !== void 0).join(" ") || void 0
-	} : {};
-	const webRowProps = (selected) => isWeb ? {
-		role: "option",
-		"aria-selected": selected ? "true" : "false"
-	} : {};
-	const keepRowRef = (optionValue) => (instance) => {
-		if (instance === null) rowRefs.current.delete(optionValue);
-		else rowRefs.current.set(optionValue, instance);
-	};
-	const renderItem = ({ item }) => {
-		if (item.kind === "group") return /* @__PURE__ */ React.createElement(Text$1, {
-			style: groupLabelStyle,
-			testID: "Listbox.groupLabel"
-		}, item.label);
-		const option = item.option;
-		const selected = multiple ? selectedValues.includes(option.value) : option.value === selectedValue;
-		const optionDisabled = isDisabled || option.disabled === true;
-		return /* @__PURE__ */ React.createElement(ListboxOptionRow, {
-			option,
-			selected,
-			optionDisabled,
-			multiple,
-			hint: displayedError,
-			webProps: webRowProps(selected),
-			rowStyle: optionRowStyle(activeValue === option.value, focusedValue === option.value, optionDisabled),
-			labelStyle: optionLabelStyle(selected),
-			descriptionStyle: optionDescriptionStyle,
-			textColumnStyle: optionTextColumnStyle,
-			onPress: () => selectOption(option),
-			onFocus: () => handleFocusOption(option.value),
-			onBlur: () => handleBlurOption(option.value),
-			onHoverIn: () => handleHoverOption(option.value),
-			registerRef: keepRowRef(option.value)
-		});
-	};
-	return /* @__PURE__ */ React.createElement(View, {
-		ref,
-		testID: "Listbox",
-		style: rootStyle
-	}, /* @__PURE__ */ React.createElement(FlatList, {
-		...webListProps,
-		ref: listRef,
-		data: rows,
-		keyExtractor: (row) => row.key,
-		renderItem,
-		style: listStyle,
-		contentContainerStyle: listContentStyle,
-		accessibilityRole: isWeb ? void 0 : "list",
-		accessibilityLabel: label,
-		accessibilityState: {
-			disabled: isDisabled,
-			busy: loading
-		},
-		accessibilityValue: multiple ? { text: COPY$14.selectedCount.replace("{count}", String(selectedValues.length)) } : void 0,
-		ListEmptyComponent: /* @__PURE__ */ React.createElement(View, {
-			id: emptyId,
-			"aria-hidden": isWeb,
-			style: emptyRowStyle,
-			testID: "Listbox.emptyState"
-		}, /* @__PURE__ */ React.createElement(Text, { tone: "muted" }, placeholderText)),
-		testID: "Listbox.list"
-	}), displayedError !== void 0 ? /* @__PURE__ */ React.createElement(View, {
-		id: errorId,
-		testID: "Listbox.errorMessage"
-	}, /* @__PURE__ */ React.createElement(Text, {
-		size: "sm",
-		tone: "danger"
-	}, displayedError)) : null);
-}
-//#endregion
-//#region src/Select.tsx
-/** The component's user-facing strings, from the doc's `copy` block. */
-const COPY$13 = {
-	placeholder: "Select…",
-	selectedCount: "{count} selected",
-	done: "Done",
-	required: "{label} is required.",
-	invalid: "{label} is not valid.",
-	requiredIndicator: " (required)"
-};
-/** The most selected labels the trigger spells out before it counts them instead. */
-const MAX_LISTED_LABELS = 2;
-function isGroup$2(item) {
-	return "group" in item;
-}
-function flattenOptions$1(items) {
-	const options = [];
-	items.forEach((item) => {
-		if (isGroup$2(item)) options.push(...item.options);
-		else options.push(item);
-	});
-	return options;
-}
-/** Nothing selected: no entries with `multiple`, no string without it. */
-function isEmptyValue(candidate) {
-	return Array.isArray(candidate) ? candidate.length === 0 : candidate === void 0 || candidate === "";
-}
-/**
-* Select — the field for "one of these" (or "any of these") when the list is longer
-* than a RadioGroup should show and typing is not the natural way in.
-*
-* When to use: a form field with about seven to fifty recognisable options — country,
-* role, status. Use `multiple` for tags or memberships. Use Combobox instead when typing
-* to filter is faster than scrolling, or free text is allowed. Do not use it for two to
-* six options (RadioGroup), for actions (Menu), for modes (SegmentedControl), or for
-* on/off (Switch).
-*
-* Renders a `Pressable` trigger (`accessibilityRole="combobox"`, `accessibilityLabel`,
-* `accessibilityHint`, `accessibilityState={{ expanded, disabled }}`,
-* `accessibilityValue={{ text }}` with the selected label(s), the count, or the
-* placeholder) showing the value and a `chevron-down` `Icon`. A long value is clipped to
-* one line with an ellipsis. Activating the trigger opens an `embedded` `Listbox` (given
-* no `name`, so Select alone is the field, `selectionFollowsFocus: false`, and the first
-* selection as `initialActiveValue`): a `BottomSheet` on phone-width screens
-* (`layout.maxWidth.prose` and narrower) with a `copy.done` footer button for `multiple`,
-* or else a transparent `Modal` whose popup sits below the trigger (flipped above when
-* there is no room), at least as wide as it, on `layer.dropdown`, fading in over `enter`.
-* Closing is instant on every platform, as on web. Escape (the Android back gesture) and
-* an outside tap close without changing the value; focus returns to the trigger by hand
-* (`AccessibilityInfo.setAccessibilityFocus`), since `FocusScope`'s restore only
-* recaptures a `TextInput`. Selecting an option commits and, for a single select, closes;
-* re-picking the selected option closes without firing `onChange`. `Pressable` sees no
-* keys, so Enter-as-press is the only other keyboard rule — Tab-commits-and-closes has no
-* native form.
-*
-* `disabled` wins over a controlled `open`: a disabled Select never shows its popup, is
-* not submitted, and stays visible and focusable (the `disabled` prop is never passed to
-* the `Pressable`, which would take it out of the tab order; react-native-web gets
-* `aria-disabled` on the DOM node instead, and `aria-expanded` is mirrored because
-* react-native-web drops `accessibilityState`).
-*
-* Validation works as `Input`'s: precedence `error`, then `required` (`copy.required`),
-* then `invalid` (`copy.invalid`), registered with the enclosing `FormContext` by `name`
-* with a string value for a single select and a `string[]` with `multiple`.
-*/
-function Select({ label, name, options, value, defaultValue, placeholder, hideLabel = false, size = "md", open: openProp, multiple = false, description, required = false, disabled = false, invalid = false, error, native = "auto", overrides, ref, onChange, onOpenChange }) {
-	const { tokens: t } = useTheme();
-	const form = useFormContext();
-	const fieldset = useFieldsetContext();
-	const reducedMotion = useReducedMotion();
-	const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-	const triggerRef = React.useRef(null);
-	const popupId = React.useId();
-	const [internalValue, setInternalValue] = React.useState(defaultValue);
-	const [focused, setFocused] = React.useState(false);
-	const [internalOpen, setInternalOpen] = React.useState(false);
-	const [triggerRect, setTriggerRect] = React.useState(null);
-	const [popupHeight, setPopupHeight] = React.useState(null);
-	const progress = React.useRef(new Animated.Value(0)).current;
-	const isControlled = value !== void 0;
-	const currentValue = isControlled ? value : internalValue;
-	const isOpenControlled = openProp !== void 0;
-	const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
-	const open = isDisabled ? false : isOpenControlled ? openProp : internalOpen;
-	const formErrors = form?.errors;
-	const formMarked = formErrors !== void 0 && Object.prototype.hasOwnProperty.call(formErrors, name);
-	const formError = formErrors?.[name];
-	const ownError = error !== void 0 && error !== "" ? error : void 0;
-	const summarised = form !== null && form.errorSummary;
-	const isPhoneWidth = windowWidth <= t.layoutMaxWidthProse;
-	const usesSheet = native !== "never" && isPhoneWidth;
-	const popupMounted = open && (usesSheet || triggerRect !== null);
-	const flatOptions = React.useMemo(() => flattenOptions$1(options), [options]);
-	const labelFor = React.useCallback((optionValue) => flatOptions.find((option) => option.value === optionValue)?.label ?? optionValue, [flatOptions]);
-	const selectedValues = multiple ? Array.isArray(currentValue) ? currentValue : [] : typeof currentValue === "string" && currentValue !== "" ? [currentValue] : [];
-	const hasSelection = selectedValues.length > 0;
-	const isInvalid = ownError !== void 0 || invalid || formMarked;
-	const derivedError = isInvalid ? required && !hasSelection ? COPY$13.required.replace("{label}", label) : COPY$13.invalid.replace("{label}", label) : void 0;
-	const displayedError = ownError ?? (formError !== void 0 && formError !== "" ? formError : derivedError);
-	const validateValue = React.useCallback((candidate) => {
-		if (isDisabled) return null;
-		if (error !== void 0 && error !== "") return error;
-		if (required && isEmptyValue(candidate)) return COPY$13.required.replace("{label}", label);
-		if (invalid) return COPY$13.invalid.replace("{label}", label);
-		return null;
-	}, [
-		isDisabled,
-		error,
-		required,
-		invalid,
-		label
-	]);
-	const focusTrigger = React.useCallback(() => {
-		const node = triggerRef.current === null ? null : findNodeHandle(triggerRef.current);
-		if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
-	}, []);
-	const latest = React.useRef({
-		currentValue,
-		validateValue
-	});
-	latest.current = {
-		currentValue,
-		validateValue
-	};
-	const handle = React.useMemo(() => ({
-		label,
-		getValue: () => {
-			const current = latest.current.currentValue;
-			if (multiple) return Array.isArray(current) && current.length > 0 ? current : void 0;
-			return typeof current === "string" && current !== "" ? current : void 0;
-		},
-		validate: () => latest.current.validateValue(latest.current.currentValue),
-		focus: focusTrigger
-	}), [
-		label,
-		multiple,
-		focusTrigger
-	]);
-	const register = form?.register;
-	const unregister = form?.unregister;
-	React.useEffect(() => {
-		if (register === void 0 || unregister === void 0 || isDisabled) return;
-		register(name, handle);
-		return () => unregister(name);
-	}, [
-		register,
-		unregister,
-		name,
-		handle,
-		isDisabled
-	]);
-	React.useEffect(() => {
-		if (Platform.OS === "ios" && !summarised && displayedError !== void 0) AccessibilityInfo.announceForAccessibility(displayedError);
-	}, [displayedError, summarised]);
-	React.useEffect(() => {
-		if (Platform.OS !== "web") return;
-		const node = triggerRef.current;
-		if (node === null) return;
-		if (isDisabled) node.setAttribute("aria-disabled", "true");
-		else node.removeAttribute("aria-disabled");
-		if (popupMounted) node.setAttribute("aria-controls", popupId);
-		else node.removeAttribute("aria-controls");
-	}, [
-		isDisabled,
-		popupMounted,
-		popupId
-	]);
-	const changeOpen = (next) => {
-		if (!isOpenControlled) setInternalOpen(next);
-		onOpenChange?.(next);
-	};
-	const closePopup = () => {
-		if (!open) return;
-		changeOpen(false);
-		focusTrigger();
-	};
-	const handleTriggerPress = () => {
-		if (isDisabled) return;
-		if (open) {
-			closePopup();
-			return;
-		}
-		changeOpen(true);
-	};
-	const handleListboxChange = (next) => {
-		if (!multiple && next === currentValue) {
-			closePopup();
-			return;
-		}
-		if (!isControlled) setInternalValue(next);
-		onChange?.(next);
-		if (form !== null && form.validateMode !== "submit") form.reportValidity(name, validateValue(next));
-		if (!multiple) closePopup();
-	};
-	const token = (overrideRef, fallback) => overrideRef ? resolveToken(t, overrideRef) : fallback;
-	const enterDuration = token(overrides?.enter, t.motionDurationFast);
-	const standardEasing = toEasing(t.motionEasingStandard);
-	React.useEffect(() => {
-		if (usesSheet) return;
-		if (!open) {
-			progress.setValue(0);
-			setTriggerRect(null);
-			setPopupHeight(null);
-			return;
-		}
-		triggerRef.current?.measureInWindow((x, y, width, height) => setTriggerRect({
-			x,
-			y,
-			width,
-			height
-		}));
-		if (reducedMotion) {
-			progress.setValue(1);
-			return;
-		}
-		const animation = Animated.timing(progress, {
-			toValue: 1,
-			duration: enterDuration,
-			easing: standardEasing,
-			useNativeDriver: false
-		});
-		animation.start();
-		return () => animation.stop();
-	}, [
-		open,
-		usesSheet,
-		reducedMotion,
-		enterDuration,
-		standardEasing,
-		progress
-	]);
-	const handlePopupLayout = (event) => {
-		setPopupHeight(event.nativeEvent.layout.height);
-	};
-	const triggerBorderInvalid = token(overrides?.triggerBorderInvalid, t.colorBorderDanger);
-	const triggerBorderWidth = token(overrides?.triggerBorderWidth, t.borderWidthThin);
-	const triggerRadius = token(overrides?.triggerRadius, t.radiusMd);
-	const triggerPaddingInline = token(overrides?.triggerPaddingInline, t.spaceMd);
-	const triggerPaddingBlock = token(overrides?.triggerPaddingBlock, size === "sm" ? t.space1 : t.spaceSm);
-	const triggerGap = token(overrides?.triggerGap, t.layoutGapNormal);
-	const partGap = token(overrides?.partGap, t.space1);
-	const popupSurface = token(overrides?.popupSurface, t.colorOverlaySurface);
-	const popupBorder = token(overrides?.popupBorder, t.colorBorder);
-	const popupBorderWidth = token(overrides?.popupBorderWidth, t.borderWidthThin);
-	const popupShadow = token(overrides?.popupShadow, t.shadowOverlay);
-	const popupRadius = token(overrides?.popupRadius, t.radiusMd);
-	const popupOffset = token(overrides?.popupOffset, t.space1);
-	const layer = token(overrides?.layer, t.layerDropdown);
-	const disabledOpacity = token(overrides?.disabledOpacity, t.opacityDisabled);
-	const minTarget = size === "sm" ? t.sizeTargetMin : t.sizeTargetComfortable;
-	const visibleLabel = required ? `${label}${COPY$13.requiredIndicator}` : label;
-	const accessibleName = fieldset === null ? visibleLabel : `${fieldset.legend}, ${visibleLabel}`;
-	const valueText = !hasSelection ? placeholder ?? COPY$13.placeholder : selectedValues.length <= MAX_LISTED_LABELS ? selectedValues.map(labelFor).join(", ") : COPY$13.selectedCount.replace("{count}", new Intl.NumberFormat().format(selectedValues.length));
-	const borderWidth = focused ? t.borderWidthFocus : triggerBorderWidth;
-	const borderGrowth = Math.max(0, borderWidth - triggerBorderWidth);
-	const triggerBorderColor = isInvalid ? triggerBorderInvalid : focused ? t.colorBorderFocus : t.colorBorderStrong;
-	const containerStyle = {
-		flexDirection: "column",
-		gap: partGap,
-		opacity: isDisabled ? disabledOpacity : 1
-	};
-	const triggerStyle = {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-		gap: triggerGap,
-		minHeight: minTarget,
-		backgroundColor: t.colorBackground,
-		borderWidth,
-		borderColor: triggerBorderColor,
-		borderRadius: triggerRadius,
-		paddingHorizontal: Math.max(0, triggerPaddingInline - borderGrowth),
-		paddingVertical: Math.max(0, triggerPaddingBlock - borderGrowth)
-	};
-	const fontFamilyRef = overrides?.fontFamily ?? "font.family.body";
-	const fontSizeRef = overrides?.fontSize ?? `font.size.${size}`;
-	const lineHeightRef = overrides?.lineHeight ?? "font.lineHeight.normal";
-	const helperSizeRef = overrides?.helperSize ?? "font.size.sm";
-	const labelOverrides = {
-		fontWeight: overrides?.labelWeight ?? "font.weight.medium",
-		fontSize: fontSizeRef,
-		fontFamily: fontFamilyRef,
-		lineHeight: lineHeightRef
-	};
-	const valueOverrides = {
-		fontSize: fontSizeRef,
-		fontWeight: overrides?.fontWeight ?? "font.weight.regular",
-		fontFamily: fontFamilyRef,
-		lineHeight: lineHeightRef
-	};
-	const helperOverrides = {
-		fontSize: helperSizeRef,
-		fontFamily: fontFamilyRef,
-		lineHeight: lineHeightRef
-	};
-	const listboxOverrides = {
-		fontFamily: fontFamilyRef,
-		lineHeight: lineHeightRef
-	};
-	const chevronOverrides = { color: "color.foreground.muted" };
-	const listbox = /* @__PURE__ */ React.createElement(Listbox, {
-		label,
-		options,
-		multiple,
-		value: currentValue,
-		embedded: true,
-		selectionFollowsFocus: false,
-		initialActiveValue: selectedValues[0],
-		onChange: handleListboxChange,
-		overrides: listboxOverrides
-	});
-	const spaceBelow = triggerRect !== null ? windowHeight - (triggerRect.y + triggerRect.height) : 0;
-	const spaceAbove = triggerRect !== null ? triggerRect.y : 0;
-	const measuredPopupHeight = popupHeight ?? 0;
-	const flipAbove = triggerRect !== null && spaceBelow < measuredPopupHeight + popupOffset && spaceAbove > spaceBelow;
-	const popupTop = triggerRect === null ? 0 : flipAbove ? triggerRect.y - popupOffset - measuredPopupHeight : triggerRect.y + triggerRect.height + popupOffset;
-	const hostStyle = { flex: 1 };
-	const valueSlotStyle = { flexShrink: 1 };
-	const popupOuterStyle = {
-		position: "absolute",
-		top: popupTop,
-		left: triggerRect?.x ?? 0,
-		minWidth: triggerRect?.width,
-		borderRadius: popupRadius,
-		zIndex: layer,
-		opacity: progress,
-		...popupShadow
-	};
-	const popupInnerStyle = {
-		borderRadius: popupRadius,
-		borderWidth: popupBorderWidth,
-		borderColor: popupBorder,
-		backgroundColor: popupSurface,
-		overflow: "hidden"
-	};
-	return /* @__PURE__ */ React.createElement(View, {
-		ref,
-		testID: "Select",
-		style: containerStyle,
-		"aria-disabled": isDisabled
-	}, hideLabel ? null : /* @__PURE__ */ React.createElement(View, { testID: "Select.label" }, /* @__PURE__ */ React.createElement(Text, {
-		weight: "medium",
-		overrides: labelOverrides
-	}, visibleLabel)), description === void 0 || description === "" ? null : /* @__PURE__ */ React.createElement(View, { testID: "Select.description" }, /* @__PURE__ */ React.createElement(Text, {
-		tone: "muted",
-		size: "sm",
-		overrides: helperOverrides
-	}, description)), /* @__PURE__ */ React.createElement(Pressable, {
-		ref: triggerRef,
-		accessibilityRole: "combobox",
-		accessibilityLabel: accessibleName,
-		accessibilityHint: description,
-		accessibilityState: {
-			expanded: open,
-			disabled: isDisabled
-		},
-		accessibilityValue: { text: valueText },
-		"aria-expanded": open,
-		onPress: handleTriggerPress,
-		onFocus: () => setFocused(true),
-		onBlur: () => setFocused(false),
-		style: triggerStyle,
-		testID: "Select.trigger"
-	}, /* @__PURE__ */ React.createElement(View, {
-		testID: "Select.value",
-		style: valueSlotStyle
-	}, /* @__PURE__ */ React.createElement(Text, {
-		tone: hasSelection ? "default" : "muted",
-		truncate: true,
-		overrides: valueOverrides
-	}, valueText)), /* @__PURE__ */ React.createElement(View, { testID: "Select.chevron" }, /* @__PURE__ */ React.createElement(Icon, {
-		name: "chevron-down",
-		size: "sm",
-		overrides: chevronOverrides
-	}))), displayedError === void 0 ? null : /* @__PURE__ */ React.createElement(View, {
-		testID: "Select.errorMessage",
-		accessibilityLiveRegion: summarised ? "none" : "assertive"
-	}, /* @__PURE__ */ React.createElement(Text, {
-		tone: "danger",
-		size: "sm",
-		overrides: helperOverrides
-	}, displayedError)), usesSheet ? /* @__PURE__ */ React.createElement(BottomSheet, {
-		open,
-		heading: label,
-		onClose: closePopup,
-		footer: multiple ? /* @__PURE__ */ React.createElement(Button, {
-			label: COPY$13.done,
-			onPress: closePopup
-		}) : void 0
-	}, /* @__PURE__ */ React.createElement(View, {
-		nativeID: popupId,
-		testID: "Select.popup"
-	}, listbox)) : /* @__PURE__ */ React.createElement(Modal, {
-		visible: open,
-		transparent: true,
-		animationType: "none",
-		onRequestClose: closePopup,
-		statusBarTranslucent: true
-	}, /* @__PURE__ */ React.createElement(View, { style: hostStyle }, /* @__PURE__ */ React.createElement(Pressable, {
-		style: StyleSheet.absoluteFill,
-		onPress: closePopup,
-		accessible: false,
-		testID: "Select.scrim"
-	}), triggerRect === null ? null : /* @__PURE__ */ React.createElement(FocusScope, {
-		trapped: true,
-		active: open,
-		autoFocus: "first",
-		restoreFocus: false
-	}, /* @__PURE__ */ React.createElement(Animated.View, {
-		style: popupOuterStyle,
-		onLayout: handlePopupLayout,
-		nativeID: popupId,
-		accessibilityViewIsModal: true,
-		accessibilityLabel: label,
-		testID: "Select.popup"
-	}, /* @__PURE__ */ React.createElement(View, { style: popupInnerStyle }, listbox))))));
-}
-//#endregion
 //#region src/Combobox.tsx
 /** copy.* — used verbatim; `{…}` params are interpolated, `resultCount` is selected by `Intl.PluralRules`. */
-const COPY$12 = {
+const COPY$10 = {
 	empty: "No matches",
 	loading: "Loading…",
 	addCustom: "Add \"{value}\"",
@@ -8970,7 +11163,7 @@ const COPY$12 = {
 	requiredIndicator: " (required)"
 };
 function resultCountText(count) {
-	return (new Intl.PluralRules(void 0).select(count) === "one" ? COPY$12.resultCount.one : COPY$12.resultCount.other).replace("{count}", String(count));
+	return (new Intl.PluralRules(void 0).select(count) === "one" ? COPY$10.resultCount.one : COPY$10.resultCount.other).replace("{count}", String(count));
 }
 const CUSTOM_PREFIX = "__ds_combobox_custom__:";
 function isGroup$1(item) {
@@ -8987,6 +11180,10 @@ function flattenOptions(items) {
 /** Case- and diacritic-insensitive comparison key. */
 function fold(text) {
 	return text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
+/** react-native-web only: the DOM's focused element (tools have no DOM lib, so it is declared locally). */
+function webActiveElement() {
+	return globalThis.document?.activeElement ?? null;
 }
 /**
 * Combobox — an input that narrows as you type and lets you pick, or, with
@@ -9059,7 +11256,7 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 	const selectedValues = multiple ? Array.isArray(currentValue) ? currentValue : currentValue !== "" ? [currentValue] : [] : [];
 	const selectedValue = !multiple && typeof currentValue === "string" && currentValue !== "" ? currentValue : void 0;
 	const hasSelection = multiple ? selectedValues.length > 0 : selectedValue !== void 0;
-	const derivedError = isInvalid ? required && !hasSelection ? COPY$12.required.replace("{label}", label) : COPY$12.invalid.replace("{label}", label) : void 0;
+	const derivedError = isInvalid ? required && !hasSelection ? COPY$10.required.replace("{label}", label) : COPY$10.invalid.replace("{label}", label) : void 0;
 	const displayedError = ownError ?? (formError !== void 0 && formError !== "" ? formError : derivedError);
 	const lastSingleValue = React.useRef(multiple ? void 0 : currentValue);
 	React.useEffect(() => {
@@ -9102,7 +11299,7 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 	const exactMatch = findExactMatch(trimmedInput);
 	const customOption = allowCustom && !isLoading && trimmedInput !== "" && exactMatch === void 0 ? {
 		value: `${CUSTOM_PREFIX}${trimmedInput}`,
-		label: COPY$12.addCustom.replace("{value}", trimmedInput)
+		label: COPY$10.addCustom.replace("{value}", trimmedInput)
 	} : null;
 	const visibleItems = isLoading ? [] : filteredItems;
 	const listboxItems = customOption !== null ? [customOption, ...visibleItems] : visibleItems;
@@ -9111,9 +11308,9 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 		if (isDisabled) return null;
 		if (error !== void 0 && error !== "") return error;
 		if (required) {
-			if (Array.isArray(candidate) ? candidate.length === 0 : candidate === "") return COPY$12.required.replace("{label}", label);
+			if (Array.isArray(candidate) ? candidate.length === 0 : candidate === "") return COPY$10.required.replace("{label}", label);
 		}
-		if (invalid) return COPY$12.invalid.replace("{label}", label);
+		if (invalid) return COPY$10.invalid.replace("{label}", label);
 		return null;
 	}, [
 		isDisabled,
@@ -9186,7 +11383,7 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 			setStatusText("");
 			return;
 		}
-		const text = isLoading ? COPY$12.loading : resultCount === 0 ? COPY$12.empty : resultCountText(resultCount);
+		const text = isLoading ? COPY$10.loading : resultCount === 0 ? COPY$10.empty : resultCountText(resultCount);
 		const timeout = setTimeout(() => {
 			setStatusText(text);
 			if (Platform.OS === "ios") AccessibilityInfo.announceForAccessibility(text);
@@ -9236,9 +11433,17 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 		if (isDisabled) return;
 		if (open) closePopup(true);
 		else {
+			openedByTyping.current = false;
 			setShowAll(true);
 			changeOpen(true);
+			if (!usesSheet) inputRef.current?.focus();
 		}
+	};
+	const handleInputPress = () => {
+		if (isDisabled || open) return;
+		openedByTyping.current = false;
+		setShowAll(true);
+		changeOpen(true);
 	};
 	const handleClear = () => {
 		if (isDisabled) return;
@@ -9304,7 +11509,14 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 		if (form !== null && form.validateMode === "blur") form.reportValidity(name, validateValue(currentValue));
 	};
 	React.useEffect(() => {
-		if (open && !wasOpen.current) setShowAll(!openedByTyping.current);
+		if (open && !wasOpen.current) {
+			setShowAll(!openedByTyping.current);
+			const input = inputRef.current;
+			if (!usesSheet && input !== null && !input.isFocused()) {
+				const field = fieldRef.current;
+				if (!(Platform.OS === "web" && field !== null && field.contains(webActiveElement()))) input.focus();
+			}
+		}
 		if (!open) openedByTyping.current = false;
 		wasOpen.current = open;
 	}, [open]);
@@ -9373,7 +11585,7 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 		usesSheet,
 		enterDuration
 	]);
-	const visibleLabel = required ? `${label}${COPY$12.requiredIndicator}` : label;
+	const visibleLabel = required ? `${label}${COPY$10.requiredIndicator}` : label;
 	const showClear = clearable && !isDisabled && (hasSelection || currentInputText !== "");
 	const singleSummaryText = selectedValue !== void 0 ? labelFor(selectedValue) : placeholder ?? "";
 	const summaryIsPlaceholder = !hasSelection;
@@ -9458,7 +11670,7 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 			truncate: true,
 			overrides: chipTextOverrides
 		}, chipLabel), interactive ? /* @__PURE__ */ React.createElement(View, { testID: "Combobox.chipRemove" }, /* @__PURE__ */ React.createElement(Button, {
-			label: COPY$12.removeChip.replace("{label}", chipLabel),
+			label: COPY$10.removeChip.replace("{label}", chipLabel),
 			variant: "ghost",
 			size: "sm",
 			iconOnly: true,
@@ -9481,8 +11693,12 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 			expanded: open
 		},
 		accessibilityValue: !multiple && selectedValue !== void 0 ? { text: labelFor(selectedValue) } : void 0,
+		"aria-label": visibleLabel,
+		"aria-disabled": isDisabled,
 		"aria-expanded": open,
 		editable: !isDisabled,
+		onPressIn: usesSheet ? void 0 : handleInputPress,
+		...Platform.OS === "web" && !usesSheet ? { onClick: handleInputPress } : null,
 		value: currentInputText,
 		placeholder,
 		placeholderTextColor: t.colorForegroundMuted,
@@ -9506,7 +11722,7 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 		disabled: isDisabled,
 		embedded: true,
 		loading: isLoading,
-		emptyMessage: COPY$12.empty,
+		emptyMessage: COPY$10.empty,
 		initialActiveValue: typeAheadValue,
 		onChange: handleListboxChange,
 		overrides: listboxOverrides
@@ -9555,7 +11771,7 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 		gap: fieldGap
 	};
 	const clearButton = showClear ? /* @__PURE__ */ React.createElement(View, { testID: "Combobox.clearButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$12.clearLabel,
+		label: COPY$10.clearLabel,
 		variant: "ghost",
 		size: "sm",
 		iconOnly: true,
@@ -9588,6 +11804,9 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 			expanded: open
 		},
 		accessibilityValue: hasSelection ? { text: multiple ? selectedValues.map(labelFor).join(", ") : singleSummaryText } : void 0,
+		"aria-label": visibleLabel,
+		"aria-disabled": isDisabled,
+		"aria-expanded": open,
 		onPress: handleTogglePress,
 		onFocus: () => setFocused(true),
 		onBlur: () => setFocused(false),
@@ -9615,8 +11834,12 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 	}, multiple && selectedValues.length > 0 ? /* @__PURE__ */ React.createElement(View, {
 		style: sheetChipsRowStyle,
 		testID: "Combobox.chips"
-	}, selectedValues.map((v) => renderChip(v, true))) : null, textInput, clearButton, /* @__PURE__ */ React.createElement(View, { testID: "Combobox.toggleButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$12.toggleLabel,
+	}, selectedValues.map((v) => renderChip(v, true))) : null, textInput, clearButton, /* @__PURE__ */ React.createElement(View, {
+		testID: "Combobox.toggleButton",
+		onPointerDown: handleListPressStart,
+		onPointerUp: handleListPressEnd
+	}, /* @__PURE__ */ React.createElement(Button, {
+		label: COPY$10.toggleLabel,
 		variant: "ghost",
 		size: "sm",
 		iconOnly: true,
@@ -9650,7 +11873,7 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 		height: "full",
 		onClose: () => closePopup(true),
 		footer: /* @__PURE__ */ React.createElement(Button, {
-			label: COPY$12.done,
+			label: COPY$10.done,
 			onPress: () => closePopup(true)
 		})
 	}, /* @__PURE__ */ React.createElement(View, {
@@ -9664,6 +11887,16 @@ function Combobox({ label, name, options, value, defaultValue, open: openProp, i
 }
 //#endregion
 //#region src/Accordion.tsx
+/** Each overridable binding's default token, the one place its path is written. */
+const DEFAULT_TOKEN = {
+	divider: "color.border",
+	dividerWidth: "border.width.thin",
+	itemGap: "layout.gap.none",
+	triggerPaddingBlock: "space.md",
+	fontFamily: "font.family.body",
+	triggerFontSize: "font.size.md",
+	triggerFontWeight: "font.weight.medium"
+};
 function toIdArray(value) {
 	if (value === void 0 || value === "") return [];
 	return Array.isArray(value) ? value : [value];
@@ -9713,12 +11946,12 @@ function Accordion({ items, headingLevel = "3", exclusive = false, value, defaul
 		internalOpenIds
 	]);
 	const requestedIds = toIdArray(isControlled ? value : defaultValue);
-	const warnedRef = React.useRef(null);
+	const warnedRef = React.useRef(/* @__PURE__ */ new Set());
 	React.useEffect(() => {
 		if (!__DEV__ || !exclusive || requestedIds.length <= 1) return;
 		const key = requestedIds.join(" ");
-		if (warnedRef.current === key) return;
-		warnedRef.current = key;
+		if (warnedRef.current.has(key)) return;
+		warnedRef.current.add(key);
 		console.warn(`Accordion: \`exclusive\` opens one section, but \`${isControlled ? "value" : "defaultValue"}\` has ${requestedIds.length} ids. Opening "${requestedIds[0]}"; ignoring ${requestedIds.slice(1).join(", ")}.`);
 	});
 	const previousOpenRef = React.useRef(openIds);
@@ -9759,22 +11992,29 @@ function Accordion({ items, headingLevel = "3", exclusive = false, value, defaul
 			for (const item of items) if (item.id !== id && previous.includes(item.id)) onOpenChange?.(item.id, false, "exclusive");
 		}
 	};
+	const tokenFor = (binding) => overrides?.[binding] ?? DEFAULT_TOKEN[binding];
+	const paddingToken = tokenFor("triggerPaddingBlock");
+	const fontFamilyToken = tokenFor("fontFamily");
+	const fontSizeToken = tokenFor("triggerFontSize");
+	const fontWeightToken = tokenFor("triggerFontWeight");
 	const disclosureOverrides = React.useMemo(() => ({
-		triggerPaddingBlock: overrides?.triggerPaddingBlock ?? "space.md",
-		triggerFontFamily: overrides?.fontFamily ?? "font.family.body",
-		triggerFontSize: overrides?.triggerFontSize ?? "font.size.md",
-		triggerFontWeight: overrides?.triggerFontWeight ?? "font.weight.medium"
+		triggerPaddingBlock: paddingToken,
+		triggerFontFamily: fontFamilyToken,
+		triggerFontSize: fontSizeToken,
+		triggerFontWeight: fontWeightToken
 	}), [
-		overrides?.triggerPaddingBlock,
-		overrides?.fontFamily,
-		overrides?.triggerFontSize,
-		overrides?.triggerFontWeight
+		paddingToken,
+		fontFamilyToken,
+		fontSizeToken,
+		fontWeightToken
 	]);
+	const dividerColorToken = tokenFor("divider");
+	const dividerWidthToken = tokenFor("dividerWidth");
 	const dividerOverrides = React.useMemo(() => ({
-		color: overrides?.divider ?? "color.border",
-		thickness: overrides?.dividerWidth ?? "border.width.thin"
-	}), [overrides?.divider, overrides?.dividerWidth]);
-	const listStyle = { gap: overrides?.itemGap ? resolveToken(t, overrides.itemGap) : t.layoutGapNone };
+		color: dividerColorToken,
+		thickness: dividerWidthToken
+	}), [dividerColorToken, dividerWidthToken]);
+	const listStyle = { gap: resolveToken(t, tokenFor("itemGap")) };
 	const children = [];
 	items.forEach((item, index) => {
 		if (divided && index > 0) children.push(/* @__PURE__ */ React.createElement(Divider, {
@@ -9784,6 +12024,7 @@ function Accordion({ items, headingLevel = "3", exclusive = false, value, defaul
 		children.push(/* @__PURE__ */ React.createElement(Disclosure, {
 			key: item.id,
 			summary: item.summary,
+			fullWidth: true,
 			headingLevel,
 			open: openIds.includes(item.id),
 			disabled: item.disabled,
@@ -9799,677 +12040,9 @@ function Accordion({ items, headingLevel = "3", exclusive = false, value, defaul
 	}, children);
 }
 //#endregion
-//#region src/Slider.tsx
-const COPY$11 = {
-	minimumLabel: (label) => `${label} minimum`,
-	maximumLabel: (label) => `${label} maximum`,
-	rangeText: (low, high) => `${low} – ${high}`,
-	required: (label) => `${label} is required.`,
-	invalid: (label) => `${label} is not valid.`,
-	pageUpAction: "Increase by a page",
-	pageDownAction: "Decrease by a page",
-	homeAction: "Set to minimum",
-	endAction: "Set to maximum"
-};
-/**
-* `increment`/`decrement` are the standard adjustable actions (VoiceOver swipe, TalkBack
-* volume keys) and take no label. PageUp/PageDown/Home/End have no native gesture, so they
-* are custom actions in the platform's Actions menu, labelled from copy.
-*/
-const THUMB_ACTIONS = [
-	{ name: "increment" },
-	{ name: "decrement" },
-	{
-		name: "pageUp",
-		label: COPY$11.pageUpAction
-	},
-	{
-		name: "pageDown",
-		label: COPY$11.pageDownAction
-	},
-	{
-		name: "home",
-		label: COPY$11.homeAction
-	},
-	{
-		name: "end",
-		label: COPY$11.endAction
-	}
-];
-/** PageUp/PageDown move by ten steps. */
-const PAGE_STEPS = 10;
-function clamp$1(value, min, max) {
-	return Math.min(max, Math.max(min, value));
-}
-function percentOf(value, min, max) {
-	if (max <= min) return 0;
-	return clamp$1((value - min) / (max - min), 0, 1);
-}
-function isSameSliderValue(a, b) {
-	if (Array.isArray(a) || Array.isArray(b)) return Array.isArray(a) && Array.isArray(b) && a[0] === b[0] && a[1] === b[1];
-	return a === b;
-}
-/** Removes floating-point drift from step arithmetic (0.1 + 0.2) so values stay on the step grid. */
-function tidy(value) {
-	return Math.round(value * 1e9) / 1e9;
-}
-/** Snaps a pointer position: to the nearest mark with `snapToMarks`, otherwise to the step grid. */
-function snapValue(raw, min, max, step, snapMarks) {
-	const clamped = clamp$1(raw, min, max);
-	if (snapMarks !== void 0 && snapMarks.length > 0) {
-		let nearest = snapMarks[0].value;
-		for (const mark of snapMarks) if (Math.abs(clamped - mark.value) < Math.abs(clamped - nearest)) nearest = mark.value;
-		return clamp$1(nearest, min, max);
-	}
-	if (step <= 0) return clamped;
-	return clamp$1(tidy(min + Math.round((clamped - min) / step) * step), min, max);
-}
-/** Ten steps in `direction`; with `snapToMarks`, the next mark, and past the last mark the bound. */
-function pagedValue(current, direction, min, max, step, snapMarks) {
-	if (snapMarks !== void 0 && snapMarks.length > 0) {
-		const sorted = snapMarks.map((mark) => mark.value).sort((a, b) => a - b);
-		return clamp$1((direction > 0 ? sorted.find((v) => v > current) : sorted.reverse().find((v) => v < current)) ?? (direction > 0 ? max : min), min, max);
-	}
-	return clamp$1(tidy(current + direction * step * PAGE_STEPS), min, max);
-}
-function resolveOr(t, ref, fallback) {
-	return ref ? resolveToken(t, ref) : fallback;
-}
-/** Fades `visible` in and out over the `transition` binding, or snaps when motion is reduced. */
-function useFade(visible, reducedMotion, duration, easing) {
-	const anim = React.useRef(new Animated.Value(visible ? 1 : 0)).current;
-	const target = React.useRef(visible ? 1 : 0);
-	React.useEffect(() => {
-		const toValue = visible ? 1 : 0;
-		if (toValue === target.current) return;
-		target.current = toValue;
-		if (reducedMotion) {
-			anim.setValue(toValue);
-			return;
-		}
-		Animated.timing(anim, {
-			toValue,
-			duration,
-			easing: toEasing(easing),
-			useNativeDriver: false
-		}).start();
-	}, [
-		visible,
-		reducedMotion,
-		anim,
-		duration,
-		easing
-	]);
-	return anim;
-}
-/**
-* One thumb: a `View` (not `Pressable`) carrying a `PanResponder`'s handlers directly, since
-* spreading `panHandlers` onto `Pressable` fights its own responder. The adjustable role and
-* accessibility actions are the non-gesture path; the drag is additive. A `latest` ref keeps
-* the responder's closures current without recreating the `PanResponder` mid-gesture.
-*/
-function SliderThumb({ kind, value, fraction, min, max, disabled, pressed, accessibilityLabel, accessibilityHint, formatValue, showBubble, bubbleTypography, reducedMotion, onGrant, onDrag, onRelease, onAction, styleTokens: st, ref }) {
-	const [focused, setFocused] = React.useState(false);
-	const latest = React.useRef({
-		disabled,
-		onGrant,
-		onDrag,
-		onRelease
-	});
-	latest.current = {
-		disabled,
-		onGrant,
-		onDrag,
-		onRelease
-	};
-	const panResponder = React.useRef(PanResponder.create({
-		onStartShouldSetPanResponder: () => !latest.current.disabled,
-		onMoveShouldSetPanResponder: () => !latest.current.disabled,
-		onPanResponderTerminationRequest: () => false,
-		onPanResponderGrant: () => latest.current.onGrant(kind),
-		onPanResponderMove: (_evt, gesture) => latest.current.onDrag(gesture.dx),
-		onPanResponderRelease: () => latest.current.onRelease(),
-		onPanResponderTerminate: () => latest.current.onRelease()
-	})).current;
-	const handleAccessibilityAction = (event) => {
-		if (!latest.current.disabled) onAction(kind, event.nativeEvent.actionName);
-	};
-	const haloAnim = useFade(pressed, reducedMotion, st.transitionDuration, st.motionEasingStandard);
-	const bubbleAnim = useFade(showBubble && (pressed || focused), reducedMotion, st.transitionDuration, st.motionEasingStandard);
-	const haloSize = st.thumbSize + st.haloSpread * 2;
-	const ringSize = st.thumbSize + (st.focusRingWidth + st.focusRingWidth) * 2;
-	const hitStyle = {
-		position: "absolute",
-		start: `${fraction * 100}%`,
-		top: "50%",
-		width: st.minTarget,
-		height: st.minTarget,
-		marginTop: -(st.minTarget / 2),
-		marginStart: -(st.minTarget / 2),
-		alignItems: "center",
-		justifyContent: "center"
-	};
-	const haloStyle = {
-		position: "absolute",
-		width: haloSize,
-		height: haloSize,
-		borderRadius: haloSize / 2,
-		backgroundColor: st.haloColor,
-		opacity: haloAnim.interpolate({
-			inputRange: [0, 1],
-			outputRange: [0, st.haloOpacity]
-		})
-	};
-	const ringStyle = {
-		position: "absolute",
-		width: ringSize,
-		height: ringSize,
-		borderRadius: ringSize / 2,
-		borderWidth: st.focusRingWidth,
-		borderColor: st.focusRing
-	};
-	const knobStyle = {
-		width: st.thumbSize,
-		height: st.thumbSize,
-		borderRadius: st.thumbSize / 2,
-		backgroundColor: st.thumbColor,
-		borderWidth: st.thumbBorderWidth,
-		borderColor: st.thumbBorderColor,
-		...st.thumbShadow
-	};
-	const bubbleStyle = {
-		position: "absolute",
-		bottom: st.minTarget + st.bubbleOffset,
-		paddingVertical: st.bubblePaddingBlock,
-		paddingHorizontal: st.bubblePaddingInline,
-		borderRadius: st.bubbleRadius,
-		backgroundColor: st.bubbleSurface,
-		opacity: bubbleAnim
-	};
-	return /* @__PURE__ */ React.createElement(View, {
-		ref,
-		testID: "Slider.thumb",
-		accessible: true,
-		focusable: true,
-		accessibilityRole: "adjustable",
-		accessibilityLabel,
-		accessibilityHint,
-		accessibilityValue: {
-			min,
-			max,
-			now: value,
-			text: formatValue(value)
-		},
-		accessibilityState: { disabled },
-		"aria-valuemin": min,
-		"aria-valuemax": max,
-		"aria-valuenow": value,
-		"aria-valuetext": formatValue(value),
-		"aria-disabled": disabled ? true : void 0,
-		accessibilityActions: THUMB_ACTIONS,
-		onAccessibilityAction: handleAccessibilityAction,
-		onFocus: () => setFocused(true),
-		onBlur: () => setFocused(false),
-		...panResponder.panHandlers,
-		style: hitStyle
-	}, showBubble ? /* @__PURE__ */ React.createElement(Animated.View, {
-		testID: "Slider.bubble",
-		pointerEvents: "none",
-		accessibilityElementsHidden: true,
-		importantForAccessibility: "no-hide-descendants",
-		style: bubbleStyle
-	}, /* @__PURE__ */ React.createElement(TextForegroundContext.Provider, { value: st.bubbleText }, /* @__PURE__ */ React.createElement(Text, {
-		size: "sm",
-		tone: "default",
-		overrides: bubbleTypography
-	}, formatValue(value)))) : null, /* @__PURE__ */ React.createElement(Animated.View, {
-		pointerEvents: "none",
-		style: haloStyle
-	}), focused ? /* @__PURE__ */ React.createElement(View, {
-		pointerEvents: "none",
-		style: ringStyle
-	}) : null, /* @__PURE__ */ React.createElement(View, {
-		pointerEvents: "none",
-		style: knobStyle
-	}));
-}
-/**
-* Slider — a bounded numeric value (or, with `range`, a minimum and a maximum) chosen by
-* feel: the thumb sits on the value, the fill shows how much, and every value the drag
-* reaches is also reachable through the adjustable accessibility actions.
-*
-* When to use: a bounded value where approximate is fine and the scale has meaning across
-* its whole width — volume, brightness, a price range. Use `range` for "between" filters,
-* `marks` for meaningful stops, and pair with a NumberInput (`showValue: never`) when exact
-* entry also matters. Not for exact values, more than about a hundred steps without marks,
-* or two or three discrete choices.
-*
-* Each thumb is its own adjustable element: increment/decrement move by `step`; PageUp,
-* PageDown, Home and End are custom actions labelled from copy. Dragging a thumb, or
-* pressing and dragging anywhere on the track area (which moves the nearest thumb), snaps to
-* `step`, or to the marks with `snapToMarks`. `onValueChange` fires on every change,
-* `onSlidingComplete` once per interaction (release, or each accessibility action), and
-* neither fires when the value did not change. A range's thumbs cannot cross; each thumb's
-* `accessibilityValue` min/max is the live constraint from the other. `disabled` (or a
-* disabled Form or Fieldset) dims the whole slider with `disabledOpacity` and leaves it
-* readable but inert. Inside a Form the field registers once: its value as a decimal
-* string, or a range as two strings; `validate: blur` runs when an interaction ends.
-* Hardware-keyboard keys are not handled on native; the accessibility actions cover them.
-*/
-function Slider({ label, name, min = 0, max = 100, step = 1, snapToMarks = false, required = false, invalid = false, value, defaultValue, range = false, formatValue = String, showValue = "always", marks, disabled = false, description, error, overrides, onValueChange, onSlidingComplete, ref }) {
-	const { tokens: t } = useTheme();
-	const form = useFormContext();
-	const fieldset = useFieldsetContext();
-	const reducedMotion = useReducedMotion();
-	const rtl = I18nManager.isRTL;
-	const snapMarks = snapToMarks && marks !== void 0 && marks.length > 0 ? marks : void 0;
-	const given = defaultValue ?? (range ? [min, max] : min);
-	const fallback = Array.isArray(given) ? [clamp$1(given[0], min, max), clamp$1(given[1], min, max)] : clamp$1(given, min, max);
-	const [internalValue, setInternalValue] = React.useState(fallback);
-	const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
-	const currentValue = value ?? internalValue;
-	React.useEffect(() => {
-		if (__DEV__ && !(max > min)) console.warn(`Slider: max (${max}) must be greater than min (${min}).`);
-	}, [min, max]);
-	const singleValue = !range && typeof currentValue === "number" ? clamp$1(currentValue, min, max) : min;
-	const [rangeLowRaw, rangeHighRaw] = range && Array.isArray(currentValue) ? currentValue : [min, max];
-	const rangeLow = clamp$1(Math.min(rangeLowRaw, rangeHighRaw), min, max);
-	const rangeHigh = clamp$1(Math.max(rangeLowRaw, rangeHighRaw), min, max);
-	const normalized = range ? [rangeLow, rangeHigh] : singleValue;
-	const reportedRef = React.useRef(normalized);
-	reportedRef.current = normalized;
-	const validateValue = (candidate) => {
-		if (error !== void 0 && error !== "") return error;
-		if (required && isSameSliderValue(candidate, fallback)) return COPY$11.required(label);
-		if (invalid) return COPY$11.invalid(label);
-		return null;
-	};
-	/** Bounds for a thumb: the scale, narrowed by the other thumb in a range. */
-	const boundsFor = (kind) => {
-		const base = reportedRef.current;
-		if (!Array.isArray(base)) return [min, max];
-		return kind === "min" ? [min, base[1]] : [base[0], max];
-	};
-	const valueOf = (kind) => {
-		const base = reportedRef.current;
-		return Array.isArray(base) ? kind === "max" ? base[1] : base[0] : base;
-	};
-	const report = (kind, next) => {
-		const base = reportedRef.current;
-		const [lo, hi] = boundsFor(kind);
-		const bounded = clamp$1(next, lo, hi);
-		const nextValue = Array.isArray(base) ? kind === "min" ? [bounded, base[1]] : [base[0], bounded] : bounded;
-		if (isSameSliderValue(nextValue, base)) return;
-		reportedRef.current = nextValue;
-		if (value === void 0) setInternalValue(nextValue);
-		onValueChange?.(nextValue);
-		if (form !== null && form.validateMode === "change") form.reportValidity(name, validateValue(nextValue));
-	};
-	/** Ends an interaction that began at `start`: reports it only if it changed the value. */
-	const complete = (start) => {
-		const final = reportedRef.current;
-		if (isSameSliderValue(start, final)) return;
-		onSlidingComplete?.(final);
-		if (form !== null && form.validateMode !== "submit") form.reportValidity(name, validateValue(final));
-	};
-	const [activeKind, setActiveKind] = React.useState(null);
-	const gesture = React.useRef(null);
-	const trackWidthRef = React.useRef(0);
-	const rawFromDx = (origin, dx) => {
-		const width = trackWidthRef.current;
-		return width <= 0 ? origin : origin + (rtl ? -dx : dx) / width * (max - min);
-	};
-	const beginGesture = (kind, origin) => {
-		gesture.current = {
-			kind,
-			origin,
-			start: reportedRef.current
-		};
-		setActiveKind(kind);
-	};
-	const dragGesture = (dx) => {
-		const g = gesture.current;
-		if (g !== null) report(g.kind, snapValue(rawFromDx(g.origin, dx), min, max, step, snapMarks));
-	};
-	const endGesture = () => {
-		const g = gesture.current;
-		gesture.current = null;
-		setActiveKind(null);
-		if (g !== null) complete(g.start);
-	};
-	const handleAction = (kind, action) => {
-		const current = valueOf(kind);
-		const [lo, hi] = boundsFor(kind);
-		let next;
-		switch (action) {
-			case "increment":
-				next = tidy(current + step);
-				break;
-			case "decrement":
-				next = tidy(current - step);
-				break;
-			case "pageUp":
-				next = pagedValue(current, 1, min, max, step, snapMarks);
-				break;
-			case "pageDown":
-				next = pagedValue(current, -1, min, max, step, snapMarks);
-				break;
-			case "home":
-				next = lo;
-				break;
-			case "end":
-				next = hi;
-				break;
-			default: return;
-		}
-		const start = reportedRef.current;
-		report(kind, next);
-		complete(start);
-	};
-	/** The thumb a track press at `raw` moves: in a range, the nearer one (ties go to the low thumb). */
-	const nearestKind = (raw) => {
-		const base = reportedRef.current;
-		if (!Array.isArray(base)) return "single";
-		const [low, high] = base;
-		if (raw <= low) return "min";
-		if (raw >= high) return "max";
-		return raw - low <= high - raw ? "min" : "max";
-	};
-	const latest = React.useRef({
-		isDisabled,
-		rtl,
-		min,
-		max,
-		nearestKind,
-		beginGesture,
-		dragGesture,
-		endGesture
-	});
-	latest.current = {
-		isDisabled,
-		rtl,
-		min,
-		max,
-		nearestKind,
-		beginGesture,
-		dragGesture,
-		endGesture
-	};
-	const trackResponder = React.useRef(PanResponder.create({
-		onStartShouldSetPanResponder: () => !latest.current.isDisabled,
-		onPanResponderTerminationRequest: () => false,
-		onPanResponderGrant: (evt) => {
-			const width = trackWidthRef.current;
-			if (width <= 0) return;
-			const cur = latest.current;
-			const x = cur.rtl ? width - evt.nativeEvent.locationX : evt.nativeEvent.locationX;
-			const raw = cur.min + x / width * (cur.max - cur.min);
-			cur.beginGesture(cur.nearestKind(raw), raw);
-			cur.dragGesture(0);
-		},
-		onPanResponderMove: (_evt, g) => latest.current.dragGesture(g.dx),
-		onPanResponderRelease: () => latest.current.endGesture(),
-		onPanResponderTerminate: () => latest.current.endGesture()
-	})).current;
-	const handleTrackLayout = (event) => {
-		trackWidthRef.current = event.nativeEvent.layout.width;
-	};
-	const firstThumbRef = React.useRef(null);
-	const latestForm = React.useRef({
-		normalized,
-		validateValue,
-		label
-	});
-	latestForm.current = {
-		normalized,
-		validateValue,
-		label
-	};
-	const handle = React.useMemo(() => ({
-		get label() {
-			return latestForm.current.label;
-		},
-		getValue: () => {
-			const current = latestForm.current.normalized;
-			return Array.isArray(current) ? [String(current[0]), String(current[1])] : String(current);
-		},
-		validate: () => latestForm.current.validateValue(latestForm.current.normalized),
-		focus: () => {
-			const node = firstThumbRef.current;
-			const nodeHandle = node === null ? null : findNodeHandle(node);
-			if (nodeHandle != null) AccessibilityInfo.setAccessibilityFocus(nodeHandle);
-		}
-	}), []);
-	const register = form?.register;
-	const unregister = form?.unregister;
-	React.useEffect(() => {
-		if (register === void 0 || unregister === void 0 || isDisabled) return;
-		register(name, handle);
-		return () => unregister(name);
-	}, [
-		register,
-		unregister,
-		name,
-		handle,
-		isDisabled
-	]);
-	const formError = form?.errors[name];
-	const displayedError = error !== void 0 && error !== "" ? error : formError !== void 0 ? formError : invalid ? COPY$11.invalid(label) : void 0;
-	const summarised = form !== null && form.errorSummary;
-	React.useEffect(() => {
-		if (Platform.OS === "ios" && !summarised && displayedError !== void 0) AccessibilityInfo.announceForAccessibility(displayedError);
-	}, [displayedError, summarised]);
-	const trackColor = resolveOr(t, overrides?.track, t.colorBackgroundStrong);
-	const trackHeight = resolveOr(t, overrides?.trackHeight, t.space1);
-	const trackRadius = resolveOr(t, overrides?.trackRadius, t.radiusFull);
-	const markColor = resolveOr(t, overrides?.mark, t.colorBorderStrong);
-	const markSize = resolveOr(t, overrides?.markSize, t.space1);
-	const markLabelSize = resolveOr(t, overrides?.markLabelSize, t.fontSizeXs);
-	const markLabelGap = resolveOr(t, overrides?.markLabelGap, t.space1);
-	const partGap = resolveOr(t, overrides?.partGap, t.space1);
-	const labelGap = resolveOr(t, overrides?.labelGap, t.space2);
-	const trackPaddingBlock = resolveOr(t, overrides?.trackPaddingBlock, t.space3);
-	const disabledOpacity = resolveOr(t, overrides?.disabledOpacity, t.opacityDisabled);
-	const controlSelected = t.colorControlSelectedBackground;
-	const thumbStyleTokens = {
-		thumbSize: resolveOr(t, overrides?.thumbSize, t.space5),
-		thumbBorderWidth: t.borderWidthFocus,
-		thumbColor: resolveOr(t, overrides?.thumb, t.colorControlBackground),
-		thumbBorderColor: controlSelected,
-		thumbShadow: resolveOr(t, overrides?.thumbShadow, t.shadowRaised),
-		haloColor: controlSelected,
-		haloSpread: resolveOr(t, overrides?.haloSpread, t.space2),
-		haloOpacity: resolveOr(t, overrides?.thumbActiveScale, t.opacityDisabled),
-		minTarget: t.sizeTargetComfortable,
-		focusRing: t.colorBorderFocus,
-		focusRingWidth: t.borderWidthFocus,
-		bubbleSurface: t.colorInverseSurface,
-		bubbleText: t.colorInverseForeground,
-		bubbleRadius: resolveOr(t, overrides?.bubbleRadius, t.radiusSm),
-		bubblePaddingBlock: resolveOr(t, overrides?.bubblePaddingBlock, t.space1),
-		bubblePaddingInline: resolveOr(t, overrides?.bubblePaddingInline, t.space2),
-		bubbleOffset: resolveOr(t, overrides?.bubbleOffset, t.space1),
-		motionEasingStandard: t.motionEasingStandard,
-		transitionDuration: resolveOr(t, overrides?.transition, t.motionDurationFast)
-	};
-	const displayValueText = range ? COPY$11.rangeText(formatValue(rangeLow), formatValue(rangeHigh)) : formatValue(singleValue);
-	const markList = marks ?? [];
-	const markLabels = markList.filter((mark) => mark.label !== void 0);
-	const fontFamily = overrides?.fontFamily;
-	const helperTypography = {
-		fontFamily,
-		fontSize: overrides?.helperSize
-	};
-	const valueTypography = {
-		fontFamily,
-		fontSize: overrides?.valueSize
-	};
-	const thumbShared = {
-		disabled: isDisabled,
-		accessibilityHint: displayedError !== void 0 ? displayedError : description,
-		formatValue,
-		showBubble: showValue === "hover",
-		bubbleTypography: valueTypography,
-		reducedMotion,
-		onGrant: (kind) => beginGesture(kind, valueOf(kind)),
-		onDrag: dragGesture,
-		onRelease: endGesture,
-		onAction: handleAction,
-		styleTokens: thumbStyleTokens
-	};
-	const lowFraction = percentOf(rangeLow, min, max);
-	const highFraction = percentOf(rangeHigh, min, max);
-	const singleFraction = percentOf(singleValue, min, max);
-	return /* @__PURE__ */ React.createElement(View, {
-		ref,
-		testID: "Slider",
-		"aria-disabled": isDisabled ? true : void 0,
-		style: {
-			flexDirection: "column",
-			gap: partGap,
-			opacity: isDisabled ? disabledOpacity : 1
-		}
-	}, /* @__PURE__ */ React.createElement(View, { style: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "baseline",
-		gap: labelGap
-	} }, /* @__PURE__ */ React.createElement(View, { testID: "Slider.label" }, /* @__PURE__ */ React.createElement(Text, {
-		size: "md",
-		weight: "medium",
-		tone: "default",
-		overrides: {
-			fontFamily,
-			fontSize: overrides?.fontSize,
-			fontWeight: overrides?.labelWeight
-		}
-	}, label)), showValue === "always" ? /* @__PURE__ */ React.createElement(View, {
-		testID: "Slider.valueText",
-		accessibilityElementsHidden: true,
-		importantForAccessibility: "no-hide-descendants"
-	}, /* @__PURE__ */ React.createElement(Text, {
-		size: "sm",
-		tone: "default",
-		overrides: valueTypography
-	}, displayValueText)) : null), /* @__PURE__ */ React.createElement(View, { style: {
-		flexDirection: "column",
-		gap: markLabelGap
-	} }, /* @__PURE__ */ React.createElement(View, {
-		style: {
-			justifyContent: "center",
-			paddingVertical: trackPaddingBlock
-		},
-		onLayout: handleTrackLayout,
-		...trackResponder.panHandlers
-	}, /* @__PURE__ */ React.createElement(View, {
-		testID: "Slider.track",
-		pointerEvents: "none",
-		style: {
-			height: trackHeight,
-			borderRadius: trackRadius,
-			backgroundColor: trackColor,
-			overflow: "hidden"
-		}
-	}, /* @__PURE__ */ React.createElement(View, {
-		testID: "Slider.fill",
-		style: {
-			position: "absolute",
-			start: range ? `${lowFraction * 100}%` : 0,
-			width: `${(range ? highFraction - lowFraction : singleFraction) * 100}%`,
-			height: trackHeight,
-			borderRadius: trackRadius,
-			backgroundColor: controlSelected
-		}
-	})), markList.length > 0 ? /* @__PURE__ */ React.createElement(View, {
-		testID: "Slider.tickMarks",
-		pointerEvents: "none",
-		accessibilityElementsHidden: true,
-		importantForAccessibility: "no-hide-descendants",
-		style: {
-			position: "absolute",
-			top: 0,
-			bottom: 0,
-			start: 0,
-			end: 0
-		}
-	}, markList.map((mark) => /* @__PURE__ */ React.createElement(View, {
-		key: mark.value,
-		style: {
-			position: "absolute",
-			start: `${percentOf(mark.value, min, max) * 100}%`,
-			top: "50%",
-			width: markSize,
-			height: markSize,
-			marginStart: -(markSize / 2),
-			marginTop: -(markSize / 2),
-			borderRadius: markSize / 2,
-			backgroundColor: markColor
-		}
-	}))) : null, range ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(SliderThumb, {
-		...thumbShared,
-		ref: firstThumbRef,
-		kind: "min",
-		value: rangeLow,
-		fraction: lowFraction,
-		min,
-		max: rangeHigh,
-		pressed: activeKind === "min",
-		accessibilityLabel: COPY$11.minimumLabel(label)
-	}), /* @__PURE__ */ React.createElement(SliderThumb, {
-		...thumbShared,
-		kind: "max",
-		value: rangeHigh,
-		fraction: highFraction,
-		min: rangeLow,
-		max,
-		pressed: activeKind === "max",
-		accessibilityLabel: COPY$11.maximumLabel(label)
-	})) : /* @__PURE__ */ React.createElement(SliderThumb, {
-		...thumbShared,
-		ref: firstThumbRef,
-		kind: "single",
-		value: singleValue,
-		fraction: singleFraction,
-		min,
-		max,
-		pressed: activeKind === "single",
-		accessibilityLabel: label
-	})), markLabels.length > 0 ? /* @__PURE__ */ React.createElement(View, {
-		pointerEvents: "none",
-		accessibilityElementsHidden: true,
-		importantForAccessibility: "no-hide-descendants",
-		style: { height: toLineHeight(markLabelSize, t.fontLineHeightNormal) }
-	}, markLabels.map((mark) => /* @__PURE__ */ React.createElement(View, {
-		key: mark.value,
-		style: {
-			position: "absolute",
-			start: `${percentOf(mark.value, min, max) * 100}%`,
-			transform: [{ translateX: rtl ? "50%" : "-50%" }]
-		}
-	}, /* @__PURE__ */ React.createElement(Text, {
-		size: "xs",
-		tone: "muted",
-		overrides: {
-			fontFamily,
-			fontSize: overrides?.markLabelSize
-		}
-	}, mark.label)))) : null), description !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "Slider.description" }, /* @__PURE__ */ React.createElement(Text, {
-		size: "sm",
-		tone: "muted",
-		overrides: helperTypography
-	}, description)) : null, displayedError !== void 0 ? /* @__PURE__ */ React.createElement(View, {
-		testID: "Slider.errorMessage",
-		accessibilityLiveRegion: summarised ? "none" : "assertive"
-	}, /* @__PURE__ */ React.createElement(Text, {
-		size: "sm",
-		tone: "danger",
-		overrides: helperTypography
-	}, displayedError)) : null);
-}
-//#endregion
 //#region src/Search.tsx
 /** copy.* — used verbatim; `suggestionsCount` is selected by `Intl.PluralRules` on `count`. */
-const COPY$10 = {
+const COPY$9 = {
 	clear: "Clear search",
 	submit: "Search",
 	loading: "Loading suggestions",
@@ -10480,9 +12053,9 @@ const COPY$10 = {
 	noSuggestions: "No suggestions"
 };
 function suggestionsCountText(count) {
-	return (new Intl.PluralRules(void 0).select(count) === "one" ? COPY$10.suggestionsCount.one : COPY$10.suggestionsCount.other).replace("{count}", String(count));
+	return (new Intl.PluralRules(void 0).select(count) === "one" ? COPY$9.suggestionsCount.one : COPY$9.suggestionsCount.other).replace("{count}", String(count));
 }
-const FONT_SIZE_TOKEN$1 = {
+const FONT_SIZE_TOKEN = {
 	md: "fontSizeMd",
 	lg: "fontSizeLg"
 };
@@ -10490,7 +12063,7 @@ const FONT_SIZE_REF = {
 	md: "font.size.md",
 	lg: "font.size.lg"
 };
-const PADDING_BLOCK_TOKEN$1 = {
+const PADDING_BLOCK_TOKEN = {
 	md: "spaceSm",
 	lg: "spaceMd"
 };
@@ -10530,8 +12103,8 @@ const ICON_OVERRIDES = { color: "color.foreground.muted" };
 * `AccessibilityInfo.announceForAccessibility` after `statusDebounce`, there being no
 * visually-hidden primitive to hold a live region.
 *
-* `name` and `action` are a URL query key and a GET target — neither exists on native — so
-* both are accepted for parity and do nothing; `action` warns under `__DEV__`. The caller's
+* `name` is the Form registration key, as on every platform. `action` is a GET target, which
+* has no meaning on native: it is accepted for parity, does nothing, and warns under `__DEV__`. The caller's
 * ScrollView needs `keyboardShouldPersistTaps="handled"` so a suggestion tap is not
 * swallowed by keyboard dismissal; Search has no ScrollView of its own to set it on.
 */
@@ -10574,6 +12147,7 @@ function Search({ label, showLabel = false, name = "q", value, defaultValue, pla
 		if (__DEV__ && action !== void 0) console.warn("Search: `action` has no effect on React Native; handle `onSubmitEditing` instead.");
 	}, [action]);
 	const handle = React.useMemo(() => ({
+		label,
 		getValue: () => latest.current.trim(),
 		validate: () => null,
 		focus: () => {
@@ -10583,7 +12157,7 @@ function Search({ label, showLabel = false, name = "q", value, defaultValue, pla
 			const node = findNodeHandle(input);
 			if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
 		}
-	}), []);
+	}), [label]);
 	const register = form?.register;
 	const unregister = form?.unregister;
 	React.useEffect(() => {
@@ -10652,7 +12226,7 @@ function Search({ label, showLabel = false, name = "q", value, defaultValue, pla
 		submit(chosen.label);
 	};
 	const count = suggestions?.length ?? 0;
-	const statusText = !(hasSuggestions && !isDisabled && (showList || loading)) ? "" : loading ? COPY$10.loading : count === 0 ? COPY$10.noSuggestions : suggestionsCountText(count);
+	const statusText = !(hasSuggestions && !isDisabled && (showList || loading)) ? "" : loading ? COPY$9.loading : count === 0 ? COPY$9.noSuggestions : suggestionsCountText(count);
 	const statusDebounce = t.motionDurationBase * 2;
 	React.useEffect(() => {
 		if (statusText === "") return;
@@ -10662,10 +12236,10 @@ function Search({ label, showLabel = false, name = "q", value, defaultValue, pla
 	const borderWidth = overrides?.borderWidth ? resolveToken(t, overrides.borderWidth) : t.borderWidthThin;
 	const radius = overrides?.radius ? resolveToken(t, overrides.radius) : t.radiusFull;
 	const paddingInline = overrides?.paddingInline ? resolveToken(t, overrides.paddingInline) : t.spaceMd;
-	const paddingBlock = overrides?.paddingBlock ? resolveToken(t, overrides.paddingBlock) : t[PADDING_BLOCK_TOKEN$1[size]];
+	const paddingBlock = overrides?.paddingBlock ? resolveToken(t, overrides.paddingBlock) : t[PADDING_BLOCK_TOKEN[size]];
 	const affixGap = overrides?.affixGap ? resolveToken(t, overrides.affixGap) : t.layoutGapTight;
 	const fontFamily = overrides?.fontFamily ? resolveToken(t, overrides.fontFamily) : t.fontFamilyBody;
-	const fontSize = overrides?.fontSize ? resolveToken(t, overrides.fontSize) : t[FONT_SIZE_TOKEN$1[size]];
+	const fontSize = overrides?.fontSize ? resolveToken(t, overrides.fontSize) : t[FONT_SIZE_TOKEN[size]];
 	const lineHeight = overrides?.lineHeight ? resolveToken(t, overrides.lineHeight) : t.fontLineHeightNormal;
 	const suggestionsOffset = overrides?.suggestionsOffset ? resolveToken(t, overrides.suggestionsOffset) : t.space1;
 	const popupSurface = overrides?.popupSurface ? resolveToken(t, overrides.popupSurface) : t.colorOverlaySurface;
@@ -10721,10 +12295,13 @@ function Search({ label, showLabel = false, name = "q", value, defaultValue, pla
 		ref,
 		testID: "Search",
 		accessibilityRole: landmark ? "search" : void 0,
+		accessibilityState: isDisabled ? { disabled: true } : void 0,
+		"aria-disabled": isDisabled ? true : void 0,
 		style: rootStyle
 	}, showLabel ? /* @__PURE__ */ React.createElement(View, {
 		testID: "Search.label",
 		style: dimStyle,
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no-hide-descendants"
 	}, /* @__PURE__ */ React.createElement(Text, { overrides: {
@@ -10736,6 +12313,7 @@ function Search({ label, showLabel = false, name = "q", value, defaultValue, pla
 	}, /* @__PURE__ */ React.createElement(View, {
 		testID: "Search.icon",
 		style: dimStyle,
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no-hide-descendants"
 	}, /* @__PURE__ */ React.createElement(Icon, {
@@ -10745,13 +12323,15 @@ function Search({ label, showLabel = false, name = "q", value, defaultValue, pla
 	})), /* @__PURE__ */ React.createElement(TextInput, {
 		ref: inputRef,
 		testID: "Search.input",
-		role: "searchbox",
+		role: hasSuggestions ? "combobox" : "searchbox",
 		accessibilityLabel: label,
+		"aria-label": label,
 		accessibilityState: {
 			disabled: isDisabled,
 			expanded: hasSuggestions ? showList : void 0
 		},
 		"aria-disabled": isDisabled,
+		"aria-expanded": hasSuggestions ? showList : void 0,
 		editable: !isDisabled,
 		value: currentValue,
 		placeholder,
@@ -10767,7 +12347,7 @@ function Search({ label, showLabel = false, name = "q", value, defaultValue, pla
 		onSubmitEditing: handleSubmitEditing,
 		style: inputStyle
 	}), currentValue !== "" ? /* @__PURE__ */ React.createElement(View, { testID: "Search.clearButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$10.clear,
+		label: COPY$9.clear,
 		variant: "ghost",
 		size: "sm",
 		iconOnly: true,
@@ -10778,7 +12358,7 @@ function Search({ label, showLabel = false, name = "q", value, defaultValue, pla
 		}),
 		onPress: handleClearPress
 	})) : null, /* @__PURE__ */ React.createElement(View, { testID: "Search.submitButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$10.submit,
+		label: COPY$9.submit,
 		variant: "ghost",
 		size: "sm",
 		iconOnly: true,
@@ -10803,7 +12383,7 @@ function Search({ label, showLabel = false, name = "q", value, defaultValue, pla
 		value: "",
 		embedded: true,
 		selectionFollowsFocus: false,
-		emptyMessage: loading ? COPY$10.loading : COPY$10.noSuggestions,
+		emptyMessage: loading ? COPY$9.loading : COPY$9.noSuggestions,
 		onChange: handleSuggestionChange
 	})) : null));
 }
@@ -10852,11 +12432,15 @@ function isGroup(node) {
 */
 function ToolbarGroup({ label, children, ref }) {
 	const layout = React.useContext(ToolbarLayoutContext);
-	if (__DEV__ && layout === null) console.warn("ToolbarGroup: render it as a direct child of Toolbar; outside one it has no layout.");
+	const outside = layout === null;
+	React.useEffect(() => {
+		if (__DEV__ && outside) console.warn("ToolbarGroup: render it inside a Toolbar; outside one it has no orientation, wrapping or gap.");
+	}, [outside]);
 	return /* @__PURE__ */ React.createElement(View, {
 		ref,
 		role: "group",
 		accessibilityLabel: label,
+		"aria-label": label,
 		style: layout?.group,
 		testID: "Toolbar.group"
 	}, children);
@@ -10995,8 +12579,13 @@ function Toolbar({ label, children, orientation = "horizontal", overflow, size =
 		testID: "Toolbar",
 		accessibilityRole: "toolbar",
 		accessibilityLabel: label,
+		"aria-label": label,
 		style: styles.root
-	}, /* @__PURE__ */ React.createElement(ToolbarLayoutContext.Provider, { value: layout }, mode === "wrap" ? /* @__PURE__ */ React.createElement(View, { style: styles.row }, content) : /* @__PURE__ */ React.createElement(View, null, /* @__PURE__ */ React.createElement(ScrollView, {
+	}, /* @__PURE__ */ React.createElement(ToolbarLayoutContext.Provider, { value: layout }, mode === "wrap" ? /* @__PURE__ */ React.createElement(View, {
+		style: styles.row,
+		testID: "Toolbar.container"
+	}, content) : /* @__PURE__ */ React.createElement(View, null, /* @__PURE__ */ React.createElement(ScrollView, {
+		testID: "Toolbar.container",
 		horizontal: !vertical,
 		showsHorizontalScrollIndicator: false,
 		showsVerticalScrollIndicator: false,
@@ -11049,6 +12638,7 @@ function ToolbarFade({ edge, vertical, length, color }) {
 	return /* @__PURE__ */ React.createElement(View, {
 		style: position,
 		pointerEvents: "none",
+		"aria-hidden": true,
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no"
 	}, /* @__PURE__ */ React.createElement(Svg, {
@@ -11094,7 +12684,7 @@ function collectSlides(children) {
 	});
 	return slides;
 }
-const COPY$9 = {
+const COPY$8 = {
 	previous: "Previous slide",
 	next: "Next slide",
 	play: "Start automatic rotation",
@@ -11112,14 +12702,22 @@ const DEFAULT_INTERVAL = 6e3;
 const VISIBLE_THRESHOLD = 60;
 const SLIDE_ACTIONS = [{
 	name: "increment",
-	label: COPY$9.next
+	label: COPY$8.next
 }, {
 	name: "decrement",
-	label: COPY$9.previous
+	label: COPY$8.previous
 }];
 const SlideView = View;
 /** react-native-web renders this package's components; the web platform's semantics apply there. */
 const IS_WEB = Platform.OS === "web";
+/**
+* DOM-only attributes for react-native-web, which View's and Pressable's types omit: the region and
+* slide role descriptions, and a dot's aria-current (aria-selected is not allowed on a button).
+* Native ignores them.
+*/
+const REGION_ATTRS = IS_WEB ? { "aria-roledescription": "carousel" } : {};
+const SLIDE_ATTRS = { "aria-roledescription": "slide" };
+const CURRENT_ATTRS = { "aria-current": "true" };
 /**
 * Carousel — shows several things in the space of one and lets the user page through them.
 *
@@ -11197,7 +12795,7 @@ function Carousel({ label, children, perView = 1, loop = false, autoplay = false
 		if (!isControlled) setInternalIndex(target);
 		onChange?.(target, reason);
 		if (reason !== "autoplay") {
-			const message = COPY$9.announce(target + 1, total);
+			const message = COPY$8.announce(target + 1, total);
 			setAnnouncement(message);
 			if (Platform.OS === "ios") AccessibilityInfo.announceForAccessibility(message);
 		}
@@ -11214,17 +12812,21 @@ function Carousel({ label, children, perView = 1, loop = false, autoplay = false
 	};
 	const dragging = React.useRef(false);
 	const endedDrag = React.useRef(false);
+	const pendingSwipe = React.useRef(null);
 	const [settleCount, setSettleCount] = React.useState(0);
 	const settleSwipe = () => {
 		if (!dragging.current) return;
 		dragging.current = false;
+		const landed = pendingSwipe.current;
+		pendingSwipe.current = null;
+		if (landed !== null) goTo(landed, "swipe");
 		if (isControlled) setSettleCount((n) => n + 1);
 	};
 	const viewabilityConfig = React.useRef({ itemVisiblePercentThreshold: VISIBLE_THRESHOLD }).current;
 	const onViewableItemsChanged = React.useRef(({ viewableItems }) => {
 		if (!dragging.current) return;
 		const first = viewableItems.find((entry) => entry.isViewable && entry.index != null);
-		if (first?.index != null) latest.current.goTo(first.index, "swipe");
+		if (first?.index != null) pendingSwipe.current = first.index;
 	}).current;
 	const trackRef = React.useRef(null);
 	const positioned = React.useRef(false);
@@ -11302,8 +12904,9 @@ function Carousel({ label, children, perView = 1, loop = false, autoplay = false
 	* web, where the native hiding props are dropped.
 	*/
 	const slideSemantics = (index, visible) => IS_WEB ? {
-		role: "group",
-		inert: !visible
+		role: picker === "tabs" ? "tabpanel" : "group",
+		inert: !visible,
+		...SLIDE_ATTRS
 	} : {
 		accessible: visible,
 		accessibilityRole: "adjustable",
@@ -11311,7 +12914,7 @@ function Carousel({ label, children, perView = 1, loop = false, autoplay = false
 			min: 1,
 			max: total,
 			now: index + 1,
-			text: COPY$9.slideLabel(index + 1, total)
+			text: COPY$8.slideLabel(index + 1, total)
 		},
 		accessibilityActions: SLIDE_ACTIONS,
 		onAccessibilityAction: handleSlideAccessibilityAction,
@@ -11322,7 +12925,8 @@ function Carousel({ label, children, perView = 1, loop = false, autoplay = false
 		const visible = index >= currentIndex && index < currentIndex + pageSize;
 		return /* @__PURE__ */ React.createElement(SlideView, {
 			testID: "Carousel.slide",
-			accessibilityLabel: COPY$9.slideLabel(index + 1, total),
+			accessibilityLabel: COPY$8.slideLabel(index + 1, total),
+			"aria-label": COPY$8.slideLabel(index + 1, total),
 			...slideSemantics(index, visible),
 			style: itemWidth > 0 ? { width: itemWidth } : void 0
 		}, item.content);
@@ -11370,6 +12974,8 @@ function Carousel({ label, children, perView = 1, loop = false, autoplay = false
 		testID: "Carousel",
 		role: "region",
 		accessibilityLabel: label,
+		"aria-label": label,
+		...IS_WEB ? REGION_ATTRS : void 0,
 		onTouchStart: () => setTouching(true),
 		onTouchEnd: () => setTouching(false),
 		onTouchCancel: () => setTouching(false),
@@ -11378,7 +12984,7 @@ function Carousel({ label, children, perView = 1, loop = false, autoplay = false
 		testID: "Carousel.playButton",
 		style: { alignSelf: "flex-start" }
 	}, /* @__PURE__ */ React.createElement(Button, {
-		label: playing ? COPY$9.pause : COPY$9.play,
+		label: playing ? COPY$8.pause : COPY$8.play,
 		variant: "secondary",
 		onPress: handlePlayPress,
 		onFocus: onControlFocus,
@@ -11393,7 +12999,7 @@ function Carousel({ label, children, perView = 1, loop = false, autoplay = false
 		testID: "Carousel.prevButton",
 		style: controlPartStyle
 	}, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$9.previous,
+		label: COPY$8.previous,
 		variant: "secondary",
 		iconOnly: true,
 		disabled: prevTarget === null,
@@ -11413,7 +13019,7 @@ function Carousel({ label, children, perView = 1, loop = false, autoplay = false
 		testID: "Carousel.nextButton",
 		style: controlPartStyle
 	}, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$9.next,
+		label: COPY$8.next,
 		variant: "secondary",
 		iconOnly: true,
 		disabled: nextTarget === null,
@@ -11468,11 +13074,12 @@ function Carousel({ label, children, perView = 1, loop = false, autoplay = false
 	}))), picker !== "none" && total > 0 ? /* @__PURE__ */ React.createElement(View, {
 		testID: "Carousel.picker",
 		role: picker === "tabs" ? "tablist" : "group",
-		accessibilityLabel: COPY$9.pickerLabel,
+		accessibilityLabel: COPY$8.pickerLabel,
+		"aria-label": COPY$8.pickerLabel,
 		style: pickerStyle
 	}, slides.map((slide, index) => picker === "tabs" ? /* @__PURE__ */ React.createElement(CarouselTab, {
 		key: slide.key,
-		label: slide.label || COPY$9.goTo(index + 1),
+		label: slide.label || COPY$8.goTo(index + 1),
 		selected: index === currentIndex,
 		fontSize: tabFontSize,
 		fontWeight: tabFontWeight,
@@ -11486,7 +13093,7 @@ function Carousel({ label, children, perView = 1, loop = false, autoplay = false
 		onBlur: onControlBlur
 	}) : /* @__PURE__ */ React.createElement(CarouselDot, {
 		key: slide.key,
-		label: COPY$9.goTo(index + 1),
+		label: COPY$8.goTo(index + 1),
 		selected: index >= currentIndex && index < currentIndex + pageSize,
 		size: dotSize,
 		radius: dotRadius,
@@ -11497,6 +13104,7 @@ function Carousel({ label, children, perView = 1, loop = false, autoplay = false
 	}))) : null, /* @__PURE__ */ React.createElement(View, {
 		testID: "Carousel.liveRegion",
 		accessibilityLiveRegion: rotating ? "none" : "polite",
+		"aria-live": rotating ? "off" : "polite",
 		style: {
 			position: "absolute",
 			width: 1,
@@ -11562,6 +13170,8 @@ function CarouselDot({ label, selected, size, radius, transition, onSelect, onFo
 		accessibilityRole: "button",
 		accessibilityLabel: label,
 		accessibilityState: { selected },
+		"aria-label": label,
+		...selected ? CURRENT_ATTRS : void 0,
 		onFocus: () => {
 			setFocused(true);
 			onFocus();
@@ -11615,6 +13225,8 @@ function CarouselTab({ label, selected, fontSize, fontWeight, lineHeight, fontFa
 		accessibilityRole: "tab",
 		accessibilityLabel: label,
 		accessibilityState: { selected },
+		"aria-label": label,
+		"aria-selected": selected,
 		onFocus: () => {
 			setFocused(true);
 			onFocus();
@@ -11633,7 +13245,7 @@ function CarouselTab({ label, selected, fontSize, fontWeight, lineHeight, fontFa
 }
 //#endregion
 //#region src/Table.tsx
-const COPY$8 = {
+const COPY$7 = {
 	sortToolbarLabel: (caption) => `Sort ${caption}`,
 	sortAscending: (column) => `Sort by ${column}, ascending`,
 	sortDescending: (column) => `Sort by ${column}, descending`,
@@ -11671,7 +13283,9 @@ const HEADER_WEIGHT$2 = "font.weight.semibold";
 const CELL_GAP = "layout.gap.tight";
 const CAPTION_SIZE$2 = "font.size.md";
 const CAPTION_WEIGHT$2 = "font.weight.semibold";
-const CAPTION_GAP$2 = "space.2";
+const CAPTION_GAP = "space.2";
+/** A hidden caption leaves no gap above the header. */
+const CAPTION_GAP_HIDDEN = "space.0";
 function tokenOr$3(t, ref, fallback) {
 	return ref === void 0 ? fallback : resolveToken(t, ref);
 }
@@ -11774,17 +13388,20 @@ function ScrollFade({ edge, inset, length, color }) {
 * `FlatList` (`accessibilityRole="list"`, `accessibilityLabel={caption}`) of bordered
 * blocks whose accessible summary joins `copy.cellLabel` for every visible column, row
 * header first, with the selected state; the selection Checkbox and `rowActions` are
-* separate stops beside it, and sortable columns become a `Toolbar` of Buttons above the
-* list (`copy.sortToolbarLabel`). At or above that width (tablets, react-native-web) the
+* separate stops beside it, and the sort Buttons and the select-all share one `Toolbar`
+* above the list (`copy.sortToolbarLabel`, `size: sm`, the table's own `density`), named
+* for the table even when the Checkbox is all it holds. At or above that width the
 * same list renders a header row (`accessibilityRole="header"` cells) and rows of
 * fixed-width cells: `width: fill` flexes, `auto` and `min` are both `space.20`.
 * `responsive: scroll` keeps the columns at every width inside a horizontal scroll region
 * named by the caption with `copy.scrollHint` as its hint; the row-header cells are
 * translated by the horizontal offset so they stay pinned, and cast `stickyColumnShadow`
 * once scrolled, with a `scrollFade` gradient over each edge that still hides columns
-* (react-native-svg, as Toolbar does; the start fade begins where the pinned column ends). `stickyHeader` pins the list header (`stickyHeaderIndices`), which casts
-* `headerShadow` once the body has scrolled beneath it; with `maxHeight: none` the list
-* does not scroll itself, so the page does. `abbr` has no effect on native.
+* (react-native-svg, as Toolbar does; the start fade begins where the pinned column ends).
+* `stickyHeader` pins the list header (`stickyHeaderIndices`), which casts `headerShadow`
+* once the body has scrolled beneath it — only with `maxHeight: viewport`, at every
+* `responsive` value, since with `maxHeight: none` the page scrolls and the header belongs
+* to the page rather than to this list. `abbr` has no effect on native.
 *
 * Sorting with a controlled `sort` leaves ordering to the caller; otherwise the table
 * sorts `data` from its own state (numbers numerically, anything else with
@@ -11807,6 +13424,7 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 	const width = measuredWidth ?? viewport.width;
 	const narrow = width < t.layoutMaxWidthProse;
 	const layout = responsive === "scroll" ? "scroll" : narrow ? "stack" : "table";
+	const sticksHeader = stickyHeader && maxHeight === "viewport";
 	const [internalSort, setInternalSort] = React.useState(defaultSort);
 	const activeSort = sort ?? internalSort;
 	const [internalSelected, setInternalSelected] = React.useState(defaultSelected ?? []);
@@ -11867,7 +13485,7 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 		}
 		lastSortKey.current = sortKey;
 		const header = columns.find((column) => column.key === activeSort.column)?.header ?? activeSort.column;
-		announce(COPY$8.sortedAnnouncement(header, activeSort.direction), setSortAnnouncement);
+		announce(COPY$7.sortedAnnouncement(header, activeSort.direction), setSortAnnouncement);
 	}, [sortKey]);
 	const selectionKey = selectedIds.join("\0");
 	const lastSelectionKey = React.useRef(selectionKey);
@@ -11877,7 +13495,7 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 			return;
 		}
 		lastSelectionKey.current = selectionKey;
-		announce(COPY$8.selectedCount(selectedIds.length, data.length), setSelectionAnnouncement);
+		announce(COPY$7.selectedCount(selectedIds.length, data.length), setSelectionAnnouncement);
 	}, [selectionKey]);
 	const visibleColumns = columns.filter((column) => {
 		if (layout === "scroll" || column.hideBelow === void 0) return true;
@@ -11981,7 +13599,7 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 	const sortButton = (column) => /* @__PURE__ */ React.createElement(Button, {
 		key: column.key,
 		label: column.header,
-		accessibleName: activeSort?.column === column.key && activeSort.direction === "ascending" ? COPY$8.sortDescending(column.header) : COPY$8.sortAscending(column.header),
+		accessibleName: activeSort?.column === column.key && activeSort.direction === "ascending" ? COPY$7.sortDescending(column.header) : COPY$7.sortAscending(column.header),
 		variant: "ghost",
 		size: "sm",
 		trailingIcon: sortIcon(column),
@@ -11992,7 +13610,7 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 		onPress: () => handleSortPress(column.key)
 	});
 	const selectAll = selectable === "multiple" ? /* @__PURE__ */ React.createElement(Checkbox, {
-		label: COPY$8.selectAll,
+		label: COPY$7.selectAll,
 		hideLabel: true,
 		name: `${baseId}-all`,
 		checked: allSelected,
@@ -12003,7 +13621,7 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 		style: selectCellStyle,
 		testID: "Table.selectCell"
 	}, /* @__PURE__ */ React.createElement(Checkbox, {
-		label: COPY$8.selectRow(rowName(row)),
+		label: COPY$7.selectRow(rowName(row)),
 		hideLabel: true,
 		name: `${baseId}-${row.id}`,
 		checked: selectedSet.has(row.id),
@@ -12018,13 +13636,14 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 	});
 	const headerRow = /* @__PURE__ */ React.createElement(View, {
 		testID: "Table.header",
+		role: "listitem",
 		style: {
 			flexDirection: "row",
 			alignItems: "stretch",
 			backgroundColor: t.colorBackgroundSubtle,
 			borderBottomWidth: headerBorderWidth,
 			borderBottomColor: headerBorder,
-			...stickyHeader && headerScrolled ? headerShadow : null
+			...sticksHeader && headerScrolled ? headerShadow : null
 		}
 	}, /* @__PURE__ */ React.createElement(View, {
 		testID: "Table.headerRow",
@@ -12033,10 +13652,10 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 			alignItems: "stretch",
 			flexGrow: 1
 		}
-	}, selectable !== "none" ? /* @__PURE__ */ React.createElement(View, {
+	}, selectable === "multiple" ? /* @__PURE__ */ React.createElement(View, {
 		style: selectCellStyle,
 		testID: "Table.selectAllCell"
-	}, selectAll) : null, visibleColumns.map((column) => {
+	}, selectAll) : selectable === "single" ? /* @__PURE__ */ React.createElement(View, { style: selectCellStyle }) : null, visibleColumns.map((column) => {
 		const content = column.sortable === true ? /* @__PURE__ */ React.createElement(View, { testID: "Table.sortButton" }, sortButton(column)) : /* @__PURE__ */ React.createElement(Text, {
 			size: "sm",
 			weight: "semibold",
@@ -12063,12 +13682,13 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 		testID: "Table.columnHeader",
 		accessibilityRole: "header",
 		style: [cellStyle, { flexShrink: 0 }]
-	}, /* @__PURE__ */ React.createElement(View, { style: HIDDEN_STYLE$4 }, /* @__PURE__ */ React.createElement(Text, { size: "sm" }, COPY$8.actions))) : null));
+	}, /* @__PURE__ */ React.createElement(View, { style: HIDDEN_STYLE$4 }, /* @__PURE__ */ React.createElement(Text, { size: "sm" }, COPY$7.actions))) : null));
 	const renderColumnsRow = ({ item: row, index }) => {
 		const isSelected = selectable !== "none" && selectedSet.has(row.id);
 		const background = rowBackground(row, index);
 		return /* @__PURE__ */ React.createElement(View, {
 			testID: "Table.row",
+			role: "listitem",
 			accessibilityState: selectable !== "none" ? { selected: isSelected } : void 0,
 			style: {
 				flexDirection: "row",
@@ -12093,6 +13713,7 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 					testID: "Table.rowHeader",
 					accessibilityRole: "button",
 					accessibilityLabel: rowName(row),
+					"aria-label": rowName(row),
 					accessibilityState: selectable !== "none" ? { selected: isSelected } : void 0,
 					onPress: () => onRowPress?.(row.id),
 					onHoverIn: () => setHoveredId(row.id),
@@ -12127,21 +13748,24 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 		}, rowActions(row)) : null);
 	};
 	const sortableColumns = visibleColumns.filter((column) => column.sortable === true);
+	const stackedControls = selectAll !== null || sortableColumns.length > 0;
 	const stackedHeader = /* @__PURE__ */ React.createElement(View, {
 		testID: "Table.header",
+		role: "listitem",
 		style: {
 			backgroundColor: t.colorBackground,
 			paddingBottom: cellPaddingBlock,
-			...stickyHeader && headerScrolled ? headerShadow : null
+			...sticksHeader && headerScrolled ? headerShadow : null
 		}
-	}, selectAll !== null ? /* @__PURE__ */ React.createElement(View, { testID: "Table.selectAllCell" }, selectAll) : null, sortableColumns.length > 0 ? /* @__PURE__ */ React.createElement(Toolbar, {
-		label: COPY$8.sortToolbarLabel(caption),
-		density
-	}, sortableColumns.map(sortButton)) : null);
+	}, stackedControls ? /* @__PURE__ */ React.createElement(Toolbar, {
+		label: COPY$7.sortToolbarLabel(caption),
+		density,
+		size: "sm"
+	}, selectAll !== null ? /* @__PURE__ */ React.createElement(View, { testID: "Table.selectAllCell" }, selectAll) : null, sortableColumns.map(sortButton)) : null);
 	const renderStackedRow = ({ item: row, index }) => {
 		const isSelected = selectable !== "none" && selectedSet.has(row.id);
 		const background = rowBackground(row, index);
-		const summary = summaryColumns.map((column) => COPY$8.cellLabel(column.header, cellValue$2(row, column.key))).join(", ");
+		const summary = summaryColumns.map((column) => COPY$7.cellLabel(column.header, cellValue$2(row, column.key))).join(", ");
 		const pairs = summaryColumns.map((column) => /* @__PURE__ */ React.createElement(View, {
 			key: column.key,
 			testID: column === rowHeaderColumn ? "Table.rowHeader" : "Table.cell"
@@ -12159,6 +13783,7 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 		const focused = focusedId === row.id;
 		return /* @__PURE__ */ React.createElement(View, {
 			testID: "Table.row",
+			role: "listitem",
 			style: {
 				flexDirection: "row",
 				alignItems: "flex-start",
@@ -12179,6 +13804,7 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 		}) : null, selectable !== "none" ? rowCheckbox(row) : null, rowPressEnabled ? /* @__PURE__ */ React.createElement(Pressable, {
 			accessibilityRole: "button",
 			accessibilityLabel: summary,
+			"aria-label": summary,
 			accessibilityState: selectable !== "none" ? { selected: isSelected } : void 0,
 			onPress: () => onRowPress?.(row.id),
 			onHoverIn: () => setHoveredId(row.id),
@@ -12197,6 +13823,7 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 		}, pairs)) : /* @__PURE__ */ React.createElement(View, {
 			accessible: true,
 			accessibilityLabel: summary,
+			"aria-label": summary,
 			accessibilityState: selectable !== "none" ? { selected: isSelected } : void 0,
 			style: summaryStyle
 		}, pairs), rowActions !== void 0 ? /* @__PURE__ */ React.createElement(View, {
@@ -12210,12 +13837,13 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 	};
 	const emptyState = /* @__PURE__ */ React.createElement(View, {
 		testID: "Table.emptyState",
+		role: "listitem",
 		style: cellStyle
 	}, /* @__PURE__ */ React.createElement(Text, {
 		size: "sm",
 		tone: "muted",
 		overrides: bodyText
-	}, loading ? COPY$8.loading : emptyMessage ?? COPY$8.empty));
+	}, loading ? COPY$7.loading : emptyMessage ?? COPY$7.empty));
 	const list = /* @__PURE__ */ React.createElement(FlatList, {
 		testID: "Table.table",
 		data: rows,
@@ -12232,7 +13860,7 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 		renderItem: layout === "stack" ? renderStackedRow : renderColumnsRow,
 		ListHeaderComponent: layout === "stack" ? stackedHeader : headerRow,
 		ListEmptyComponent: emptyState,
-		stickyHeaderIndices: stickyHeader ? [0] : void 0,
+		stickyHeaderIndices: sticksHeader ? [0] : void 0,
 		contentContainerStyle: layout === "stack" ? { gap: stackedBlockGap } : void 0,
 		scrollEnabled: maxHeight === "viewport",
 		style: maxHeight === "viewport" ? { maxHeight: viewport.height - 2 * t.layoutGapSection } : void 0,
@@ -12240,9 +13868,15 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 		scrollEventThrottle: 16,
 		accessibilityRole: "list",
 		accessibilityLabel: caption,
-		accessibilityHint: COPY$8.rowCount(data.length),
-		accessibilityState: { busy: loading }
+		"aria-label": caption,
+		accessibilityHint: COPY$7.rowCount(data.length),
+		accessibilityState: { busy: loading },
+		"aria-busy": loading
 	});
+	`${baseId}`;
+	const scrollHintId = `${baseId}-scroll-hint`;
+	Platform.OS;
+	const scrollWebProps = Platform.OS === "web" ? { "aria-describedby": scrollHintId } : {};
 	const handleLayout = (event) => {
 		setMeasuredWidth(event.nativeEvent.layout.width);
 	};
@@ -12260,13 +13894,16 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 		overrides: {
 			fontSize: overrides?.captionSize ?? CAPTION_SIZE$2,
 			fontWeight: overrides?.captionWeight ?? CAPTION_WEIGHT$2,
-			marginBlockEnd: overrides?.captionGap ?? CAPTION_GAP$2
+			marginBlockEnd: hideCaption ? CAPTION_GAP_HIDDEN : overrides?.captionGap ?? CAPTION_GAP
 		}
 	}, caption)), /* @__PURE__ */ React.createElement(View, { testID: "Table.container" }, layout === "scroll" ? /* @__PURE__ */ React.createElement(View, null, /* @__PURE__ */ React.createElement(Animated.ScrollView, {
 		testID: "Table.scrollRegion",
 		horizontal: true,
+		role: "region",
 		accessibilityLabel: caption,
-		accessibilityHint: COPY$8.scrollHint,
+		"aria-label": caption,
+		accessibilityHint: COPY$7.scrollHint,
+		...scrollWebProps,
 		onLayout: (event) => {
 			scrollMetrics.current.viewport = event.nativeEvent.layout.width;
 			updateFadeEdges();
@@ -12296,12 +13933,13 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 		color: t.colorBackground
 	}) : null) : list), loading && rows.length > 0 ? /* @__PURE__ */ React.createElement(View, {
 		accessibilityLiveRegion: "polite",
+		"aria-live": "polite",
 		style: cellStyle
 	}, /* @__PURE__ */ React.createElement(Text, {
 		size: "sm",
 		tone: "muted",
 		overrides: bodyText
-	}, COPY$8.loading)) : null, footer !== void 0 && footer !== null ? /* @__PURE__ */ React.createElement(View, {
+	}, COPY$7.loading)) : null, footer !== void 0 && footer !== null && footer !== false ? /* @__PURE__ */ React.createElement(View, {
 		testID: "Table.footer",
 		style: cellStyle
 	}, typeof footer === "string" ? /* @__PURE__ */ React.createElement(Text, {
@@ -12309,978 +13947,13 @@ function Table({ caption, captionLevel = "2", footer, hideCaption = false, colum
 		overrides: bodyText
 	}, footer) : footer) : null, /* @__PURE__ */ React.createElement(View, {
 		accessibilityLiveRegion: "polite",
+		"aria-live": "polite",
 		style: HIDDEN_STYLE$4
 	}, /* @__PURE__ */ React.createElement(Text, { size: "sm" }, sortAnnouncement)), /* @__PURE__ */ React.createElement(View, {
 		accessibilityLiveRegion: "polite",
+		"aria-live": "polite",
 		style: HIDDEN_STYLE$4
 	}, /* @__PURE__ */ React.createElement(Text, { size: "sm" }, selectionAnnouncement)));
-}
-//#endregion
-//#region src/DatePicker.tsx
-/** The component's user-facing strings, from the doc's `copy` block. */
-const COPY$7 = {
-	open: "Choose date",
-	openRange: "Choose dates",
-	previousMonth: "Previous month",
-	nextMonth: "Next month",
-	month: "Month",
-	year: "Year",
-	today: "Today",
-	clear: "Clear",
-	weekNumber: "Week",
-	gridLabel: (label, month, year) => `${label}, ${month} ${year}`,
-	selected: "selected",
-	todayLabel: "today",
-	startLabel: "Start date",
-	endLabel: "End date",
-	required: (label) => `${label} is required.`,
-	invalid: (label, pattern) => `${label} must be a valid date (${pattern}).`,
-	tooEarly: (label, min) => `${label} must be on or after ${min}.`,
-	tooLate: (label, max) => `${label} must be on or before ${max}.`,
-	rangeOrder: "End date must be on or after the start date.",
-	requiredIndicator: " (required)"
-};
-/** Six rows always, so the grid's height does not change with the month. */
-const WEEKS_SHOWN = 6;
-const DAYS_PER_WEEK = 7;
-/** The year Select's span when `min`/`max` give no bound of their own. */
-const YEARS_BACK = 100;
-const YEARS_FORWARD = 10;
-const MS_PER_DAY = 864e5;
-/** The en dash between the start and end inputs. */
-const RANGE_SEPARATOR = "–";
-/** `font.size.{size}` — the field text and the label, so the label follows `size`. */
-const FONT_SIZE_TOKEN = {
-	sm: "fontSizeSm",
-	md: "fontSizeMd"
-};
-const PADDING_INLINE_TOKEN = {
-	sm: "space2",
-	md: "spaceMd"
-};
-const PADDING_BLOCK_TOKEN = {
-	sm: "space1",
-	md: "spaceSm"
-};
-/** `minTarget` / `minTargetSm`: both locked, so the sm floor is always `size.target.min`. */
-const MIN_TARGET_TOKEN = {
-	sm: "sizeTargetMin",
-	md: "sizeTargetComfortable"
-};
-const ISO = /^(\d{4})-(\d{2})-(\d{2})$/u;
-function daysInMonth(year, month) {
-	return new Date(Date.UTC(year, month, 0)).getUTCDate();
-}
-function toUtc(date) {
-	return Date.UTC(date.year, date.month - 1, date.day);
-}
-function fromUtc(ms) {
-	const d = new Date(ms);
-	return {
-		year: d.getUTCFullYear(),
-		month: d.getUTCMonth() + 1,
-		day: d.getUTCDate()
-	};
-}
-function toIso(date) {
-	return `${String(date.year).padStart(4, "0")}-${String(date.month).padStart(2, "0")}-${String(date.day).padStart(2, "0")}`;
-}
-/** Parses an ISO calendar date, rejecting impossible days (`2026-02-30`). */
-function parseIso(iso) {
-	const match = ISO.exec(iso);
-	if (match === null) return null;
-	const year = Number(match[1]);
-	const month = Number(match[2]);
-	const day = Number(match[3]);
-	if (month < 1 || month > 12 || day < 1 || day > daysInMonth(year, month)) return null;
-	return {
-		year,
-		month,
-		day
-	};
-}
-function addDays(date, days) {
-	return fromUtc(toUtc(date) + days * MS_PER_DAY);
-}
-/** 0 = Sunday, as `Date.prototype.getUTCDay`. */
-function weekdayOf(date) {
-	return new Date(toUtc(date)).getUTCDay();
-}
-/** The ISO-8601 week of the given day: the week whose Thursday names the year. */
-function isoWeekOf(date) {
-	const thursday = addDays(date, 3 - (weekdayOf(date) + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK);
-	const january1 = {
-		year: thursday.year,
-		month: 1,
-		day: 1
-	};
-	return Math.floor((toUtc(thursday) - toUtc(january1)) / MS_PER_DAY / DAYS_PER_WEEK) + 1;
-}
-/** Today in the device's own calendar; `new Date()` is read for its local parts only. */
-function todayIso() {
-	const now = /* @__PURE__ */ new Date();
-	return toIso({
-		year: now.getFullYear(),
-		month: now.getMonth() + 1,
-		day: now.getDate()
-	});
-}
-/** The device locale, since React Native has no `document.documentElement.lang`. */
-function deviceLocale() {
-	return new Intl.DateTimeFormat().resolvedOptions().locale;
-}
-const FIELD_PLACEHOLDER = {
-	year: "YYYY",
-	month: "MM",
-	day: "DD"
-};
-const FIELD_DIGITS = {
-	year: 4,
-	month: 2,
-	day: 2
-};
-function isPatternField(type) {
-	return type === "year" || type === "month" || type === "day";
-}
-/** The numeric formatter every typed value is read and written through. */
-function numericFormat(locale) {
-	return new Intl.DateTimeFormat(locale, {
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-		timeZone: "UTC"
-	});
-}
-/** A reference date whose parts are all unambiguous, used only to read the locale's pattern. */
-const PATTERN_SAMPLE = Date.UTC(2026, 10, 22);
-/** The locale's typed pattern ("MM/DD/YYYY", "DD.MM.YYYY"), which is also the default placeholder. */
-function localePattern(locale) {
-	return numericFormat(locale).formatToParts(PATTERN_SAMPLE).map((part) => isPatternField(part.type) ? FIELD_PLACEHOLDER[part.type] : part.value).join("");
-}
-/** The pattern's field order, which is how a typed string's numbers are assigned. */
-function patternOrder(locale) {
-	const order = [];
-	for (const part of numericFormat(locale).formatToParts(PATTERN_SAMPLE)) if (isPatternField(part.type)) order.push(part.type);
-	return order;
-}
-/**
-* Reads typed text against the locale pattern, leniently: any non-digit run separates
-* the fields, and the separators may be left out entirely. Two-digit years are refused —
-* "10/11/26" is a typo, not the year 2026 — and an impossible day is not a date.
-*/
-function parseTyped(text, locale) {
-	const order = patternOrder(locale);
-	if (order.length !== 3) return null;
-	const groups = text.split(/\D+/u).filter((group) => group !== "");
-	let digits;
-	if (groups.length === order.length) digits = groups;
-	else if (groups.length === 1) {
-		const run = groups[0];
-		const total = order.reduce((sum, field) => sum + FIELD_DIGITS[field], 0);
-		if (run.length !== total) return null;
-		let at = 0;
-		digits = order.map((field) => {
-			const slice = run.slice(at, at + FIELD_DIGITS[field]);
-			at += FIELD_DIGITS[field];
-			return slice;
-		});
-	} else return null;
-	const date = {
-		year: 0,
-		month: 0,
-		day: 0
-	};
-	for (let i = 0; i < order.length; i++) {
-		const field = order[i];
-		const digit = digits[i];
-		if (field === "year" ? digit.length !== FIELD_DIGITS.year : digit.length > FIELD_DIGITS[field]) return null;
-		date[field] = Number(digit);
-	}
-	return parseIso(toIso(date)) === null ? null : toIso(date);
-}
-/** The typed text for an ISO date, in the locale's numeric pattern. */
-function formatTyped(iso, locale) {
-	const date = parseIso(iso);
-	return date === null ? "" : numericFormat(locale).format(toUtc(date));
-}
-/**
-* The locale's first day of the week through `Intl.Locale`'s week info where the engine
-* has it (Hermes often does not), else Sunday, as the doc says.
-*/
-function firstDayOfWeek(locale) {
-	try {
-		const resolved = new Intl.Locale(locale);
-		const info = typeof resolved.getWeekInfo === "function" ? resolved.getWeekInfo() : resolved.weekInfo;
-		if (info !== void 0) return info.firstDay % DAYS_PER_WEEK;
-	} catch {}
-	return 0;
-}
-function startOf(value) {
-	if (value === void 0) return "";
-	return typeof value === "string" ? value : value.start;
-}
-function endOf(value) {
-	if (value === void 0) return "";
-	return typeof value === "string" ? value : value.end;
-}
-/**
-* One day of the grid. `Pressable` sees no key events on native, so there is no roving
-* tabindex here: every day is its own focus stop, reached by swipe. The fill is a layer
-* whose opacity animates over `transition` (react-native-web has no native driver, so
-* `useNativeDriver` stays false), which is how "background-color animates" reads on this
-* platform; the today ring is an inset ring and switches at once.
-*/
-function DayCell({ iso, day, label, outsideMonth, selected, inRange, today, disabled, daySize, dayRadius, dayFontSize, dayHover, fontFamily, lineHeight, duration, onPress }) {
-	const { tokens: t } = useTheme();
-	const reducedMotion = useReducedMotion();
-	const [hovered, setHovered] = React.useState(false);
-	const [focused, setFocused] = React.useState(false);
-	const fill = selected ? t.colorControlSelectedBackground : inRange ? t.colorBackgroundStrong : hovered && !disabled ? dayHover : void 0;
-	const target = fill === void 0 ? 0 : 1;
-	const fillOpacity = React.useRef(new Animated.Value(target)).current;
-	const shown = React.useRef(target);
-	React.useEffect(() => {
-		if (shown.current === target) return;
-		shown.current = target;
-		if (reducedMotion || duration === 0) {
-			fillOpacity.setValue(target);
-			return;
-		}
-		Animated.timing(fillOpacity, {
-			toValue: target,
-			duration,
-			easing: toEasing(t.motionEasingStandard),
-			useNativeDriver: false
-		}).start();
-	}, [
-		target,
-		fillOpacity,
-		reducedMotion,
-		duration,
-		t
-	]);
-	const cellStyle = React.useMemo(() => ({
-		width: daySize,
-		height: daySize,
-		borderRadius: dayRadius,
-		alignItems: "center",
-		justifyContent: "center",
-		opacity: disabled ? t.opacityDisabled : 1
-	}), [
-		daySize,
-		dayRadius,
-		disabled,
-		t
-	]);
-	const ringColor = focused ? t.colorBorderFocus : today ? t.colorControlSelectedBackground : void 0;
-	return /* @__PURE__ */ React.createElement(Pressable, {
-		testID: "DatePicker.day",
-		accessibilityRole: "button",
-		accessibilityLabel: label,
-		accessibilityState: {
-			selected,
-			disabled
-		},
-		"aria-disabled": disabled,
-		style: cellStyle,
-		onHoverIn: () => setHovered(true),
-		onHoverOut: () => setHovered(false),
-		onFocus: () => setFocused(true),
-		onBlur: () => setFocused(false),
-		onPress: () => {
-			if (!disabled) onPress(iso);
-		}
-	}, /* @__PURE__ */ React.createElement(Animated.View, {
-		pointerEvents: "none",
-		style: [StyleSheet.absoluteFill, {
-			backgroundColor: fill,
-			borderRadius: dayRadius,
-			opacity: fillOpacity
-		}]
-	}), ringColor === void 0 ? null : /* @__PURE__ */ React.createElement(View, {
-		pointerEvents: "none",
-		style: [StyleSheet.absoluteFill, {
-			borderWidth: t.borderWidthFocus,
-			borderColor: ringColor,
-			borderRadius: dayRadius
-		}]
-	}), /* @__PURE__ */ React.createElement(Text$1, { style: {
-		color: selected ? t.colorControlSelectedForeground : outsideMonth ? t.colorForegroundMuted : t.colorForeground,
-		fontFamily,
-		fontSize: dayFontSize,
-		lineHeight: toLineHeight(dayFontSize, lineHeight)
-	} }, day));
-}
-/**
-* DatePicker — two ways to say the same date: type it, or find it on a calendar. Both
-* produce a plain ISO date (`2026-09-10`), never a timestamp, because a delivery date or
-* a birthday has no time zone to get wrong.
-*
-* When to use: any date the user chooses — due dates, bookings, dates of birth, report
-* periods (`range`). Set `min`, `max` and `isDateDisabled` whenever they exist, so the
-* calendar shows what is possible instead of validating after the fact. Not for a
-* date-and-time, a month or year alone (Select), or relative choices.
-*
-* React Native has no core date picker and the package takes no date dependency (only
-* `react-native-svg`, for Icon), so the calendar is the system's own grid here as on
-* every other platform: a `TextInput` (`keyboardType="number-pad"`) parsed against the
-* locale's pattern, a ghost `Button` with the "calendar" glyph, and a `BottomSheet`
-* (`height="content"`, `heading={label}`) holding the header, the 7-column grid of
-* `daySize` `Pressable` days and the Today/Clear footer. The `popover` part is that
-* sheet: only `calendarInset` is forwarded (to its `inset` override) and `calendarSurface`
-* is realised by the sheet's own locked surface.
-*
-* Native has no grid or gridcell role and `Pressable` sees no keys, so there is no roving
-* tabindex and no Arrow, Page, Home or End handling: every day is its own focus stop
-* reached by swipe, and the prev/next month Buttons stand in for PageUp/PageDown.
-* `TextInputKeyPressEvent` carries no modifier flags, so Alt+ArrowDown cannot be told
-* from ArrowDown and both simply open the calendar. Focus on open lands on the sheet's
-* first focusable element rather than the selected day, and focus on close returns
-* through BottomSheet's own FocusScope, since Button exposes no node handle to focus by
-* hand; only the displayed month follows the value.
-*
-* There is no native invalid state, so the error is appended to the input's
-* `accessibilityHint` after `description` and announced through an assertive live region
-* (Android) with `AccessibilityInfo.announceForAccessibility` on iOS. The label is a
-* `Text` — React Native has no `<label>` — and `hideLabel` drops it, leaving the name in
-* `accessibilityLabel`. Button and Select take no `testID`, so each composed part is
-* wrapped in a `View` this component owns carrying `testID="DatePicker.<part>"`.
-*
-* Inside a Form the field registers by `name` with the start's ISO string; a range adds
-* a second field, `name-end`, holding the end, and only `name` reports the combined
-* message so one message is never read twice.
-*/
-function DatePicker({ label, name, value, defaultValue, open, range = false, min, max, isDateDisabled, locale, showWeekNumbers = false, placeholder, description, required = false, hideLabel = false, size = "md", disabled = false, error, overrides, ref, onChange, onOpenChange }) {
-	const { tokens: t } = useTheme();
-	const form = useFormContext();
-	const fieldset = useFieldsetContext();
-	const resolvedLocale = locale ?? deviceLocale();
-	const pattern = React.useMemo(() => localePattern(resolvedLocale), [resolvedLocale]);
-	const weekStart = React.useMemo(() => firstDayOfWeek(resolvedLocale), [resolvedLocale]);
-	const fullFormat = React.useMemo(() => new Intl.DateTimeFormat(resolvedLocale, {
-		dateStyle: "full",
-		timeZone: "UTC"
-	}), [resolvedLocale]);
-	const monthFormat = React.useMemo(() => new Intl.DateTimeFormat(resolvedLocale, {
-		month: "long",
-		timeZone: "UTC"
-	}), [resolvedLocale]);
-	const weekdayFormat = React.useMemo(() => new Intl.DateTimeFormat(resolvedLocale, {
-		weekday: "short",
-		timeZone: "UTC"
-	}), [resolvedLocale]);
-	const startInputRef = React.useRef(null);
-	const endInputRef = React.useRef(null);
-	const [internalValue, setInternalValue] = React.useState(defaultValue);
-	const [internalOpen, setInternalOpen] = React.useState(false);
-	const [focusedInput, setFocusedInput] = React.useState(null);
-	/** The first pick of a range: shown only in the calendar until the end is picked. */
-	const [pendingStart, setPendingStart] = React.useState(null);
-	const currentValue = value ?? internalValue;
-	const startIso = startOf(currentValue);
-	const endIso = endOf(currentValue);
-	const isOpen = open ?? internalOpen;
-	const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
-	const [startText, setStartText] = React.useState(() => formatTyped(startOf(defaultValue ?? value), resolvedLocale));
-	const [endText, setEndText] = React.useState(() => formatTyped(endOf(defaultValue ?? value), resolvedLocale));
-	React.useEffect(() => {
-		if (focusedInput !== "start") setStartText(formatTyped(startIso, resolvedLocale));
-	}, [
-		startIso,
-		focusedInput,
-		resolvedLocale
-	]);
-	React.useEffect(() => {
-		if (focusedInput !== "end") setEndText(formatTyped(endIso, resolvedLocale));
-	}, [
-		endIso,
-		focusedInput,
-		resolvedLocale
-	]);
-	const today = todayIso();
-	const [viewMonth, setViewMonth] = React.useState(() => {
-		const anchor = parseIso(startOf(defaultValue ?? value)) ?? parseIso(today);
-		return {
-			year: anchor.year,
-			month: anchor.month,
-			day: 1
-		};
-	});
-	/** Which input a keyboard open came from; the calendar Button always opens on the start. */
-	const openAnchor = React.useRef("start");
-	const isDayDisabled = React.useCallback((iso) => {
-		if (min !== void 0 && min !== "" && iso < min) return true;
-		if (max !== void 0 && max !== "" && iso > max) return true;
-		return isDateDisabled?.(iso) ?? false;
-	}, [
-		min,
-		max,
-		isDateDisabled
-	]);
-	const changeOpen = (next) => {
-		if (next === isOpen || next && isDisabled) return;
-		if (open === void 0) setInternalOpen(next);
-		onOpenChange?.(next);
-	};
-	const anchorMonth = React.useRef({
-		startIso,
-		endIso,
-		today
-	});
-	anchorMonth.current = {
-		startIso,
-		endIso,
-		today
-	};
-	React.useEffect(() => {
-		if (!isOpen) {
-			setPendingStart(null);
-			return;
-		}
-		const current = anchorMonth.current;
-		const anchor = parseIso(openAnchor.current === "end" ? current.endIso : current.startIso) ?? parseIso(current.today);
-		setViewMonth({
-			year: anchor.year,
-			month: anchor.month,
-			day: 1
-		});
-		openAnchor.current = "start";
-	}, [isOpen]);
-	const monthName = monthFormat.format(toUtc(viewMonth));
-	const yearName = String(viewMonth.year);
-	const gridLabel = COPY$7.gridLabel(label, monthName, yearName);
-	const announced = React.useRef(gridLabel);
-	React.useEffect(() => {
-		if (isOpen && announced.current !== gridLabel) AccessibilityInfo.announceForAccessibility(gridLabel);
-		announced.current = gridLabel;
-	}, [isOpen, gridLabel]);
-	const ownError = error !== void 0 && error !== "" ? error : void 0;
-	const validateTexts = React.useCallback((start, end) => {
-		if (isDisabled) return null;
-		if (ownError !== void 0) return ownError;
-		const startEmpty = start.trim() === "";
-		const endEmpty = end.trim() === "";
-		if (required && (range ? startEmpty && endEmpty : startEmpty)) return COPY$7.required(label);
-		const startDate = startEmpty ? null : parseTyped(start, resolvedLocale);
-		const endDate = range && !endEmpty ? parseTyped(end, resolvedLocale) : null;
-		if (!startEmpty && startDate === null || range && !endEmpty && endDate === null) return COPY$7.invalid(label, pattern);
-		if (range && startEmpty !== endEmpty) return required ? COPY$7.required(label) : null;
-		if (startDate === null) return null;
-		const ends = range && endDate !== null ? [startDate, endDate] : [startDate];
-		if (min !== void 0 && min !== "" && ends.some((iso) => iso < min)) return COPY$7.tooEarly(label, formatTyped(min, resolvedLocale));
-		if (max !== void 0 && max !== "" && ends.some((iso) => iso > max)) return COPY$7.tooLate(label, formatTyped(max, resolvedLocale));
-		if (range && endDate !== null && endDate < startDate) return COPY$7.rangeOrder;
-		return null;
-	}, [
-		isDisabled,
-		ownError,
-		range,
-		required,
-		label,
-		resolvedLocale,
-		pattern,
-		min,
-		max
-	]);
-	const formErrors = form?.errors;
-	const formMarked = formErrors !== void 0 && Object.prototype.hasOwnProperty.call(formErrors, name);
-	const formError = formErrors?.[name];
-	const derivedError = formMarked ? validateTexts(startText, endText) ?? void 0 : void 0;
-	const displayedError = ownError ?? (formError !== void 0 && formError !== "" ? formError : derivedError);
-	const summarised = form !== null && form.errorSummary;
-	const isInvalid = displayedError !== void 0;
-	const focusField = React.useCallback(() => {
-		startInputRef.current?.focus();
-		const node = startInputRef.current === null ? null : findNodeHandle(startInputRef.current);
-		if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
-	}, []);
-	const latest = React.useRef({
-		startIso,
-		endIso,
-		startText,
-		endText,
-		isDisabled,
-		validateTexts,
-		focusField
-	});
-	latest.current = {
-		startIso,
-		endIso,
-		startText,
-		endText,
-		isDisabled,
-		validateTexts,
-		focusField
-	};
-	const startHandle = React.useMemo(() => ({
-		label,
-		getValue: () => latest.current.isDisabled || latest.current.startIso === "" ? void 0 : latest.current.startIso,
-		validate: () => latest.current.validateTexts(latest.current.startText, latest.current.endText),
-		focus: () => latest.current.focusField()
-	}), [label]);
-	const endHandle = React.useMemo(() => ({
-		label,
-		getValue: () => latest.current.isDisabled || latest.current.endIso === "" ? void 0 : latest.current.endIso,
-		validate: () => null,
-		focus: () => endInputRef.current?.focus()
-	}), [label]);
-	const register = form?.register;
-	const unregister = form?.unregister;
-	const endName = `${name}-end`;
-	React.useEffect(() => {
-		if (register === void 0 || unregister === void 0 || isDisabled) return;
-		register(name, startHandle);
-		if (range) register(endName, endHandle);
-		return () => {
-			unregister(name);
-			if (range) unregister(endName);
-		};
-	}, [
-		register,
-		unregister,
-		name,
-		endName,
-		range,
-		startHandle,
-		endHandle,
-		isDisabled
-	]);
-	React.useEffect(() => {
-		if (Platform.OS === "ios" && !summarised && displayedError !== void 0) AccessibilityInfo.announceForAccessibility(displayedError);
-	}, [displayedError, summarised]);
-	const reportValidity = (start, end, on) => {
-		if (form !== null && (form.validateMode === on || form.validateMode === "change" || form.submitFailed)) form.reportValidity(name, validateTexts(start, end));
-	};
-	const commit = (next) => {
-		if (value === void 0) setInternalValue(next);
-		onChange?.(next);
-	};
-	/** A pick or Clear shows the formatted value at once, whether or not an input has focus. */
-	const showValue = (start, end) => {
-		setStartText(formatTyped(start, resolvedLocale));
-		setEndText(formatTyped(end, resolvedLocale));
-	};
-	const pickDay = (iso) => {
-		if (isDayDisabled(iso)) return;
-		if (!range) {
-			showValue(iso, "");
-			commit(iso);
-			changeOpen(false);
-			return;
-		}
-		if (pendingStart === null || iso < pendingStart) {
-			setPendingStart(iso);
-			return;
-		}
-		const next = {
-			start: pendingStart,
-			end: iso
-		};
-		setPendingStart(null);
-		showValue(next.start, next.end);
-		commit(next);
-		changeOpen(false);
-	};
-	const handleClear = () => {
-		setPendingStart(null);
-		showValue("", "");
-		commit(void 0);
-		reportValidity("", "", "change");
-	};
-	const handleTyped = (next, which) => {
-		const nextStart = which === "start" ? next : startText;
-		const nextEnd = which === "end" ? next : endText;
-		if (which === "start") setStartText(next);
-		else setEndText(next);
-		reportValidity(nextStart, nextEnd, "change");
-		const typed = parseTyped(next, resolvedLocale);
-		if (typed === null) return;
-		const parsed = parseIso(typed);
-		setViewMonth({
-			year: parsed.year,
-			month: parsed.month,
-			day: 1
-		});
-		if (!range) {
-			if (typed !== startIso) commit(typed);
-			return;
-		}
-		const other = which === "start" ? parseTyped(nextEnd, resolvedLocale) : parseTyped(nextStart, resolvedLocale);
-		if (other === null) return;
-		const value2 = which === "start" ? {
-			start: typed,
-			end: other
-		} : {
-			start: other,
-			end: typed
-		};
-		if (value2.start !== startIso || value2.end !== endIso) commit(value2);
-	};
-	const handleInputKeyPress = (event, which) => {
-		if (event.nativeEvent.key === "ArrowDown" && !isOpen) {
-			openAnchor.current = which;
-			changeOpen(true);
-		}
-	};
-	const gridStart = React.useMemo(() => {
-		const first = {
-			year: viewMonth.year,
-			month: viewMonth.month,
-			day: 1
-		};
-		return addDays(first, -((weekdayOf(first) - weekStart + DAYS_PER_WEEK) % DAYS_PER_WEEK));
-	}, [viewMonth, weekStart]);
-	const weeks = React.useMemo(() => {
-		const rows = [];
-		for (let week = 0; week < WEEKS_SHOWN; week++) {
-			const row = [];
-			for (let index = 0; index < DAYS_PER_WEEK; index++) row.push(addDays(gridStart, week * DAYS_PER_WEEK + index));
-			rows.push(row);
-		}
-		return rows;
-	}, [gridStart]);
-	const weekdayNames = React.useMemo(() => Array.from({ length: DAYS_PER_WEEK }, (_unused, index) => weekdayFormat.format(toUtc(addDays(gridStart, index)))), [weekdayFormat, gridStart]);
-	const shownStart = range && pendingStart !== null ? pendingStart : startIso;
-	const shownEnd = range && pendingStart !== null ? "" : range ? endIso : "";
-	const monthOptions = React.useMemo(() => Array.from({ length: 12 }, (_unused, index) => ({
-		value: String(index + 1),
-		label: monthFormat.format(toUtc({
-			year: viewMonth.year,
-			month: index + 1,
-			day: 1
-		}))
-	})), [monthFormat, viewMonth.year]);
-	const yearOptions = React.useMemo(() => {
-		const currentYear = parseIso(today).year;
-		const lowest = Math.min(parseIso(min ?? "")?.year ?? currentYear - YEARS_BACK, viewMonth.year);
-		const highest = Math.max(parseIso(max ?? "")?.year ?? currentYear + YEARS_FORWARD, viewMonth.year);
-		return Array.from({ length: highest - lowest + 1 }, (_unused, index) => ({
-			value: String(lowest + index),
-			label: String(lowest + index)
-		}));
-	}, [
-		today,
-		min,
-		max,
-		viewMonth.year
-	]);
-	const goToMonth = (year, month) => {
-		setViewMonth(fromUtc(Date.UTC(year, month - 1, 1)));
-	};
-	const borderWidth = overrides?.borderWidth ? resolveToken(t, overrides.borderWidth) : t.borderWidthThin;
-	const borderInvalid = overrides?.borderInvalid ? resolveToken(t, overrides.borderInvalid) : t.colorBorderDanger;
-	const radius = overrides?.radius ? resolveToken(t, overrides.radius) : t.radiusMd;
-	const paddingInline = overrides?.paddingInline ? resolveToken(t, overrides.paddingInline) : t[PADDING_INLINE_TOKEN[size]];
-	const paddingBlock = overrides?.paddingBlock ? resolveToken(t, overrides.paddingBlock) : t[PADDING_BLOCK_TOKEN[size]];
-	const fontSize = overrides?.fontSize ? resolveToken(t, overrides.fontSize) : t[FONT_SIZE_TOKEN[size]];
-	const calendarGap = overrides?.calendarGap ? resolveToken(t, overrides.calendarGap) : t.layoutGapNormal;
-	const headerGap = overrides?.headerGap ? resolveToken(t, overrides.headerGap) : t.layoutGapTight;
-	const footerGap = overrides?.footerGap ? resolveToken(t, overrides.footerGap) : t.layoutGapTight;
-	const dayGap = overrides?.dayGap ? resolveToken(t, overrides.dayGap) : t.space0;
-	const dayRadius = overrides?.dayRadius ? resolveToken(t, overrides.dayRadius) : t.radiusMd;
-	const dayHover = overrides?.dayHover ? resolveToken(t, overrides.dayHover) : t.colorActionGhostBackgroundHover;
-	const partGap = overrides?.partGap ? resolveToken(t, overrides.partGap) : t.space1;
-	const fieldGap = overrides?.fieldGap ? resolveToken(t, overrides.fieldGap) : t.space2;
-	const dayFontSize = overrides?.dayFontSize ? resolveToken(t, overrides.dayFontSize) : t.fontSizeSm;
-	const fontFamily = overrides?.fontFamily ? resolveToken(t, overrides.fontFamily) : t.fontFamilyBody;
-	const lineHeight = overrides?.lineHeight ? resolveToken(t, overrides.lineHeight) : t.fontLineHeightNormal;
-	const disabledOpacity = overrides?.disabledOpacity ? resolveToken(t, overrides.disabledOpacity) : t.opacityDisabled;
-	const transition = overrides?.transition ? resolveToken(t, overrides.transition) : t.motionDurationFast;
-	const daySize = t.sizeTargetComfortable;
-	const helperOverrides = {
-		fontSize: overrides?.helperSize,
-		fontFamily: overrides?.fontFamily,
-		lineHeight: overrides?.lineHeight
-	};
-	const labelOverrides = {
-		fontSize: overrides?.fontSize,
-		fontWeight: overrides?.labelWeight,
-		fontFamily: overrides?.fontFamily,
-		lineHeight: overrides?.lineHeight
-	};
-	const titleOverrides = {
-		fontSize: overrides?.monthTitleSize,
-		fontWeight: overrides?.monthTitleWeight
-	};
-	const weekdayOverrides = {
-		fontSize: overrides?.weekdaySize,
-		fontWeight: overrides?.weekdayWeight,
-		fontFamily: overrides?.fontFamily
-	};
-	const weekNumberOverrides = {
-		fontSize: overrides?.weekNumberSize,
-		fontWeight: overrides?.weekNumberWeight,
-		fontFamily: overrides?.fontFamily
-	};
-	const sheetOverrides = overrides?.calendarInset === void 0 ? void 0 : { inset: overrides.calendarInset };
-	const focusRingWidth = t.borderWidthFocus;
-	const inputStyle = (which) => {
-		const focused = focusedInput === which;
-		const currentBorderWidth = focused ? focusRingWidth : borderWidth;
-		const growth = currentBorderWidth - borderWidth;
-		return {
-			flex: 1,
-			minHeight: t[MIN_TARGET_TOKEN[size]],
-			paddingHorizontal: Math.max(0, paddingInline - growth),
-			paddingVertical: Math.max(0, paddingBlock - growth),
-			borderWidth: currentBorderWidth,
-			borderColor: isInvalid ? borderInvalid : focused ? t.colorBorderFocus : t.colorBorderStrong,
-			borderRadius: radius,
-			backgroundColor: t.colorBackground,
-			color: t.colorForeground,
-			fontFamily,
-			fontSize,
-			lineHeight: toLineHeight(fontSize, lineHeight)
-		};
-	};
-	const groupStyle = React.useMemo(() => ({
-		flexDirection: "column",
-		gap: partGap,
-		opacity: isDisabled ? disabledOpacity : 1
-	}), [
-		partGap,
-		isDisabled,
-		disabledOpacity
-	]);
-	const visibleLabel = required ? `${label}${COPY$7.requiredIndicator}` : label;
-	const accessibleName = fieldset === null ? visibleLabel : `${fieldset.legend}, ${visibleLabel}`;
-	const hint = [description, displayedError].filter((part) => part !== void 0 && part !== "").join(" ");
-	const fieldPlaceholder = placeholder ?? pattern;
-	const buttonSize = size === "sm" ? "sm" : "md";
-	const dayLabel = (iso, selected) => {
-		const parts = [fullFormat.format(toUtc(parseIso(iso)))];
-		if (iso === today) parts.push(COPY$7.todayLabel);
-		if (selected) parts.push(COPY$7.selected);
-		return parts.join(", ");
-	};
-	const renderInput = (which) => {
-		const isEnd = which === "end";
-		const name2 = range ? `${accessibleName}, ${isEnd ? COPY$7.endLabel : COPY$7.startLabel}` : accessibleName;
-		return /* @__PURE__ */ React.createElement(TextInput, {
-			ref: isEnd ? endInputRef : startInputRef,
-			testID: "DatePicker.input",
-			style: inputStyle(which),
-			value: isEnd ? endText : startText,
-			placeholder: fieldPlaceholder,
-			placeholderTextColor: t.colorForegroundMuted,
-			editable: !isDisabled,
-			keyboardType: "number-pad",
-			accessibilityLabel: name2,
-			accessibilityHint: hint === "" ? void 0 : hint,
-			accessibilityState: { disabled: isDisabled },
-			"aria-disabled": isDisabled,
-			onChangeText: (next) => handleTyped(next, which),
-			onKeyPress: (event) => handleInputKeyPress(event, which),
-			onFocus: () => setFocusedInput(which),
-			onBlur: () => {
-				setFocusedInput(null);
-				showValue(startIso, endIso);
-				reportValidity(startText, endText, "blur");
-			}
-		});
-	};
-	const footer = /* @__PURE__ */ React.createElement(View, {
-		testID: "DatePicker.footer",
-		style: {
-			flexDirection: "row",
-			justifyContent: "flex-end",
-			gap: footerGap
-		}
-	}, /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.todayButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$7.today,
-		variant: "ghost",
-		size: "sm",
-		disabled: isDayDisabled(today),
-		onPress: () => pickDay(today)
-	})), /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.clearButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$7.clear,
-		variant: "ghost",
-		size: "sm",
-		onPress: handleClear
-	})));
-	return /* @__PURE__ */ React.createElement(View, {
-		ref,
-		testID: "DatePicker",
-		style: groupStyle,
-		"aria-disabled": isDisabled
-	}, hideLabel ? null : /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.label" }, /* @__PURE__ */ React.createElement(Text, {
-		size,
-		weight: "medium",
-		overrides: labelOverrides
-	}, visibleLabel)), description === void 0 || description === "" ? null : /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.description" }, /* @__PURE__ */ React.createElement(Text, {
-		size: "sm",
-		tone: "muted",
-		overrides: helperOverrides
-	}, description)), /* @__PURE__ */ React.createElement(View, {
-		testID: "DatePicker.field",
-		style: {
-			flexDirection: "row",
-			alignItems: "center",
-			gap: fieldGap
-		}
-	}, renderInput("start"), range ? /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(Text$1, {
-		accessibilityElementsHidden: true,
-		importantForAccessibility: "no",
-		style: {
-			color: t.colorForegroundMuted,
-			fontFamily,
-			fontSize
-		}
-	}, RANGE_SEPARATOR), renderInput("end")) : null, /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.calendarButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: range ? COPY$7.openRange : COPY$7.open,
-		variant: "ghost",
-		iconOnly: true,
-		size: buttonSize,
-		expanded: isOpen,
-		disabled: isDisabled,
-		leadingIcon: /* @__PURE__ */ React.createElement(Icon, {
-			name: "calendar",
-			color: t.colorActionGhostForeground
-		}),
-		onPress: () => changeOpen(true)
-	}))), displayedError === void 0 ? null : /* @__PURE__ */ React.createElement(View, {
-		testID: "DatePicker.errorMessage",
-		accessibilityLiveRegion: summarised ? "none" : "assertive"
-	}, /* @__PURE__ */ React.createElement(Text, {
-		size: "sm",
-		tone: "danger",
-		overrides: helperOverrides
-	}, displayedError)), isOpen ? /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.popover" }, /* @__PURE__ */ React.createElement(BottomSheet, {
-		open: true,
-		heading: label,
-		height: "content",
-		footer,
-		onClose: () => changeOpen(false),
-		overrides: sheetOverrides
-	}, /* @__PURE__ */ React.createElement(View, { style: { gap: calendarGap } }, /* @__PURE__ */ React.createElement(View, {
-		testID: "DatePicker.header",
-		style: {
-			flexDirection: "row",
-			alignItems: "center",
-			gap: headerGap
-		}
-	}, /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.prevMonthButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$7.previousMonth,
-		variant: "ghost",
-		iconOnly: true,
-		size: "sm",
-		leadingIcon: /* @__PURE__ */ React.createElement(Icon, {
-			name: "chevron-left",
-			color: t.colorActionGhostForeground
-		}),
-		onPress: () => goToMonth(viewMonth.year, viewMonth.month - 1)
-	})), /* @__PURE__ */ React.createElement(FormContext.Provider, { value: null }, /* @__PURE__ */ React.createElement(View, {
-		testID: "DatePicker.monthSelect",
-		style: { flex: 1 }
-	}, /* @__PURE__ */ React.createElement(Select, {
-		label: COPY$7.month,
-		name: "month",
-		hideLabel: true,
-		size: "sm",
-		options: monthOptions,
-		value: String(viewMonth.month),
-		overrides: titleOverrides,
-		onChange: (next) => {
-			if (typeof next === "string") goToMonth(viewMonth.year, Number(next));
-		}
-	})), /* @__PURE__ */ React.createElement(View, {
-		testID: "DatePicker.yearSelect",
-		style: { flex: 1 }
-	}, /* @__PURE__ */ React.createElement(Select, {
-		label: COPY$7.year,
-		name: "year",
-		hideLabel: true,
-		size: "sm",
-		options: yearOptions,
-		value: String(viewMonth.year),
-		overrides: titleOverrides,
-		onChange: (next) => {
-			if (typeof next === "string") goToMonth(Number(next), viewMonth.month);
-		}
-	}))), /* @__PURE__ */ React.createElement(View, { testID: "DatePicker.nextMonthButton" }, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$7.nextMonth,
-		variant: "ghost",
-		iconOnly: true,
-		size: "sm",
-		leadingIcon: /* @__PURE__ */ React.createElement(Icon, {
-			name: "chevron-right",
-			color: t.colorActionGhostForeground
-		}),
-		onPress: () => goToMonth(viewMonth.year, viewMonth.month + 1)
-	}))), /* @__PURE__ */ React.createElement(View, {
-		testID: "DatePicker.grid",
-		accessibilityLabel: gridLabel,
-		style: { gap: dayGap }
-	}, /* @__PURE__ */ React.createElement(View, { style: {
-		flexDirection: "row",
-		gap: dayGap
-	} }, showWeekNumbers ? /* @__PURE__ */ React.createElement(View, { style: {
-		width: daySize,
-		alignItems: "center"
-	} }, /* @__PURE__ */ React.createElement(Text, {
-		size: "xs",
-		tone: "muted",
-		weight: "medium",
-		overrides: weekdayOverrides
-	}, COPY$7.weekNumber)) : null, weekdayNames.map((weekday) => /* @__PURE__ */ React.createElement(View, {
-		key: weekday,
-		testID: "DatePicker.weekdayHeader",
-		style: {
-			width: daySize,
-			alignItems: "center"
-		}
-	}, /* @__PURE__ */ React.createElement(Text, {
-		size: "xs",
-		tone: "muted",
-		weight: "medium",
-		overrides: weekdayOverrides
-	}, weekday)))), weeks.map((week) => {
-		const first = week[0];
-		return /* @__PURE__ */ React.createElement(View, {
-			key: toIso(first),
-			style: {
-				flexDirection: "row",
-				gap: dayGap
-			}
-		}, showWeekNumbers ? /* @__PURE__ */ React.createElement(View, {
-			testID: "DatePicker.weekNumber",
-			accessible: true,
-			accessibilityLabel: `${COPY$7.weekNumber} ${isoWeekOf(first)}`,
-			style: {
-				width: daySize,
-				alignItems: "center",
-				justifyContent: "center"
-			}
-		}, /* @__PURE__ */ React.createElement(Text, {
-			size: "xs",
-			tone: "muted",
-			weight: "regular",
-			overrides: weekNumberOverrides
-		}, isoWeekOf(first))) : null, week.map((date) => {
-			const iso = toIso(date);
-			const isEnd = iso === shownStart || shownEnd !== "" && iso === shownEnd;
-			const between = shownStart !== "" && shownEnd !== "" && iso > shownStart && iso < shownEnd;
-			return /* @__PURE__ */ React.createElement(DayCell, {
-				key: iso,
-				iso,
-				day: date.day,
-				label: dayLabel(iso, isEnd || between),
-				outsideMonth: date.month !== viewMonth.month,
-				selected: isEnd,
-				inRange: between,
-				today: iso === today,
-				disabled: isDayDisabled(iso),
-				daySize,
-				dayRadius,
-				dayFontSize,
-				dayHover,
-				fontFamily,
-				lineHeight,
-				duration: transition,
-				onPress: pickDay
-			});
-		}));
-	}))))) : null);
 }
 //#endregion
 //#region src/DataGrid.tsx
@@ -13300,7 +13973,7 @@ const COPY$6 = {
 	empty: "Nothing to show.",
 	scrollHint: "Scroll sideways to see more columns",
 	cellLabel: (column, value) => `${column}: ${value}`,
-	editHint: "Double tap to edit"
+	editHint: "Opens the cell editor"
 };
 const JUSTIFY$1 = {
 	start: "flex-start",
@@ -13318,10 +13991,11 @@ const HEADER_WEIGHT$1 = "font.weight.semibold";
 const HEADER_SIZE$1 = "font.size.sm";
 const CAPTION_SIZE$1 = "font.size.md";
 const CAPTION_WEIGHT$1 = "font.weight.semibold";
-const CAPTION_GAP$1 = "space.2";
-const LINE_HEIGHT$1 = "font.lineHeight.tight";
+const LINE_HEIGHT$2 = "font.lineHeight.tight";
 const NUMERIC_FONT$1 = "font.family.mono";
 const INSET_ZERO$1 = "space.0";
+/** minTarget, forwarded to the select Checkboxes' `controlSize` (locked, so never an override). */
+const MIN_TARGET$1 = "size.target.min";
 function tokenOr$2(t, ref, fallback) {
 	return ref === void 0 ? fallback : resolveToken(t, ref);
 }
@@ -13345,7 +14019,7 @@ function sameCell$1(a, rowId, column) {
 	return a !== null && a.rowId === rowId && a.column === column;
 }
 /** The row hover tint, faded over `transition` (instant under reduced motion). */
-function RowTint({ visible, color, duration }) {
+function RowTint$1({ visible, color, duration }) {
 	const { tokens: t } = useTheme();
 	const reducedMotion = useReducedMotion();
 	const opacity = React.useRef(new Animated.Value(visible ? 1 : 0)).current;
@@ -13453,7 +14127,8 @@ function ResizeHandle$1({ width, minWidth, color, handleWidth, hitSlop, onResize
 *
 * There is no grid element on native. The caption is a `Heading` at `captionLevel` (visually
 * hidden with `hideCaption`). A horizontal `ScrollView` (the scroll region) holds a `FlatList`
-* with `role="grid"`, the caption as its `accessibilityLabel`, and a fixed `getItemLayout`
+* with `role="grid"`, the caption followed by `copy.rowCount` as its `accessibilityLabel`
+* (native has no aria-rowcount, so the total is at least spoken on focus), and a fixed `getItemLayout`
 * from the density's row height, so rows virtualize; the header row (`role="rowgroup"` >
 * `row` > `columnheader`) is its sticky list header, sharing the horizontal scroll with the
 * body and casting `headerShadow` once the body scrolls beneath it. `FlatList` gives the body
@@ -13465,7 +14140,10 @@ function ResizeHandle$1({ width, minWidth, color, handleWidth, hitSlop, onResize
 * The web keyboard model has no equivalent in core React Native (View and Pressable have no
 * key events), so touch replaces it: a sortable header is a `Button`; `selectable="row"`
 * (and `range`, which degrades to it with a `__DEV__` warning) adds `Checkbox` cells and a
-* select-all Checkbox that stands in for Ctrl+A; `cell` selects the tapped cell. An editable
+* select-all Checkbox that stands in for Ctrl+A; `cell` selects the tapped cell, where selection
+* follows focus and the inset `cellFocusRing` is its only visual. The scroll region draws
+* `focusRing` while a cell inside it reports focus, so the region's overflow never clips it
+* (react-native-web only — core RN gives View and Pressable no focus events). An editable
 * cell opens its editor on tap (`copy.editHint`), after `onEditStart` allows it: `Input`
 * (commits on blur), `NumberInput` and `DatePicker` (commit when another cell or a sort header
 * is pressed, or through the cell's `activate` accessibility action), `Select` (opens at once
@@ -13481,7 +14159,7 @@ function ResizeHandle$1({ width, minWidth, color, handleWidth, hitSlop, onResize
 * `copy.position` for the active cell — which is shown but never announced. With
 * `showStatusBar` false the bar is visually hidden and keeps only the live region.
 */
-function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, data, rowCount, sort, defaultSort, selectable = "none", selected, editable = false, density = "compact", stickyHeader = true, height = "viewport", loading = false, emptyMessage, showStatusBar = true, overrides, onSortChange, onSelectionChange, onCellChange, onEditStart, onEndReached, onColumnResize, ref }) {
+function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, data, rowCount, sort, defaultSort, selectable = "none", selected, editable = false, density = "compact", stickyHeader: _stickyHeader = true, height = "viewport", loading = false, emptyMessage, showStatusBar = true, overrides, onSortChange, onSelectionChange, onCellChange, onEditStart, onEndReached, onColumnResize, ref }) {
 	const { tokens: t } = useTheme();
 	const viewport = useWindowDimensions();
 	const baseId = React.useId();
@@ -13494,6 +14172,7 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 	const [activeCell, setActiveCell] = React.useState(null);
 	const [focusedCell, setFocusedCell] = React.useState(null);
 	const [hoveredRow, setHoveredRow] = React.useState(null);
+	const [pressedRow, setPressedRow] = React.useState(null);
 	const [editing, setEditing] = React.useState(null);
 	const [draft, setDraft] = React.useState(void 0);
 	const [editError, setEditError] = React.useState(void 0);
@@ -13503,11 +14182,15 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 	const [regionWidth, setRegionWidth] = React.useState(null);
 	const [listHeight, setListHeight] = React.useState(null);
 	const [announcement, setAnnouncement] = React.useState("");
+	const [headerHeight, setHeaderHeight] = React.useState(null);
 	React.useEffect(() => {
 		if (!__DEV__) return;
-		if (selectable === "range") console.warn("DataGrid: `selectable=\"range\"` has no touch model on React Native and degrades to `\"row\"`.");
+		if (caption === "") console.warn("DataGrid: `caption` is required; the grid falls back to an empty accessible name.");
 		if (columns.filter((column) => column.isRowHeader === true).length > 1) console.warn("DataGrid: only one column may set `isRowHeader`; the first one is used.");
-	}, [selectable, columns]);
+		const pinnedStart = columns.filter((column) => column.pinned === "start").length;
+		const pinnedEnd = columns.filter((column) => column.pinned === "end").length;
+		if (!(columns.slice(0, pinnedStart).every((column) => column.pinned === "start") && columns.slice(columns.length - pinnedEnd).every((column) => column.pinned === "end"))) console.warn("DataGrid: pinned columns must be contiguous at the start or the end of `columns`, in their order there.");
+	}, [caption, columns]);
 	/** Puts a message in the status bar's live region, and speaks it on iOS, which has no live regions. */
 	const announce = (message) => {
 		setAnnouncement(message);
@@ -13550,13 +14233,17 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 	const statusBarPadding = tokenOr$2(t, overrides?.statusBarPadding, t.space2);
 	const statusBarGap = tokenOr$2(t, overrides?.statusBarGap, t.space2);
 	const fixedHeight = tokenOr$2(t, overrides?.fixedHeight, t.space20);
+	const captionGap = tokenOr$2(t, overrides?.captionGap, t.space2);
 	const transition = tokenOr$2(t, overrides?.transition, t.motionDurationFast);
-	const rowHeight = density === "comfortable" ? t.sizeTargetComfortable : t.sizeTargetMin;
+	const focusRing = t.colorBorderFocus;
+	const focusRingWidth = t.borderWidthFocus;
+	const densityRowHeight = density === "comfortable" ? t.sizeTargetComfortable : t.sizeTargetMin;
+	const rowHeight = mode === "row" ? Math.max(densityRowHeight, t.sizeTargetComfortable) : densityRowHeight;
 	const selectColumnWidth = t.sizeTargetMin + 2 * cellPaddingInline;
 	const bodyText = {
 		fontFamily: overrides?.fontFamily,
 		fontSize: overrides?.fontSize,
-		lineHeight: overrides?.lineHeight ?? LINE_HEIGHT$1
+		lineHeight: overrides?.lineHeight ?? LINE_HEIGHT$2
 	};
 	const numericText = {
 		...bodyText,
@@ -13564,15 +14251,11 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 	};
 	const headerText = {
 		fontFamily: overrides?.fontFamily,
-		lineHeight: overrides?.lineHeight ?? LINE_HEIGHT$1,
+		lineHeight: overrides?.lineHeight ?? LINE_HEIGHT$2,
 		fontSize: headerSize,
 		fontWeight: headerWeight
 	};
-	const statusBarText = {
-		fontFamily: overrides?.fontFamily,
-		lineHeight: overrides?.lineHeight ?? LINE_HEIGHT$1,
-		fontSize: overrides?.statusBarSize
-	};
+	const statusBarText = { fontSize: overrides?.statusBarSize };
 	const editorInset = {
 		paddingInline: INSET_ZERO$1,
 		paddingBlock: INSET_ZERO$1
@@ -13629,6 +14312,10 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		}
 		return commitEdit(row, column, draft);
 	}
+	const editingRowLoaded = editing === null || rows.some((row) => row.id === editing.rowId);
+	React.useEffect(() => {
+		if (!editingRowLoaded) closeEditor();
+	}, [editingRowLoaded]);
 	const startEdit = (row, column) => {
 		if (sameCell$1(editing, row.id, column.key) || !commitOpenEdit()) return;
 		if (onEditStart?.(row.id, column.key) === false) return;
@@ -13716,6 +14403,7 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 	const headerRow = /* @__PURE__ */ React.createElement(View, {
 		testID: "DataGrid.header",
 		role: "rowgroup",
+		onLayout: (event) => setHeaderHeight(event.nativeEvent.layout.height),
 		style: {
 			backgroundColor: t.colorBackgroundSubtle,
 			...headerScrolled ? headerShadow : null
@@ -13748,6 +14436,7 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		name: `${baseId}-all`,
 		checked: allSelected,
 		indeterminate: someSelected,
+		overrides: { controlSize: MIN_TARGET$1 },
 		onChange: toggleAll
 	})) : null, columns.map((column) => {
 		const width = widthFor(column);
@@ -13787,7 +14476,11 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			flexGrow: 1,
 			flexShrink: 1,
 			alignItems: JUSTIFY$1[column.align ?? "start"]
-		} }, column.sortable === true ? /* @__PURE__ */ React.createElement(View, { testID: "DataGrid.sortButton" }, /* @__PURE__ */ React.createElement(Button, {
+		} }, column.sortable === true ? /* @__PURE__ */ React.createElement(Pressable, {
+			testID: "DataGrid.sortButton",
+			accessible: false,
+			onPress: () => handleSortPress(column.key)
+		}, /* @__PURE__ */ React.createElement(Button, {
 			label: column.header,
 			accessibleName: sorted && activeSort.direction === "ascending" ? COPY$6.sortDescending(column.header) : COPY$6.sortAscending(column.header),
 			variant: "ghost",
@@ -13805,7 +14498,8 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			onPress: () => handleSortPress(column.key)
 		})) : /* @__PURE__ */ React.createElement(View, {
 			accessible: true,
-			accessibilityLabel: column.abbr ?? column.header
+			accessibilityLabel: column.abbr ?? column.header,
+			"aria-label": column.abbr ?? column.header
 		}, /* @__PURE__ */ React.createElement(Text, {
 			size: "sm",
 			weight: "semibold",
@@ -13828,6 +14522,7 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			testID: "DataGrid.row",
 			role: "row",
 			accessibilityState: mode === "row" ? { selected: rowSelected } : void 0,
+			"aria-selected": mode === "row" ? rowSelected : void 0,
 			style: {
 				flexDirection: "row",
 				alignItems: "stretch",
@@ -13838,17 +14533,23 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 				borderStartWidth: t.borderWidthFocus,
 				borderStartColor: rowSelected ? t.colorControlSelectedBackground : background
 			}
-		}, /* @__PURE__ */ React.createElement(RowTint, {
-			visible: hoveredRow === row.id,
+		}, /* @__PURE__ */ React.createElement(RowTint$1, {
+			visible: !rowSelected && (hoveredRow === row.id || pressedRow === row.id),
 			color: rowHover,
 			duration: transition
-		}), mode === "row" ? /* @__PURE__ */ React.createElement(View, {
+		}), mode === "row" ? /* @__PURE__ */ React.createElement(Pressable, {
 			testID: "DataGrid.selectCell",
 			role: "cell",
+			accessible: false,
+			onPress: () => toggleRow(row.id),
+			onPressIn: () => setPressedRow(row.id),
+			onPressOut: () => setPressedRow((current) => current === row.id ? null : current),
+			onHoverIn: () => setHoveredRow(row.id),
+			onHoverOut: () => setHoveredRow((current) => current === row.id ? null : current),
 			style: [
 				selectColumnStyle,
 				{
-					backgroundColor: background,
+					backgroundColor: scrolledX ? background : "transparent",
 					borderEndWidth: gridLineWidth,
 					borderEndColor: gridLine
 				},
@@ -13859,6 +14560,7 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			hideLabel: true,
 			name: `${baseId}-${row.id}`,
 			checked: rowSelected,
+			overrides: { controlSize: MIN_TARGET$1 },
 			onChange: () => toggleRow(row.id)
 		})) : null, columns.map((column) => {
 			const key = `${row.id} ${column.key}`;
@@ -13868,7 +14570,7 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			const isEditing = sameCell$1(editing, row.id, column.key);
 			const invalid = isEditing && editError !== void 0;
 			const cellSelected = mode === "cell" && sameCell$1(activeCell, row.id, column.key);
-			const cellBackground = invalid ? t.colorStatusDangerBackground : isEditing ? t.colorControlBackground : cellSelected ? t.colorBackgroundSubtle : "transparent";
+			const cellBackground = invalid ? t.colorStatusDangerBackground : isEditing ? t.colorControlBackground : "transparent";
 			const style = [{
 				width: widthFor(column),
 				paddingHorizontal: cellPaddingInline,
@@ -13922,8 +14624,10 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 				testID: isRowHeader ? "DataGrid.rowHeader" : "DataGrid.cell",
 				role,
 				accessibilityLabel: COPY$6.cellLabel(column.header, value),
+				"aria-label": COPY$6.cellLabel(column.header, value),
 				accessibilityHint: canEdit ? COPY$6.editHint : void 0,
 				accessibilityState: mode === "cell" ? { selected: cellSelected } : void 0,
+				"aria-selected": mode === "cell" && isRowHeader ? cellSelected : void 0,
 				onPress: interactive ? () => {
 					if (mode === "cell" && !cellSelected) {
 						const next = {
@@ -13936,6 +14640,8 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 					if (canEdit) startEdit(row, column);
 					else commitOpenEdit();
 				} : void 0,
+				onPressIn: interactive ? () => setPressedRow(row.id) : void 0,
+				onPressOut: interactive ? () => setPressedRow((current) => current === row.id ? null : current) : void 0,
 				onFocus: () => setFocusedCell(key),
 				onBlur: () => setFocusedCell((current) => current === key ? null : current),
 				onHoverIn: () => setHoveredRow(row.id),
@@ -13948,13 +14654,14 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		}));
 	};
 	const requestedEnd = React.useRef(null);
+	const hasScrolled = React.useRef(false);
 	React.useEffect(() => {
 		requestedEnd.current = null;
 	}, [data.length]);
-	const pageRows = Math.max(1, Math.ceil((listHeight ?? viewport.height) / rowHeight));
+	const rowsPerPage = Math.max(1, Math.floor((listHeight ?? viewport.height) / rowHeight) - 1);
 	const handleEndReached = () => {
-		if (rowCount === void 0 || data.length >= rowCount) return;
-		const end = Math.min(rowCount, data.length + pageRows) - 1;
+		if (!hasScrolled.current || rowCount === void 0 || data.length >= rowCount) return;
+		const end = Math.min(rowCount - 1, data.length + rowsPerPage - 1);
 		if (requestedEnd.current === end) return;
 		requestedEnd.current = end;
 		onEndReached?.(data.length, end);
@@ -13962,6 +14669,7 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 	const contentWidth = columns.reduce((sum, column) => sum + widthFor(column), mode === "row" ? selectColumnWidth : 0) + t.borderWidthFocus;
 	const overflows = regionWidth !== null && contentWidth > regionWidth;
 	const bounded = height !== "content";
+	const gridFocused = focusedCell !== null || editing !== null;
 	const flexStyle = {
 		flexGrow: 1,
 		flexShrink: 1
@@ -13975,16 +14683,18 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		}
 	}, /* @__PURE__ */ React.createElement(Text, {
 		size: "sm",
-		tone: "muted",
-		overrides: bodyText
+		tone: "muted"
 	}, emptyMessage ?? COPY$6.empty));
 	const live = loading ? COPY$6.loading : editError !== void 0 ? COPY$6.invalid(editError) : editing !== null ? COPY$6.editing(columnByKey.get(editing.column)?.header ?? editing.column) : announcement;
 	const activeIndex = activeCell === null ? -1 : rows.findIndex((row) => row.id === activeCell.rowId);
+	const gridLabel = `${caption}, ${COPY$6.rowCount(total)}`;
 	const list = /* @__PURE__ */ React.createElement(FlatList, {
 		testID: "DataGrid.grid",
 		role: "grid",
-		accessibilityLabel: caption,
+		accessibilityLabel: gridLabel,
+		"aria-label": gridLabel,
 		accessibilityState: { busy: loading },
+		"aria-busy": loading,
 		data: rows,
 		extraData: [
 			selectedIds,
@@ -13992,6 +14702,7 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			activeCell,
 			focusedCell,
 			hoveredRow,
+			pressedRow,
 			editing,
 			draft,
 			editError,
@@ -14004,15 +14715,18 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		renderItem: renderRow,
 		getItemLayout: (_items, index) => ({
 			length: rowHeight,
-			offset: rowHeight * index,
+			offset: (headerHeight ?? rowHeight + headerBorderWidth) + rowHeight * index,
 			index
 		}),
 		ListHeaderComponent: headerRow,
-		ListEmptyComponent: emptyState,
-		stickyHeaderIndices: stickyHeader || bounded ? [0] : void 0,
+		ListEmptyComponent: loading ? void 0 : emptyState,
+		stickyHeaderIndices: bounded ? [0] : void 0,
 		scrollEnabled: bounded,
 		initialNumToRender: bounded ? void 0 : data.length,
-		onScroll: (event) => setHeaderScrolled(event.nativeEvent.contentOffset.y > 0),
+		onScroll: (event) => {
+			hasScrolled.current = true;
+			setHeaderScrolled(event.nativeEvent.contentOffset.y > 0);
+		},
 		scrollEventThrottle: 16,
 		onEndReached: rowCount !== void 0 ? handleEndReached : void 0,
 		onEndReachedThreshold: 1,
@@ -14024,19 +14738,18 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		testID: "DataGrid",
 		style: {
 			backgroundColor: t.colorBackground,
-			...height === "viewport" ? { height: viewport.height - 2 * t.layoutGapSection } : null
+			...height === "viewport" ? { height: viewport.height - 2 * t.layoutGapSection } : height === "fixed" ? { height: fixedHeight } : null
 		}
 	}, /* @__PURE__ */ React.createElement(View, {
 		testID: "DataGrid.caption",
-		style: hideCaption ? HIDDEN_STYLE$3 : void 0
+		style: hideCaption ? HIDDEN_STYLE$3 : { paddingBottom: captionGap }
 	}, /* @__PURE__ */ React.createElement(Heading, {
 		level: captionLevel,
 		size: "md",
 		overrides: {
-			fontFamily: overrides?.fontFamily,
 			fontSize: overrides?.captionSize ?? CAPTION_SIZE$1,
 			fontWeight: overrides?.captionWeight ?? CAPTION_WEIGHT$1,
-			marginBlockEnd: overrides?.captionGap ?? CAPTION_GAP$1
+			marginBlockEnd: INSET_ZERO$1
 		}
 	}, caption)), /* @__PURE__ */ React.createElement(View, {
 		testID: "DataGrid.container",
@@ -14044,12 +14757,11 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			borderStartWidth: gridLineWidth,
 			borderTopWidth: gridLineWidth,
 			borderColor: gridLine,
-			...height === "viewport" ? flexStyle : height === "fixed" ? { height: fixedHeight } : null
+			...bounded ? flexStyle : null
 		}
 	}, /* @__PURE__ */ React.createElement(ScrollView, {
 		testID: "DataGrid.scrollRegion",
 		horizontal: true,
-		accessibilityHint: COPY$6.scrollHint,
 		onScroll: (event) => setScrolledX(event.nativeEvent.contentOffset.x > 0),
 		scrollEventThrottle: 16,
 		onLayout: (event) => setRegionWidth(event.nativeEvent.layout.width),
@@ -14057,18 +14769,19 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			minWidth: contentWidth,
 			flexGrow: 1
 		},
-		style: bounded ? flexStyle : void 0
-	}, /* @__PURE__ */ React.createElement(View, { style: [{ width: contentWidth }, bounded ? flexStyle : null] }, list))), /* @__PURE__ */ React.createElement(View, {
+		style: [{
+			borderWidth: focusRingWidth,
+			borderColor: gridFocused ? focusRing : "transparent"
+		}, bounded ? flexStyle : null]
+	}, /* @__PURE__ */ React.createElement(View, { style: [{ width: contentWidth }, bounded ? flexStyle : null] }, list))), /* @__PURE__ */ React.createElement(View, { style: showStatusBar ? {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		alignItems: "center",
+		gap: statusBarGap,
+		padding: statusBarPadding,
+		backgroundColor: t.colorBackgroundSubtle
+	} : HIDDEN_STYLE$3 }, /* @__PURE__ */ React.createElement(View, {
 		testID: "DataGrid.statusBar",
-		style: showStatusBar ? {
-			flexDirection: "row",
-			flexWrap: "wrap",
-			alignItems: "center",
-			gap: statusBarGap,
-			padding: statusBarPadding,
-			backgroundColor: t.colorBackgroundSubtle
-		} : HIDDEN_STYLE$3
-	}, /* @__PURE__ */ React.createElement(View, {
 		role: "status",
 		accessibilityLiveRegion: "polite"
 	}, editError !== void 0 && !loading ? /* @__PURE__ */ React.createElement(View, { style: { backgroundColor: t.colorStatusDangerBackground } }, /* @__PURE__ */ React.createElement(TextForegroundContext.Provider, { value: t.colorStatusDangerForeground }, /* @__PURE__ */ React.createElement(Text, {
@@ -14098,7 +14811,10 @@ function DataGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 }
 //#endregion
 //#region src/TreeGrid.tsx
-/** The component's user-facing strings, from the doc's `copy` block. */
+/**
+* The component's user-facing strings, from the doc's `copy` block (`cellLabel` included, which
+* the rn notes ask of every cell).
+*/
 const COPY$5 = {
 	expand: (rowName) => `Expand ${rowName}`,
 	collapse: (rowName) => `Collapse ${rowName}`,
@@ -14107,6 +14823,7 @@ const COPY$5 = {
 	loading: "Loading",
 	expandAll: "Expand all",
 	collapseAll: "Collapse all",
+	editHint: "Opens the cell editor",
 	empty: "Nothing to show.",
 	sortAscending: (column) => `Sort by ${column}, ascending`,
 	sortDescending: (column) => `Sort by ${column}, descending`,
@@ -14120,9 +14837,7 @@ const COPY$5 = {
 	position: (row, column) => `Row ${row}, ${column}`,
 	resize: (column) => `Resize ${column}`,
 	scrollHint: "Scroll sideways to see more columns",
-	/** DataGrid's cell name and edit hint: the column model, the editors and the touch affordances are shared. */
-	cellLabel: (column, value) => `${column}: ${value}`,
-	editHint: "Double tap to edit"
+	cellLabel: (column, value) => `${column}: ${value}`
 };
 const JUSTIFY = {
 	start: "flex-start",
@@ -14141,10 +14856,11 @@ const HEADER_WEIGHT = "font.weight.semibold";
 const HEADER_SIZE = "font.size.sm";
 const CAPTION_SIZE = "font.size.md";
 const CAPTION_WEIGHT = "font.weight.semibold";
-const CAPTION_GAP = "space.2";
-const LINE_HEIGHT = "font.lineHeight.tight";
+const LINE_HEIGHT$1 = "font.lineHeight.tight";
 const NUMERIC_FONT = "font.family.mono";
 const INSET_ZERO = "space.0";
+/** minTarget, forwarded to the select Checkboxes' `controlSize` (locked, so never an override). */
+const MIN_TARGET = "size.target.min";
 function tokenOr$1(t, ref, fallback) {
 	return ref === void 0 ? fallback : resolveToken(t, ref);
 }
@@ -14278,6 +14994,45 @@ function Chevron$1({ expanded, color, duration }) {
 		color
 	}));
 }
+/** The row hover tint, faded over DataGrid's own transition token (instant under reduced motion). */
+function RowTint({ visible, color, duration }) {
+	const { tokens: t } = useTheme();
+	const reducedMotion = useReducedMotion();
+	const opacity = React.useRef(new Animated.Value(visible ? 1 : 0)).current;
+	const wasVisible = React.useRef(visible);
+	React.useEffect(() => {
+		const toValue = visible ? 1 : 0;
+		const changed = wasVisible.current !== visible;
+		wasVisible.current = visible;
+		if (reducedMotion || !changed) {
+			opacity.setValue(toValue);
+			return;
+		}
+		const animation = Animated.timing(opacity, {
+			toValue,
+			duration,
+			easing: toEasing(t.motionEasingStandard),
+			useNativeDriver: false
+		});
+		animation.start();
+		return () => animation.stop();
+	}, [
+		visible,
+		reducedMotion,
+		duration,
+		opacity,
+		t.motionEasingStandard
+	]);
+	return /* @__PURE__ */ React.createElement(Animated.View, {
+		accessibilityElementsHidden: true,
+		importantForAccessibility: "no-hide-descendants",
+		style: [StyleSheet.absoluteFill, {
+			backgroundColor: color,
+			opacity,
+			pointerEvents: "none"
+		}]
+	});
+}
 /** An inset ring drawn over a cell, so neighbours and the scroll region never clip it. */
 function CellRing({ color, width }) {
 	return /* @__PURE__ */ React.createElement(View, {
@@ -14363,22 +15118,26 @@ function ResizeHandle({ width, minWidth, color, handleWidth, hitSlop, onResize, 
 * Expansion is the tree part. Each row header is a `Pressable` announcing "{name}, Level {n},
 * {count} items" with `accessibilityState.expanded` and its own `expand`/`collapse` actions when
 * it has children; pressing it toggles, long-pressing edits it when the column is editable. The
-* visible chevron is a ghost, icon-only `Button` at `size.target.min`, hidden from assistive
-* technology (the row header's actions are the screen-reader path) and rotated over `transition`.
-* The root view carries `expandAll`/`collapseAll` actions over every loaded row — the native
-* stand-in for `*`, which core React Native cannot reach, along with Shift+Space and Control+A.
-* `indent` is a spacer per level beyond the first, and one guide line per ancestor level runs the
-* full row height, centred on that ancestor's chevron. A `"lazy"` row fires `onExpand` every time
-* it opens while still lazy and shows one busy placeholder row reading `copy.loading` — a row
-* that is navigable but neither selectable nor editable — until `children` arrives. Native has no
-* position in set: only the level and the child count are conveyed.
+* visible chevron is a ghost, icon-only `Button` at `size.target.min` named with
+* `copy.expand`/`copy.collapse` and rotated over `transition` — it stays in the accessibility
+* tree (a focusable control inside a hidden wrapper is an `aria-hidden-focus` failure on
+* react-native-web, and `Button` has no non-focusable option), with the row header's actions as
+* the other path to the same act. The root view carries `expandAll`/`collapseAll` actions over
+* every loaded row — the native stand-in for `*`, which core React Native cannot reach, along
+* with Shift+Space and Control+A. `indent` is a spacer per level beyond the first, and one guide
+* line per ancestor level runs the full row height, centred on that ancestor's chevron. A
+* `"lazy"` row fires `onExpand` every time it opens while still lazy and shows one busy
+* placeholder row reading `copy.loading` — a row that is navigable but neither selectable nor
+* editable — until `children` arrives. Native has no position in set: only the level and the
+* child count are conveyed.
 *
 * Everything else is DataGrid's model: a sortable header is a `Button` (sorting orders siblings
 * within each level and keeps the tree), `selectable="row"` adds `Checkbox` cells and a select-all
 * that covers every loaded row at every level, `cell` selects the tapped cell, and an editable
 * cell opens `Input`, `NumberInput`, `DatePicker`, `Select` or `Checkbox` after `onEditStart`
-* allows it, with `activate` committing and `escape` cancelling. A failing `validate` keeps the
-* editor open with the cell ringed in danger and the message in the status bar's live region.
+* allows it, with `activate` committing and `escape` cancelling — which is also all
+* `escape-dismiss` asks of a component with no overlay. A failing `validate` keeps the editor
+* open with the cell ringed in danger and the message in the status bar's live region.
 */
 function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, data, expanded, defaultExpanded, sort, defaultSort, selectable = "none", selected, defaultSelected, selectChildren = false, editable = false, density = "compact", height = "viewport", loading = false, showStatusBar = true, stickyHeader = true, emptyMessage, overrides, onExpandChange, onExpand, onSortChange, onSelectionChange, onCellChange, onEditStart, onColumnResize, ref }) {
 	const { tokens: t } = useTheme();
@@ -14390,6 +15149,9 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 	const [internalSelected, setInternalSelected] = React.useState(defaultSelected ?? []);
 	const [activeCell, setActiveCell] = React.useState(null);
 	const [focusedCell, setFocusedCell] = React.useState(null);
+	const [hoveredRow, setHoveredRow] = React.useState(null);
+	const [pressedRow, setPressedRow] = React.useState(null);
+	const [headerHeight, setHeaderHeight] = React.useState(null);
 	const [editing, setEditing] = React.useState(null);
 	const [draft, setDraft] = React.useState(void 0);
 	const [editError, setEditError] = React.useState(void 0);
@@ -14411,7 +15173,6 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		if (Platform.OS === "ios") AccessibilityInfo.announceForAccessibility(message);
 	};
 	const indent = tokenOr$1(t, overrides?.indent, t.space5);
-	const expandButtonSize = t.sizeTargetMin;
 	const expandGap = tokenOr$1(t, overrides?.expandGap, t.layoutGapTight);
 	const guideLine = tokenOr$1(t, overrides?.guideLine, t.colorBorder);
 	const guideLineWidth = tokenOr$1(t, overrides?.guideLineWidth, t.borderWidthThin);
@@ -14419,20 +15180,28 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 	const fixedHeight = tokenOr$1(t, overrides?.fixedHeight, t.space20);
 	const parentWeight = overrides?.parentWeight ?? PARENT_WEIGHT;
 	const transition = tokenOr$1(t, overrides?.transition, t.motionDurationFast);
+	const expandButtonSize = t.sizeTargetMin;
+	const focusRing = t.colorBorderFocus;
+	const focusRingWidth = t.borderWidthFocus;
+	const minTarget = t.sizeTargetMin;
 	const gridLine = t.colorBorder;
 	const gridLineWidth = t.borderWidthThin;
 	const columnWidth = t.space20 * 2;
+	const rowHover = t.colorActionGhostBackgroundHover;
+	const dataGridTransition = t.motionDurationFast;
 	const resizeHandleWidth = t.space1;
 	const resizeStep = t.space4;
-	const rowHeight = density === "comfortable" ? t.sizeTargetComfortable : t.sizeTargetMin;
-	const selectColumnWidth = t.sizeTargetMin + 2 * cellPaddingInline;
-	const bodyText = { lineHeight: LINE_HEIGHT };
+	const captionGap = t.space2;
+	const densityRowHeight = density === "comfortable" ? t.sizeTargetComfortable : minTarget;
+	const rowHeight = selectable === "row" ? Math.max(densityRowHeight, t.sizeTargetComfortable) : densityRowHeight;
+	const selectColumnWidth = minTarget + 2 * cellPaddingInline;
+	const bodyText = { lineHeight: LINE_HEIGHT$1 };
 	const numericText = {
-		lineHeight: LINE_HEIGHT,
+		lineHeight: LINE_HEIGHT$1,
 		fontFamily: NUMERIC_FONT
 	};
 	const headerText = {
-		lineHeight: LINE_HEIGHT,
+		lineHeight: LINE_HEIGHT$1,
 		fontSize: HEADER_SIZE,
 		fontWeight: HEADER_WEIGHT
 	};
@@ -14644,7 +15413,7 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		}
 	};
 	const widthFor = (column) => widths[column.key] ?? column.width ?? columnWidth;
-	const minWidthFor = (column) => column.minWidth ?? t.sizeTargetMin;
+	const minWidthFor = (column) => column.minWidth ?? minTarget;
 	const resizeTo = (column, width) => {
 		setWidths((previous) => ({
 			...previous,
@@ -14670,6 +15439,7 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 	const headerRow = /* @__PURE__ */ React.createElement(View, {
 		testID: "TreeGrid.header",
 		role: "rowgroup",
+		onLayout: (event) => setHeaderHeight(event.nativeEvent.layout.height),
 		style: {
 			backgroundColor: t.colorBackgroundSubtle,
 			...headerScrolled ? t.shadowRaised : null
@@ -14702,6 +15472,7 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		name: `${baseId}-all`,
 		checked: allSelected,
 		indeterminate: someSelected,
+		overrides: { controlSize: MIN_TARGET },
 		onChange: toggleAll
 	})) : null, columns.map((column) => {
 		const width = widthFor(column);
@@ -14741,7 +15512,11 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			flexGrow: 1,
 			flexShrink: 1,
 			alignItems: JUSTIFY[column.align ?? "start"]
-		} }, column.sortable === true ? /* @__PURE__ */ React.createElement(View, { testID: "TreeGrid.sortButton" }, /* @__PURE__ */ React.createElement(Button, {
+		} }, column.sortable === true ? /* @__PURE__ */ React.createElement(Pressable, {
+			testID: "TreeGrid.sortButton",
+			accessible: false,
+			onPress: () => handleSortPress(column)
+		}, /* @__PURE__ */ React.createElement(Button, {
 			label: column.header,
 			accessibleName: sorted && activeSort.direction === "ascending" ? COPY$5.sortDescending(column.header) : COPY$5.sortAscending(column.header),
 			variant: "ghost",
@@ -14759,7 +15534,8 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			onPress: () => handleSortPress(column)
 		})) : /* @__PURE__ */ React.createElement(View, {
 			accessible: true,
-			accessibilityLabel: column.abbr ?? column.header
+			accessibilityLabel: column.abbr ?? column.header,
+			"aria-label": column.abbr ?? column.header
 		}, /* @__PURE__ */ React.createElement(Text, {
 			size: "sm",
 			weight: "semibold",
@@ -14770,23 +15546,33 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			minWidth: minWidthFor(column),
 			color: t.colorBorderStrong,
 			handleWidth: resizeHandleWidth,
-			hitSlop: (t.sizeTargetMin - resizeHandleWidth) / 2,
+			hitSlop: (minTarget - resizeHandleWidth) / 2,
 			onResize: (next) => resizeTo(column, next),
 			onResizeEnd: (next) => onColumnResize?.(column.key, next)
 		}) : null);
 	})));
-	/** One full-height line per ancestor level, centred on that ancestor's expand control. Decorative: the level is announced. */
+	/**
+	* One full-height line per ancestor level, centred on that ancestor's expand control. Drawn on
+	* the row, not inside the row header cell (which may be pinned and clip it), at
+	* cellPaddingInline + indent × (ancestor level − 1) + expandButtonSize / 2 from the row header's
+	* start, offset by the selection column when there is one. Decorative — the level is announced,
+	* so the lines are hidden (they hold no control) and never contrast-checked.
+	*/
+	const rowHeaderStart = selectable === "row" ? selectColumnWidth : 0;
 	const guideLines = (level) => level > 1 ? /* @__PURE__ */ React.createElement(View, {
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no-hide-descendants",
-		style: [StyleSheet.absoluteFill, { pointerEvents: "none" }]
+		style: [StyleSheet.absoluteFill, {
+			pointerEvents: "none",
+			zIndex: 1
+		}]
 	}, Array.from({ length: level - 1 }, (_unused, ancestor) => /* @__PURE__ */ React.createElement(View, {
 		key: ancestor,
 		style: {
 			position: "absolute",
 			top: 0,
 			bottom: 0,
-			start: cellPaddingInline + ancestor * indent + (expandButtonSize - guideLineWidth) / 2,
+			start: rowHeaderStart + cellPaddingInline + ancestor * indent + (expandButtonSize - guideLineWidth) / 2,
 			width: guideLineWidth,
 			backgroundColor: guideLine
 		}
@@ -14826,10 +15612,10 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		});
 		const ring = invalid ? /* @__PURE__ */ React.createElement(CellRing, {
 			color: t.colorBorderDanger,
-			width: t.borderWidthFocus
+			width: focusRingWidth
 		}) : isEditing || focusedCell === key || cellSelected ? /* @__PURE__ */ React.createElement(CellRing, {
-			color: t.colorBorderFocus,
-			width: t.borderWidthFocus
+			color: focusRing,
+			width: focusRingWidth
 		}) : null;
 		if (isEditing) return /* @__PURE__ */ React.createElement(View, {
 			key: column.key,
@@ -14844,10 +15630,14 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		return /* @__PURE__ */ React.createElement(Pressable, {
 			key: column.key,
 			testID: "TreeGrid.cell",
-			role: "cell",
+			role: selectable === "cell" ? "gridcell" : "cell",
 			accessibilityLabel: COPY$5.cellLabel(column.header, cellText(row, column.key)),
+			"aria-label": COPY$5.cellLabel(column.header, cellText(row, column.key)),
 			accessibilityHint: editableHere ? COPY$5.editHint : void 0,
 			accessibilityState: selectable === "cell" ? { selected: cellSelected } : void 0,
+			"aria-selected": selectable === "cell" ? cellSelected : void 0,
+			onPressIn: interactive ? () => setPressedRow(row.id) : void 0,
+			onPressOut: interactive ? () => setPressedRow((current) => current === row.id ? null : current) : void 0,
 			onPress: interactive ? () => {
 				if (selectable === "cell" && !cellSelected) selectCell(row.id, column.key);
 				if (editableHere) startEdit(row, column);
@@ -14855,6 +15645,8 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			} : void 0,
 			onFocus: () => setFocusedCell(key),
 			onBlur: () => setFocusedCell((current) => current === key ? null : current),
+			onHoverIn: () => setHoveredRow(row.id),
+			onHoverOut: () => setHoveredRow((current) => current === row.id ? null : current),
 			style
 		}, /* @__PURE__ */ React.createElement(View, {
 			testID: "TreeGrid.cellContent",
@@ -14888,7 +15680,7 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			const action = event.nativeEvent.actionName;
 			if (action === "expand" && !isExpanded || action === "collapse" && isExpanded) toggleExpand(row);
 		};
-		/** Pressing a parent toggles it; a leaf takes DataGrid's order — edit if editable, else select the cell. */
+		/** Pressing a parent toggles it and never selects the cell; a leaf takes DataGrid's order — select the cell, then edit when editable. */
 		const activate = () => {
 			if (parent) {
 				commitOpenEdit();
@@ -14912,10 +15704,10 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		});
 		const ring = invalid ? /* @__PURE__ */ React.createElement(CellRing, {
 			color: t.colorBorderDanger,
-			width: t.borderWidthFocus
+			width: focusRingWidth
 		}) : isEditing || focusedCell === key || cellSelected ? /* @__PURE__ */ React.createElement(CellRing, {
-			color: t.colorBorderFocus,
-			width: t.borderWidthFocus
+			color: focusRing,
+			width: focusRingWidth
 		}) : null;
 		const state = parent ? {
 			expanded: isExpanded,
@@ -14926,16 +15718,23 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			testID: "TreeGrid.rowHeader",
 			role: "rowheader",
 			accessibilityLabel: label,
+			"aria-label": label,
 			accessibilityHint: editableHere ? COPY$5.editHint : void 0,
 			accessibilityState: state,
+			"aria-expanded": parent ? isExpanded : void 0,
+			"aria-selected": selectable === "cell" ? cellSelected : void 0,
 			accessibilityActions: expandActions,
 			onAccessibilityAction: expandActions !== void 0 ? handleAction : void 0,
+			onPressIn: () => setPressedRow(row.id),
+			onPressOut: () => setPressedRow((current) => current === row.id ? null : current),
 			onPress: activate,
 			onLongPress: parent && editableHere ? () => startEdit(row, column) : void 0,
 			onFocus: () => setFocusedCell(key),
 			onBlur: () => setFocusedCell((current) => current === key ? null : current),
+			onHoverIn: () => setHoveredRow(row.id),
+			onHoverOut: () => setHoveredRow((current) => current === row.id ? null : current),
 			style
-		}, guideLines(level), level > 1 ? /* @__PURE__ */ React.createElement(View, {
+		}, level > 1 ? /* @__PURE__ */ React.createElement(View, {
 			testID: "TreeGrid.indent",
 			style: { width: (level - 1) * indent }
 		}) : null, /* @__PURE__ */ React.createElement(View, { style: {
@@ -14946,11 +15745,9 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			gap: expandGap
 		} }, /* @__PURE__ */ React.createElement(View, {
 			testID: "TreeGrid.expandButton",
-			accessibilityElementsHidden: true,
-			importantForAccessibility: "no-hide-descendants",
 			style: {
 				width: expandButtonSize,
-				minHeight: t.sizeTargetMin,
+				minHeight: minTarget,
 				alignItems: "center",
 				justifyContent: "center"
 			}
@@ -14987,15 +15784,18 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		testID: "TreeGrid.row",
 		role: "row",
 		accessibilityState: { busy: true },
+		"aria-busy": true,
 		style: {
 			flexDirection: "row",
 			alignItems: "stretch",
 			height: rowHeight,
 			backgroundColor: t.colorBackground,
 			borderBottomWidth: gridLineWidth,
-			borderBottomColor: gridLine
+			borderBottomColor: gridLine,
+			borderStartWidth: focusRingWidth,
+			borderStartColor: t.colorBackground
 		}
-	}, selectable === "row" ? /* @__PURE__ */ React.createElement(View, { style: [selectColumnStyle, {
+	}, guideLines(flat.level), selectable === "row" ? /* @__PURE__ */ React.createElement(View, { style: [selectColumnStyle, {
 		borderEndWidth: gridLineWidth,
 		borderEndColor: gridLine
 	}] }) : null, columns.map((column) => column === rowHeaderColumn ? /* @__PURE__ */ React.createElement(View, {
@@ -15003,11 +15803,12 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		testID: "TreeGrid.rowHeader",
 		role: "rowheader",
 		accessibilityLabel: [COPY$5.loading, COPY$5.level(flat.level)].join(", "),
+		"aria-label": [COPY$5.loading, COPY$5.level(flat.level)].join(", "),
 		style: [cellFrame(column), {
 			flexDirection: "row",
 			alignItems: "center"
 		}]
-	}, guideLines(flat.level), flat.level > 1 ? /* @__PURE__ */ React.createElement(View, {
+	}, flat.level > 1 ? /* @__PURE__ */ React.createElement(View, {
 		testID: "TreeGrid.indent",
 		style: { width: (flat.level - 1) * indent }
 	}) : null, /* @__PURE__ */ React.createElement(View, { style: {
@@ -15046,6 +15847,8 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 				selected: rowSelected,
 				busy
 			} : busy ? { busy } : void 0,
+			"aria-selected": selectable === "row" ? rowSelected : void 0,
+			"aria-busy": busy || void 0,
 			style: {
 				flexDirection: "row",
 				alignItems: "stretch",
@@ -15053,16 +15856,26 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 				backgroundColor: background,
 				borderBottomWidth: gridLineWidth,
 				borderBottomColor: gridLine,
-				borderStartWidth: t.borderWidthFocus,
+				borderStartWidth: focusRingWidth,
 				borderStartColor: rowSelected ? t.colorControlSelectedBackground : background
 			}
-		}, selectable === "row" ? /* @__PURE__ */ React.createElement(View, {
+		}, /* @__PURE__ */ React.createElement(RowTint, {
+			visible: !rowSelected && (hoveredRow === row.id || pressedRow === row.id),
+			color: rowHover,
+			duration: dataGridTransition
+		}), guideLines(item.level), selectable === "row" ? /* @__PURE__ */ React.createElement(Pressable, {
 			testID: "TreeGrid.selectCell",
 			role: "cell",
+			accessible: false,
+			onPress: () => toggleRow(row),
+			onPressIn: () => setPressedRow(row.id),
+			onPressOut: () => setPressedRow((current) => current === row.id ? null : current),
+			onHoverIn: () => setHoveredRow(row.id),
+			onHoverOut: () => setHoveredRow((current) => current === row.id ? null : current),
 			style: [
 				selectColumnStyle,
 				{
-					backgroundColor: background,
+					backgroundColor: scrolledX ? background : "transparent",
 					borderEndWidth: gridLineWidth,
 					borderEndColor: gridLine
 				},
@@ -15074,12 +15887,14 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			name: `${baseId}-${row.id}`,
 			checked: checkState === "checked",
 			indeterminate: checkState === "indeterminate",
+			overrides: { controlSize: MIN_TARGET },
 			onChange: () => toggleRow(row)
 		})) : null, columns.map((column) => column === rowHeaderColumn ? renderRowHeader(item, column) : renderDataCell(row, column)));
 	};
-	const contentWidth = columns.reduce((sum, column) => sum + widthFor(column), selectable === "row" ? selectColumnWidth : 0) + t.borderWidthFocus;
+	const contentWidth = columns.reduce((sum, column) => sum + widthFor(column), selectable === "row" ? selectColumnWidth : 0) + focusRingWidth;
 	const overflows = regionWidth !== null && contentWidth > regionWidth;
 	const bounded = height !== "content";
+	const gridFocused = focusedCell !== null || editing !== null;
 	const flexStyle = {
 		flexGrow: 1,
 		flexShrink: 1
@@ -15102,7 +15917,9 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		testID: "TreeGrid.grid",
 		role: "grid",
 		accessibilityLabel: caption,
+		"aria-label": caption,
 		accessibilityState: { busy: loading },
+		"aria-busy": loading,
 		data: rows,
 		extraData: [
 			selectedIds,
@@ -15111,6 +15928,8 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			activeSort,
 			activeCell,
 			focusedCell,
+			hoveredRow,
+			pressedRow,
 			editing,
 			draft,
 			editError,
@@ -15123,12 +15942,12 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		renderItem: renderRow,
 		getItemLayout: (_items, index) => ({
 			length: rowHeight,
-			offset: rowHeight * index,
+			offset: (headerHeight ?? rowHeight + t.borderWidthThin) + rowHeight * index,
 			index
 		}),
 		ListHeaderComponent: headerRow,
-		ListEmptyComponent: emptyState,
-		stickyHeaderIndices: stickyHeader || bounded ? [0] : void 0,
+		ListEmptyComponent: loading ? void 0 : emptyState,
+		stickyHeaderIndices: bounded ? [0] : void 0,
 		scrollEnabled: bounded,
 		initialNumToRender: bounded ? void 0 : rows.length,
 		onScroll: (event) => setHeaderScrolled(event.nativeEvent.contentOffset.y > 0),
@@ -15148,18 +15967,18 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 		onAccessibilityAction: handleRootAction,
 		style: {
 			backgroundColor: t.colorBackground,
-			...height === "viewport" ? { height: viewport.height - 2 * t.layoutGapSection } : null
+			...height === "viewport" ? { height: viewport.height - 2 * t.layoutGapSection } : height === "fixed" ? { height: fixedHeight } : null
 		}
 	}, /* @__PURE__ */ React.createElement(View, {
 		testID: "TreeGrid.caption",
-		style: hideCaption ? HIDDEN_STYLE$2 : void 0
+		style: hideCaption ? HIDDEN_STYLE$2 : { paddingBottom: captionGap }
 	}, /* @__PURE__ */ React.createElement(Heading, {
 		level: captionLevel,
 		size: "md",
 		overrides: {
 			fontSize: CAPTION_SIZE,
 			fontWeight: CAPTION_WEIGHT,
-			marginBlockEnd: CAPTION_GAP
+			marginBlockEnd: INSET_ZERO
 		}
 	}, caption)), /* @__PURE__ */ React.createElement(View, {
 		testID: "TreeGrid.container",
@@ -15167,12 +15986,11 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			borderStartWidth: gridLineWidth,
 			borderTopWidth: gridLineWidth,
 			borderColor: gridLine,
-			...height === "viewport" ? flexStyle : height === "fixed" ? { height: fixedHeight } : null
+			...bounded ? flexStyle : null
 		}
 	}, /* @__PURE__ */ React.createElement(ScrollView, {
 		testID: "TreeGrid.scrollRegion",
 		horizontal: true,
-		accessibilityHint: COPY$5.scrollHint,
 		onScroll: (event) => setScrolledX(event.nativeEvent.contentOffset.x > 0),
 		scrollEventThrottle: 16,
 		onLayout: (event) => setRegionWidth(event.nativeEvent.layout.width),
@@ -15180,18 +15998,19 @@ function TreeGrid({ caption, captionLevel = "2", hideCaption = false, columns, d
 			minWidth: contentWidth,
 			flexGrow: 1
 		},
-		style: bounded ? flexStyle : void 0
-	}, /* @__PURE__ */ React.createElement(View, { style: [{ width: contentWidth }, bounded ? flexStyle : null] }, list))), /* @__PURE__ */ React.createElement(View, {
+		style: [{
+			borderWidth: focusRingWidth,
+			borderColor: gridFocused ? focusRing : "transparent"
+		}, bounded ? flexStyle : null]
+	}, /* @__PURE__ */ React.createElement(View, { style: [{ width: contentWidth }, bounded ? flexStyle : null] }, list))), /* @__PURE__ */ React.createElement(View, { style: showStatusBar ? {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		alignItems: "center",
+		gap: t.space2,
+		padding: t.space2,
+		backgroundColor: t.colorBackgroundSubtle
+	} : HIDDEN_STYLE$2 }, /* @__PURE__ */ React.createElement(View, {
 		testID: "TreeGrid.statusBar",
-		style: showStatusBar ? {
-			flexDirection: "row",
-			flexWrap: "wrap",
-			alignItems: "center",
-			gap: t.space2,
-			padding: t.space2,
-			backgroundColor: t.colorBackgroundSubtle
-		} : HIDDEN_STYLE$2
-	}, /* @__PURE__ */ React.createElement(View, {
 		role: "status",
 		accessibilityLiveRegion: "polite"
 	}, editError !== void 0 && !loading ? /* @__PURE__ */ React.createElement(View, { style: { backgroundColor: t.colorStatusDangerBackground } }, /* @__PURE__ */ React.createElement(TextForegroundContext.Provider, { value: t.colorStatusDangerForeground }, /* @__PURE__ */ React.createElement(Text, {
@@ -15231,6 +16050,13 @@ const COPY$4 = {
 const LABEL_SELECTED_WEIGHT = "font.weight.medium";
 const HEADING_SIZE = "font.size.md";
 const BADGE_SIZE = "font.size.xs";
+const FONT_FAMILY = "font.family.body";
+const FONT_SIZE = "font.size.sm";
+const LINE_HEIGHT = "font.lineHeight.normal";
+/** iconColor, locked: forwarded to the composed Icon as `overrides.color`. */
+const ICON_COLOR = "color.foreground.muted";
+/** The `defaultExpanded` sentinel for "every loaded parent"; never matched against an id. */
+const ALL = "*";
 /** Clips content to one point while keeping it in the accessibility tree (the Android live region). */
 const HIDDEN_STYLE$1 = {
 	position: "absolute",
@@ -15238,6 +16064,31 @@ const HIDDEN_STYLE$1 = {
 	height: 1,
 	overflow: "hidden"
 };
+const isWeb = Platform.OS === "web";
+/**
+* Marks a disabled row on react-native-web. Pressable writes `aria-disabled` from its own
+* `disabled` prop, which the press guard deliberately never sets — that would take the row out of
+* the accessibility tree — so the attribute is written on the node instead, as Button and Listbox
+* record. It is also what keeps a dimmed row out of axe's contrast check: WCAG 1.4.3 exempts
+* inactive components, and `opacity.disabled` over `color.foreground` cannot reach 4.5:1.
+*/
+function markDisabled(instance, disabled) {
+	if (!isWeb || instance === null) return;
+	const node = instance;
+	if (disabled) node.setAttribute("aria-disabled", "true");
+	else node.removeAttribute("aria-disabled");
+}
+/**
+* Demotes the composed Link inside a node's label out of the tab order on react-native-web, the
+* platform's form of the `tabIndex={-1}` web and lit put on it: the row Pressable follows `href`
+* itself, so the row stays the tab stop and the one target. A widget outside the tab order whose
+* ancestor is in it is also not a target of its own, which is what keeps the short inline anchor
+* out of axe's target-size rule.
+*/
+function demoteLink(instance) {
+	if (!isWeb || instance === null) return;
+	instance.querySelector("[data-testid=\"Link\"]")?.setAttribute("tabindex", "-1");
+}
 function tokenOr(t, ref, fallback) {
 	return ref === void 0 ? fallback : resolveToken(t, ref);
 }
@@ -15264,12 +16115,23 @@ function flattenNodes(nodes, expanded, level, out = []) {
 	}
 	return out;
 }
-/** Every loaded parent, at any depth — what `["*"]` expands; never a `"lazy"` node. */
+/** Every enabled loaded parent, at any depth — what `["*"]` expands; never a `"lazy"` node. */
 function expandableIds(nodes, out = []) {
 	for (const node of nodes) if (Array.isArray(node.children) && node.children.length > 0) {
-		out.push(node.id);
+		if (node.disabled !== true) out.push(node.id);
 		expandableIds(node.children, out);
 	}
+	return out;
+}
+/**
+* The expanded ids with the `"*"` sentinel replaced in place by the concrete parents it opens,
+* duplicates dropped; every other listed id (a held-lazy one included) keeps its place. This is
+* what the first user toggle reports.
+*/
+function resolveExpanded(ids, nodes) {
+	if (!ids.includes(ALL)) return ids;
+	const out = [];
+	for (const id of ids) for (const each of id === ALL ? expandableIds(nodes) : [id]) if (!out.includes(each)) out.push(each);
 	return out;
 }
 /** Every node whose children are still `"lazy"`, at any depth: those open on a user act only, so `onExpand` never fires for a caller's id. */
@@ -15323,7 +16185,7 @@ function Chevron({ expanded, color, duration }) {
 	]);
 	const style = { transform: [{ rotate: rotation.interpolate({
 		inputRange: [0, 1],
-		outputRange: ["0deg", "90deg"]
+		outputRange: [I18nManager.isRTL ? "180deg" : "0deg", "90deg"]
 	}) }] };
 	return /* @__PURE__ */ React.createElement(Animated.View, { style }, /* @__PURE__ */ React.createElement(Icon, {
 		name: "chevron-right",
@@ -15386,20 +16248,31 @@ function Tree({ label, showLabel = false, headingLevel = "2", nodes, expanded, d
 	const labelSelectedWeight = overrides?.labelSelectedWeight ?? LABEL_SELECTED_WEIGHT;
 	const headingSize = overrides?.headingSize ?? HEADING_SIZE;
 	const badgeSize = overrides?.badgeSize ?? BADGE_SIZE;
+	/**
+	* fontFamily/fontSize/lineHeight set the container's type and, resolved the same way (the
+	* override when there is one, the token otherwise), are always forwarded to the label Text,
+	* so the root and the composed label never disagree.
+	*/
 	const labelTypography = {
-		fontFamily: overrides?.fontFamily,
-		fontSize: overrides?.fontSize,
-		lineHeight: overrides?.lineHeight
+		fontFamily: overrides?.fontFamily ?? FONT_FAMILY,
+		fontSize: overrides?.fontSize ?? FONT_SIZE,
+		lineHeight: overrides?.lineHeight ?? LINE_HEIGHT
 	};
 	/** Parent and tree order for every node, loaded subtrees included. */
 	const index = React.useMemo(() => indexNodes(nodes, void 0, /* @__PURE__ */ new Map()), [nodes]);
-	const [internalExpanded, setInternalExpanded] = React.useState(() => defaultExpanded?.includes("*") ? expandableIds(nodes) : defaultExpanded ?? []);
+	const [internalExpanded, setInternalExpanded] = React.useState(defaultExpanded ?? []);
 	const expandedIds = expanded ?? internalExpanded;
+	/** Lazy ids the user opened and has not closed since; any other still-lazy id is held shut. */
 	const [openedLazy, setOpenedLazy] = React.useState([]);
 	const lazySet = React.useMemo(() => new Set(lazyIds(nodes)), [nodes]);
-	/** What is actually open: a still-lazy id the caller listed stays shut until the user opens it, so `onExpand` follows a user act. */
-	const expandedSet = React.useMemo(() => new Set(expandedIds.filter((id) => !lazySet.has(id) || openedLazy.includes(id))), [
-		expandedIds,
+	const resolvedExpanded = React.useMemo(() => resolveExpanded(expandedIds, nodes), [expandedIds, nodes]);
+	/**
+	* What is actually open: a still-lazy id the caller listed stays shut until the user opens it,
+	* so `onExpand` follows a user act, and a disabled parent stays closed by any means.
+	*/
+	const expandedSet = React.useMemo(() => new Set(resolvedExpanded.filter((id) => index.get(id)?.node.disabled !== true && (!lazySet.has(id) || openedLazy.includes(id)))), [
+		resolvedExpanded,
+		index,
 		lazySet,
 		openedLazy
 	]);
@@ -15410,31 +16283,27 @@ function Tree({ label, showLabel = false, headingLevel = "2", nodes, expanded, d
 	const toggleExpand = (node) => {
 		if (node.disabled === true) return;
 		if (expandedSet.has(node.id)) {
-			commitExpanded(expandedIds.filter((id) => id !== node.id));
+			setOpenedLazy((prev) => prev.filter((id) => id !== node.id));
+			commitExpanded(resolvedExpanded.filter((id) => id !== node.id));
 			return;
 		}
 		if (node.children === "lazy") {
 			setOpenedLazy((prev) => prev.includes(node.id) ? prev : [...prev, node.id]);
 			onExpand?.(node.id);
 		}
-		commitExpanded(expandedIds.includes(node.id) ? expandedIds : [...expandedIds, node.id]);
+		commitExpanded(resolvedExpanded.includes(node.id) ? resolvedExpanded : [...resolvedExpanded, node.id]);
 	};
 	const visible = React.useMemo(() => flattenNodes(nodes, expandedSet, 1), [nodes, expandedSet]);
 	const [internalSelected, setInternalSelected] = React.useState(defaultSelected ?? []);
 	const selectedIds = selected ?? internalSelected;
 	const selectedSet = React.useMemo(() => new Set(selectedIds), [selectedIds]);
-	const [announcement, setAnnouncement] = React.useState("");
 	/** Selected ids as the event reports them: tree (document) order, unknown ids last. */
 	const inTreeOrder = (ids) => Array.from(ids).sort((a, b) => (index.get(a)?.order ?? Number.MAX_SAFE_INTEGER) - (index.get(b)?.order ?? Number.MAX_SAFE_INTEGER));
 	const commitSelection = (next) => {
 		if (next.length === selectedIds.length && next.every((id) => selectedSet.has(id))) return;
 		if (selected === void 0) setInternalSelected(next);
 		onSelectionChange?.(next);
-		if (selectable === "multiple") {
-			const message = COPY$4.selectedCount(next.length);
-			setAnnouncement(message);
-			if (Platform.OS === "ios") AccessibilityInfo.announceForAccessibility(message);
-		}
+		if (selectable === "multiple" && Platform.OS === "ios") AccessibilityInfo.announceForAccessibility(COPY$4.selectedCount(next.length));
 	};
 	const checkStateOf = (node) => {
 		const own = selectedSet.has(node.id);
@@ -15532,8 +16401,12 @@ function Tree({ label, showLabel = false, headingLevel = "2", nodes, expanded, d
 		size: "xs",
 		color: t.colorControlSelectedForeground
 	}));
+	/** The lazy placeholder: not a node, so no level and no part hook, as on web. */
 	const renderPlaceholder = (item) => /* @__PURE__ */ React.createElement(View, {
-		testID: "Tree.node",
+		role: "listitem",
+		accessible: true,
+		accessibilityLabel: COPY$4.loading,
+		"aria-label": COPY$4.loading,
 		style: {
 			flexDirection: "row",
 			alignItems: "center",
@@ -15541,12 +16414,10 @@ function Tree({ label, showLabel = false, headingLevel = "2", nodes, expanded, d
 			paddingHorizontal: rowPaddingInline,
 			gap: rowGap
 		}
-	}, guides(item.level), /* @__PURE__ */ React.createElement(View, {
-		testID: "Tree.indent",
-		style: { width: (item.level - 1) * indent }
-	}), /* @__PURE__ */ React.createElement(View, { style: { width: expandButtonSize } }), /* @__PURE__ */ React.createElement(Text, {
+	}, guides(item.level), /* @__PURE__ */ React.createElement(View, { style: { width: (item.level - 1) * indent + expandButtonSize } }), /* @__PURE__ */ React.createElement(Text, {
 		size: "sm",
-		tone: "muted"
+		tone: "muted",
+		overrides: labelTypography
 	}, COPY$4.loading));
 	const renderNode = ({ item }) => {
 		if (item.placeholder) return renderPlaceholder(item);
@@ -15557,6 +16428,9 @@ function Tree({ label, showLabel = false, headingLevel = "2", nodes, expanded, d
 		const checkState = selectable === "multiple" ? checkStateOf(node) : "unchecked";
 		const isSelected = selectable === "single" ? selectedSet.has(node.id) : selectable === "multiple" && checkState === "checked";
 		const highlighted = !disabled && hoveredId === node.id;
+		const rowLabel = node.badge === void 0 ? `${node.label}, level ${level}` : `${node.label}, ${node.badge}, level ${level}`;
+		const checked = selectable === "multiple" ? checkState === "mixed" ? "mixed" : checkState === "checked" : void 0;
+		const busy = isExpanded && node.children === "lazy" ? true : void 0;
 		const actions = [];
 		if (parent && !disabled) actions.push({
 			name: "expand",
@@ -15573,6 +16447,7 @@ function Tree({ label, showLabel = false, headingLevel = "2", nodes, expanded, d
 		};
 		return /* @__PURE__ */ React.createElement(View, {
 			testID: "Tree.node",
+			role: "listitem",
 			style: {
 				flexDirection: "row",
 				alignItems: "center",
@@ -15595,7 +16470,10 @@ function Tree({ label, showLabel = false, headingLevel = "2", nodes, expanded, d
 				backgroundColor: rowSelectedBorder,
 				pointerEvents: "none"
 			}
-		}) : null, /* @__PURE__ */ React.createElement(View, {
+		}) : null, /* @__PURE__ */ React.createElement(View, { style: {
+			flexDirection: "row",
+			alignItems: "center"
+		} }, /* @__PURE__ */ React.createElement(View, {
 			testID: "Tree.indent",
 			style: { width: (level - 1) * indent }
 		}), /* @__PURE__ */ React.createElement(View, {
@@ -15615,21 +16493,28 @@ function Tree({ label, showLabel = false, headingLevel = "2", nodes, expanded, d
 			disabled,
 			leadingIcon: /* @__PURE__ */ React.createElement(Chevron, {
 				expanded: isExpanded,
-				color: t.colorForeground,
+				color: t.colorActionGhostForeground,
 				duration: transition
 			}),
 			onPress: () => toggleExpand(node)
-		}) : null), /* @__PURE__ */ React.createElement(Pressable, {
+		}) : null)), /* @__PURE__ */ React.createElement(Pressable, {
 			testID: "Tree.nodeRow",
+			ref: (instance) => {
+				markDisabled(instance, disabled);
+			},
 			accessibilityRole: node.href !== void 0 ? "link" : "button",
-			accessibilityLabel: `${node.label}, level ${level}`,
+			accessibilityLabel: rowLabel,
+			"aria-label": rowLabel,
 			accessibilityState: {
 				disabled,
 				expanded: parent ? isExpanded : void 0,
 				selected: selectable === "single" ? isSelected : void 0,
-				checked: selectable === "multiple" ? checkState === "mixed" ? "mixed" : checkState === "checked" : void 0,
-				busy: isExpanded && node.children === "lazy" ? true : void 0
+				checked,
+				busy
 			},
+			"aria-disabled": disabled || void 0,
+			"aria-expanded": parent ? isExpanded : void 0,
+			"aria-busy": busy,
 			accessibilityActions: actions.length > 0 ? actions : void 0,
 			onAccessibilityAction: actions.length > 0 ? handleAction : void 0,
 			onPress: () => press(node),
@@ -15655,27 +16540,30 @@ function Tree({ label, showLabel = false, headingLevel = "2", nodes, expanded, d
 		} }, node.icon !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "Tree.icon" }, /* @__PURE__ */ React.createElement(Icon, {
 			name: node.icon,
 			size: "sm",
-			color: t.colorForegroundMuted
-		})) : null, /* @__PURE__ */ React.createElement(View, { style: { flex: 1 } }, node.href !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "Tree.link" }, /* @__PURE__ */ React.createElement(Text, {
+			overrides: { color: ICON_COLOR }
+		})) : null, /* @__PURE__ */ React.createElement(View, {
+			testID: "Tree.label",
+			style: { flex: 1 }
+		}, /* @__PURE__ */ React.createElement(Text, {
 			size: "sm",
 			truncate: true,
-			overrides: labelTypography
+			overrides: isSelected && node.href === void 0 ? {
+				...labelTypography,
+				fontWeight: labelSelectedWeight
+			} : labelTypography
+		}, node.href !== void 0 ? /* @__PURE__ */ React.createElement(View, {
+			testID: "Tree.link",
+			ref: demoteLink
 		}, /* @__PURE__ */ React.createElement(Link, {
 			href: node.href,
 			label: node.label,
+			tone: "inherit",
 			onPress: () => {
 				press(node);
 				return false;
 			},
 			onLongPress: selectable === "multiple" ? () => longPress(node) : void 0
-		}))) : /* @__PURE__ */ React.createElement(View, { testID: "Tree.label" }, /* @__PURE__ */ React.createElement(Text, {
-			size: "sm",
-			truncate: true,
-			overrides: isSelected ? {
-				...labelTypography,
-				fontWeight: labelSelectedWeight
-			} : labelTypography
-		}, node.label))), node.badge !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "Tree.badge" }, /* @__PURE__ */ React.createElement(Text, {
+		})) : node.label)), node.badge !== void 0 ? /* @__PURE__ */ React.createElement(View, { testID: "Tree.badge" }, /* @__PURE__ */ React.createElement(Text, {
 			size: "xs",
 			tone: "muted",
 			overrides: { fontSize: badgeSize }
@@ -15695,14 +16583,16 @@ function Tree({ label, showLabel = false, headingLevel = "2", nodes, expanded, d
 		testID: "Tree"
 	}, showLabel ? /* @__PURE__ */ React.createElement(View, { testID: "Tree.heading" }, /* @__PURE__ */ React.createElement(Heading, {
 		level: headingLevel,
+		size: "md",
 		overrides: { fontSize: headingSize }
 	}, label)) : null, /* @__PURE__ */ React.createElement(FlatList, {
 		accessibilityRole: "list",
 		accessibilityLabel: label,
+		"aria-label": label,
 		data: visible,
 		extraData: [
 			selectedIds,
-			expandedIds,
+			expandedSet,
 			focusedId,
 			hoveredId,
 			selectable,
@@ -15713,6 +16603,7 @@ function Tree({ label, showLabel = false, headingLevel = "2", nodes, expanded, d
 		renderItem: renderNode,
 		ListEmptyComponent: /* @__PURE__ */ React.createElement(View, {
 			testID: "Tree.emptyState",
+			role: "listitem",
 			style: {
 				minHeight: rowHeight,
 				paddingHorizontal: rowPaddingInline,
@@ -15720,12 +16611,13 @@ function Tree({ label, showLabel = false, headingLevel = "2", nodes, expanded, d
 			}
 		}, /* @__PURE__ */ React.createElement(Text, {
 			size: "sm",
-			tone: "muted"
+			tone: "muted",
+			overrides: labelTypography
 		}, COPY$4.empty))
 	}), selectable === "multiple" ? /* @__PURE__ */ React.createElement(View, {
 		accessibilityLiveRegion: "polite",
 		style: HIDDEN_STYLE$1
-	}, /* @__PURE__ */ React.createElement(Text, { size: "sm" }, announcement)) : null);
+	}, /* @__PURE__ */ React.createElement(Text, { size: "sm" }, COPY$4.selectedCount(selectedIds.length))) : null);
 }
 //#endregion
 //#region src/Splitter.tsx
@@ -15795,18 +16687,18 @@ function Splitter({ label, orientation = "horizontal", primary, secondary, size,
 	const baseSize = clamp(size ?? internalSize, minSize, maxSize);
 	const effectiveSize = isCollapsed ? 0 : baseSize;
 	React.useEffect(() => {
-		if (__DEV__ && minSize >= maxSize) console.warn(`Splitter: minSize (${minSize}) must be less than maxSize (${maxSize}).`);
-	}, [minSize, maxSize]);
-	const persist = (nextSize, nextCollapsed) => {
 		if (persistKey !== void 0) persisted.set(persistKey, {
-			size: nextSize,
-			collapsed: nextCollapsed
+			size: baseSize,
+			collapsed: isCollapsed
 		});
-	};
+	}, [
+		persistKey,
+		baseSize,
+		isCollapsed
+	]);
 	const applySize = (raw, commit) => {
 		const next = clamp(raw, minSize, maxSize);
 		if (size === void 0) setInternalSize(next);
-		persist(next, false);
 		onSizeChange?.(next);
 		if (commit) onSizeChangeEnd?.(next);
 	};
@@ -15819,7 +16711,6 @@ function Splitter({ label, orientation = "horizontal", primary, secondary, size,
 	};
 	const setCollapsedState = (next) => {
 		if (collapsed === void 0) setInternalCollapsed(next);
-		persist(baseSize, next);
 		onCollapseChange?.(next);
 	};
 	const toggleCollapse = () => {
@@ -15864,15 +16755,27 @@ function Splitter({ label, orientation = "horizontal", primary, secondary, size,
 	const containerExtentRef = React.useRef(0);
 	const dragRef = React.useRef({
 		active: false,
+		moved: false,
 		start: 0,
 		last: 0
 	});
+	/** A gesture that never moved the separator (no change of the clamped size, and no
+	* collapse) is not a drag and commits nothing; one the platform cancels counts as a
+	* release, so both paths end here. */
+	const endDrag = () => {
+		const drag = dragRef.current;
+		if (drag.moved) latest.current.onSizeChangeEnd?.(drag.last);
+		drag.active = false;
+		drag.moved = false;
+		setDragging(false);
+	};
 	const panResponder = React.useRef(PanResponder.create({
 		onStartShouldSetPanResponder: () => !latest.current.isCollapsed,
 		onMoveShouldSetPanResponder: () => !latest.current.isCollapsed,
 		onPanResponderGrant: () => {
 			dragRef.current = {
 				active: true,
+				moved: false,
 				start: latest.current.baseSize,
 				last: latest.current.baseSize
 			};
@@ -15882,25 +16785,23 @@ function Splitter({ label, orientation = "horizontal", primary, secondary, size,
 			const drag = dragRef.current;
 			const extent = containerExtentRef.current;
 			if (!drag.active || extent <= 0) return;
-			const raw = drag.start + (latest.current.horizontal ? gesture.dx : gesture.dy) / extent * 100;
+			const delta = latest.current.horizontal ? gesture.dx : gesture.dy;
+			const raw = drag.start + delta / extent * 100;
 			if (latest.current.collapsible && raw < latest.current.minSize) {
 				drag.active = false;
+				drag.moved = true;
 				setDragging(false);
 				latest.current.setCollapsedState(true);
 				return;
 			}
-			drag.last = raw;
-			latest.current.applySize(raw, false);
+			const next = clamp(raw, latest.current.minSize, latest.current.maxSize);
+			if (next === drag.last) return;
+			drag.moved = true;
+			drag.last = next;
+			latest.current.applySize(next, false);
 		},
-		onPanResponderRelease: () => {
-			latest.current.onSizeChangeEnd?.(clamp(dragRef.current.last, latest.current.minSize, latest.current.maxSize));
-			dragRef.current.active = false;
-			setDragging(false);
-		},
-		onPanResponderTerminate: () => {
-			dragRef.current.active = false;
-			setDragging(false);
-		}
+		onPanResponderRelease: endDrag,
+		onPanResponderTerminate: endDrag
 	})).current;
 	const separatorSize = overrides?.separatorSize ? resolveToken(t, overrides.separatorSize) : t.space1;
 	const separatorColor = overrides?.separatorColor ? resolveToken(t, overrides.separatorColor) : t.colorBorder;
@@ -15938,7 +16839,8 @@ function Splitter({ label, orientation = "horizontal", primary, secondary, size,
 		transitionDuration,
 		t.motionEasingStandard
 	]);
-	const stackThreshold = stackBelow === "never" ? null : t[STACK_BELOW[stackBelow]];
+	const stackToken = stackBelow === "never" ? void 0 : t[STACK_BELOW[stackBelow]];
+	const stackThreshold = typeof stackToken === "number" ? stackToken : null;
 	const stacked = horizontal && stackThreshold !== null && containerWidth !== null && containerWidth < stackThreshold;
 	const handleContainerLayout = (event) => {
 		const { width, height } = event.nativeEvent.layout;
@@ -16034,6 +16936,7 @@ function Splitter({ label, orientation = "horizontal", primary, secondary, size,
 		}] : []
 	];
 	const reportedSize = Math.round(effectiveSize);
+	const reportedMin = isCollapsed ? 0 : minSize;
 	return /* @__PURE__ */ React.createElement(View, {
 		ref,
 		testID: "Splitter",
@@ -16042,6 +16945,7 @@ function Splitter({ label, orientation = "horizontal", primary, secondary, size,
 	}, /* @__PURE__ */ React.createElement(Animated.View, {
 		testID: "Splitter.primaryPane",
 		style: primaryPaneStyle,
+		"aria-hidden": isCollapsed && !stacked,
 		accessibilityElementsHidden: isCollapsed && !stacked,
 		importantForAccessibility: isCollapsed && !stacked ? "no-hide-descendants" : "auto",
 		pointerEvents: isCollapsed && !stacked ? "none" : "auto"
@@ -16051,12 +16955,17 @@ function Splitter({ label, orientation = "horizontal", primary, secondary, size,
 		focusable: true,
 		accessibilityRole: "adjustable",
 		accessibilityLabel: label,
+		"aria-label": label,
 		accessibilityValue: {
-			min: isCollapsed ? 0 : minSize,
+			min: reportedMin,
 			max: maxSize,
 			now: reportedSize,
 			text: COPY$3.sizeText(reportedSize)
 		},
+		"aria-valuemin": reportedMin,
+		"aria-valuemax": maxSize,
+		"aria-valuenow": reportedSize,
+		"aria-valuetext": COPY$3.sizeText(reportedSize),
 		accessibilityActions: separatorActions,
 		onAccessibilityAction: handleSeparatorAction,
 		hitSlop: horizontal ? {
@@ -16086,6 +16995,7 @@ function Splitter({ label, orientation = "horizontal", primary, secondary, size,
 		variant: "ghost",
 		size: "sm",
 		iconOnly: true,
+		expanded: !isCollapsed,
 		leadingIcon: /* @__PURE__ */ React.createElement(Icon, {
 			name: collapseIcon,
 			color: t.colorActionGhostForeground
@@ -16110,6 +17020,8 @@ const COPY$2 = {
 };
 /** Announcement tiers are quarters of the range: 1–3 announce `copy.progress`, 4 is `max` (completion). */
 const TIERS = 4;
+/** Invalid min/max pairs already warned about, for the life of the process: a second bar with the same bad range, or a remount, stays silent. */
+const warnedRanges = /* @__PURE__ */ new Set();
 function defaultFormatValue(value, min, max) {
 	const fraction = max > min ? (value - min) / (max - min) : 0;
 	return new Intl.NumberFormat(void 0, {
@@ -16126,7 +17038,7 @@ function defaultFormatValue(value, min, max) {
 * overall completion. Not a measured quantity that can go up or down (Meter), not a
 * value the user sets (Slider).
 *
-* Renders an `accessible` `View` with `accessibilityRole="progressbar"`,
+* Renders an `accessible` `View` with `role="progressbar"`,
 * `accessibilityLabel` (the accessible name even when `hideLabel` hides the visible
 * label) and `accessibilityValue={{ min, max, now, text }}` — an indeterminate bar
 * carries `min` and `max` only and sets `accessibilityState={{ busy: true }}`. The bar
@@ -16134,7 +17046,7 @@ function defaultFormatValue(value, min, max) {
 * `transition`, snapping under reduced motion. Indeterminate: a one-third-width fill
 * sweeps from wholly before the track's inline start to wholly past its inline end
 * (leftward under `I18nManager.isRTL`) over `indeterminateLoop` with `sweepEasing`; under
-* reduced motion no loop starts and the fill is drawn full-width at `opacity.disabled`.
+* reduced motion no loop starts and the fill is drawn full-width at `indeterminateReducedOpacity`.
 *
 * Announcements (`AccessibilityInfo.announceForAccessibility`): the tier is
 * `floor(fraction × 4)` and is tracked whatever `announce` is. The state at mount is
@@ -16155,17 +17067,20 @@ function ProgressBar({ label, value, min = 0, max = 100, formatValue = defaultFo
 	const safeMin = Number.isFinite(min) ? min : 0;
 	const safeMax = Number.isFinite(max) ? max : 100;
 	const validRange = safeMax > safeMin;
-	const warnedRef = React.useRef(null);
 	React.useEffect(() => {
 		if (!__DEV__ || validRange) return;
 		const key = `${safeMin}/${safeMax}`;
-		if (warnedRef.current === key) return;
-		warnedRef.current = key;
+		if (warnedRanges.has(key)) return;
+		warnedRanges.add(key);
 		console.warn(`ProgressBar: \`max\` (${safeMax}) must be greater than \`min\` (${safeMin}); the bar renders empty.`);
-	});
+	}, [
+		validRange,
+		safeMin,
+		safeMax
+	]);
 	const clamped = validRange ? Math.min(safeMax, Math.max(safeMin, typeof value === "number" && Number.isFinite(value) ? value : safeMin)) : safeMin;
 	const fraction = validRange ? (clamped - safeMin) / (safeMax - safeMin) : 0;
-	const valueText = formatValue(clamped, safeMin, safeMax);
+	const valueText = indeterminate ? "" : validRange ? formatValue(clamped, safeMin, safeMax) : defaultFormatValue(safeMin, safeMin, safeMax);
 	const trackColor = overrides?.track ? resolveToken(t, overrides.track) : t.colorBackgroundStrong;
 	const trackHeight = overrides?.trackHeight ? resolveToken(t, overrides.trackHeight) : t.space2;
 	const radius = overrides?.radius ? resolveToken(t, overrides.radius) : t.radiusFull;
@@ -16174,6 +17089,7 @@ function ProgressBar({ label, value, min = 0, max = 100, formatValue = defaultFo
 	const transitionDuration = overrides?.transition ? resolveToken(t, overrides.transition) : t.motionDurationBase;
 	const loopDuration = overrides?.indeterminateLoop ? resolveToken(t, overrides.indeterminateLoop) : t.motionDurationLoop;
 	const sweepEasing = overrides?.sweepEasing ? resolveToken(t, overrides.sweepEasing) : t.motionEasingStandard;
+	const reducedOpacity = overrides?.indeterminateReducedOpacity ? resolveToken(t, overrides.indeterminateReducedOpacity) : t.opacityDisabled;
 	const fillColor = t[FILL_TOKEN[tone]];
 	const [trackWidth, setTrackWidth] = React.useState(0);
 	const fillWidth = React.useRef(new Animated.Value(0)).current;
@@ -16287,7 +17203,11 @@ function ProgressBar({ label, value, min = 0, max = 100, formatValue = defaultFo
 				alignItems: "baseline",
 				gap: labelGap
 			},
-			labelWrapper: { flexShrink: 1 },
+			labelWrapper: {
+				flexShrink: 1,
+				minWidth: 0
+			},
+			valueWrapper: { flexShrink: 0 },
 			track: {
 				height: trackHeight,
 				borderRadius: radius,
@@ -16308,7 +17228,7 @@ function ProgressBar({ label, value, min = 0, max = 100, formatValue = defaultFo
 		borderRadius: radius,
 		backgroundColor: fillColor,
 		width: "100%",
-		opacity: t.opacityDisabled
+		opacity: reducedOpacity
 	} : {
 		height: trackHeight,
 		borderRadius: radius,
@@ -16328,8 +17248,9 @@ function ProgressBar({ label, value, min = 0, max = 100, formatValue = defaultFo
 		testID: "ProgressBar",
 		accessible: true,
 		focusable: false,
-		accessibilityRole: "progressbar",
+		role: "progressbar",
 		accessibilityLabel: label,
+		"aria-label": label,
 		accessibilityValue: indeterminate ? {
 			min: safeMin,
 			max: safeMax
@@ -16362,7 +17283,10 @@ function ProgressBar({ label, value, min = 0, max = 100, formatValue = defaultFo
 			fontFamily: overrides?.fontFamily,
 			lineHeight: overrides?.lineHeight
 		}
-	}, label)), showValueText ? /* @__PURE__ */ React.createElement(View, { testID: "ProgressBar.valueText" }, /* @__PURE__ */ React.createElement(Text, {
+	}, label)), showValueText ? /* @__PURE__ */ React.createElement(View, {
+		testID: "ProgressBar.valueText",
+		style: styles.valueWrapper
+	}, /* @__PURE__ */ React.createElement(Text, {
 		size: "sm",
 		tone: "muted",
 		overrides: {
@@ -16433,10 +17357,12 @@ function formatTimestamp(timestamp, now) {
 * an article stay individually focusable; the hidden "unread" word and, when the total
 * is known (`hasMore` false), the "{index} of {total}" position sit before each Card,
 * because Card takes a heading string and a footer slot with nothing between them.
-* `onEndReached` fires with threshold one screen; `maintainVisibleContentPosition` keeps
-* the reader's place when the caller prepends after `onShowNew`. The new-items row is a
-* `View` above the list, so it never scrolls away, and is `accessibilityLiveRegion="polite"`
-* — Android announces the count; on iOS VoiceOver users reach the button at the top.
+* `onEndReached` fires with threshold one screen, at most once per change of the last item's
+* id, `hasMore` or `loading`, so a list that keeps reporting the end asks only once;
+* `maintainVisibleContentPosition` keeps the reader's place when the caller prepends after
+* `onShowNew`. The new-items row is a `View` above the list, so it never scrolls away; it is
+* always rendered as `accessibilityLiveRegion="polite"` and padded only while shown — Android
+* announces the count; on iOS VoiceOver users reach the button at the top.
 * While `loading` with no items the indicator shows, not `copy.empty`, so an empty feed
 * about to fetch stays blank rather than flashing it. There is no hardware keyboard feed
 * model on native (no Page or Ctrl keys); screen readers browse with their own gestures.
@@ -16451,6 +17377,7 @@ function Feed({ label, items, hasMore = false, loading = false, newItemsCount, h
 	const loadingInset = token(overrides?.loadingInset, t.layoutInsetMd);
 	const endMessageInset = token(overrides?.endMessageInset, t.layoutInsetMd);
 	const emptyStateInset = token(overrides?.emptyStateInset, t.layoutInsetMd);
+	const articleRadius = token(overrides?.articleRadius, t.radiusLg);
 	const articleInset = overrides?.articleInset;
 	const articleBodyGap = overrides?.articleBodyGap;
 	const timestampSize = overrides?.timestampSize;
@@ -16478,9 +17405,9 @@ function Feed({ label, items, hasMore = false, loading = false, newItemsCount, h
 	const buttonOverrides = React.useMemo(() => ({ fontFamily }), [fontFamily]);
 	const warnedLabel = React.useRef(false);
 	React.useEffect(() => {
-		if (__DEV__ && label === "" && !warnedLabel.current) {
+		if (__DEV__ && label.trim() === "" && !warnedLabel.current) {
 			warnedLabel.current = true;
-			console.warn("Feed: `label` is empty; the feed has no accessible name. Say what the feed contains (\"Activity\").");
+			console.warn("Feed: label is the accessible name of the feed and must not be empty.");
 		}
 	}, [label]);
 	const requestRef = React.useRef(onEndReached);
@@ -16495,8 +17422,20 @@ function Feed({ label, items, hasMore = false, loading = false, newItemsCount, h
 		hasMore,
 		loading
 	]);
+	const lastId = items.length > 0 ? items[items.length - 1].id : void 0;
+	const asked = React.useRef(false);
+	React.useEffect(() => {
+		asked.current = false;
+	}, [
+		lastId,
+		hasMore,
+		loading
+	]);
 	const handleEndReached = () => {
-		if (hasMore && !loading && !empty) onEndReached?.();
+		if (hasMore && !loading && !empty && !asked.current) {
+			asked.current = true;
+			onEndReached?.();
+		}
 	};
 	const onVisibleRef = React.useRef(onViewableItemsChanged);
 	React.useEffect(() => {
@@ -16517,10 +17456,12 @@ function Feed({ label, items, hasMore = false, loading = false, newItemsCount, h
 	const unreadWidth = t.borderWidthFocus;
 	const renderItem = React.useCallback(({ item, index }) => /* @__PURE__ */ React.createElement(View, {
 		testID: "Feed.article",
+		role: "listitem",
 		style: item.unread ? {
 			borderStartWidth: unreadWidth,
-			borderStartColor: unreadColor
-		} : void 0
+			borderStartColor: unreadColor,
+			borderRadius: articleRadius
+		} : { borderRadius: articleRadius }
 	}, item.unread ? /* @__PURE__ */ React.createElement(View, { style: HIDDEN_STYLE }, /* @__PURE__ */ React.createElement(Text, { overrides: textOverrides }, COPY$1.unread)) : null, total !== void 0 ? /* @__PURE__ */ React.createElement(View, { style: HIDDEN_STYLE }, /* @__PURE__ */ React.createElement(Text, { overrides: textOverrides }, COPY$1.position(index + 1, total))) : null, /* @__PURE__ */ React.createElement(Card, {
 		heading: item.heading,
 		headingLevel,
@@ -16536,6 +17477,7 @@ function Feed({ label, items, hasMore = false, loading = false, newItemsCount, h
 		overrides: timestampOverrides
 	}, formatTimestamp(item.timestamp, Date.now()))), typeof item.content === "string" || typeof item.content === "number" ? /* @__PURE__ */ React.createElement(Text, { overrides: textOverrides }, item.content) : item.content)))), [
 		articleBodyOverrides,
+		articleRadius,
 		cardOverrides,
 		headingLevel,
 		textOverrides,
@@ -16546,12 +17488,14 @@ function Feed({ label, items, hasMore = false, loading = false, newItemsCount, h
 	]);
 	const footer = loading ? /* @__PURE__ */ React.createElement(View, {
 		testID: "Feed.loadingIndicator",
+		role: "listitem",
 		style: { padding: loadingInset }
 	}, /* @__PURE__ */ React.createElement(ProgressBar, {
 		label: COPY$1.loading,
 		hideLabel: true
 	})) : !hasMore && !empty ? /* @__PURE__ */ React.createElement(View, {
 		testID: "Feed.endMessage",
+		role: "listitem",
 		style: { padding: endMessageInset }
 	}, /* @__PURE__ */ React.createElement(Text, {
 		size: "sm",
@@ -16560,6 +17504,7 @@ function Feed({ label, items, hasMore = false, loading = false, newItemsCount, h
 	}, endMessage ?? COPY$1.end)) : void 0;
 	const emptyState = !hasMore && !loading ? /* @__PURE__ */ React.createElement(View, {
 		testID: "Feed.emptyState",
+		role: "listitem",
 		style: { padding: emptyStateInset }
 	}, /* @__PURE__ */ React.createElement(Text, {
 		size: "sm",
@@ -16570,25 +17515,28 @@ function Feed({ label, items, hasMore = false, loading = false, newItemsCount, h
 	return /* @__PURE__ */ React.createElement(View, {
 		ref,
 		testID: "Feed"
-	}, showNewItems ? /* @__PURE__ */ React.createElement(View, {
+	}, /* @__PURE__ */ React.createElement(View, {
 		testID: "Feed.newItemsButton",
 		accessibilityLiveRegion: "polite",
+		"aria-live": "polite",
 		style: {
 			alignSelf: "flex-start",
-			paddingTop: newItemsOffset,
+			paddingTop: showNewItems ? newItemsOffset : 0,
 			zIndex: newItemsLayer
 		}
-	}, /* @__PURE__ */ React.createElement(Button, {
-		label: COPY$1.showNew(Math.trunc(newItemsCount)),
+	}, showNewItems ? /* @__PURE__ */ React.createElement(Button, {
+		label: COPY$1.showNew(newItemsCount),
 		variant: "secondary",
 		size: "sm",
 		overrides: buttonOverrides,
 		onPress: onShowNew
-	})) : null, /* @__PURE__ */ React.createElement(FlatList, {
+	}) : null), /* @__PURE__ */ React.createElement(FlatList, {
 		testID: "Feed.container",
 		accessibilityRole: "list",
 		accessibilityLabel: label,
+		"aria-label": label,
 		accessibilityState: { busy: loading },
+		"aria-busy": loading,
 		data: items,
 		keyExtractor: (item) => item.id,
 		renderItem,
@@ -16621,6 +17569,11 @@ function statusFor(step, index, currentIndex) {
 	if (currentIndex === -1 || index > currentIndex) return "upcoming";
 	return index < currentIndex ? "complete" : "current";
 }
+/**
+* The DOM mirror of `accessibilityState.selected`, which react-native-web does not map. The web contract marks the
+* current step with aria-current="step" (aria-selected is not allowed on a button); View's types omit aria-current.
+*/
+const CURRENT_STEP_ATTRS = { "aria-current": "step" };
 const STATUS_WORD = {
 	complete: COPY.complete,
 	current: COPY.current,
@@ -16698,6 +17651,7 @@ function Stepper({ label, steps, current, orientation = "horizontal", navigable 
 			index,
 			status: statusFor(step, index, currentIndex),
 			isCurrent: step.id === current,
+			isRevealed: currentIndex === -1 ? index === 0 : step.id === current,
 			isNavigable,
 			compact: isCompact,
 			isHorizontal,
@@ -16728,6 +17682,7 @@ function Stepper({ label, steps, current, orientation = "horizontal", navigable 
 		testID: "Stepper.list",
 		accessibilityRole: "list",
 		accessibilityLabel: label || COPY.navLabel,
+		"aria-label": label || COPY.navLabel,
 		style: isHorizontal ? {
 			flexDirection: "row",
 			alignItems: "flex-start"
@@ -16745,7 +17700,7 @@ function Stepper({ label, steps, current, orientation = "horizontal", navigable 
 	}))) : null);
 }
 /** One step's indicator, label and description; its own component so focus and hover state stay local. */
-function StepControl({ step, index, status, isCurrent, isNavigable, compact, isHorizontal, t, r, f, onStepSelect }) {
+function StepControl({ step, index, status, isCurrent, isRevealed, isNavigable, compact, isHorizontal, t, r, f, onStepSelect }) {
 	const [focused, setFocused] = React.useState(false);
 	const [hovered, setHovered] = React.useState(false);
 	const n = index + 1;
@@ -16775,7 +17730,8 @@ function StepControl({ step, index, status, isCurrent, isNavigable, compact, isH
 		testID: "Stepper.indicator",
 		style: indicatorStyle,
 		accessibilityElementsHidden: true,
-		importantForAccessibility: "no"
+		importantForAccessibility: "no",
+		"aria-hidden": true
 	}, status === "complete" ? /* @__PURE__ */ React.createElement(Icon, {
 		name: "check",
 		size: "sm",
@@ -16791,7 +17747,7 @@ function StepControl({ step, index, status, isCurrent, isNavigable, compact, isH
 			size: f.indicatorFontSize
 		}
 	}) : /* @__PURE__ */ React.createElement(Text$1, { style: numeralStyle }, n));
-	const showLabel = !compact || isCurrent;
+	const showLabel = !compact || isRevealed;
 	const showDescription = !isHorizontal && step.description !== void 0;
 	const textBlock = showLabel || showDescription ? /* @__PURE__ */ React.createElement(View, { style: isHorizontal ? { alignItems: "center" } : {
 		flex: 1,
@@ -16833,12 +17789,16 @@ function StepControl({ step, index, status, isCurrent, isNavigable, compact, isH
 	const control = !isNavigable ? /* @__PURE__ */ React.createElement(View, {
 		accessible: true,
 		accessibilityLabel: accessibleName,
-		accessibilityState: { selected: isCurrent },
+		"aria-label": accessibleName,
+		...textBlock === null ? { role: "img" } : { accessibilityState: { selected: isCurrent } },
+		...isCurrent ? CURRENT_STEP_ATTRS : null,
 		style: containerStyle(false)
 	}, indicator, textBlock) : /* @__PURE__ */ React.createElement(Pressable, {
 		accessibilityRole: "button",
 		accessibilityLabel: accessibleName,
+		"aria-label": accessibleName,
 		accessibilityState: { selected: isCurrent },
+		...isCurrent ? CURRENT_STEP_ATTRS : null,
 		onPress: () => onStepSelect?.(step.id),
 		onFocus: () => setFocused(true),
 		onBlur: () => setFocused(false),
@@ -16910,10 +17870,11 @@ function Connector({ isHorizontal, complete, reducedMotion, t, r }) {
 		testID: "Stepper.connector",
 		accessibilityElementsHidden: true,
 		importantForAccessibility: "no",
+		"aria-hidden": true,
 		style: track
 	}, /* @__PURE__ */ React.createElement(Animated.View, { style: line }));
 }
 //#endregion
-export { Accordion, ActionSheet, Alert, AlertDialog, BottomSheet, Box, Breadcrumb, Button, Card, Carousel, CarouselSlide, Checkbox, Combobox, Container, DataGrid, DatePicker, Dialog, Disclosure, Divider, Feed, Fieldset, FieldsetContext, FocusScope, Form, FormContext, Heading, Icon, Input, Landmark, Link, Listbox, Menu, Meter, NumberInput, Popover, ProgressBar, RadioGroup, Search, SegmentedControl, Select, SidePanel, Slider, Splitter, Stack, Stepper, Switch, TabPanel, Table, Tabs, Text, TextStyleContext, ThemeProvider, Toast, ToastProvider, Toolbar, ToolbarGroup, Tooltip, Tree, TreeGrid, toEasing, toFontWeight, toLineHeight, toTextAlign, toast, useFieldsetContext, useFormContext, useReducedMotion, useSidePanelEdgeSwipe, useTheme, useToast };
+export { Accordion, ActionSheet, Alert, AlertDialog, BottomSheet, Box, Breadcrumb, Button, Card, Carousel, CarouselSlide, Checkbox, Combobox, Container, DataGrid, DatePicker, Dialog, Disclosure, Divider, Feed, Fieldset, FieldsetContext, FocusScope, Form, FormContext, Heading, Icon, Input, Landmark, Link, Listbox, Menu, Meter, NumberInput, Popover, ProgressBar, RadioGroup, Search, SegmentedControl, Select, SidePanel, Slider, Splitter, Stack, Stepper, Switch, TabPanel, Table, Tabs, Text, TextStyleContext, ThemeProvider, Toast, ToastProvider, Toolbar, ToolbarGroup, Tooltip, Tree, TreeGrid, dismiss, toEasing, toFontWeight, toLineHeight, toTextAlign, toast, useFieldsetContext, useFormContext, useReducedMotion, useSidePanelEdgeSwipe, useTheme, useToast };
 
 //# sourceMappingURL=index.js.map

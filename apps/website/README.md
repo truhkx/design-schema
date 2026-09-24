@@ -308,33 +308,89 @@ docker build -f apps/website/Dockerfile -t design-schema-website .
 docker run --rm -p 8080:80 design-schema-website          # http://localhost:8080
 ```
 
-Or with Compose, which also keeps Caddy's certificates in a volume and restarts the container:
+Or with Compose, which runs it hardened (read-only, no capabilities beyond binding :80), restarts it,
+and publishes it on this machine only:
 
 ```
-docker compose -f apps/website/compose.yaml up -d --build
+docker compose -f apps/website/compose.yaml up -d --build website     # http://127.0.0.1:8080
 ```
 
-**A real domain with HTTPS.** Point the domain's DNS at the server, open ports 80 and 443, and create
-`apps/website/.env`:
+### Cloudflare Tunnel (home hosting)
+
+The default way to put it on the internet. `cloudflared` (the `tunnel` service, Compose profile
+`tunnel`) makes an **outbound** connection to Cloudflare; Cloudflare terminates TLS on the public
+hostname and sends requests down the tunnel to Caddy as plain HTTP on `http://website:80`. No router
+ports are opened, no certificates live on the machine, and the home IP never appears in DNS. Caddy
+stays on `:80` (no `SITE_ADDRESS`), which serves any `Host` and never redirects to HTTPS.
+
+**Once, in Cloudflare:** a domain on Cloudflare DNS; Zero Trust → Networks → Tunnels → Create a tunnel
+(Cloudflared) → copy the token; add a public hostname (e.g. `designschema.example.com`) whose service
+is `http://website:80`.
+
+**Once, here:** copy `apps/website/.env.example` to `apps/website/.env` (gitignored; never commit the
+token) and fill it in:
 
 ```
-SITE_ADDRESS=example.com
-HTTP_PORT=80
-HTTPS_PORT=443
+TUNNEL_TOKEN=<the token from the dashboard>
+HTTP_PORT=8080
+PUBLIC_SITE_URL=https://designschema.example.com
 ```
 
-With `SITE_ADDRESS` set, Caddy obtains and renews a Let's Encrypt certificate on its own and redirects
-HTTP to HTTPS (`Caddyfile`). Left unset, it serves plain HTTP on port 80, which is also the setting to
-use behind another reverse proxy.
+`PUBLIC_SITE_URL` becomes Astro's `site`, so canonical URLs use the public hostname; leave it empty to
+build exactly as without it.
+
+**Deploy, and every update after:**
+
+```
+powershell -ExecutionPolicy Bypass -File apps/website/deploy.ps1
+```
+
+It checks the token, refuses while `jobs/` has a file newer than the last commit (a queue mid-run;
+`-Force` overrides), runs `pnpm check`, then `docker compose --profile tunnel up -d --build`, waits for
+the website's healthcheck, and prints `docker compose ps` and the tunnel's last 20 log lines. A
+`Registered tunnel connection` line is the success signal. Cloudflare caches `/_astro/*` (immutable,
+fingerprinted) and revalidates HTML (`no-cache`), so a deploy shows on the next load without a purge.
+
+**Offline:** `docker compose -f apps/website/compose.yaml --profile tunnel down`.
+
+**Keeping it up on Windows.** Both containers are `restart: unless-stopped`, so they come back on their
+own whenever Docker is running — after a reboot, a Docker Desktop update or a crash. What has to be
+set is that Docker is running: Docker Desktop → Settings → General → *Start Docker Desktop when you sign
+in*, and a power plan that never sleeps while plugged in (Settings → System → Power → *Make my device
+sleep after: Never* on AC). A machine that is asleep is offline; Cloudflare shows its error page until
+it wakes.
+
+**A private preview.** For a hostname only some people should see (say `preview.example.com` on a
+second tunnel route), put a Cloudflare Access application in front of it (Zero Trust → Access →
+Applications) with a one-time-PIN or identity-provider policy; nothing changes on the machine.
+
+**HSTS** is a commented line in the `Caddyfile`: uncomment it once the hostname is HTTPS-only at
+Cloudflare (SSL/TLS → Edge Certificates → *Always Use HTTPS*).
+
+### Let's Encrypt (the alternative)
+
+On a machine with a public IP, Caddy can do its own HTTPS instead: point the domain's DNS at it, forward
+ports 80 and 443, set `SITE_ADDRESS=example.com` in `apps/website/.env`, and run the `letsencrypt`
+profile *instead of* the tunnel (it binds 80/443 on every interface):
+
+```
+docker compose -f apps/website/compose.yaml --profile letsencrypt up -d --build website-letsencrypt
+```
+
+Caddy obtains and renews the certificate on its own, keeps it in the `caddy_data` volume, and
+redirects HTTP to HTTPS (`Caddyfile`). That volume is the only reason `/data` persists; under the
+tunnel it is a tmpfs, because Caddy on `:80` writes nothing there worth keeping.
+
+### Notes
 
 The build context is the working tree, uncommitted edits included, and the image validates every doc
 before it builds anything. So build from a tree that passes `pnpm check`: not while a job queue is
 mid-run, when a half-applied change fails the parse step. A context from a Windows checkout is fine;
 the Dockerfile normalises text files to LF before the first tool runs.
 
-**Updating** is a rebuild: `docker compose -f apps/website/compose.yaml up -d --build`. HTML is served
-with `Cache-Control: no-cache` and fingerprinted `/_astro/*` assets as immutable, so a new build is
-visible on the next page load.
+**Updating** is a rebuild: re-run `deploy.ps1`, or `docker compose -f apps/website/compose.yaml up -d
+--build website` for the local-only container. HTML is served with `Cache-Control: no-cache` and
+fingerprinted `/_astro/*` assets as immutable, so a new build is visible on the next page load.
 
 ## Not here yet
 

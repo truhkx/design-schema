@@ -4,10 +4,14 @@ import { TokenRef } from "@design-schema/tokens";
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 type ButtonType = "button" | "submit";
+type ButtonHaspopup = "menu" | "listbox" | "tree" | "grid" | "dialog";
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 type ButtonOverridableBinding = "iconGap" | "paddingInline" | "paddingBlock" | "radius" | "fontFamily" | "fontWeight" | "fontSize" | "inverseBackgroundHover" | "inverseHoverOpacity" | "disabledOpacity" | "transition" | "loadingSpin" | "spinnerSize";
 interface ButtonProps extends Omit<ComponentPropsWithoutRef<"button">, "type" | "disabled" | "children" | "aria-label" | "onClick" | "className" | "style"> {
-  /** The button's text. Also its accessible name. */
+  /**
+   * The button's text. Also its accessible name. An empty string is allowed and warns on no
+   * platform: it renders a nameless button, and nothing enforces WCAG 4.1.2 at runtime.
+   */
   label: string;
   /**
    * Visual emphasis. One primary button per view. These four are the whole set: there is no
@@ -31,6 +35,13 @@ interface ButtonProps extends Omit<ComponentPropsWithoutRef<"button">, "type" | 
    */
   expanded?: boolean | undefined;
   /**
+   * Set by a parent whose popup the button opens (Menu's trigger takes `menu`): `aria-haspopup` on
+   * the button. No default: omitted means the button opens nothing and no aria-haspopup is written.
+   * The values are ARIA's own, without `true` (which means `menu`). When the prop is set and an
+   * `aria-haspopup` also arrives through `...rest`, the prop wins.
+   */
+  haspopup?: ButtonHaspopup | undefined;
+  /**
    * Prevents activation. The button stays in the tab order and is announced as disabled. A press
    * blocked by `disabled` or `loading` is not a press: onPress does not fire and nothing chained from
    * it (an extension's tracking) runs. Inside a disabled Form the button is disabled whatever this
@@ -39,7 +50,8 @@ interface ButtonProps extends Omit<ComponentPropsWithoutRef<"button">, "type" | 
   disabled?: boolean | undefined;
   /**
    * Overrides the accessible name when it must say more than the visible label ("Sort by Amount,
-   * ascending" on a header that shows "Amount"). The name must contain the visible label (WCAG 2.5.3
+   * ascending" on a header that shows "Amount"). It wins over `label` everywhere, `iconOnly` included,
+   * where it replaces the label as the aria-label. The name must contain the visible label (WCAG 2.5.3
    * label-in-name); starting with it is preferred but not required. Maps to aria-label.
    */
   accessibleName?: string | undefined;
@@ -91,7 +103,7 @@ interface ButtonProps extends Omit<ComponentPropsWithoutRef<"button">, "type" | 
  * the alternatives beside it, `ghost` for low-emphasis actions in dense UI such as toolbars, and
  * `danger` only for destructive, hard-to-undo actions.
  */
-export declare function Button({ ref, label, variant, size, leadingIcon, trailingIcon, type, expanded, disabled, accessibleName, overflowLabel: _overflowLabel, iconOnly, loading, inverse, track, overrides, onClick, onTrack, "aria-expanded": ariaExpanded, "aria-describedby": describedBy, ...props }: ButtonProps & {
+export declare function Button({ ref, label, variant, size, leadingIcon, trailingIcon, type, expanded, haspopup, disabled, accessibleName, overflowLabel: _overflowLabel, iconOnly, loading, inverse, track, overrides, onClick, onTrack, "aria-expanded": ariaExpanded, "aria-haspopup": ariaHaspopup, "aria-describedby": describedBy, ...props }: ButtonProps & {
   ref?: Ref<HTMLButtonElement> | undefined;
 }): ReactElement;
 //#endregion
@@ -104,7 +116,7 @@ type TextElement = "p" | "span";
 /**
  * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
  * this list. `color` is locked: every tone is contrast-checked against the page background, so it
- * is not overridable and is ignored if passed.
+ * is not overridable and is ignored if passed. Its `--ds-text-color` hook stays, for page CSS.
  */
 type TextOverridableBinding = "fontFamily" | "fontSize" | "fontWeight" | "lineHeight";
 interface TextProps extends Omit<ComponentPropsWithoutRef<"p">, "children"> {
@@ -408,7 +420,9 @@ interface StackProps extends Omit<ComponentPropsWithoutRef<"div">, "children"> {
   justify?: StackJustify | undefined;
   /**
    * Allow horizontal stacks to wrap onto new lines instead of overflowing. It is set whatever the
-   * direction — on a column it is inert unless the block size is bounded.
+   * direction — on a column it is inert unless the block size is bounded — rather than being silently
+   * ignored on a vertical Stack. Prefer wrapping over horizontal scrolling so content reflows at 320px
+   * and 400% zoom.
    */
   wrap?: boolean | undefined;
   /**
@@ -517,6 +531,14 @@ interface LinkProps extends Omit<ComponentPropsWithoutRef<"a">, "href" | "childr
   tone?: LinkTone | undefined;
   /** Downloads the resource instead of navigating, under the server's file name (a custom file name is out of scope). Web only. */
   download?: boolean | undefined;
+  /**
+   * The link points at the page the user is on, in a navigation list (a SidePanel drawer, a Tree of
+   * href nodes): `aria-current="page"` on the anchor. The link stays a link and keeps its colours and
+   * underline; how a navigation also marks it visually is that container's to say. False writes
+   * nothing, so an `aria-current` passed through `...rest` (a `step` or `location`) still applies;
+   * while `current` is true the prop wins.
+   */
+  current?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<LinkOverridableBinding, TokenRef | undefined>> | undefined;
   /**
@@ -534,7 +556,7 @@ interface LinkProps extends Omit<ComponentPropsWithoutRef<"a">, "href" | "childr
  * default) and standalone in navigation lists. Use `external` whenever the destination leaves the
  * product, so people are warned before they lose their place.
  */
-export declare function Link({ ref, href, label, external, tone, download, overrides, onClick, ...rest }: LinkProps & {
+export declare function Link({ ref, href, label, external, tone, download, current, overrides, onClick, ...rest }: LinkProps & {
   ref?: Ref<HTMLAnchorElement> | undefined;
 }): ReactElement;
 //#endregion
@@ -554,7 +576,8 @@ interface CheckboxProps extends Omit<ComponentPropsWithoutRef<"input">, "type" |
   /**
    * What a native HTML <form> submits under `name` when checked (web and Lit only). The enclosing Form
    * (React, React Native, ds-form) ignores it and collects the boolean `checked`. Checkboxes sharing a
-   * `name` are not a multi-select under Form; give each its own name.
+   * `name` are not a multi-select under Form; give each its own name. React Native accepts it
+   * (default 'on') for API parity and does nothing with it.
    */
   value?: string | undefined;
   /** Controlled checked state. Omit for an uncontrolled control. */
@@ -563,10 +586,17 @@ interface CheckboxProps extends Omit<ComponentPropsWithoutRef<"input">, "type" |
   defaultChecked?: boolean | undefined;
   /**
    * Shows the mixed indicator, for a parent checkbox whose children are partly selected. Visual and
-   * announced only; the submitted value still follows `checked`.
+   * announced only; the submitted value still follows `checked`. With `checked` also true, mixed wins
+   * for both the glyph and the announced state — a partly selected parent is mixed, whatever its own
+   * box would say — while the submitted value stays `checked`.
    */
   indeterminate?: boolean | undefined;
-  /** Cannot be toggled and is not submitted. Stays visible, readable and focusable. */
+  /**
+   * Cannot be toggled and is skipped by the Form. Stays visible, readable and focusable, which is why
+   * it is `aria-disabled` and not the native attribute — with the accepted consequence that a native
+   * HTML `<form>` still submits a disabled-but-checked box's `value`, since only the native attribute
+   * excludes it.
+   */
   disabled?: boolean | undefined;
   /** Must be checked to submit — for consent and agreement. Shown in the label, not only by color. */
   required?: boolean | undefined;
@@ -622,7 +652,9 @@ interface SwitchProps extends Omit<ComponentPropsWithoutRef<"input">, "type" | "
   defaultChecked?: boolean | undefined;
   /**
    * Cannot be toggled. Stays visible, readable and focusable. A disabled switch contributes no key
-   * to the Form's values: it unregisters while disabled and registers again when re-enabled.
+   * to the Form's values: it stays registered and reports itself through the registration's
+   * `isDisabled()`, which the Form uses to skip it, as Checkbox does. The input also drops `name`
+   * while disabled, so a native <form> submits nothing for it.
    */
   disabled?: boolean | undefined;
   /** Persistent helper text below the label explaining the effect. */
@@ -637,6 +669,8 @@ interface SwitchProps extends Omit<ComponentPropsWithoutRef<"input">, "type" | "
   /**
    * Fired when the user changes the state, with the new boolean. The change is already in effect;
    * there is nothing to submit. A controlled prop change fires nothing, and nothing fires on mount.
+   * Every native toggle flips the value, so a controlled switch whose prop never moves reports
+   * `onChange(!checked)` on every click.
    */
   onChange?: ((checked: boolean) => void) | undefined;
 }
@@ -678,7 +712,10 @@ interface RadioGroupProps extends Omit<ComponentPropsWithoutRef<"fieldset">, "na
   }[];
   /** Controlled selected value. Omit for an uncontrolled group. */
   value?: string | undefined;
-  /** Initial selection for an uncontrolled group. Omit to start with nothing selected. */
+  /**
+   * Initial selection for an uncontrolled group. Omit to start with nothing selected. It is read once,
+   * when the group first renders: assigning it later is a no-op, exactly as a React state initialiser is.
+   */
   defaultValue?: string | undefined;
   /** Layout of the options. Horizontal only for two or three short labels; it wraps rather than overflows. */
   orientation?: RadioGroupOrientation | undefined;
@@ -686,7 +723,11 @@ interface RadioGroupProps extends Omit<ComponentPropsWithoutRef<"fieldset">, "na
   required?: boolean | undefined;
   /** Marks the group as failing validation. Usually set by the Form; can be set directly. */
   invalid?: boolean | undefined;
-  /** Disables every option. Individual options use `options[].disabled`. */
+  /**
+   * Disables every option. Individual options use `options[].disabled`. The group's state folds into
+   * each option's, so every radio announces as disabled rather than only the group. A disabled group
+   * submits nothing and validates clean, so a disabled required group never blocks a submit.
+   */
   disabled?: boolean | undefined;
   /** Persistent helper text under the legend. */
   description?: string | undefined;
@@ -731,6 +772,12 @@ interface DisclosureProps extends Omit<ComponentPropsWithoutRef<"button">, "type
    */
   keepMounted?: boolean | undefined;
   /**
+   * The trigger spans the width of its row, so the whole row is the hit area (and the hover fill runs edge to edge)
+   * rather than ending at the summary text. The icon and summary stay at the start; the rest of the row is empty
+   * trigger.
+   */
+  fullWidth?: boolean | undefined;
+  /**
    * When set, the trigger is wrapped in a heading of this level so the disclosure appears in the document outline —
    * use for FAQ and accordion sections.
    */
@@ -755,7 +802,7 @@ interface DisclosureProps extends Omit<ComponentPropsWithoutRef<"button">, "type
  * `ref` resolves to the trigger `<button>` (Accordion moves focus between triggers through it); the wrapping `<div>`
  * carries `data-ds="Disclosure"`.
  */
-export declare function Disclosure({ ref, summary, children, open, defaultOpen, disabled, keepMounted, headingLevel, overrides, onToggle, id: idProp, ...rest }: DisclosureProps & {
+export declare function Disclosure({ ref, summary, children, open, defaultOpen, disabled, keepMounted, fullWidth, headingLevel, overrides, onToggle, id: idProp, ...rest }: DisclosureProps & {
   ref?: Ref<HTMLButtonElement> | undefined;
 }): ReactElement;
 //#endregion
@@ -782,7 +829,9 @@ interface AlertProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | 
   /**
    * How the alert is announced when it appears. `status` is polite (most messages), `alert`
    * interrupts (only for errors that block the user), `off` for alerts already present when the
-   * view loads. Maps to role=status, role=alert, or a plain region. Never use `alert` for success or info.
+   * view loads. Changing `live` after the first render swaps the role in place and never
+   * re-announces the message: only a change to the heading or the body is a new message.
+   * Maps to role=status, role=alert, or a plain region. Never use `alert` for success or info.
    */
   live?: AlertLive | undefined;
   /**
@@ -790,7 +839,11 @@ interface AlertProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | 
    * removes the alert (the component is controlled by its presence in the tree).
    */
   dismissible?: boolean | undefined;
-  /** Fired when the user activates the dismiss button. The consumer removes the alert. */
+  /**
+   * Fired when the user activates the dismiss button. The consumer removes the alert. The
+   * focus-onward step runs first, so focus has already left the alert by the time the handler runs
+   * and may unmount it synchronously. It carries no payload.
+   */
   onDismiss?: (() => void) | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<AlertOverridableBinding, TokenRef | undefined>> | undefined;
@@ -826,7 +879,8 @@ interface LandmarkProps extends Omit<HTMLAttributes<HTMLElement>, "role" | "chil
    * Accessible name. Required for `region` and `form`, and whenever the page has more than one
    * landmark of the same role (two navigations: "Main" and "Footer"). Not shown visually. An empty
    * string counts as absent. `banner`, `main` and `contentinfo` never take a label: one passed to
-   * them is not rendered and a development warning says so.
+   * them is not rendered and a development warning says so. `search` and `complementary` do take a
+   * label, and a page with two of either needs one.
    */
   label?: string | undefined;
   /** The region's content. */
@@ -929,7 +983,8 @@ interface MeterProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | 
   tone?: MeterTone | undefined;
   /**
    * Hides the visible value text (a boolean attribute can only turn things on, so the flag is the hiding
-   * one). The accessible value is always exposed.
+   * one). The header row stays — the label is always visible — and only the value text and its wrapper are
+   * omitted. The accessible value is always exposed.
    */
   hideValue?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
@@ -962,7 +1017,8 @@ interface IconProps extends Omit<ComponentPropsWithoutRef<"svg">, "name" | "role
    * Which glyph. The set is deliberately small and grows only when a component needs a shape;
    * `info`, `success`, `warning` and `danger` are the four status shapes (circle-i, circle-check,
    * triangle-!, octagon-x) so tone is never carried by color alone. `name` has no default; the
-   * Default story renders `check`.
+   * Default story renders `check`. Enum stories for hyphenated names capitalise each segment and
+   * join them: `NameChevronRight`, `NameArrowLeft`.
    */
   name: IconName;
   /** Rendered size, from the font-size scale so icons line up with text of the same size. */
@@ -1096,11 +1152,13 @@ interface ContainerProps extends Omit<ComponentPropsWithoutRef<"div">, "children
    * padded parent. */
   gutter?: ContainerGutter | undefined;
   /** Where the capped column sits in a wider viewport. `start` sets `margin-inline: 0` on both sides,
-   * not just the start side, so the column never picks up an asymmetric margin. */
+   * not just the start side, so the column never picks up an asymmetric margin. The margin is not a
+   * style binding: it has no hook and is not overridable. The selector is written at every `width`,
+   * `full` included, where it is inert. */
   align?: ContainerAlign | undefined;
   /** Use `main` for the page's main column when no Landmark wraps it. A page has exactly one `main`;
    * that is the author's responsibility, since the component cannot see the rest of the page, so it
-   * neither enforces it nor warns. */
+   * neither enforces it nor warns. `div` (the default) and `section` add no semantics. */
   element?: ContainerElement | undefined;
   /**
    * Per-instance style overrides: each entry sets the matching CSS hook to that token, inline.
@@ -1214,7 +1272,7 @@ interface DialogProps extends Omit<ComponentPropsWithoutRef<"dialog">, "children
   initialFocus?: DialogInitialFocus | undefined;
   /** Fired when the user requests to close, with a reason: `escape`, `close-button`, `scrim`, or `action`. The consumer sets `open` to false (or not). */
   onClose?: ((reason: DialogCloseReason) => void) | undefined;
-  /** Fired after the open transition ends and focus has moved in. When there is no transition to wait for (reduced motion, or a zero computed duration), it fires on the next frame after focus moves in. Use to start work that needs the dialog visible. */
+  /** Fired after the open transition ends and focus has moved in. When there is no transition to wait for (reduced motion, or a zero computed duration), it fires on the next frame (requestAnimationFrame) after focus moves in. It does not fire when `open` becomes false before the enter transition finishes. Use to start work that needs the dialog visible. */
   onOpened?: (() => void) | undefined;
   /** Portal target. Defaults to `document.body`. A platform prop, not part of the schema. */
   container?: HTMLElement | undefined;
@@ -1418,20 +1476,24 @@ interface TooltipProps {
    * `true`: the tooltip is supplementary and becomes the child's accessible description
    * (aria-describedby). `false`: the tooltip IS the child's name (an icon-only button whose label
    * equals the tooltip) and is linked as aria-labelledby instead — set this when the child has no
-   * visible text and its `label` equals `content`, to avoid announcing it twice.
+   * visible text and its `label` equals `content`, to avoid announcing it twice. When they differ
+   * anyway, the tooltip text wins and the child's visible label is no longer its accessible name.
    */
   describes?: boolean | undefined;
   /**
    * Controlled visibility, for stories and tests only (the Keyboard story renders the tooltip open
    * with it). Product code never sets it: a tooltip is hover and focus driven. There is no change
    * event: Escape still hides a tooltip rendered with `open: true`, and it stays hidden until the
-   * `open` prop next changes.
+   * `open` prop next changes. While `open` is set, only Escape and changes to `open` affect
+   * visibility; hover, focus, blur and long-press do not.
    */
   open?: boolean | undefined;
   /**
    * Hover delay before showing: `default` uses `motion.duration.base` × 3 (roughly 600ms, so casual
    * mouse movement does not flash tooltips); `none` for toolbars where a sibling tooltip is already open.
-   * After any tooltip hides, siblings show with no delay for one `motion.duration.base` (the warm window).
+   * After any tooltip hides, siblings show with no delay for one `motion.duration.base` (the warm window),
+   * which skips the delay for `default` tooltips too; `none` is always instant. The pointer may cross to
+   * the tooltip within one `motion.duration.fast` before it hides.
    */
   delay?: TooltipDelay | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
@@ -1535,7 +1597,11 @@ interface FieldsetProps extends Omit<ComponentPropsWithoutRef<"fieldset">, "disa
    * errors stay on the fields. An empty string counts as unset (no part, no aria-invalid, no announcement).
    */
   error?: string | undefined;
-  /** Disables every field inside. Fields keep their own `disabled` for finer control. */
+  /**
+   * Disables every field inside. The group wins in one direction only: a field may disable itself while
+   * the group is enabled, but it cannot opt out of a disabled group — `disabled={false}` on a child of a
+   * disabled Fieldset is overridden, and clearing the group never enables a field that was disabled on its own.
+   */
   disabled?: boolean | undefined;
   /** Gap between the fields, from the layout rhythm. Fieldset renders the Stack itself; children are the raw fields. */
   gap?: FieldsetGap | undefined;
@@ -1593,8 +1659,8 @@ interface ToastProps extends Omit<ComponentPropsWithoutRef<"div">, "id" | "child
   onAction?: (() => void) | undefined;
   /**
    * The toast left the screen: reason `timeout`, `dismiss-button`, `escape`, `action`, `replaced`
-   * (left immediately, without its exit transition), or `programmatic`. Fires after the exit
-   * transition, just before the toast is removed.
+   * (left immediately, without its exit transition), or `programmatic`. Fires synchronously when
+   * the toast begins to leave; the element is removed once the exit transition ends.
    */
   onDismiss?: ((reason: ToastDismissReason) => void) | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
@@ -1610,11 +1676,10 @@ interface ToastProps extends Omit<ComponentPropsWithoutRef<"div">, "id" | "child
  * there is an action, and for `danger`, so nobody misses the one they needed.
  *
  * Toasts are normally shown with `toast({ message })`, which renders them in the one
- * `ToastRegion`; rendering `<Toast>` directly is for previews and custom hosts.
+ * `ToastRegion`; rendering `<Toast>` directly is for previews and custom hosts. Toast exposes no
+ * `ref`: toasts are created by `toast()`, not placed by callers.
  */
-export declare function Toast({ ref, message, tone, actionLabel, duration, dismissible, toastId: _toastId, onAction, onDismiss, overrides, ...rest }: ToastProps & {
-  ref?: Ref<HTMLDivElement> | undefined;
-}): ReactElement | null;
+export declare function Toast({ message, tone, actionLabel, duration, dismissible, toastId: _toastId, onAction, onDismiss, overrides, ...rest }: ToastProps): ReactElement | null;
 /** Options for `toast()`: the toast's props, shown in the region. */
 interface ToastOptions {
   /** One sentence saying what happened ("Message sent", "3 files deleted"). */
@@ -1646,9 +1711,7 @@ interface ToastRegionProps {
  * Mount it once at the app root, or let `toast()` create it on first use. It exists before any
  * toast so announcements fire; F6 moves focus into it from anywhere and back again.
  */
-export declare function ToastRegion({ ref, overrides, container }: ToastRegionProps & {
-  ref?: Ref<HTMLDivElement> | undefined;
-}): ReactElement | null;
+export declare function ToastRegion({ overrides, container }: ToastRegionProps): ReactElement | null;
 /**
  * Shows a toast. A notification is an event, not a place in the tree, so it is called rather than
  * rendered: `toast({ message: 'Link copied' })`. Resolves with `{ reason }` when the toast leaves.
@@ -1666,13 +1729,25 @@ export declare function dismiss(toastId?: string): void;
 type PopoverPlacement = "bottom-start" | "bottom" | "bottom-end" | "top-start" | "top" | "top-end" | "start" | "end";
 /** Heading level of the panel heading. Accepts the schema's string values and their numeric equivalents. */
 type PopoverHeadingLevel = "2" | "3" | "4" | 2 | 3 | 4;
-type PopoverOpenChangeReason = "trigger" | "escape" | "outside" | "close-button" | "tab-out";
-/** Style bindings that can be overridden per instance; `surface`, `focusRing` and `focusRingWidth` are locked. */
-type PopoverOverridableBinding = "border" | "borderWidth" | "shadow" | "radius" | "inset" | "partGap" | "offset" | "arrowSize" | "maxWidth" | "layer" | "enter" | "enterDistance" | "exit";
-interface PopoverProps {
+/** Where focus goes on open: the first control, or nowhere (the composer moves it). */
+type PopoverInitialFocus = "first" | "none";
+/**
+ * Why `onOpenChange` fired. Keeps its exported name although the union includes `trigger`, which
+ * also opens.
+ */
+type PopoverCloseReason = "trigger" | "escape" | "outside" | "close-button" | "tab-out";
+/** @deprecated Use `PopoverCloseReason`, the name every platform exports. */
+type PopoverOpenChangeReason = PopoverCloseReason;
+/**
+ * Style bindings that can be overridden per instance; `surface`, `breakpoint`, `focusRing` and
+ * `focusRingWidth` are locked (their hooks stay themeable from page CSS).
+ */
+type PopoverOverridableBinding = "border" | "borderWidth" | "shadow" | "radius" | "inset" | "partGap" | "offset" | "arrowSize" | "maxWidth" | "gutter" | "layer" | "enter" | "enterDistance" | "exit";
+interface PopoverProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | "role" | "id" | "popover"> {
   /**
    * Exactly one focusable element — usually a Button — that opens the popover; typed as a single
-   * element, since it is cloned with aria-expanded/aria-controls and the toggle handler.
+   * element, since it is cloned with aria-expanded/aria-controls and the toggle handler. A fragment,
+   * a bare string or anything but one element warns in development, since it never opens the panel.
    */
   trigger: ReactElement;
   /** The panel content. May contain controls, links and a short Form; keep it to what fits without scrolling. */
@@ -1691,7 +1766,8 @@ interface PopoverProps {
   /**
    * False (default): the page stays interactive; clicking outside closes; focus moves in but is not
    * trapped, and Tab out closes. True: behaves as a small Dialog anchored to the trigger — focus
-   * trapped, background inert — for content that must be finished (a required form).
+   * trapped, background inert, page scroll locked, no scrim — for content that must be finished (a
+   * required form); pressing outside does nothing.
    */
   modal?: boolean | undefined;
   /** A small pointer toward the trigger. Off by default; Calm & precise prefers a plain edge. */
@@ -1702,10 +1778,17 @@ interface PopoverProps {
    */
   dismissible?: boolean | undefined;
   /**
+   * Where focus goes on open. `first` (default) is the first control: the first focusable element in
+   * the body, then the close button, then the heading, then the panel. `none` moves no focus: a
+   * composing component that opens the popover on content it owns focuses its own element once the
+   * panel is shown, and until it does focus stays on the trigger.
+   */
+  initialFocus?: PopoverInitialFocus | undefined;
+  /**
    * Fired when the popover opens or closes, with the new state and a reason: `trigger`, `escape`,
    * `outside`, `close-button`, `tab-out`.
    */
-  onOpenChange?: ((open: boolean, reason: PopoverOpenChangeReason) => void) | undefined;
+  onOpenChange?: ((open: boolean, reason: PopoverCloseReason) => void) | undefined;
   /** Portal target for the panel. Defaults to `document.body`. Platform prop; never affects semantics. */
   container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
@@ -1720,10 +1803,11 @@ interface PopoverProps {
  * link. Use `modal` when the panel contains a required step (a short form that must be submitted or
  * cancelled). Use `heading` when the content is not obvious from the trigger.
  *
- * The root (`data-ds="Popover"`, and `ref`) is the panel, which exists only while open or closing;
- * the trigger is rendered in place and the panel through a portal.
+ * The root (`data-ds="Popover"`, the override hooks, and `ref`) is the panel, which exists only while
+ * open or closing (the ref is null while closed); the trigger is rendered in place and the panel
+ * through a portal once hydrated.
  */
-export declare function Popover({ ref, trigger, children, heading, headingLevel, open: openProp, placement, modal, showArrow, dismissible, onOpenChange, container, overrides }: PopoverProps & {
+export declare function Popover({ ref, trigger, children, heading, headingLevel, open: openProp, placement, modal, showArrow, dismissible, initialFocus, onOpenChange, container, overrides, className: _className, style: _style, ...rest }: PopoverProps & {
   ref?: Ref<HTMLElement> | undefined;
 }): ReactElement;
 //#endregion
@@ -1738,8 +1822,8 @@ interface BottomSheetProps extends Omit<ComponentPropsWithoutRef<"dialog">, "chi
   /** The sheet's title and accessible name. May be visually hidden with `hideHeading` when the content is self-explanatory (a share sheet). */
   heading: string;
   /**
-   * Keep the heading for assistive technology but do not render it (forwarded to Dialog above the
-   * breakpoint). The accessible name is required regardless; visually hidden is fine, absent is not.
+   * Keep the heading for assistive technology but do not render it. The accessible name is required
+   * regardless; visually hidden is fine, absent is not.
    */
   hideHeading?: boolean | undefined;
   /** The body. Scrolls inside the sheet when taller than the sheet's height. */
@@ -1751,8 +1835,7 @@ interface BottomSheetProps extends Omit<ComponentPropsWithoutRef<"dialog">, "chi
   /**
    * Escape, the close button, a scrim tap and the drag gesture all request close. When false, only the
    * footer actions close it, as in Dialog: the close button and the drag handle are not rendered, a
-   * scrim tap and a drag do nothing, and Escape still reports with reason `escape`. The wide Dialog
-   * presentation receives the same value.
+   * scrim tap and a drag do nothing, and Escape still reports with reason `escape`.
    */
   dismissible?: boolean | undefined;
   /**
@@ -1771,7 +1854,7 @@ interface BottomSheetProps extends Omit<ComponentPropsWithoutRef<"dialog">, "chi
   onDragDismiss?: (() => void) | undefined;
   /** Portal target. Defaults to `document.body`. A platform prop, not part of the schema. */
   container?: HTMLElement | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. Bindings Dialog shares by name are forwarded to it above the breakpoint. */
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>> | undefined;
 }
 /**
@@ -1784,10 +1867,10 @@ interface BottomSheetProps extends Omit<ComponentPropsWithoutRef<"dialog">, "chi
  * for a browsable list where seeing the page behind matters (a map with results). For a flat list of
  * actions, ActionSheet is the lighter component.
  *
- * Above the `layout.maxWidth.prose` breakpoint the same props render `Dialog` of size md directly, so
- * the root and `ref` are Dialog's `<dialog>` and `drag` never fires. Below it `ref` resolves to the
- * sheet's `<dialog>`, null while closed. The sheet never closes itself: Escape, the close button, a
- * scrim tap and the drag gesture all call `onClose` with a reason and the consumer flips `open`.
+ * One presentation at every width: the surface sits at the bottom edge, capped at
+ * `layout.maxWidth.prose` and centred. `ref` resolves to the sheet's `<dialog>`, null while closed.
+ * The sheet never closes itself: Escape, the close button, a scrim tap and the drag gesture all call
+ * `onClose` with a reason and the consumer flips `open`.
  */
 export declare function BottomSheet({ ref, open, heading, hideHeading, children, footer, height, dismissible, dragToDismiss, onClose, onDragDismiss, container, overrides, className: _className, style: _style, ...rest }: BottomSheetProps & {
   ref?: Ref<HTMLDialogElement> | undefined;
@@ -1800,16 +1883,16 @@ type ActionSheetCloseReason = "escape" | "scrim" | "cancel" | "drag";
 type ActionSheetAction = {
   id: string;
   label: string;
-  icon?: IconName;
-  tone?: "default" | "danger";
-  disabled?: boolean;
+  icon?: IconName | undefined;
+  tone?: "default" | "danger" | undefined;
+  disabled?: boolean | undefined;
 };
 /**
  * Style bindings that can be overridden per instance; accessibility-bearing bindings (surface,
  * handle, itemHover, itemColor, itemDangerColor, titleColor, minTarget, maxWidth, focusRing,
  * focusRingWidth) are never in this list.
  */
-type ActionSheetOverridableBinding = "scrim" | "shadow" | "radius" | "itemPaddingBlock" | "itemPaddingInline" | "itemGap" | "headerPaddingBlock" | "headerGap" | "handleHeight" | "handleWidth" | "handleRadius" | "titleSize" | "fontFamily" | "fontSize" | "lineHeight" | "divider" | "dividerWidth" | "layer" | "enter" | "exit";
+type ActionSheetOverridableBinding = "scrim" | "shadow" | "radius" | "itemPaddingBlock" | "itemPaddingInline" | "itemGap" | "headerPaddingBlock" | "headerGap" | "handleHeight" | "handleWidth" | "handleRadius" | "titleSize" | "fontFamily" | "fontSize" | "itemIconSize" | "lineHeight" | "divider" | "dividerWidth" | "layer" | "enter" | "exit";
 interface ActionSheetProps extends Omit<ComponentPropsWithoutRef<"dialog">, "children" | "title" | "onCancel" | "onClose" | "open" | "className" | "style"> {
   /**
    * Controlled only — there is no uncontrolled mode; the consumer owns `open`, the sheet requests a
@@ -1823,8 +1906,10 @@ interface ActionSheetProps extends Omit<ComponentPropsWithoutRef<"dialog">, "chi
    */
   heading?: string | undefined;
   /**
-   * Two to about eight actions. `danger` actions are visually distinct and grouped last. The count
-   * is guidance, not enforced: no dev warning outside that range.
+   * Two to about eight actions. `danger` actions are visually distinct and grouped last: the
+   * component does the grouping, so the consumer may pass them in any order — the default actions
+   * render in the order given, then the danger ones in the order given. The count is guidance, not
+   * enforced: no dev warning outside that range.
    */
   actions: ActionSheetAction[];
   /**
@@ -1870,10 +1955,13 @@ type SidePanelOverridableBinding = "scrim" | "shadow" | "border" | "borderWidth"
 interface SidePanelProps extends Omit<ComponentPropsWithoutRef<"aside">, "children" | "role" | "hidden"> {
   /**
    * The Button that shows and hides the panel (usually `iconOnly` with the `menu` Icon and a label
-   * like "Menu"). It is the APG disclosure button: the panel sets aria-expanded and aria-controls on
-   * it, and it stays a toggle — pressing it again closes. Omit to control `open` from elsewhere (a
-   * Toolbar). Exactly one element: it is cloned, wrapped in an overlay-owned
-   * `<span data-part="trigger">` with display: contents, and that wrapper is what persistent mode hides.
+   * like "Menu"). It is the APG disclosure button: the panel sets aria-expanded on it, and
+   * aria-controls whenever the element it names is in the DOM — a modal panel's <dialog> unmounts
+   * when closed, so the attribute is dropped then. It stays a toggle — pressing it again closes. Omit
+   * to control `open` from elsewhere (a Toolbar). Exactly one element, because it is cloned to carry
+   * that wiring; a fragment or a bare string never opens the panel, so both warn in development. The
+   * clone sits in an overlay-owned `<span data-part="trigger">` with display: contents, and that
+   * wrapper — never the Button — is what persistent mode hides.
    */
   trigger?: ReactElement<{
     onClick?: ((event: MouseEvent<HTMLElement>) => void) | undefined;
@@ -2029,7 +2117,11 @@ interface TabsProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | "
   label: string;
   /** Controlled selected tab id. Omit for uncontrolled. */
   value?: string | undefined;
-  /** Initially selected tab id. Defaults to the first enabled tab. */
+  /**
+   * Initially selected tab id. Defaults to the first enabled tab. Taken verbatim, never corrected:
+   * one naming a disabled tab selects it and shows its panel, one matching no tab selects nothing —
+   * in both cases the roving tab stop falls back to the first enabled tab, and neither warns.
+   */
   defaultValue?: string | undefined;
   /**
    * `automatic` selects a tab as arrow keys move to it (fine when panels are cheap); `manual`
@@ -2095,7 +2187,8 @@ interface SegmentedControlProps extends Omit<ComponentPropsWithoutRef<"div">, "o
    */
   defaultValue?: string | undefined;
   /**
-   * Show icons only (every option must have one); labels become accessible names and Tooltips. An
+   * Show icons only (every option must have one); labels become accessible names and Tooltips,
+   * disabled segments included (an `aria-disabled` button still takes pointer events). An
    * option without `icon` warns in development once per instance (one message listing every option
    * without an icon) and that segment shows its label as text instead, so it never renders empty;
    * that segment gets no Tooltip and no `aria-label`, since its visible text is its name.
@@ -2139,6 +2232,17 @@ type ListboxItem = ListboxOption | ListboxGroup;
 /** A value, or with `multiple` an array of values. */
 type ListboxValue = string | string[];
 type ListboxMaxVisible = "5" | "8" | "12" | "all" | 5 | 8 | 12;
+/**
+ * copy.* — used verbatim; `{label}` is replaced by the `label` prop. `selectedCount` is not rendered
+ * by the list: it is exported for a host (Select, Combobox) or the surrounding UI to show.
+ */
+export declare const LISTBOX_COPY: {
+  readonly empty: "No options";
+  readonly required: "{label} is required.";
+  readonly invalid: "{label} is not valid.";
+  readonly selectedCount: "{count} selected";
+  readonly loading: "Loading…";
+};
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 type ListboxOverridableBinding = "border" | "borderInvalid" | "partGap" | "borderWidth" | "radius" | "listPadding" | "optionPaddingBlock" | "optionPaddingInline" | "optionGap" | "optionRadius" | "optionDescriptionSize" | "optionWeight" | "optionSelectedWeight" | "groupLabelSize" | "groupLabelWeight" | "groupLabelPaddingBlock" | "fontFamily" | "fontSize" | "lineHeight" | "disabledOpacity" | "typeaheadReset";
 interface ListboxProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | "onChange" | "defaultValue" | "role" | "tabIndex" | "className" | "style" | "aria-label" | "aria-labelledby" | "aria-multiselectable" | "aria-activedescendant" | "aria-invalid" | "aria-required" | "aria-describedby" | "aria-busy" | "aria-disabled"> {
@@ -2158,7 +2262,12 @@ interface ListboxProps extends Omit<ComponentPropsWithoutRef<"div">, "children" 
    * multi-select.
    */
   multiple?: boolean | undefined;
-  /** Controlled selection: a value, or with `multiple` the exported `ListboxValue` (`string | string[]`). Omit for uncontrolled. */
+  /**
+   * Controlled selection: a value, or with `multiple` the exported `ListboxValue` (`string |
+   * string[]`). Omit for uncontrolled. A shape that does not match the mode is normalised: a
+   * single-select list takes an array's first entry, a multi-select list reads a bare string as a
+   * one-entry array.
+   */
   value?: ListboxValue | undefined;
   /** Initial selection (or array). */
   defaultValue?: ListboxValue | undefined;
@@ -2172,49 +2281,64 @@ interface ListboxProps extends Omit<ComponentPropsWithoutRef<"div">, "children" 
   /**
    * Marks the list invalid (aria-invalid, and `borderInvalid` when not `embedded`) with
    * `copy.invalid`. The list is invalid while this is true OR `error` is non-empty; clearing
-   * `error` never clears an explicitly set `invalid`.
+   * `error` never clears an explicitly set `invalid`. A Form-supplied message makes it invalid too.
    */
   invalid?: boolean | undefined;
   /**
    * Error message rendered below the list and linked by aria-describedby; implies invalid. The
    * displayed message is `error`, then the Form's message, then while invalid `copy.required`
-   * (required and nothing selected) else `copy.invalid`.
+   * (required and nothing selected) else `copy.invalid`. Not a live region.
    */
   error?: string | undefined;
   /**
    * The list lives inside a popup (Select, Combobox) that owns the border, surface and radius; the
    * list draws none of its own. It keeps its own `listPadding`, and an override of `border`,
-   * `borderWidth`, `surface` or `radius` is a no-op while it is set. An embedded list is not a tab
-   * stop (`tabindex="-1"`): its host keeps focus on the trigger or input and forwards keys.
+   * `borderWidth`, `borderInvalid`, `surface` or `radius` is a no-op while it is set. An embedded
+   * list is not a tab stop (`tabindex="-1"`): its host keeps focus on the trigger or input and
+   * forwards keys.
    */
   embedded?: boolean | undefined;
   /**
    * The option that is active when the list first receives focus (Select opens with the selected
    * option active). It wins when it names an enabled option; otherwise the first selected, else the
-   * first enabled.
+   * first enabled. When it changes while the list does not contain the focused element, the active
+   * option moves to it without firing `onActiveChange`.
    */
   initialActiveValue?: string | undefined;
+  /**
+   * The active option, driven by a host that keeps focus on its own trigger or input and forwards
+   * keys (Select, Combobox, Search). Set, it wins over `initialActiveValue` and needs no focus in
+   * the list; `null` means no option is active. Forwarded keys then move nothing on their own: they
+   * report the option they would make active through `onActiveChange`. Omitted, the list owns the
+   * active option. Option ids are `${id}-option-${value}`.
+   */
+  activeValue?: string | null | undefined;
   /** Options are being fetched (async Combobox); the list shows `copy.loading` in place of the empty message and is aria-busy. */
   loading?: boolean | undefined;
   /**
-   * The whole list is inert but readable: it stays focusable (tabindex=0, aria-disabled=true), keys,
-   * hover and clicks do nothing, and `disabledOpacity` dims the list once.
+   * The whole list is inert but readable: it stays focusable (aria-disabled=true), keys, hover and
+   * clicks do nothing, and `disabledOpacity` dims the list once. Focusing it sets no active option
+   * and reports nothing; the focus ring is still drawn.
    */
   disabled?: boolean | undefined;
   /**
    * Field name for Form collection. The submitted value is a string in single-select and an array
-   * of strings with `multiple`; nothing selected submits no key.
+   * of strings with `multiple`; nothing selected submits no key. Without `name` nothing is submitted.
    */
   name?: string | undefined;
   /** Shown when `options` is empty (a filtered Combobox with no matches). Defaults to `copy.empty`. */
   emptyMessage?: string | undefined;
-  /** Height in rows before the list scrolls; `all` never scrolls. */
+  /** Height in rows before the list scrolls; `all` never scrolls. Computed from tokens, never measured. */
   maxVisible?: ListboxMaxVisible | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<ListboxOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selection changes, with the new value (array when `multiple`). */
   onChange?: ((value: string | string[]) => void) | undefined;
-  /** Fired as the focused (active) option changes, with its value; null when the list loses focus. */
+  /**
+   * Fired as the focused (active) option changes, with its value: on keyboard moves, hover (deduped),
+   * the option made active when the list receives focus, and null when the list loses focus. Never
+   * on mount.
+   */
   onActiveChange?: ((value: string | null) => void) | undefined;
 }
 /**
@@ -2225,9 +2349,9 @@ interface ListboxProps extends Omit<ComponentPropsWithoutRef<"div">, "children" 
  *
  * The root is a wrapper `div` (data-ds, data-ds-field) holding the `role="listbox"` list and the
  * error message. `id` names the list, and option ids are `${id}-option-${value}`. Keyboard and focus
- * handlers sit on the wrapper, so a host (Select) may dispatch `keydown`/`focusin` on the ref.
+ * handlers sit on the wrapper, so a host may dispatch `keydown`/`focusin` on the ref.
  */
-export declare function Listbox({ ref, label, labelledBy, options, multiple, value, defaultValue, selectionFollowsFocus, required, invalid, error, embedded, initialActiveValue, loading, disabled, name, emptyMessage, maxVisible, overrides, onChange, onActiveChange, onBlur, onFocus, onKeyDown, id: idProp, ...rest }: ListboxProps & {
+export declare function Listbox({ ref, label, labelledBy, options, multiple, value, defaultValue, selectionFollowsFocus, required, invalid, error, embedded, initialActiveValue, activeValue: activeValueProp, loading, disabled, name, emptyMessage, maxVisible, overrides, onChange, onActiveChange, onBlur, onFocus, onKeyDown, id: idProp, ...rest }: ListboxProps & {
   ref?: Ref<HTMLDivElement> | undefined;
 }): ReactElement;
 //#endregion
@@ -2239,7 +2363,7 @@ type SelectSize = "sm" | "md";
  * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
  * this list. `labelWeight` and `helperSize` reach only the composed Text parts' own `overrides`
  * (no --ds-select-* hook); `fontFamily`, `fontSize`, `fontWeight` and `lineHeight` are forwarded
- * into the composed parts as the schema lists, and keep a root hook for the native <select>.
+ * into the composed parts and keep a root hook for the trigger and the native <select>.
  */
 type SelectOverridableBinding = "triggerBorderInvalid" | "triggerBorderWidth" | "triggerRadius" | "triggerPaddingInline" | "triggerPaddingBlock" | "triggerGap" | "chevronReserve" | "partGap" | "labelWeight" | "helperSize" | "popupSurface" | "popupBorder" | "popupBorderWidth" | "popupShadow" | "popupRadius" | "popupOffset" | "layer" | "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "disabledOpacity" | "enter";
 interface SelectProps extends Omit<ComponentPropsWithoutRef<"button">, "type" | "name" | "value" | "defaultValue" | "placeholder" | "required" | "disabled" | "onChange" | "children" | "className" | "style" | "role" | "aria-describedby" | "aria-invalid" | "aria-required" | "aria-haspopup" | "aria-expanded" | "aria-controls" | "aria-labelledby" | "aria-activedescendant" | "aria-disabled"> {
@@ -2273,7 +2397,11 @@ interface SelectProps extends Omit<ComponentPropsWithoutRef<"button">, "type" | 
   description?: string | undefined;
   /** Must have a value to submit. Shown in the label, not only by color. */
   required?: boolean | undefined;
-  /** Not openable and not submitted. Stays visible and focusable. */
+  /**
+   * Not openable and not submitted. Stays visible and focusable. Wins over a controlled `open`: a
+   * disabled Select never shows its popup — it forces the popup closed locally, reports
+   * `aria-expanded="false"`, and fires no `onOpenChange` to correct the caller's prop.
+   */
   disabled?: boolean | undefined;
   /** Marks the field invalid. Usually set by the Form. */
   invalid?: boolean | undefined;
@@ -2281,9 +2409,9 @@ interface SelectProps extends Omit<ComponentPropsWithoutRef<"button">, "type" | 
   error?: string | undefined;
   /**
    * Use the platform's own picker instead of the popup Listbox: `auto` means never on web (the
-   * styled popup) and always on native phones (the OS wheel/dialog is what users expect); `always`
-   * forces a native <select> on web too (forms that must work without JS); `never` forces the popup
-   * everywhere.
+   * styled popup) and always on native phones; `always` forces a native <select> on web too (forms
+   * that must work without JS); `never` forces the popup everywhere. On web `auto` and `never`
+   * render identically.
    */
   native?: SelectNative | undefined;
   /** Portal target for the popup. Defaults to `document.body`. A platform prop, not a schema prop. */
@@ -2300,6 +2428,9 @@ interface SelectProps extends Omit<ComponentPropsWithoutRef<"button">, "type" | 
  *
  * When to use:
  * Use a Select for a form field with about seven to fifty options that people recognise on sight — country, role, status, time zone from a short list, a category. Use `multiple` for tags or memberships when a set of Checkboxes would be too long. Use `native: always` on web for forms that must work without JavaScript. Use Combobox instead when the list is long enough that typing to filter is faster than scrolling, or when free text is allowed.
+ *
+ * The root is the field group (`data-ds="Select"`, `data-ds-field`); `ref` reaches the control —
+ * the trigger button, or the native <select> with `native: always`.
  */
 export declare function Select({ ref, label, name, options, value, defaultValue, placeholder, hideLabel, size, open: openProp, multiple, description, required, disabled, invalid, error, native, container, overrides, onChange, onOpenChange, id: idProp, onClick: onClickProp, onKeyDown: onKeyDownProp, onFocus, onBlur, ...rest }: SelectProps & {
   ref?: Ref<HTMLButtonElement | HTMLSelectElement> | undefined;
@@ -2322,7 +2453,12 @@ interface ComboboxProps extends Omit<ComponentPropsWithoutRef<"input">, "type" |
   value?: ComboboxValue | undefined;
   /** Initial value(s). */
   defaultValue?: ComboboxValue | undefined;
-  /** Controlled popup state, for programmatic use and for stories and tests. Omit for the typing-driven default. */
+  /**
+   * Controlled popup state, for programmatic use and for stories and tests. Omit for the
+   * typing-driven default. Opening the list this way claims DOM focus for the input when focus is
+   * not already inside the field — `aria-activedescendant` announces nothing otherwise — but never
+   * takes it from a focused clear or chip-remove Button.
+   */
   open?: boolean | undefined;
   /** Controlled text of the input (what the user has typed). Usually uncontrolled; controlled by consumers driving `async` filtering. */
   inputValue?: string | undefined;
@@ -2340,8 +2476,9 @@ interface ComboboxProps extends Omit<ComponentPropsWithoutRef<"input">, "type" |
    * diacritic-insensitive match) commits that option's `value`, never a custom string. If the
    * matching option is disabled, the row stays suppressed and the commit does nothing (neither the
    * disabled value nor a custom string). With `multiple`, text matching an already-selected option
-   * leaves it selected (no `onChange`, unlike Enter on its row, which toggles) and clears the text.
-   * A comma typed when there is nothing to commit (empty text, or only a disabled match) is dropped
+   * leaves it selected (no `onChange`, unlike Enter on its row, which toggles) and clears the text —
+   * that clear does fire `onInputChange`, like any other commit. The synthetic row is independent of
+   * `filter`: it shows with `filter: none` too. A comma typed when there is nothing to commit (empty text, or only a disabled match) is dropped
    * and the text before it kept.
    */
   allowCustom?: boolean | undefined;
@@ -2362,11 +2499,11 @@ interface ComboboxProps extends Omit<ComponentPropsWithoutRef<"input">, "type" |
   disabled?: boolean | undefined;
   /** Marks the field invalid. */
   invalid?: boolean | undefined;
-  /** Error message; implies invalid. */
+  /** Error message; implies invalid. An empty string is not a message (as Input): nothing renders, though a Form entry still marks the field. */
   error?: string | undefined;
   /** For `async`: show the loading row and announce it. The consumer sets it around its request. */
   loading?: boolean | undefined;
-  /** Show a clear button when there is a value or text. */
+  /** Show a clear button when there is a value or text. It also gates Escape-clears-text. */
   clearable?: boolean | undefined;
   /** Portal target for the popup. Defaults to `document.body`. Platform prop; never affects semantics. */
   container?: HTMLElement | undefined;
@@ -2378,10 +2515,11 @@ interface ComboboxProps extends Omit<ComponentPropsWithoutRef<"input">, "type" |
    * Fired on every text change the user causes — each keystroke, and the text a commit, Escape-to-clear
    * or the clear button leaves behind (so `async` consumers can reset) — with the input text. Not fired
    * when a controlled `value` change rewrites the label, nor when a commit, Escape or the clear button
-   * leaves the text unchanged. The hook for `async` filtering.
+   * leaves the text unchanged ("unchanged" against the text the input shows now, which for a
+   * controlled `inputValue` is the consumer's prop). The hook for `async` filtering.
    */
   onInputChange?: ((value: string) => void) | undefined;
-  /** Fired when the list opens or closes. */
+  /** Fired when the list opens or closes — including the closes the component causes itself (a blur, a single-select commit, Escape, Tab). */
   onOpenChange?: ((open: boolean) => void) | undefined;
 }
 /**
@@ -2423,7 +2561,10 @@ interface AccordionProps extends Omit<ComponentPropsWithoutRef<"div">, "children
   /**
    * Opening one section closes the others. Off by default: users usually want to compare, and forced-closing is a
    * common frustration. Turning it on while several sections are open trims the open set to the first open id
-   * without firing any event (the same as several ids in `value`/`defaultValue`).
+   * without firing any event. "First" is array order: the order of `value`/`defaultValue`, and for uncontrolled
+   * state the order the sections were opened. Uncontrolled, the trim is permanent; controlled, it only affects what
+   * is shown, so turning `exclusive` off shows the full `value` again, still without events. A declared set of
+   * several ids warns in development, once per distinct id list.
    */
   exclusive?: boolean | undefined;
   /**
@@ -2431,11 +2572,11 @@ interface AccordionProps extends Omit<ComponentPropsWithoutRef<"div">, "children
    * string means nothing is open. Events always report an array, with zero or one entry when `exclusive`.
    */
   value?: string | string[] | undefined;
-  /** Initially open ids; the same shapes as `value`. */
+  /** Initially open ids; the same shapes as `value`. Given both, `value` controls and `defaultValue` is ignored. */
   defaultValue?: string | string[] | undefined;
   /** A hairline between items. */
   divided?: boolean | undefined;
-  /** Passed to every Disclosure; required when panels contain form fields. */
+  /** Passed to every Disclosure; required when panels contain form fields. Accordion-wide, like `headingLevel`. */
   keepMounted?: boolean | undefined;
   /**
    * Per-instance style overrides. `itemGap` sets the root hook; the trigger bindings are forwarded to each composed
@@ -2573,7 +2714,7 @@ interface NumberInputProps extends Omit<ComponentPropsWithoutRef<"input">, "type
    * `prefix`: that name is a native Element member.) */
   leadingText?: string | undefined;
   /** Static text after the value inside the field ("kg", "%"). Also the literal shown when `unit`
-   * is not a valid Intl unit. */
+   * is not a valid Intl unit. Ignored under `format: percent`, which draws its own sign. */
   trailingText?: string | undefined;
   /** Hide the increment/decrement buttons. Arrow keys work regardless. */
   hideSteppers?: boolean | undefined;
@@ -2617,7 +2758,7 @@ export declare function NumberInput({ ref, label, name, value, defaultValue, min
 type ProgressBarTone = "neutral" | "success" | "danger";
 type ProgressBarAnnounce = "none" | "milestones" | "complete";
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
-type ProgressBarOverridableBinding = "track" | "trackHeight" | "radius" | "labelSize" | "labelWeight" | "valueSize" | "fontFamily" | "lineHeight" | "partGap" | "labelGap" | "transition" | "indeterminateLoop" | "sweepEasing";
+type ProgressBarOverridableBinding = "track" | "trackHeight" | "radius" | "labelSize" | "labelWeight" | "valueSize" | "fontFamily" | "lineHeight" | "partGap" | "labelGap" | "transition" | "indeterminateLoop" | "indeterminateReducedOpacity" | "sweepEasing";
 type ProgressBarOverrides = Partial<Record<ProgressBarOverridableBinding, TokenRef | undefined>>;
 interface ProgressBarProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | "role" | "className" | "style" | "tabIndex"> {
   /** What is progressing ("Uploading photos", "Importing contacts"). Visible unless `hideLabel`. */
@@ -2638,9 +2779,9 @@ interface ProgressBarProps extends Omit<ComponentPropsWithoutRef<"div">, "childr
    * without a custom formatter — rounded to a whole number in the runtime's default locale (there is no locale
    * prop), so 99.5% of the way shows "100%" before completion; completion is only the clamped value reaching
    * `max`. Called with the clamped value. Rounding is for the text only; the fill uses the exact fraction.
-   * A `max` at or below `min` is not a range: the bar renders empty, exposes `min` as its value with the given
-   * bounds, shows and exposes "0%" unless a custom formatter says otherwise, makes no progress or completion
-   * announcements, and warns in development.
+   * Not called while indeterminate. A `max` at or below `min` is not a range: the bar renders empty, exposes
+   * `min` as its value with the bounds exactly as given, exposes (and, with `showValue`, shows) "0%", makes no
+   * progress or completion announcements, and warns in development once per distinct min/max pair.
    */
   formatValue?: ((value: number, min: number, max: number) => string) | undefined;
   /** Show the value text at the end of the label row. Ignored when indeterminate. */
@@ -2792,14 +2933,15 @@ interface SearchProps extends Omit<ComponentPropsWithoutRef<"input">, "type" | "
    * `onChange` (debounced by the caller). Setting the prop at all is what turns the field into a
    * combobox, including an explicitly empty array after a fetch that found nothing, which shows
    * `copy.noSuggestions`; leaving it undefined keeps a plain search field. The list opens on typing
-   * and on ArrowDown — never on focus alone, and an array arriving while the field is focused but
-   * untouched does not open it — and closes on Escape, Tab, blur to an element outside Search (a
-   * blur with no new focus target, such as a window switch, does not close it), a pointer press
-   * outside the field and list, a chosen suggestion, clear, and submit. ArrowDown on the last
+   * and on ArrowDown — never on focus alone — and closes on Escape, Tab, blur or a pointer press
+   * outside Search, a chosen suggestion, clear, and every submit attempt. ArrowDown on the last
    * suggestion stays there, as ArrowUp never wraps.
    */
   suggestions?: SearchSuggestion[] | undefined;
-  /** Suggestions are being fetched; announced through `copy.loading`. */
+  /**
+   * Suggestions are being fetched; announced through `copy.loading` whenever `suggestions` is set
+   * and this is true, list open or not.
+   */
   loading?: boolean | undefined;
   /**
    * Give the field the `search` landmark. Turn off when the Search sits inside another search
@@ -2813,8 +2955,8 @@ interface SearchProps extends Omit<ComponentPropsWithoutRef<"input">, "type" | "
    * Not editable, still readable and focusable: the input is read-only with aria-disabled, both
    * Buttons are disabled (the clear Button still renders when there is text), every key in the
    * keyboard table is inert, suggestions never open and an open list closes, no event fires, the
-   * label, glyph and input dim to `disabledOpacity` (the Buttons dim through their own style and the
-   * field frame is not dimmed), and a disabled Search is not registered with (or submitted by) a Form.
+   * component dims to `disabledOpacity`, and a disabled Search is not registered with (or submitted
+   * by) a Form.
    */
   disabled?: boolean | undefined;
   /** Portal target for the suggestions popup. Defaults to `document.body`. Platform prop; never affects semantics. */
@@ -2823,8 +2965,8 @@ interface SearchProps extends Omit<ComponentPropsWithoutRef<"input">, "type" | "
   overrides?: Partial<Record<SearchOverridableBinding, TokenRef | undefined>> | undefined;
   /**
    * Fired on every keystroke with the query; the caller fetches suggestions here. Also fired whenever
-   * Search itself changes the text: with "" before `onClear`, and with the suggestion's `label` before
-   * `onSubmit` when one is chosen.
+   * Search itself changes the text, so a controlled value can follow: with "" before `onClear`
+   * (clear button or Escape), and with the suggestion's `label` before `onSubmit` when one is chosen.
    */
   onChange?: ((value: string) => void) | undefined;
   /** Fired on Enter, the submit button, or choosing a suggestion, with the trimmed query. Never with an empty query. */
@@ -3052,7 +3194,8 @@ interface CarouselProps extends Omit<ComponentPropsWithoutRef<"section">, "child
   autoplay?: boolean | undefined;
   /**
    * Milliseconds between automatic advances; values below 5000 are raised to 5000 in every build,
-   * with a development warning once per instance while `autoplay` is on.
+   * with a development warning once ever per instance (a later invalid value does not warn again),
+   * and only while `autoplay` is on.
    */
   interval?: number | undefined;
   /**
@@ -3180,31 +3323,33 @@ export declare function Table({ ref, caption, captionLevel, footer, hideCaption,
 }): ReactElement;
 //#endregion
 //#region src/DataGrid.d.ts
+type DataGridCaptionLevel = "2" | "3" | "4" | 2 | 3 | 4;
 type DataGridSelectable = "none" | "row" | "cell" | "range";
 type DataGridDensity = "compact" | "comfortable";
 type DataGridHeight = "content" | "viewport" | "fixed";
-/** Heading level of the caption. Accepts the schema's string values and their numeric equivalents. */
-type DataGridCaptionLevel = "2" | "3" | "4" | 2 | 3 | 4;
 type DataGridSortDirection = "ascending" | "descending";
 type DataGridColumnAlign = "start" | "end" | "center";
 type DataGridColumnPinned = "start" | "end";
 type DataGridEditorKind = "text" | "number" | "select" | "date" | "checkbox";
-/** A row. `id` must be stable. */
+/** A data row. `id` must be stable. */
 type DataGridRow = {
   id: string;
   [key: string]: unknown;
 };
-/** `{ column: string; direction: "ascending" | "descending" }` */
-interface DataGridSortState {
+/** Sort state: the column key and its direction. */
+type DataGridSortState = {
   column: string;
   direction: DataGridSortDirection;
-}
-interface DataGridColumnOption {
+};
+/** One choice of a `select` editor. */
+type DataGridColumnOption = {
   value: string;
   label: string;
-}
-/** One entry of `columns`, in display order. */
-interface DataGridColumn {
+};
+/** A committed cell value, as the column editor produces it; undefined when cleared. */
+type DataGridCellValue = string | number | boolean | undefined;
+/** One column definition, in display order. */
+type DataGridColumn = {
   key: string;
   header: string;
   abbr?: string | undefined;
@@ -3220,86 +3365,79 @@ interface DataGridColumn {
   options?: DataGridColumnOption[] | undefined;
   render?: ((row: DataGridRow) => ReactNode) | undefined;
   validate?: ((value: unknown, row: DataGridRow) => string | undefined) | undefined;
-}
+};
+/** One cell: its row id and column key. */
 type DataGridCellRef = {
   rowId: string;
   column: string;
 };
+/** A rectangle from the anchor cell to the focus cell. */
 type DataGridRangeRef = {
   from: DataGridCellRef;
   to: DataGridCellRef;
 };
 /** Row ids, one cell, or a range, matching `selectable`. */
 type DataGridSelection = string[] | DataGridCellRef | DataGridRangeRef;
-/** A committed or previous cell value, as the column editor produces it. */
-type DataGridCellValue = string | number | boolean;
-/** Style bindings that can be overridden per instance; accessibility-bearing bindings are locked. */
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 type DataGridOverridableBinding = "headerWeight" | "headerSize" | "headerBorder" | "headerBorderWidth" | "headerShadow" | "gridLine" | "gridLineWidth" | "rowHover" | "cellPaddingInline" | "columnWidth" | "pinnedShadow" | "resizeHandle" | "resizeHandleWidth" | "resizeStep" | "statusBarSize" | "statusBarPadding" | "statusBarGap" | "captionSize" | "captionWeight" | "captionGap" | "fixedHeight" | "fontFamily" | "fontSize" | "lineHeight" | "numericFont" | "transition";
-interface DataGridProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | "className" | "style"> {
-  /** What the grid holds ("Price list"). The accessible name; visually hidden with `hideCaption`. */
+type DataGridOverrides = Partial<Record<DataGridOverridableBinding, TokenRef | undefined>>;
+interface DataGridProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | "className" | "style" | "onSelect"> {
+  /** What the grid holds ("Price list"). The accessible name; visually hidden with `hideCaption`. Required: a grid built without one falls back to an empty caption and warns in development. */
   caption: string;
   /** Heading level of the caption in the page outline; its size is captionSize regardless, as Table. */
   captionLevel?: DataGridCaptionLevel | undefined;
   /** Visually hide the caption; it remains the accessible name. */
   hideCaption?: boolean | undefined;
-  /** Table's column model plus grid concerns: pixel `width` (the columnWidth binding when omitted), `resizable`, `pinned`
-   * columns (contiguous at the start or end), `editable` with an `editor` kind and `validate`. Exactly
-   * one column may be `isRowHeader`. */
+  /** Table's column model plus grid concerns: pixel `width`, `minWidth`, `resizable`, `pinned`, `editable` with an `editor` kind and `validate`. Exactly one column may be `isRowHeader`. */
   columns: DataGridColumn[];
   /** The rows. `id` must be stable. Large arrays are fine; only visible rows are rendered. */
   data: DataGridRow[];
-  /** Total rows when `data` is a window of a larger set (server paging). Sets aria-rowcount;
-   * `onRangeNeeded` asks for more. `data` is always a contiguous prefix starting at row 0. */
+  /** Total rows when `data` is a window of a larger set (server paging). Sets aria-rowcount; `onRangeNeeded` asks for more. */
   rowCount?: number | undefined;
   /** Controlled sort state; as Table. */
   sort?: DataGridSortState | undefined;
-  /** Initial sort; the grid sorts `data` itself when `rowCount` is not set. */
+  /** Initial sort; the grid sorts `data` itself when `rowCount` is not set and the sort is uncontrolled. */
   defaultSort?: DataGridSortState | undefined;
-  /** `row` adds a checkbox column and Shift/Ctrl row selection; `cell` selects the focused cell;
-   * `range` allows Shift+arrow / pointer-drag rectangles (copy as TSV). */
+  /** `row` adds a checkbox column and Shift/Ctrl row selection; `cell` selects the focused cell; `range` allows Shift+arrow / pointer-drag rectangles (copy as TSV). */
   selectable?: DataGridSelectable | undefined;
-  /** Controlled selected row ids (row mode). */
+  /** Controlled selected row ids (row mode). Left undefined, the grid keeps the selection itself. */
   selected?: string[] | undefined;
   /** Master switch: cells whose column is `editable` can be edited with Enter, F2, typing, or double-click. */
   editable?: boolean | undefined;
   /** Row height: compact suits the grid's purpose; comfortable for touch. */
   density?: DataGridDensity | undefined;
-  /** The header stays visible while the body scrolls. Always true when virtualized. */
+  /** The header stays visible while the grid's own scroll region scrolls. Accepted for parity; every virtualized height keeps it sticky. */
   stickyHeader?: boolean | undefined;
-  /** `viewport` sets the grid height to `100vh − 2 × layout.gap.section`; `content` grows with rows
-   * (no virtualization); `fixed` uses `overrides.fixedHeight`. */
+  /** `viewport` fills the viewport less 2 × layout.gap.section; `content` grows with rows (no virtualization); `fixed` uses `overrides.fixedHeight`. */
   height?: DataGridHeight | undefined;
-  /** Sets aria-busy and shows `copy.loading` in the status bar; existing rows stay. */
+  /** Sets aria-busy and shows `copy.loading` in the status bar; existing rows stay, their text in cellMutedColor. */
   loading?: boolean | undefined;
   /** Shown when `data` is empty. */
   emptyMessage?: string | undefined;
   /** A footer line with row count, selection count and, while editing, the validation message. */
   showStatusBar?: boolean | undefined;
-  /** Portal target for the composed Select and DatePicker editors (default `document.body`). Platform prop. */
+  /** Portal target for the composed Select and DatePicker editors. Defaults to document.body. */
   container?: HTMLElement | undefined;
-  /** Per-instance style overrides; each entry sets the matching `--ds-data-grid-*` hook to that token. */
-  overrides?: Partial<Record<DataGridOverridableBinding, TokenRef | undefined>> | undefined;
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  overrides?: DataGridOverrides | undefined;
   /** As Table. */
   onSortChange?: ((column: string, direction: DataGridSortDirection) => void) | undefined;
-  /** Fired with the selection: row ids, one cell `{ rowId, column }`, or a range `{ from, to }`. */
+  /** Fired with the selection: row ids, one cell, or a range. Fired only when the selection actually changes. */
   onSelectionChange?: ((selection: DataGridSelection) => void) | undefined;
-  /** Fired when an edit commits. The caller updates `data`; the grid shows the old value until it does. */
-  onCellChange?: ((rowId: string, column: string, value: DataGridCellValue | undefined, previous: DataGridCellValue | undefined) => void) | undefined;
+  /** Fired when an edit commits, only when the committed value differs from the cell's (Object.is). The caller updates `data`. */
+  onCellChange?: ((rowId: string, column: string, value: DataGridCellValue, previous: DataGridCellValue) => void) | undefined;
   /** Fired when an editor opens; return false to refuse editing that cell. */
   onEditStart?: ((rowId: string, column: string) => boolean | void) | undefined;
   /** Fired when the visible window comes within one page of the end of `data` and `rowCount` says there is more. */
   onRangeNeeded?: ((start: number, end: number) => void) | undefined;
-  /** Fired when the user finishes resizing a resizable column. */
+  /** Fired when the user finishes dragging a resizable column edge, or on keyup of Shift after Shift+ArrowLeft/Right resizing. */
   onColumnResize?: ((column: string, width: number) => void) | undefined;
 }
 /**
- * DataGrid — Design Schema, category: data. APG grid built from `<div>`s with explicit roles.
+ * DataGrid — Design Schema, category: data.
  *
- * When to use: Use a DataGrid when people navigate cell by cell, edit values in place, select ranges,
- * or scroll through more rows than fit in memory as DOM: price lists, inventory counts, timesheets,
- * admin views over large sets, anything a spreadsheet would otherwise be used for. Set `editable` and
- * mark the columns that may change; give every editable column a `validate`. Use `height: viewport`
- * (the default) so the grid, not the page, scrolls.
+ * When to use:
+ * Use a DataGrid when people navigate cell by cell, edit values in place, select ranges, or scroll through more rows than fit in memory as DOM: price lists, inventory counts, timesheets, admin views over large sets, anything a spreadsheet would otherwise be used for. Set `editable` and mark the columns that may change; give every editable column a `validate`. Use `height: viewport` (the default) so the grid, not the page, scrolls.
  */
 export declare function DataGrid({ ref, caption, captionLevel, hideCaption, columns, data, rowCount, sort, defaultSort, selectable, selected, editable, density, stickyHeader, height, loading, emptyMessage, showStatusBar, container, overrides, onSortChange, onSelectionChange, onCellChange, onEditStart, onRangeNeeded, onColumnResize, ...rest }: DataGridProps & {
   ref?: Ref<HTMLDivElement> | undefined;
@@ -3349,7 +3487,9 @@ interface TreeGridProps extends Omit<ComponentPropsWithoutRef<"div">, "children"
    * shows the expand button and a loading state until `data` is updated. `children: []` is a leaf (no expand
    * button, no aria-expanded). */
   data: TreeGridRow[];
-  /** Controlled ids of expanded rows. */
+  /** Controlled ids of expanded rows. A still-`"lazy"` id here is held collapsed until the user opens it,
+   * exactly as in `defaultExpanded`; the id stays in the caller's array and in what onExpandChange reports,
+   * and no onExpand fires for it. */
   expanded?: string[] | undefined;
   /** Initially expanded ids. `["*"]` expands every row whose `children` is a non-empty array, including rows
    * loaded later, and never a `"lazy"` row (that would fire onExpand without a user act); `"*"` is honoured the
@@ -3452,9 +3592,10 @@ interface TreeProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | "
   /** Heading level of the visible label in the page outline; its size is headingSize regardless. */
   headingLevel?: TreeHeadingLevel | undefined;
   /**
-   * The hierarchy. `href` makes a node's label a Link (navigation trees); `icon` is an Icon glyph
-   * (`folder` and `file` exist for the usual case); `badge` is a short trailing count or status;
-   * `children: "lazy"` loads on first expand through `onExpand`.
+   * The hierarchy. `href` makes a node's label a Link with `tone: inherit` nested inside the label Text, so it
+   * takes the label's font and color (navigation trees); `icon` is an Icon glyph (`folder` and `file` exist for
+   * the usual case); `badge` is a short trailing count or status; `children: "lazy"` loads on first expand
+   * through `onExpand`.
    */
   nodes: TreeNode[];
   /**
@@ -3466,8 +3607,9 @@ interface TreeProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | "
   /**
    * Initially expanded ids. `["*"]` opens every node whose `children` is a non-empty array and never a
    * `"lazy"` node; `"*"` is reserved as that sentinel, so a node whose id is literally `"*"` is never matched
-   * by it. A lazy id listed explicitly stays closed until the user opens it (onExpand only fires for user
-   * acts), and the same rule covers the controlled `expanded`.
+   * by it. The first user toggle resolves `"*"` to the concrete ids then open, and that resolved array is what
+   * onExpandChange reports, any held-lazy ids kept in place. A lazy id listed explicitly stays closed until the
+   * user opens it (onExpand only fires for user acts), and the same rule covers the controlled `expanded`.
    */
   defaultExpanded?: string[] | undefined;
   /**
@@ -3480,22 +3622,31 @@ interface TreeProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | "
   selected?: string[] | undefined;
   /** Initially selected ids. */
   defaultSelected?: string[] | undefined;
-  /** With `multiple`, selecting a parent selects its descendants and parents show indeterminate. */
+  /**
+   * With `multiple`, selecting a parent selects its descendants and parents show indeterminate. The cascade
+   * covers loaded, enabled descendants only; a parent's id is in `selected` exactly when all its enabled loaded
+   * descendants are, and unchecking any descendant removes it and every ancestor id. A parent with no enabled
+   * loaded descendants behaves as a leaf. Shift+ArrowDown/Up cascade like Space but only ever add.
+   */
   selectChildren?: boolean | undefined;
   /**
-   * With `single`, moving focus also selects (a settings sidebar where the tree drives a panel).
-   * Off by default: focus moves, Enter or Space selects.
+   * With `single`, moving focus also selects (a settings sidebar where the tree drives a panel). Moving focus
+   * means the keyboard — the arrows, Home, End and type-ahead; entering with Tab and pointer focus never select
+   * on their own. Off by default: focus moves, Enter or Space selects.
    */
   selectOnFocus?: boolean | undefined;
   /** Vertical guide lines under open parents. */
   showGuides?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook (or composed child override) to that token. */
   overrides?: Partial<Record<TreeOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired with the selected ids. */
+  /** Fired with the selected ids, in tree (document) order, and only when the set actually changes. */
   onSelectionChange?: ((ids: string[]) => void) | undefined;
-  /** Fired with the expanded ids. */
+  /** Fired with the expanded ids, in the order they were opened. */
   onExpandChange?: ((ids: string[]) => void) | undefined;
-  /** Fired when a lazy node is expanded for the first time, with its id. */
+  /**
+   * Fired with its id each time a node whose `children` is still `"lazy"` is opened, so a failed load can retry;
+   * replacing `children` is the only thing that stops it. Fires before the onExpandChange of the same act.
+   */
   onExpand?: ((id: string) => void) | undefined;
   /** Fired on Enter or double-click on a node (open the file, navigate), with its id. Nodes with `href` navigate instead. */
   onActivate?: ((id: string) => void) | undefined;
@@ -3521,19 +3672,25 @@ type SplitterOverridableBinding = "separatorSize" | "separatorColor" | "handleSi
 interface SplitterProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | "className" | "style"> {
   /** What the divider resizes ("Sidebar width", "Preview height"). The separator's accessible name. */
   label: string;
-  /** `horizontal` places panes side by side (the separator is vertical); `vertical` stacks them. */
+  /**
+   * `horizontal` places panes side by side (the separator is vertical); `vertical` stacks them. The
+   * splitter fills its parent (block-size 100%), so a vertical splitter needs a parent with a definite height.
+   */
   orientation?: SplitterOrientation | undefined;
   /** The first pane (start or top). Its size is what the separator controls and reports. */
   primary: ReactNode;
   /** The second pane, which takes the remaining space. */
   secondary: ReactNode;
-  /** Controlled size of the primary pane as a percentage of the container (0–100). */
+  /**
+   * Controlled size of the primary pane as a percentage of the container (0–100). A value outside
+   * `minSize`–`maxSize` is clamped for the layout, the value text and aria-valuenow, and fires nothing.
+   */
   size?: number | undefined;
   /** Initial primary size, percent. */
   defaultSize?: number | undefined;
   /**
    * Smallest primary size, percent. With `collapsible`, dragging or stepping below it collapses the
-   * pane instead of clamping; otherwise it is the hard floor.
+   * pane instead of clamping; otherwise it is the hard floor. Home sets `minSize` and never collapses.
    */
   minSize?: number | undefined;
   /** Largest primary size, percent. */
@@ -3545,28 +3702,30 @@ interface SplitterProps extends Omit<ComponentPropsWithoutRef<"div">, "children"
    * or use the collapse button. Enter again restores the last size.
    */
   collapsible?: boolean | undefined;
-  /** Controlled collapsed state. */
+  /** Controlled collapsed state. Ignored unless `collapsible`. */
   collapsed?: boolean | undefined;
   /** Initial collapsed state when uncontrolled. */
   defaultCollapsed?: boolean | undefined;
   /**
    * When set, the size and collapsed state are remembered per user under this key so a sidebar
-   * stays where it was left: localStorage on web (in try/catch).
+   * stays where it was left (localStorage, in try/catch, as JSON `{size, collapsed}`). The stored
+   * value seeds only an uncontrolled `size` or `collapsed`; a controlled prop wins over the store.
    */
   persistKey?: string | undefined;
   /**
-   * Below this width of the splitter's own box (a container query, not the viewport, so nested
-   * splitters work) a horizontal splitter stacks its panes and the separator is not rendered. A
-   * vertical splitter never stacks. `content` = layout.maxWidth.content, `never` = no stacking.
+   * Below this width of the splitter's own box — its own box, not the viewport, so nested
+   * splitters work — a horizontal splitter stacks its panes and the separator is not rendered. A
+   * vertical splitter never stacks. `prose` = layout.maxWidth.prose, `content` =
+   * layout.maxWidth.content, `never` = no stacking.
    */
   stackBelow?: SplitterStackBelow | undefined;
   /** Per-instance style overrides: each entry sets the matching `--ds-splitter-*` hook to that token. */
   overrides?: Partial<Record<SplitterOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired continuously while dragging and on each key press, with the primary size in percent. */
+  /** Fired continuously while dragging and on each key press that changes the size, with the primary size in percent (unrounded). */
   onSizeChange?: ((size: number) => void) | undefined;
   /**
-   * Fired with the final size once when a drag ends and after each key press (a key press is a
-   * complete interaction), so a caller can persist on it.
+   * Fired with the final size once when a drag ends and after each key press that changed the size
+   * (a key press is a complete interaction), so a caller can persist on it.
    */
   onSizeChangeEnd?: ((size: number) => void) | undefined;
   /** Fired when the primary pane collapses or restores. */
@@ -3597,7 +3756,7 @@ type FeedItem = {
   unread?: boolean;
 };
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
-type FeedOverridableBinding = "itemGap" | "articleInset" | "articleBodyGap" | "timestampSize" | "newItemsOffset" | "newItemsLayer" | "loadingInset" | "endMessageInset" | "endMessageSize" | "emptyStateInset" | "emptyStateSize" | "fontFamily";
+type FeedOverridableBinding = "itemGap" | "articleInset" | "articleBodyGap" | "articleRadius" | "timestampSize" | "newItemsOffset" | "newItemsLayer" | "loadingInset" | "endMessageInset" | "endMessageSize" | "emptyStateInset" | "emptyStateSize" | "fontFamily";
 interface FeedProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | "role" | "aria-label" | "aria-busy" | "className" | "style"> {
   /** What the feed contains ("Activity", "Notifications"). */
   label: string;
@@ -3639,9 +3798,9 @@ interface FeedProps extends Omit<ComponentPropsWithoutRef<"div">, "children" | "
  * When to use:
  * Use a Feed for a stream of similar, time-ordered items whose total is unknown or large: activity, notifications, comments, posts, audit events. Each item is a Card with a heading and a time. Use `newItemsCount` with `onShowNew` for live streams rather than inserting items while the reader is looking; use `onItemVisible` to mark things read.
  */
-export declare const Feed: ({ ref, label, items, hasMore, loading, newItemsCount, headingLevel, endMessage, onLoadMore, onShowNew, onItemVisible, overrides, onKeyDown, ...rest }: FeedProps & {
+export declare function Feed({ ref, label, items, hasMore, loading, newItemsCount, headingLevel, endMessage, onLoadMore, onShowNew, onItemVisible, overrides, onKeyDown, ...rest }: FeedProps & {
   ref?: Ref<HTMLDivElement> | undefined;
-}) => ReactElement;
+}): ReactElement;
 //#endregion
-export type { AccordionHeadingLevel, AccordionItem, AccordionOpenChangeReason, AccordionOverridableBinding, AccordionProps, ActionSheetAction, ActionSheetActionTone, ActionSheetCloseReason, ActionSheetOverridableBinding, ActionSheetProps, AlertDialogCancelReason, AlertDialogOverridableBinding, AlertDialogProps, AlertDialogTone, AlertLive, AlertOverridableBinding, AlertProps, AlertTone, BottomSheetCloseReason, BottomSheetHeight, BottomSheetOverridableBinding, BottomSheetProps, BoxElement, BoxInset, BoxOverridableBinding, BoxProps, BoxRadius, BoxSurface, BreadcrumbItem, BreadcrumbOverridableBinding, BreadcrumbProps, ButtonOverridableBinding, ButtonProps, ButtonSize, ButtonType, ButtonVariant, CardHeadingLevel, CardInset, CardOverridableBinding, CardProps, CardSurface, CarouselChangeReason, CarouselOverridableBinding, CarouselPicker, CarouselProps, CarouselSlideProps, CheckboxOverridableBinding, CheckboxProps, ComboboxFilter, ComboboxOverridableBinding, ComboboxProps, ComboboxValue, ContainerAlign, ContainerElement, ContainerGutter, ContainerOverridableBinding, ContainerProps, ContainerWidth, DataGridCaptionLevel, DataGridCellRef, DataGridCellValue, DataGridColumn, DataGridColumnAlign, DataGridColumnOption, DataGridColumnPinned, DataGridDensity, DataGridEditorKind, DataGridHeight, DataGridOverridableBinding, DataGridProps, DataGridRangeRef, DataGridRow, DataGridSelectable, DataGridSelection, DataGridSortDirection, DataGridSortState, DatePickerOverridableBinding, DatePickerProps, DatePickerRangeValue, DatePickerSize, DatePickerValue, DialogCloseReason, DialogInitialFocus, DialogOverridableBinding, DialogProps, DialogSize, DisclosureHeadingLevel, DisclosureOverridableBinding, DisclosureProps, DisclosureToggleReason, DividerOrientation, DividerOverridableBinding, DividerProps, DividerSpacing, FeedHeadingLevel, FeedItem, FeedOverridableBinding, FeedProps, FieldsetGap, FieldsetOverridableBinding, FieldsetProps, FocusScopeAutoFocus, FocusScopeEscapeDirection, FocusScopeProps, FormContextValue, FormErrors, FormFieldRegistration, FormFieldValue, FormOverridableBinding, FormProps, FormValidateMode, FormValues, HeadingLevel, HeadingOverridableBinding, HeadingProps, HeadingSize, IconName, IconOverridableBinding, IconProps, IconSize, InputOverridableBinding, InputProps, InputSize, InputType, LandmarkElement, LandmarkProps, LandmarkRole, LinkOverridableBinding, LinkProps, LinkTone, ListboxGroup, ListboxItem, ListboxMaxVisible, ListboxOption, ListboxOverridableBinding, ListboxProps, ListboxValue, MenuAction, MenuGroup, MenuItem, MenuItemTone, MenuOpenChangeReason, MenuOverridableBinding, MenuPlacement, MenuProps, MenuSeparator, MenuTriggerIcon, MenuTriggerVariant, MeterOverridableBinding, MeterProps, MeterTone, NumberInputFormat, NumberInputOverridableBinding, NumberInputProps, NumberInputSize, PopoverHeadingLevel, PopoverOpenChangeReason, PopoverOverridableBinding, PopoverPlacement, PopoverProps, ProgressBarAnnounce, ProgressBarOverridableBinding, ProgressBarProps, ProgressBarTone, RadioGroupOption, RadioGroupOrientation, RadioGroupOverridableBinding, RadioGroupProps, SearchOverridableBinding, SearchProps, SearchSize, SearchSuggestion, SegmentedControlOption, SegmentedControlOverridableBinding, SegmentedControlProps, SegmentedControlSize, SelectNative, SelectOverridableBinding, SelectProps, SelectSize, SelectValue, SidePanelOpenChangeReason, SidePanelOverridableBinding, SidePanelPersistent, SidePanelProps, SidePanelRole, SidePanelSide, SidePanelWidth, SliderMark, SliderOverridableBinding, SliderProps, SliderShowValue, SliderValue, SplitterOrientation, SplitterOverridableBinding, SplitterProps, SplitterStackBelow, StackAlign, StackDirection, StackElement, StackGap, StackJustify, StackOverridableBinding, StackProps, StepperNavigable, StepperOrientation, StepperOverridableBinding, StepperProps, StepperStep, StepperStepStatus, SwitchLabelPosition, SwitchOverridableBinding, SwitchProps, TabPanelProps, TableCaptionLevel, TableColumn, TableColumnAlign, TableColumnHideBelow, TableColumnWidth, TableDensity, TableMaxHeight, TableOverridableBinding, TableProps, TableResponsive, TableRow, TableSelectable, TableSortDirection, TableSortState, TabsActivation, TabsFit, TabsItem, TabsOrientation, TabsOverridableBinding, TabsProps, TextAlign, TextElement, TextOverridableBinding, TextProps, TextSize, TextTone, TextWeight, ToastDismissReason, ToastDuration, ToastOptions, ToastOverridableBinding, ToastProps, ToastRegionOverridableBinding, ToastRegionProps, ToastTone, ToolbarDensity, ToolbarGroupProps, ToolbarOrientation, ToolbarOverflow, ToolbarOverridableBinding, ToolbarProps, ToolbarSize, TooltipDelay, TooltipOverridableBinding, TooltipPlacement, TooltipProps, TreeGridCaptionLevel, TreeGridCellRef, TreeGridCellValue, TreeGridChildren, TreeGridDensity, TreeGridHeight, TreeGridOverridableBinding, TreeGridProps, TreeGridRow, TreeGridSelectable, TreeGridSelection, TreeGridSortDirection, TreeGridSortState, TreeHeadingLevel, TreeNode, TreeNodeChildren, TreeOverridableBinding, TreeProps, TreeSelectable };
+export type { AccordionHeadingLevel, AccordionItem, AccordionOpenChangeReason, AccordionOverridableBinding, AccordionProps, ActionSheetAction, ActionSheetActionTone, ActionSheetCloseReason, ActionSheetOverridableBinding, ActionSheetProps, AlertDialogCancelReason, AlertDialogOverridableBinding, AlertDialogProps, AlertDialogTone, AlertLive, AlertOverridableBinding, AlertProps, AlertTone, BottomSheetCloseReason, BottomSheetHeight, BottomSheetOverridableBinding, BottomSheetProps, BoxElement, BoxInset, BoxOverridableBinding, BoxProps, BoxRadius, BoxSurface, BreadcrumbItem, BreadcrumbOverridableBinding, BreadcrumbProps, ButtonHaspopup, ButtonOverridableBinding, ButtonProps, ButtonSize, ButtonType, ButtonVariant, CardHeadingLevel, CardInset, CardOverridableBinding, CardProps, CardSurface, CarouselChangeReason, CarouselOverridableBinding, CarouselPicker, CarouselProps, CarouselSlideProps, CheckboxOverridableBinding, CheckboxProps, ComboboxFilter, ComboboxOverridableBinding, ComboboxProps, ComboboxValue, ContainerAlign, ContainerElement, ContainerGutter, ContainerOverridableBinding, ContainerProps, ContainerWidth, DataGridCaptionLevel, DataGridCellRef, DataGridCellValue, DataGridColumn, DataGridColumnAlign, DataGridColumnOption, DataGridColumnPinned, DataGridDensity, DataGridEditorKind, DataGridHeight, DataGridOverridableBinding, DataGridProps, DataGridRangeRef, DataGridRow, DataGridSelectable, DataGridSelection, DataGridSortDirection, DataGridSortState, DatePickerOverridableBinding, DatePickerProps, DatePickerRangeValue, DatePickerSize, DatePickerValue, DialogCloseReason, DialogInitialFocus, DialogOverridableBinding, DialogProps, DialogSize, DisclosureHeadingLevel, DisclosureOverridableBinding, DisclosureProps, DisclosureToggleReason, DividerOrientation, DividerOverridableBinding, DividerProps, DividerSpacing, FeedHeadingLevel, FeedItem, FeedOverridableBinding, FeedProps, FieldsetGap, FieldsetOverridableBinding, FieldsetProps, FocusScopeAutoFocus, FocusScopeEscapeDirection, FocusScopeProps, FormContextValue, FormErrors, FormFieldRegistration, FormFieldValue, FormOverridableBinding, FormProps, FormValidateMode, FormValues, HeadingLevel, HeadingOverridableBinding, HeadingProps, HeadingSize, IconName, IconOverridableBinding, IconProps, IconSize, InputOverridableBinding, InputProps, InputSize, InputType, LandmarkElement, LandmarkProps, LandmarkRole, LinkOverridableBinding, LinkProps, LinkTone, ListboxGroup, ListboxItem, ListboxMaxVisible, ListboxOption, ListboxOverridableBinding, ListboxProps, ListboxValue, MenuAction, MenuGroup, MenuItem, MenuItemTone, MenuOpenChangeReason, MenuOverridableBinding, MenuPlacement, MenuProps, MenuSeparator, MenuTriggerIcon, MenuTriggerVariant, MeterOverridableBinding, MeterProps, MeterTone, NumberInputFormat, NumberInputOverridableBinding, NumberInputProps, NumberInputSize, PopoverCloseReason, PopoverHeadingLevel, PopoverInitialFocus, PopoverOpenChangeReason, PopoverOverridableBinding, PopoverPlacement, PopoverProps, ProgressBarAnnounce, ProgressBarOverridableBinding, ProgressBarProps, ProgressBarTone, RadioGroupOption, RadioGroupOrientation, RadioGroupOverridableBinding, RadioGroupProps, SearchOverridableBinding, SearchProps, SearchSize, SearchSuggestion, SegmentedControlOption, SegmentedControlOverridableBinding, SegmentedControlProps, SegmentedControlSize, SelectNative, SelectOverridableBinding, SelectProps, SelectSize, SelectValue, SidePanelOpenChangeReason, SidePanelOverridableBinding, SidePanelPersistent, SidePanelProps, SidePanelRole, SidePanelSide, SidePanelWidth, SliderMark, SliderOverridableBinding, SliderProps, SliderShowValue, SliderValue, SplitterOrientation, SplitterOverridableBinding, SplitterProps, SplitterStackBelow, StackAlign, StackDirection, StackElement, StackGap, StackJustify, StackOverridableBinding, StackProps, StepperNavigable, StepperOrientation, StepperOverridableBinding, StepperProps, StepperStep, StepperStepStatus, SwitchLabelPosition, SwitchOverridableBinding, SwitchProps, TabPanelProps, TableCaptionLevel, TableColumn, TableColumnAlign, TableColumnHideBelow, TableColumnWidth, TableDensity, TableMaxHeight, TableOverridableBinding, TableProps, TableResponsive, TableRow, TableSelectable, TableSortDirection, TableSortState, TabsActivation, TabsFit, TabsItem, TabsOrientation, TabsOverridableBinding, TabsProps, TextAlign, TextElement, TextOverridableBinding, TextProps, TextSize, TextTone, TextWeight, ToastDismissReason, ToastDuration, ToastOptions, ToastOverridableBinding, ToastProps, ToastRegionOverridableBinding, ToastRegionProps, ToastTone, ToolbarDensity, ToolbarGroupProps, ToolbarOrientation, ToolbarOverflow, ToolbarOverridableBinding, ToolbarProps, ToolbarSize, TooltipDelay, TooltipOverridableBinding, TooltipPlacement, TooltipProps, TreeGridCaptionLevel, TreeGridCellRef, TreeGridCellValue, TreeGridChildren, TreeGridDensity, TreeGridHeight, TreeGridOverridableBinding, TreeGridProps, TreeGridRow, TreeGridSelectable, TreeGridSelection, TreeGridSortDirection, TreeGridSortState, TreeHeadingLevel, TreeNode, TreeNodeChildren, TreeOverridableBinding, TreeProps, TreeSelectable };
 //# sourceMappingURL=index.d.ts.map

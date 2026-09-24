@@ -23,8 +23,7 @@
   --ds-bottom-sheet-min-target: var(--size-target-comfortable);
   --ds-bottom-sheet-focus-ring: var(--color-border-focus);
   --ds-bottom-sheet-focus-ring-width: var(--border-width-focus);
-  /* maxWidth: the breakpoint only, so this hook styles nothing. The presentation is chosen in script
-     from the theme's --layout-max-width-prose on the document root, never per instance. */
+  /* maxWidth (locked): the surface's maximum inline size, centred at every width. */
   --ds-bottom-sheet-max-width: var(--layout-max-width-prose);
   box-sizing: border-box;
   position: fixed;
@@ -85,6 +84,9 @@
   flex-direction: column;
   gap: var(--ds-bottom-sheet-part-gap);
   inline-size: 100%;
+  /* maxWidth (locked): min(viewport width, token), centred, anchored to the bottom edge. */
+  max-inline-size: var(--ds-bottom-sheet-max-width);
+  margin-inline: auto;
   padding-block-start: var(--ds-bottom-sheet-inset);
   padding-block-end: calc(var(--ds-bottom-sheet-inset) + env(safe-area-inset-bottom));
   background-color: var(--ds-bottom-sheet-surface);
@@ -241,7 +243,7 @@
   }
 }
 
-/* scroll-lock while a narrow BottomSheet is present; the gutter keeps the page from shifting. */
+/* scroll-lock while a BottomSheet is present; the gutter keeps the page from shifting. */
 html.ds-bottom-sheet-lock-scroll {
   overflow: hidden;
   scrollbar-gutter: stable;

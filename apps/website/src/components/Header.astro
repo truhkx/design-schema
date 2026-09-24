@@ -63,7 +63,7 @@ if (layoutBreakpointMd !== BREAKPOINT_MD_IN_CSS) {
           <Logo class="ds-site-header__mark" aria-hidden="true" focusable="false" />
           <span>{WORDMARK}</span>
         </a>
-        <HeaderNav client:load items={top} themes={themes} />
+        <HeaderNav client:load items={top} themes={themes} current={Astro.url.pathname} />
       </Stack>
     </Container>
   </div>

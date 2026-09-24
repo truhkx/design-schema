@@ -14,7 +14,7 @@
 import { layoutBreakpointMd } from '@design-schema/tokens/calm-precise/light';
 
 import DocsNav from './DocsNav';
-import { DOCS_SECTIONS, siteNav } from '../nav';
+import { DOCS_SECTIONS, normalizeRoute, siteNav } from '../nav';
 import './docs-sidebar.css';
 
 const { docs } = siteNav();
@@ -22,10 +22,10 @@ if (docs.length === 0) {
   throw new Error('generated/nav.json has no docs phase groups for the sidebar. Re-run `pnpm nav` at the repo root.');
 }
 
-// The route this page is at, so the sidebar can mark it `aria-current="page"` and the mobile Select
-// can show it as the chosen option instead of its placeholder. Trailing slash removed because Astro
-// serves `/docs/components/button/` for a route written `/docs/components/button`.
-const current = Astro.url.pathname.replace(/\/+$/, '') || '/';
+// The route this page is at, so the sidebar can mark it current and the mobile Select can show it as
+// the chosen option instead of its placeholder. Normalised the same way DocsNav normalises each
+// link's href (nav.ts, `normalizeRoute`), so a trailing slash on either side still matches.
+const current = normalizeRoute(Astro.url.pathname);
 
 /**
  * docs-sidebar.css writes `layout.breakpoint.md`'s value out, because a custom property cannot
@@ -42,3 +42,45 @@ if (layoutBreakpointMd !== BREAKPOINT_MD_IN_CSS) {
 ---
 
 <DocsNav client:load sections={[...DOCS_SECTIONS]} groups={docs} current={current} />
+
+{/*
+  Scrolls the sidebar to the current page (process/website-audit-2.md, "Current location"). Inline and
+  straight after the island's server-rendered markup, so it runs while the page is still parsing —
+  before first paint in practice, and long before hydration, which keeps the same nodes and so keeps
+  their scroll offset: no visible jump.
+
+  It moves the sidebar's own scroller and nothing else. `scrollIntoView` is ruled out because it
+  scrolls every scrollable ancestor, the window included; focus is never touched. The link's offset
+  is measured against the scroller and `scrollTop` set so the link sits about a quarter of the way
+  down — inside the upper third. The jump is always instant (no smooth behaviour anywhere), which is what
+  `prefers-reduced-motion` asks for and what a before-paint adjustment needs anyway.
+
+  It runs now, at DOMContentLoaded, and at `load`. While parsing, the docs content after this point
+  is not in the document yet, so the column may still be short. A remembered non-default theme's
+  sheet can also arrive after both (Layout.astro switches its `media` on, which does not block
+  rendering): until then `--layout-gutter` is undefined, the box's `max-block-size` is invalid and
+  it does not scroll at all. `load` waits for every stylesheet, so the last pass sees the real box —
+  but only moves it if nothing else has since the previous pass, so a visitor who already scrolled
+  the sidebar keeps their place. Nothing to do when the link is already near the top of the list.
+*/}
+<script is:inline>
+  (() => {
+    let placed = -1;
+    const place = () => {
+      const scroller = document.querySelector('.ds-docs-nav__sidebar');
+      const link = scroller && scroller.querySelector('[aria-current="page"]');
+      if (!scroller || !link) return;
+      if (placed !== -1 && scroller.scrollTop !== placed) return;
+      const offset = link.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+      // The margin above the link comes from the viewport, not the box: while parsing, the box can
+      // still be shorter than it will be, and a margin from its height would move the link again at
+      // DOMContentLoaded. Capped at a third of the box so a short box still shows the link.
+      const margin = Math.min(window.innerHeight / 4, scroller.clientHeight / 3);
+      scroller.scrollTop = Math.max(0, offset - margin);
+      placed = scroller.scrollTop;
+    };
+    place();
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', place, { once: true });
+    if (document.readyState !== 'complete') window.addEventListener('load', place, { once: true });
+  })();
+</script>

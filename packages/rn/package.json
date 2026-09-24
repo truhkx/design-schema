@@ -4,7 +4,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/<owner>/design-schema.git"
+    "url": "git+https://github.com/truhkx/design-schema.git",
+    "directory": "packages/rn"
+  },
+  "homepage": "https://designschema.ai",
+  "bugs": {
+    "url": "https://github.com/truhkx/design-schema/issues"
   },
   "publishConfig": {
     "access": "public"

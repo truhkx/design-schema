@@ -109,20 +109,17 @@
     }
   },
   "BottomSheet.lit": {
-    "hash": "0d404884ea6683f4",
-    "lastAttemptHash": "0d404884ea6683f4",
-    "generatedAt": "2026-09-23T23:19:58+00:00",
+    "hash": "1ae1afdcb5657744",
+    "lastAttemptHash": "1ae1afdcb5657744",
+    "generatedAt": "2026-09-24T04:14:26+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3235,
+    "costUsd": 0.4431,
     "files": [
-      "packages/lit/src/BottomSheet.stories.ts",
-      "packages/lit/src/BottomSheet.test.ts",
-      "packages/lit/src/BottomSheet.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/BottomSheet.ts"
     ],
-    "gaps": 2,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -130,10 +127,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
-      "hooks": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
+      "hooks": true
     }
   },
   "Box.lit": {

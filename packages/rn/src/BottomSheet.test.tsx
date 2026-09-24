@@ -1,12 +1,10 @@
 /**
  * BottomSheet — behavior scenarios from the component doc, one test each, in the doc's
  * order. `non-dismissible-still-reports-escape` is scoped to web and lit, so it has no
- * test here. The scenarios describe the phone presentation, so the window is set
- * narrower than `layout.maxWidth.prose` (Jest's default 750-wide window presents as
- * Dialog). See generated/prompts/BottomSheet.rn.md.
+ * test here. The presentation is the same at every window width. See
+ * generated/prompts/BottomSheet.rn.md.
  */
 import * as React from 'react';
-import { Dimensions } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { BottomSheet } from './BottomSheet';
 import type { BottomSheetProps } from './BottomSheet';
@@ -24,12 +22,6 @@ function setup(given: Partial<BottomSheetProps> = {}) {
   );
   return { ...utils, props, onClose };
 }
-
-const PHONE = { width: 390, height: 844, scale: 3, fontScale: 1 }; // literal-ok: a phone window for the test, not a design size
-
-beforeAll(() => {
-  Dimensions.set({ window: PHONE, screen: PHONE });
-});
 
 describe('BottomSheet', () => {
   it('close-button-fires-on-close', () => {

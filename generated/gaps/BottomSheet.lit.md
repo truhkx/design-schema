@@ -85,3 +85,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - BottomSheet: the `height: full` sheet subtracts `--layout-gutter`, but the spec names no token for the top gutter beyond that platform-note wording; I used `--layout-gutter` from the web notes and marked it literal-ok.
 - BottomSheet: `open: true` with an empty `heading` is only a development warning; the spec says the name is required but does not say what to render, so I render an empty aria-label.
+
+## 2026-09-24 00:14 — round 1
+
+- BottomSheet: the spec caps the surface with `max-inline-size` but the surface sits inside `<ds-focus-scope>` and a sheet-owned `.scope` element, so it does not say which one should be full width and which one should be capped. I kept the focus scope and scope wrapper full width and capped only the surface.
+- BottomSheet: the `maxWidth` binding is locked but still has a `--ds-bottom-sheet-max-width` hook, and the doc does not say the surface reads that hook rather than the token directly. I chose the hook, consistent with the overrides contract.
+- BottomSheet: the spec says the footer column pins to the bottom with height half or full, but not how the body and footer share the slack. I kept the body as the `flex: 1` scroller and the footer as `flex: 0 0 auto`.
+- BottomSheet: the `Keyboard` story needs `given` args from the story URL only for rules with `given`; none here do, so no URL-arg handling was added.

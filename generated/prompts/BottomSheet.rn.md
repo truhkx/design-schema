@@ -112,8 +112,7 @@ component:
     hideHeading:
       type: boolean
       default: false
-      description: Keep the heading for assistive technology but do not render it
-        (forwarded to Dialog above the breakpoint).
+      description: Keep the heading for assistive technology but do not render it.
       a11y: The accessible name is required regardless; visually hidden is fine, absent
         is not.
     children:
@@ -143,8 +142,7 @@ component:
       description: 'Escape, the close button, a scrim tap and the drag gesture all
         request close. When false, only the footer actions close it, as in Dialog:
         the close button and the drag handle are not rendered, a scrim tap and a drag
-        do nothing, and Escape still reports with reason `escape`. The wide Dialog
-        presentation receives the same value.'
+        do nothing, and Escape still reports with reason `escape`.'
     dragToDismiss:
       type: boolean
       default: true
@@ -248,7 +246,8 @@ component:
       locked: false
     radius:
       token: radius.lg
-      description: Top corners only on phones; all corners when it renders as a Dialog.
+      description: 'Top corners only, at every width: the surface always meets the
+        bottom edge.'
       locked: false
     handle:
       token: color.foreground.muted
@@ -301,7 +300,7 @@ component:
         block padding stays zero). The block edges are padded once, on the column
         that holds header, body and footer (the surface): padding-block-start `inset`
         (`headerPaddingTop` when the handle is rendered) and padding-block-end `inset`,
-        plus the bottom safe-area inset below the breakpoint. No part has block padding
+        plus the bottom safe-area inset at every width. No part has block padding
         of its own, so nothing doubles.'
       locked: false
     partGap:
@@ -327,23 +326,21 @@ component:
       locked: false
     maxWidth:
       token: layout.maxWidth.prose
+      part: surface
       locked: true
-      description: 'The breakpoint only — the sheet is full width below it, so the
-        value styles nothing. The breakpoint is read from the theme token, not per
-        instance. Above this viewport width (`(width > token)`; exactly the token
-        width is still a sheet; rn: window width <= token is a sheet) the sheet renders
-        as a centered Dialog of size md instead of rising from the edge. Web and Lit
-        choose the presentation in script: the resolved `--layout-max-width-prose`
-        is read from the document root''s computed style and passed to `matchMedia(''(width
-        > <value>)'')` (the value is `literal-ok`), re-evaluated on change; when the
-        token does not resolve (no theme stylesheet, jsdom, SSR) the sheet presentation
-        renders.'
+      description: 'The surface''s maximum inline size, centred with equal inline
+        margins: the surface is `min(viewport width, token)` wide and stays anchored
+        to the bottom edge, so on a phone it is full width and on a wide viewport
+        it is a capped, centred sheet. It is not a breakpoint — there is one presentation
+        at every width, never a Dialog, and nothing is decided in script. Web and
+        Lit: `max-inline-size` on the surface with `margin-inline: auto`; rn: the
+        surface''s `maxWidth` with `alignSelf: center`, so a tablet wider than the
+        token gets the same capped sheet at the bottom.'
     layer:
       token: layer.sheet
       description: 'Has no effect inside the browser top layer or a native Modal window;
         applies to the non-top-layer fallback (position: fixed) and the rn anchor
-        view. The wide Dialog presentation keeps its own `layer.dialog`; only a `layer`
-        override is forwarded to it.'
+        view.'
       locked: false
     enter:
       token: motion.duration.base
@@ -466,11 +463,12 @@ component:
       attributes:
       - aria-modal
       - aria-labelledby
-      notes: 'The same native <dialog> as Dialog, positioned at the bottom edge with
-        inset-block-end: 0 and full width below the maxWidth token; above it, the
-        generator renders Dialog directly (composition, not duplication). Drag uses
-        Pointer Events on the handle/header with setPointerCapture; the handle is
-        aria-hidden and not focusable. Safe-area padding via env(safe-area-inset-bottom).
+      notes: 'The same native <dialog> as Dialog, filling the viewport, with the surface
+        at the bottom edge (inset-block-end: 0), `max-inline-size` from the maxWidth
+        token and `margin-inline: auto`, so it is full width on a phone and capped
+        and centred on a wide screen — one presentation at every width, with no media
+        query and no Dialog. Drag uses Pointer Events on the handle/header with setPointerCapture;
+        the handle is aria-hidden and not focusable. Safe-area padding via env(safe-area-inset-bottom).
         The <dialog> fills the viewport with a transparent ::backdrop and the scrim
         is a real `data-part="scrim"` element inside it, as in Dialog; a scrim dismiss
         is a `click` whose target is that element. Button, Heading and Stack write
@@ -478,12 +476,9 @@ component:
         wrappers around them; the body Box takes its data-part directly, inside the
         sheet-owned scroll element that `partGap` describes. FocusScope writes its
         own `data-part="scope"`, so the `focusScope` part is a sheet-owned element
-        directly inside FocusScope, as in Dialog. `container` (the portal target every
-        portaled overlay accepts, not a schema prop) is passed through to Dialog in
-        the wide presentation. In the wide presentation the root is Dialog''s own
-        <dialog> (its hooks, not a BottomSheet wrapper), and `ref` resolves to that
-        <dialog>; below the breakpoint `ref` resolves to the sheet''s <dialog>, null
-        while closed.'
+        directly inside FocusScope, as in Dialog. `container` is the portal target
+        every portaled overlay accepts (not a schema prop). `ref` resolves to the
+        sheet''s <dialog>, null while closed.'
     lit:
       tag: ds-bottom-sheet
       reflect:
@@ -493,19 +488,16 @@ component:
         attribute: no-dismiss
       - prop: dragToDismiss
         attribute: no-drag-to-dismiss
-      notes: 'Shadow <dialog> with showModal(); a matchMedia listener on the maxWidth
-        token switches between sheet and dialog presentation. `close` and `drag-dismiss`
-        are composed CustomEvents. The host is `ds-bottom-sheet` in both presentations;
-        above the breakpoint the shadow root holds a `<ds-dialog>`, which renders
-        nothing while closed so its exit transition can play, and its `opened` event
-        is stopped at the sheet. The `footer` slot is forwarded into `<ds-dialog>`
-        only when the sheet has footer children, so a sheet with no footer gets no
-        empty footer part. Below the breakpoint every composed part (heading, closeButton,
-        body, footer) is a sheet-owned wrapper element carrying `data-part`, holding
-        the `<ds-heading>`, `<ds-button>`, `<ds-box>` or `<ds-stack>`: ds-box overwrites
-        its own data-part with `surface` and the other ds-* hosts carry none. Accessible
-        name: the shadow <dialog> carries aria-label from the heading text, never
-        aria-labelledby, as ds-dialog.'
+      notes: 'Shadow <dialog> with showModal(), laid out as web: the surface at the
+        bottom edge, capped at the maxWidth token and centred, at every width — no
+        matchMedia and no `<ds-dialog>`. `close` and `drag-dismiss` are composed CustomEvents.
+        The footer part is rendered only when the `footer` slot has assigned children,
+        so a sheet with no footer gets no empty footer part. Every composed part (heading,
+        closeButton, body, footer) is a sheet-owned wrapper element carrying `data-part`,
+        holding the `<ds-heading>`, `<ds-button>`, `<ds-box>` or `<ds-stack>`: ds-box
+        overwrites its own data-part with `surface` and the other ds-* hosts carry
+        none. Accessible name: the shadow <dialog> carries aria-label from the heading
+        text, never aria-labelledby, as ds-dialog.'
     rn:
       element: Modal
       props:
@@ -517,30 +509,29 @@ component:
       notes: 'Native Modal with an Animated.View surface translated from the bottom;
         PanResponder (or the platform gesture handler if the app already has it —
         not a new dependency) on the header for drag; onRequestClose → escape. Safe
-        area via SafeAreaView / the bottom inset. On tablets above the maxWidth token,
-        present as Dialog, rendered alone with no wrapping View (a View around a Modal
-        would take layout space in the caller''s tree), so the root testID there is
-        Dialog''s; the sheet''s testIDs and scenarios apply at window width <= the
-        token, and tests set a phone-sized window. The bottom inset comes from SafeAreaView
-        on iOS: an empty SafeAreaView as the last child of the surface column, after
-        the last part, so the only edge it adds is its bottom-edge padding as height
-        (SafeAreaView is deprecated in core since 0.81 but is still the only core
-        source, and no dependency is added). `height` on rn: `half` is window height
-        × 0.5 and `full` is window height minus `layout.gutter`, as web''s 50dvh and
-        100dvh - gutter; on Android with statusBarTranslucent `full` subtracts the
-        larger of the gutter and `StatusBar.currentHeight`. iOS core exposes no status-bar
-        height, so on a notched iPhone a `full` sheet can reach under the status bar
-        when the gutter is smaller; Escape (the VoiceOver two-finger scrub) still
-        closes and the footer actions stay reachable. React Native core has no safe-area
-        API on Android and no dependency is added, so Android adds no inset — the
-        Modal is not navigationBarTranslucent, so its window already ends above the
-        system navigation bar and the footer stays reachable. The closeButton part
-        is a wrapping View with `testID="BottomSheet.closeButton"` sized to minTarget,
-        the Button''s hitSlop covering the extra area. The Modal is its own window,
-        so no ref is exposed; callers ref their trigger. The surface carries the root
-        `testID="BottomSheet"` and there is no `BottomSheet.surface`, as in Dialog;
-        `focusScope` gets no testID either, since FocusScope owns that wrapper. Of
-        the keyboard block only the Escape rule has a native path (onRequestClose,
+        area via SafeAreaView / the bottom inset. On tablets wider than the maxWidth
+        token the presentation is the same sheet, capped at the token width and centred
+        at the bottom (surface `maxWidth` from the resolved token, `width: ''100%''`,
+        `alignSelf: ''center''`), with the same testIDs and scenarios at every window
+        width. The bottom inset comes from SafeAreaView on iOS: an empty SafeAreaView
+        as the last child of the surface column, after the last part, so the only
+        edge it adds is its bottom-edge padding as height (SafeAreaView is deprecated
+        in core since 0.81 but is still the only core source, and no dependency is
+        added). `height` on rn: `half` is window height × 0.5 and `full` is window
+        height minus `layout.gutter`, as web''s 50dvh and 100dvh - gutter; on Android
+        with statusBarTranslucent `full` subtracts the larger of the gutter and `StatusBar.currentHeight`.
+        iOS core exposes no status-bar height, so on a notched iPhone a `full` sheet
+        can reach under the status bar when the gutter is smaller; Escape (the VoiceOver
+        two-finger scrub) still closes and the footer actions stay reachable. React
+        Native core has no safe-area API on Android and no dependency is added, so
+        Android adds no inset — the Modal is not navigationBarTranslucent, so its
+        window already ends above the system navigation bar and the footer stays reachable.
+        The closeButton part is a wrapping View with `testID="BottomSheet.closeButton"`
+        sized to minTarget, the Button''s hitSlop covering the extra area. The Modal
+        is its own window, so no ref is exposed; callers ref their trigger. The surface
+        carries the root `testID="BottomSheet"` and there is no `BottomSheet.surface`,
+        as in Dialog; `focusScope` gets no testID either, since FocusScope owns that
+        wrapper. Of the keyboard block only the Escape rule has a native path (onRequestClose,
         onAccessibilityEscape): native has no Tab order, so the wrap rules are delegated
         to FocusScope and are exercised on react-native-web alone; the accessible
         way through the sheet on native is the swipe order, which follows the parts.
@@ -703,6 +694,7 @@ component:
 - `handleGap`: token `layout.gap.tight`; part `header`
 - `headerGap`: token `layout.gap.normal`; part `header`
 - `footerGap`: token `layout.gap.tight`; part `footer`
+- `maxWidth`: token `layout.maxWidth.prose`; part `surface`; locked
 - `minTarget`: token `size.target.comfortable`; part `closeButton`; locked
 
 ## Keyboard
@@ -836,47 +828,47 @@ props:
 notes: "Native Modal with an Animated.View surface translated from the bottom; PanResponder\
   \ (or the platform gesture handler if the app already has it \u2014 not a new dependency)\
   \ on the header for drag; onRequestClose \u2192 escape. Safe area via SafeAreaView\
-  \ / the bottom inset. On tablets above the maxWidth token, present as Dialog, rendered\
-  \ alone with no wrapping View (a View around a Modal would take layout space in\
-  \ the caller's tree), so the root testID there is Dialog's; the sheet's testIDs\
-  \ and scenarios apply at window width <= the token, and tests set a phone-sized\
-  \ window. The bottom inset comes from SafeAreaView on iOS: an empty SafeAreaView\
-  \ as the last child of the surface column, after the last part, so the only edge\
-  \ it adds is its bottom-edge padding as height (SafeAreaView is deprecated in core\
-  \ since 0.81 but is still the only core source, and no dependency is added). `height`\
-  \ on rn: `half` is window height \xD7 0.5 and `full` is window height minus `layout.gutter`,\
-  \ as web's 50dvh and 100dvh - gutter; on Android with statusBarTranslucent `full`\
-  \ subtracts the larger of the gutter and `StatusBar.currentHeight`. iOS core exposes\
-  \ no status-bar height, so on a notched iPhone a `full` sheet can reach under the\
-  \ status bar when the gutter is smaller; Escape (the VoiceOver two-finger scrub)\
-  \ still closes and the footer actions stay reachable. React Native core has no safe-area\
-  \ API on Android and no dependency is added, so Android adds no inset \u2014 the\
-  \ Modal is not navigationBarTranslucent, so its window already ends above the system\
-  \ navigation bar and the footer stays reachable. The closeButton part is a wrapping\
-  \ View with `testID=\"BottomSheet.closeButton\"` sized to minTarget, the Button's\
-  \ hitSlop covering the extra area. The Modal is its own window, so no ref is exposed;\
-  \ callers ref their trigger. The surface carries the root `testID=\"BottomSheet\"\
-  ` and there is no `BottomSheet.surface`, as in Dialog; `focusScope` gets no testID\
-  \ either, since FocusScope owns that wrapper. Of the keyboard block only the Escape\
-  \ rule has a native path (onRequestClose, onAccessibilityEscape): native has no\
-  \ Tab order, so the wrap rules are delegated to FocusScope and are exercised on\
-  \ react-native-web alone; the accessible way through the sheet on native is the\
-  \ swipe order, which follows the parts. This is the mobile-first overlay: on phones\
-  \ prefer it to Dialog for anything the thumb should reach. The surface carries the\
-  \ RN >= 0.74 `role=\"dialog\"` prop alongside accessibilityViewIsModal, as Dialog\
-  \ does; the legacy accessibilityRole union has no dialog value. Scroll lock has\
-  \ no native meaning \u2014 a Modal has no page behind it to scroll \u2014 and is\
-  \ not implemented. With no `initialFocus` prop, focus on open is FocusScope's `autoFocus=\"\
-  first\"`, which on native lands on the scope wrapper rather than a real first control;\
-  \ that is FocusScope's own documented limit and the screen reader reads the sheet\
-  \ from the top, which is the intended result anyway."
+  \ / the bottom inset. On tablets wider than the maxWidth token the presentation\
+  \ is the same sheet, capped at the token width and centred at the bottom (surface\
+  \ `maxWidth` from the resolved token, `width: '100%'`, `alignSelf: 'center'`), with\
+  \ the same testIDs and scenarios at every window width. The bottom inset comes from\
+  \ SafeAreaView on iOS: an empty SafeAreaView as the last child of the surface column,\
+  \ after the last part, so the only edge it adds is its bottom-edge padding as height\
+  \ (SafeAreaView is deprecated in core since 0.81 but is still the only core source,\
+  \ and no dependency is added). `height` on rn: `half` is window height \xD7 0.5\
+  \ and `full` is window height minus `layout.gutter`, as web's 50dvh and 100dvh -\
+  \ gutter; on Android with statusBarTranslucent `full` subtracts the larger of the\
+  \ gutter and `StatusBar.currentHeight`. iOS core exposes no status-bar height, so\
+  \ on a notched iPhone a `full` sheet can reach under the status bar when the gutter\
+  \ is smaller; Escape (the VoiceOver two-finger scrub) still closes and the footer\
+  \ actions stay reachable. React Native core has no safe-area API on Android and\
+  \ no dependency is added, so Android adds no inset \u2014 the Modal is not navigationBarTranslucent,\
+  \ so its window already ends above the system navigation bar and the footer stays\
+  \ reachable. The closeButton part is a wrapping View with `testID=\"BottomSheet.closeButton\"\
+  ` sized to minTarget, the Button's hitSlop covering the extra area. The Modal is\
+  \ its own window, so no ref is exposed; callers ref their trigger. The surface carries\
+  \ the root `testID=\"BottomSheet\"` and there is no `BottomSheet.surface`, as in\
+  \ Dialog; `focusScope` gets no testID either, since FocusScope owns that wrapper.\
+  \ Of the keyboard block only the Escape rule has a native path (onRequestClose,\
+  \ onAccessibilityEscape): native has no Tab order, so the wrap rules are delegated\
+  \ to FocusScope and are exercised on react-native-web alone; the accessible way\
+  \ through the sheet on native is the swipe order, which follows the parts. This\
+  \ is the mobile-first overlay: on phones prefer it to Dialog for anything the thumb\
+  \ should reach. The surface carries the RN >= 0.74 `role=\"dialog\"` prop alongside\
+  \ accessibilityViewIsModal, as Dialog does; the legacy accessibilityRole union has\
+  \ no dialog value. Scroll lock has no native meaning \u2014 a Modal has no page\
+  \ behind it to scroll \u2014 and is not implemented. With no `initialFocus` prop,\
+  \ focus on open is FocusScope's `autoFocus=\"first\"`, which on native lands on\
+  \ the scope wrapper rather than a real first control; that is FocusScope's own documented\
+  \ limit and the screen reader reads the sheet from the top, which is the intended\
+  \ result anyway."
 ```
 
 ## Guidance
 
 ## Overview
 
-A bottom sheet is the phone's dialog. It rises from the edge the thumb can reach, keeps the page visible behind a scrim so the user knows where they are, and goes away with a swipe, a tap outside, or a close button. On a wide screen the same content is a Dialog; the component decides which, so screens are written once.
+A bottom sheet is the phone's dialog. It rises from the edge the thumb can reach, keeps the page visible behind a scrim so the user knows where they are, and goes away with a swipe, a tap outside, or a close button. On a wide screen it is still a sheet: the same surface rises from the same bottom edge, capped at the prose width and centred, so it never turns into a different component. When a wide screen should show a centred Dialog instead, use Dialog there.
 
 ## When to use
 
@@ -888,7 +880,7 @@ Do not use a BottomSheet as a menu (ActionSheet or Menu), as a persistent panel 
 
 ## Behavior
 
-Opening slides the sheet up and fades the scrim; focus moves to the first control or the title; the page behind is inert and its scroll locked. The body scrolls within the sheet; a downward drag on the handle or header (never the body, whatever its scroll position) begins the dismiss gesture, and releasing past the threshold or with enough velocity fires `onDragDismiss` then `onClose('drag')` — otherwise the sheet springs back. After a drag dismiss the sheet holds the release position until the consumer's update renders: `open` false plays the exit from there; `open` still true springs the sheet back to rest. A release past the threshold when `open` has already gone false — a close that raced the gesture — is a spring-back that fires neither `onDragDismiss` nor `onClose`, so the sheet never reports a dismissal it did not cause. Escape, the close button and a scrim tap request close as in Dialog. When the browser closes the native `<dialog>` on its own (a repeated Escape reaching the close watcher closes it with no `cancel` event at all), report `escape` once and re-`showModal()` unless the consumer set `open` false, as Dialog does — `open` is controlled only, and a silently closed sheet would desync. With `dismissible` false, Escape reports on every press: nothing throttles or announces the repeats. The sheet never raises `action` itself; a consumer's footer action may call the same `onClose` handler with it. The `overlay.dismiss` values are the shared category vocabulary; the event's reasons are what fires: `escape`, `scrim` and `close-button` are reported as themselves, and `swipe` is reported as `drag`. `open` is controlled only; there is no uncontrolled mode. The heading's id/ref/tabindex, the close Button's `label` from `copy.closeLabel`, its `close` Icon glyph, press handlers and aria wiring are wiring every platform passes, not composition props. Gate and Keyboard stories that need it open render through a wrapper that owns `open` (starting true) and writes `onClose` back, acting as the consumer. Above the `maxWidth` breakpoint the sheet presents as a centered Dialog of size md with the same props and events, so code does not branch on device. In the wide presentation the same props are forwarded to Dialog — `heading`, `hideHeading` (Dialog has it for this reason), `dismissible`, `footer` — and every override whose binding shares a name with a Dialog binding (`scrim`, `surface`, `shadow`, `radius`, `inset`, `partGap`, `headerGap`, `footerGap`, `layer`, `enter`, `exit`, `focusRing`, `focusRingWidth`) is forwarded to Dialog's `overrides`; the rest (the handle bindings, `headerPaddingTop`, `handleGap`, `maxWidth`, `minTarget`) have no effect there. Only overrides the caller set are forwarded, so Dialog keeps its own tokens otherwise — its `layer.dialog` included — and a locked binding is never forwarded. Close reasons map one to one: Dialog's `escape`, `close-button`, `scrim` and `action` are re-emitted as the same reasons, and `drag` has no Dialog source, so it never fires in the wide presentation. Dialog's `onOpened` is not re-emitted, since BottomSheet has no such event. In the wide presentation BottomSheet renders Dialog directly, so the root carries Dialog's own hooks and a closed sheet renders nothing in both presentations; the sheet's part hooks and authored scenarios apply below the breakpoint. Crossing the breakpoint while open swaps presentation on the next render without an animated hand-off; focus and scroll lock are re-established by the new surface. Consumer CSS on the sheet's own `--ds-bottom-sheet-*` hooks stops applying in the wide presentation for the same reason — the root is Dialog's `<dialog>` with Dialog's hooks, and only the forwarded bindings reach it. Initial focus is the first focusable in the body, then in the footer, then the close button, then the heading, which takes `tabindex="-1"` only when it is the target itself, so it is not a spurious Tab stop in the common case; there is no `initialFocus` prop.
+Opening slides the sheet up and fades the scrim; focus moves to the first control or the title; the page behind is inert and its scroll locked. The body scrolls within the sheet; a downward drag on the handle or header (never the body, whatever its scroll position) begins the dismiss gesture, and releasing past the threshold or with enough velocity fires `onDragDismiss` then `onClose('drag')` — otherwise the sheet springs back. After a drag dismiss the sheet holds the release position until the consumer's update renders: `open` false plays the exit from there; `open` still true springs the sheet back to rest. A release past the threshold when `open` has already gone false — a close that raced the gesture — is a spring-back that fires neither `onDragDismiss` nor `onClose`, so the sheet never reports a dismissal it did not cause. Escape, the close button and a scrim tap request close as in Dialog. When the browser closes the native `<dialog>` on its own (a repeated Escape reaching the close watcher closes it with no `cancel` event at all), report `escape` once and re-`showModal()` unless the consumer set `open` false, as Dialog does — `open` is controlled only, and a silently closed sheet would desync. With `dismissible` false, Escape reports on every press: nothing throttles or announces the repeats. The sheet never raises `action` itself; a consumer's footer action may call the same `onClose` handler with it. The `overlay.dismiss` values are the shared category vocabulary; the event's reasons are what fires: `escape`, `scrim` and `close-button` are reported as themselves, and `swipe` is reported as `drag`. `open` is controlled only; there is no uncontrolled mode. The heading's id/ref/tabindex, the close Button's `label` from `copy.closeLabel`, its `close` Icon glyph, press handlers and aria wiring are wiring every platform passes, not composition props. Gate and Keyboard stories that need it open render through a wrapper that owns `open` (starting true) and writes `onClose` back, acting as the consumer. The presentation is the same at every width: on a viewport wider than `maxWidth` the surface is capped at that width and centred with equal inline margins, still anchored to the bottom edge with top corners rounded, and it slides up, drags, dismisses, pads for the safe area and dims the page behind its scrim exactly as on a phone. Nothing switches at a breakpoint, so the part hooks, the `--ds-bottom-sheet-*` custom properties, every override and the authored scenarios apply at every width, and resizing an open sheet only reflows it. Initial focus is the first focusable in the body, then in the footer, then the close button, then the heading, which takes `tabindex="-1"` only when it is the target itself, so it is not a spurious Tab stop in the common case; there is no `initialFocus` prop.
 
 ## Content guidelines
 
@@ -901,13 +893,13 @@ Role `dialog`, `aria-modal`, named by the title even when visually hidden (WCAG 
 ## Platform notes
 
 ### Web
-Below the `maxWidth` breakpoint (a media query `(width > <resolved token>)` for the wide presentation, `literal-ok`), render the native `<dialog>` with `position: fixed; inset-block-end: 0; inline-size: 100%` and top-only radius; `height: content` adds `max-block-size: 90dvh` (the `contentCap` constant, `literal-ok` on every platform), and the cap belongs to that value alone — `half` (50dvh) and `full` (calc(100dvh - var(--layout-gutter))) set `block-size` outright and must not be clamped by it, or `full` would stop short of near-full-screen. Above it, render `<Dialog size="md">` with the same children. Pointer Events on the header: track `pointermove` deltaY once past `dragSlop`, translate the surface, and on `pointerup` decide by distance (> 25% of sheet height) or velocity; the body's scroll position is not checked. Padding-bottom adds `env(safe-area-inset-bottom)`.
+Render the native `<dialog>` filling the viewport with the surface at the bottom edge: `inline-size: 100%; max-inline-size: var(--layout-max-width-prose); margin-inline: auto` and top-only radius, at every width; `height: content` adds `max-block-size: 90dvh` (the `contentCap` constant, `literal-ok` on every platform), and the cap belongs to that value alone — `half` (50dvh) and `full` (calc(100dvh - var(--layout-gutter))) set `block-size` outright and must not be clamped by it, or `full` would stop short of near-full-screen. Pointer Events on the header: track `pointermove` deltaY once past `dragSlop`, translate the surface, and on `pointerup` decide by distance (> 25% of sheet height) or velocity; the body's scroll position is not checked. Padding-bottom adds `env(safe-area-inset-bottom)`.
 
 ### Lit
-`<ds-bottom-sheet open heading="Filters" height="half">`; shadow `<dialog>`; `matchMedia` decides presentation and re-renders on change; drag handling as web. Composes `<ds-heading>`, `<ds-button>`, `<ds-icon>`, `<ds-box>`, `<ds-stack>`, and `<ds-dialog>` for the wide presentation.
+`<ds-bottom-sheet open heading="Filters" height="half">`; shadow `<dialog>` laid out as web, capped and centred at the bottom edge at every width; drag handling as web. Composes `<ds-heading>`, `<ds-button>`, `<ds-icon>`, `<ds-box>` and `<ds-stack>`.
 
 ### React Native
-`Modal` with `transparent`; surface is an `Animated.View` anchored to the bottom with `translateY` driven by a `PanResponder` on the header; `height` sets the surface height as a fraction of `useWindowDimensions().height`; the body is a `ScrollView` that never starts the gesture — the PanResponder is attached to the header and handle only, so no responder arbitration between the two is needed. Bottom padding includes the safe-area inset. On tablets wider than the `maxWidth` token, render `Dialog`. `onRequestClose` → `onClose('escape')`.
+`Modal` with `transparent`; surface is an `Animated.View` anchored to the bottom with `translateY` driven by a `PanResponder` on the header; `height` sets the surface height as a fraction of `useWindowDimensions().height`; the body is a `ScrollView` that never starts the gesture — the PanResponder is attached to the header and handle only, so no responder arbitration between the two is needed. Bottom padding includes the safe-area inset. On tablets wider than the `maxWidth` token the surface is capped at the token and centred, still at the bottom edge. `onRequestClose` → `onClose('escape')`.
 
 ## Related
 

@@ -265,7 +265,7 @@ export interface NumberInputProps
    * `prefix`: that name is a native Element member.) */
   leadingText?: string | undefined;
   /** Static text after the value inside the field ("kg", "%"). Also the literal shown when `unit`
-   * is not a valid Intl unit. */
+   * is not a valid Intl unit. Ignored under `format: percent`, which draws its own sign. */
   trailingText?: string | undefined;
   /** Hide the increment/decrement buttons. Arrow keys work regardless. */
   hideSteppers?: boolean | undefined;
@@ -346,7 +346,9 @@ export function NumberInput({
   const digits = Math.max(0, Math.trunc(precision ?? decimalsInStep(step)));
   const unitKnown = format === 'unit' && unit !== undefined && unit !== '' && isIntlUnit(unit);
   // An unknown unit falls back to decimal formatting and shows the literal as trailingText.
-  const resolvedTrailing = trailingText ?? (format === 'unit' && unit && !unitKnown ? unit : undefined);
+  // percent draws its own sign, so trailingText is ignored there for the same reason.
+  const resolvedTrailing =
+    format === 'percent' ? undefined : (trailingText ?? (format === 'unit' && unit && !unitKnown ? unit : undefined));
   // currency draws its own symbol, so leadingText would show two.
   const resolvedLeading = format === 'currency' ? undefined : leadingText;
   const display = (num: number | undefined): string =>

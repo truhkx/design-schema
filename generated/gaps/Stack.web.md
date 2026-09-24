@@ -99,3 +99,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Stack: not a spec gap, a gate-infrastructure conflict. playwright.config.ts reuses any server already on port 6007 (`reuseExistingServer: true`), so in a worktree the axe gate can run against another checkout's Storybook and fail with ERR_CONNECTION_REFUSED when that server stops. Nothing in the component caused it. The same spec, run against this worktree's own Storybook on a private port (logs/stack-axe.config.ts, DS_GATE_COMPONENT=Stack), passes axe in light and dark. I changed no component code for this round.
 - Stack: the `wrapping-filters` × 0.5 multiplier is still a bare number, `calc(var(--layout-max-width-prose) * 0.5)`, because no `layout.maxWidth` token is half of prose.
 - Stack: the round-1 gaps still stand. A consumer `style` beats `overrides` (the notes say style merges after the hooks). The `Element*` stories are not told which extra args they may add, and I made only ElementNav horizontal. `Children.map` re-keys children inside the `li` wrappers. `ol` has no list scenario of its own. The doc does not say whether the root should reset the user-agent margin and padding on ul/ol.
+
+## 2026-09-23 18:54 — round 1
+
+- Stack: `overrides.gap` is a no-op under `gap: none` because the `none` rule reads `--layout-gap-none` directly; the spec states this and I followed it, but it means a consumer's `--ds-stack-gap` on that root is silently ignored.
+- Stack: the spec does not say whether `ul`/`ol` items get a `key` or how nested arrays or fragments are flattened; I used `Children.map`, which counts a fragment as one child and keys the `li` wrappers itself.
+- Stack: the `Keyboard` story requirement does not apply (no keyboard block, no interactive behavior); none was written.
+- Stack: `ref` is typed `Ref<HTMLElement>` for every `element` value, as the doc says, so callers cannot get a `HTMLUListElement` ref without a cast.

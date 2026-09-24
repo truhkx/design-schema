@@ -77,3 +77,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Heading: the spec says the Default story has 'no other args', and the per-value stories are written as overrides of Default's args. So AlignStart differs from Default only by passing the value that is already the default. I kept it for coverage; the doc could say whether a story for a default enum value is still required.
 - Heading: the spec asks for tests of the numeric level and the fallback warning but gives no expectation for the StrictMode case beyond 'cannot send it twice'. The test checks one warning across a rerender with a second invalid value but does not render under <StrictMode>. The doc could name StrictMode as a required test.
 - Heading: `tools/lint_literals.ts` needs a `/* literal-ok */` note on the string '--ds-heading-font-family' in the override hook map (it reads as a font declaration). The doc and conventions don't mention that hook-name strings can trip the literal gate; I kept the existing note.
+
+## 2026-09-23 18:52 — round 1
+
+- Heading: the general override rule says a locked binding keeps its `--ds-<name>-<binding>` hook, but the `color` binding's description says it has no `--ds-heading-color` hook. I followed the binding description and dropped the hook. The prompt convention and the schema disagree, and the docs should say which one wins.
+- Heading: the `align` prop says web keeps its own `ds-heading--align-*` classes and imports Text's `TextAlign`. It does not say whether `align` needs a default in the type or only in the destructuring. I put `start` in the destructuring, and the class is always emitted.
+
+## 2026-09-23 18:53 — round 2
+
+- Heading: the schema's `color` binding description says a locked binding has no `--ds-heading-color` hook and the rule reads `var(--color-foreground-strong)` directly, but tools/check_hooks and the template convention require every locked binding to keep its `--ds-<component>-<binding>` hook. The two contradict. I followed the spec and left the hook out, so the hooks gate still fails for Heading until either the gate exempts bindings whose description declares no hook or the Heading doc drops that sentence and locks `color` the standard way.
+
+## 2026-09-23 18:53 — round 3
+
+- Heading: unresolved contradiction, same as the previous round. The schema's `color` binding description says the locked AAA pair has no `--ds-heading-color` hook and the rule reads `var(--color-foreground-strong)` directly; tools/check_hooks (and prompts/templates/{web,lit}.md) require every locked binding to declare its hook and have rules read `var(--ds-<component>-<binding>)`. I kept the code to the spec, so the hooks gate keeps failing for Heading. Resolve by either exempting bindings whose description declares no hook in check_hooks, or changing the Heading doc to keep the standard locked-hook behavior. A declared-but-unread hook would satisfy the gate's string check but is inert, contradicts the spec's 'no hook', and would mislead the naming codemod, so I did not add one.

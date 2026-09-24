@@ -53,3 +53,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Breadcrumb: the behavior says tabindex=-1 goes on the index-1 <li> 'when focus moves' only when no revealed item is a link; the doc does not say whether a later items change that makes index 1 a link (or leaves no fallback needed) should remove it. Kept it on index 1 for the life of the instance, per 'belongs to the position'.
 - Breadcrumb: the ellipsis <li> carries data-part="item" and minTarget like the other items; the doc says it 'sits in its own item like any other' but does not say whether it shares the `item` part hook, so tests that count `item` parts see length+1 fewer-hidden entries when collapsed.
 - Breadcrumb: the Default story's args are not specified by the doc; used the settings-trail example (three items), so the collapsed path and the focus-after-expand behavior have no behavior scenario on web.
+
+## 2026-09-23 19:05 — round 1
+
+- Breadcrumb: the spec says the `link` and `expand` wrapper spans 'set no display', but the CSS has no rule for `ds-breadcrumb__link` or `ds-breadcrumb__expand`. I kept the class names on the spans and gave them no styles; the spec never says whether the spans should carry a class at all.
+- Breadcrumb: the `onNavigate` cancel rule says 'returns false or calls preventDefault()', but Breadcrumb cannot cancel by itself. It relies on Link's `onClick` handling `false`, and the spec does not say whether Breadcrumb or Link owns that.
+- Breadcrumb: the overrides text does not say where the hooks for locked bindings (`--ds-breadcrumb-current-color`, `--ds-breadcrumb-item-color` and so on) are named. I used the kebab-case binding names on the root.

@@ -65,3 +65,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - ProgressBar: the value Text now sits in a wrapper span (`ds-progress-bar__value`) that carries the value-color hook. The web platform notes only mention the header holding the Text directly.
 - ProgressBar (from round 1): with max ≤ min the value text is always the default "0%" and a custom formatValue is not called. The spec says both 'exposes "0%"' and 'called with the clamped value'.
 - ProgressBar (from round 1): an indeterminate bar with an invalid range that later gets a value in a valid range records that value silently, as for a range becoming valid, instead of announcing its tier as the first known value after indeterminate.
+
+## 2026-09-23 19:24 — round 1
+
+- ProgressBar: the spec says the hidden header (hideLabel with no value text) is visually hidden 'out of flow' but does not say whether `partGap` is then dropped by CSS or by the gap being on an absolutely positioned child; I chose absolute positioning of the header, which removes it from the flex gap.
+- ProgressBar: the sweep keyframes are given as translateX percentages (-100% to 300%) in the web notes but as -(sweep width) to +(track width) in the style binding; these agree only because the fill is one third of the track, and I used the percentages.
+- ProgressBar: the labelColor and valueColor bindings are 'realised by the Text tone, no hook of its own' but also locked-with-hook by the overrides section; I kept hooks on the root and re-scoped --color-foreground / --color-foreground-muted on the wrapper spans so the Text is never restyled.
+- ProgressBar: example stories are meant to have 'exactly its given as args', but the Meta carries default args (min, max, showValue, hideLabel, tone, announce) that merge into each example; I kept the meta defaults, which equal the schema defaults.

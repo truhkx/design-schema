@@ -68,3 +68,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-23 16:13 — round 2
 
 - Stepper: labelColor, labelUpcomingColor, descriptionColor and countColor say 'no --ds-stepper-* hook' (realised by the composed Text's tone), but tools/check_hooks.ts only exempts bindings listed under composition forwards, not tone-realised ones, so it requires a hook for all four. Chose to declare the four hooks on .ds-stepper as naming-only hooks, as Tree.css does for --ds-tree-badge-color; no rule reads them, because feeding them into Text would restyle a child. Either the doc should drop the 'no hook' wording and say the hook exists only for naming, or check_hooks should exempt bindings the doc marks as realised by a composed child's tone. As it stands, setting these hooks from page CSS changes nothing on screen, which contradicts the gate's stated reason for requiring them (re-theming from page CSS).
+
+## 2026-09-23 19:25 — round 1
+
+- Stepper: the spec says the composed label/description/count Text is passed `tone`, `align` and layout-only `className`, but the composition block lists only `element`/`size`(/`tone`); `align: center` appears only in prose. I passed `align` (center horizontal, start vertical) and a count `className`.
+- Stepper: locked label/description/count colour bindings are described as having no --ds-stepper-* hook, yet the locked-bindings rule says locked bindings keep their hook; I declared the hooks on the root (unread by rules) so naming/page CSS can still target them.
+- Stepper: the spec does not say whether a non-navigable current step's <div> carries aria-current; I put aria-current="step" on it (selected state is required regardless of navigability).
+- Stepper: the 572px container-query breakpoint is a hand-copied resolved value of layout.maxWidth.prose; the spec does not say how the generator should obtain it, so it will go stale if the token changes.

@@ -44,3 +44,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Landmark: the As* stories don't say which label to use, and the per-role labels are only defined for the Role*/scenario stories. I reused the per-role labels (AsNav "Primary", AsAside "Related links", AsSection "Related articles", AsForm "Sign in").
 - Landmark: the derived renders-as-* scenarios apply `as` to the Default story's navigation, which renders things like <main role="navigation"> — the exact pairing the doc forbids for the As* stories. The tests follow the scenarios literally (they only assert that something renders); the doc could say that renders-as-* scenarios pair `as` with its role the way the As* stories do.
 - Landmark: the doc doesn't say whether a composite's `aria-labelledby` should be read through `getRootNode().getElementById` only (so a document root, or a ShadowRoot in browsers that support it) or fall back to the document. I resolve ids in `getRootNode()` only, matching the Lit note.
+
+## 2026-09-23 19:04 — round 1
+
+- Landmark: the doc says `...rest` takes no className/style but only the type omits them, so a JS caller could still pass them at runtime; I kept the type-level omission and did not strip them at runtime, since the doc does not ask for it.
+- Landmark: the doc does not say whether a composite's `aria-labelledby` is checked when it is set together with `label`; I kept `label` winning in the duplicate-name check (`aria-label` is read first) while both are rendered.
+- Landmark: the As* stories reuse Default's children (`Primary links.`) rather than per-role text; the doc only fixes example children, so I left them as is.

@@ -120,3 +120,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - DataGrid: keyboard resize direction in RTL is unspecified; I made the arrow pointing toward the trailing edge widen (ArrowRight in LTR, ArrowLeft in RTL), matching the pointer drag.
 - DataGrid: the examples' `height: fixed` (RangeSelection) with no overrides.fixedHeight renders no visible rows by design; the HeightFixed story adds overrides.fixedHeight 'layout.maxWidth.prose', a token the spec doesn't name for this. The doc could suggest a token for demos.
 - DataGrid: the Keyboard story needs 'at least three focusable children', but the grid's model is one tab stop with every inner control demoted to tabindex=-1; I used selectable row with 20 rows (demoted Checkboxes and sort Buttons are still focusable by script). The gate's expectation for a one-tab-stop composite should be stated.
+
+## 2026-09-23 19:32 — round 1
+
+- DataGrid: the `Keyboard` story needs `selectable: row` to have a select checkbox and enough stops, but the spec does not say what args it should use; I kept the existing `selectable: row` with 20 rows.
+- DataGrid: `onEditStart` says 'return false to refuse' but gives no TypeScript return type; the existing code types it `boolean | void` and treats only a strict `false` as a refusal.
+- DataGrid: Delete/Backspace on `selectable: cell` and `range` says to clear editable cells but not whether cells whose value is already undefined fire `onCellChange`; the existing code skips them, following the 'only when the value differs' rule.
+- DataGrid: `height: fixed` in the `HeightFixed` story needs an `overrides.fixedHeight` token to show any rows, but the spec names no example token; the existing story uses `layout.maxWidth.prose`.

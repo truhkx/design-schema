@@ -90,3 +90,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Search: `emptyMessage` should be passed 'while empty'. I always pass it (loading ? copy.loading : copy.noSuggestions), assuming Listbox only shows it when there are no options.
 - Search: 'no event fires' while disabled, but consumer `onKeyDown` on the input still runs, because it's passed through rest like other fields. Only Search's own events are suppressed.
 - Search: the rule to add portaled overlays to hydration.test.tsx names only new overlays; Search was missing, so I added it. SSR output is unaffected either way, because the list never opens before an interaction.
+
+## 2026-09-23 19:26 — round 1
+
+- Search: `iconColor` is locked and forwarded to the glyph Icon's `overrides.color`, but the spec doesn't say whether Search passes the token explicitly when nothing overrides it. I always pass `color.foreground.muted`, since a locked binding has no override to read.
+- Search: the Escape rule says Escape 'does nothing' on an empty field with no list open, but not whether it should call preventDefault. I left the event unprevented so the browser's own search-input handling still runs.
+- Search: the spec says the popup is 'at least as wide as the field' via a `min-inline-size` from the measured width, but not how it is sized before the first measurement. I leave it unset for the first frame and set it from `getBoundingClientRect()` in a layout effect.
+- Search: the spec doesn't say whether the visually-hidden status region is always mounted or only while announcing. I keep it always mounted and emptied, so screen readers see the change.
+- Search: `size` gives `paddingBlock` (md=space.sm, lg=space.md) and `fontSize`, but the `minTarget` (size.target.comfortable) is applied to the whole field wrapper. The spec doesn't say whether the 24px/44px floor applies to the wrapper or the input; I chose the wrapper.

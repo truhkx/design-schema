@@ -108,3 +108,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - ActionSheet: FocusScope receives `returnFocusTo` (the opener captured when `open` turned true) on top of the listed composition props; the doc should allow it or name the restore target (carried over from round 1).
 - ActionSheet: the focusScope part is on a wrapper inside FocusScope, because FocusScope stamps its own data-part="scope" (carried over from round 1).
 - ActionSheet: closing before the enter frame finishes the exit immediately rather than waiting for a transitionend that never fires; the exit binding's description should cover this (carried over from round 1).
+
+## 2026-09-23 19:15 — round 1
+
+- ActionSheet: the doc says dismissDistance and dismissVelocity are 'marked `literal-ok`' but does not say where that marker goes for a TypeScript constant (the lint gate only checks CSS); I put a `// literal-ok: …` trailing comment on each constant.
+- ActionSheet: the wide-presentation breakpoint is read from `--layout-max-width-prose`, but the doc does not say whether the locked maxWidth hook (`--ds-action-sheet-max-width`) is also consulted before the sheet's <dialog> exists; I read that hook from :root first and fall back to the token.

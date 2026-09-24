@@ -66,3 +66,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Checkbox: the spec contradicts the hooks gate. indicatorStroke ('It declares no --ds-checkbox-* hook on any platform: Icon already applies it'), descriptionText and errorText ('Realised by the composed Text's muted/danger tone; no --ds-checkbox-* hook') are locked but not in composition.forwards, so tools/check_hooks.ts, which only exempts forwarded bindings, requires a hook for each. Chose to declare all three on the root with their tokens, as DatePicker already does, and have no rule read them, because the composed Icon and Texts realise these bindings and must not be restyled. The doc should either drop the 'no hook' wording for these three or the gate should exempt bindings realised by a composed child's props or tone. As it stands, these hooks exist but changing them has no visible effect.
 - Checkbox: the helperSize doc says there is no hook 'because there is no element of Checkbox's own to hang it on', but under the gate's rule the same reasoning did not save descriptionText or errorText. helperSize only passes because it is forwarded. The doc's explanation for which bindings skip a hook should use the gate's criterion (forwarded, or not).
+
+## 2026-09-23 19:00 — round 1
+
+- Checkbox: the spec doesn't say what a click on the label does to a disabled box beyond 'does not toggle'. The native label click reaches the input's click handler, which calls preventDefault, so I relied on that.
+- Checkbox: the spec doesn't say whether a form-level `disabled` (FormContext) should dim the box like the prop does. I treated `form.disabled` as disabled.
+- Checkbox: the spec says an example story takes exactly its `given` as args, but the meta's default args (`hideLabel`, `value` and so on) are merged in. I kept the meta defaults.

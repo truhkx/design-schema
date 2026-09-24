@@ -69,3 +69,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Fieldset: disabledOpacity requires aria-disabled on the dimmed <legend> and the role-less description <div>. ARIA 1.2 deprecates aria-disabled on generic elements. Chose: set it as written.
 - Fieldset: the examples give `children` as prose. Chose: real Input and Checkbox elements with the named labels. The NotificationPreferences Checkbox names stay notifyEmail/notifySms/notifyPush rather than the example's email/sms/push.
 - Fieldset: the disabled pass-down counts any component element as a field, so Text, Link or Icon children also receive a `disabled` prop. Kept as the web notes state it.
+
+## 2026-09-23 19:07 — round 1
+
+- Fieldset: the spec doesn't say whether a Fieldset or Button child counts toward the required indicator. I excluded Button, Text and Fieldset components and native action-type inputs, matching the native-button/nested-fieldset exclusion in the notes.
+- Fieldset: the locked bindings (legendColor, descriptionText, errorText) are 'realised by the Text tone; no hook', but the locked-hook rule says they still declare one. I declared --ds-fieldset-legend-color, --ds-fieldset-description-text and --ds-fieldset-error-text, and re-scoped the tone token on each Fieldset-owned wrapper. The doc should state which reading wins.
+- Fieldset: the spec lists example `children` as prose ('An Input name=street label=Street …'), so I chose the concrete Input and Checkbox elements in the stories myself.

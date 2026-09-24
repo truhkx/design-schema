@@ -143,3 +143,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Divider: a horizontal unlabelled divider is described as 'block-level and fills its container's inline size', which says nothing about a horizontal divider inside a horizontal flex row (where block-level does not fill); chose an explicit `inline-size: 100%` on the unlabelled horizontal root and the labelled row.
 - Divider: 'overrides change values, never presence' is spelled out for `spacing` and `labelGap` but not for `labelSize`/`fontFamily` when no label is in effect; chose to drop them (moot on web, since no Text renders then).
 - Divider: the decorative-divider scenario asserts `aria-hidden` without naming the element; the test reads it on the `data-ds="Divider"` root (the hr).
+
+## 2026-09-23 18:59 — round 1
+
+- Divider: the spec says labelColor is locked and not enforced, while the conventions say a locked binding still declares its hook. I declared `--ds-divider-label-color` on the root, and no rule reads it. If the naming codemod does not need that hook, the docs should say whether to omit it.
+- Divider: the label has a `label-is-read` scenario expecting the name `or`, but for the Lit `aria-label` and web `aria-labelledby` split the spec never says whether the web root should also carry `aria-label`. I used `aria-labelledby` only, as the platform notes state.

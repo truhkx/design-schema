@@ -99,3 +99,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tree: the spec doesn't say whether the lazy placeholder <li role=treeitem> keeps any tabindex. 'Not navigable' and the roving-tabindex convention (every other treeitem has -1) pull in opposite directions. I gave it no tabindex at all, so it can't take focus.
 - Tree: rowHover doesn't say whether disabled rows show the hover fill. They still do (at disabledOpacity); only selected rows and the placeholder are excluded.
 - Tree: selectedCount counts every id in `selected`, including ids that aren't in `nodes` (or sit inside a collapsed or lazy branch). The spec doesn't say whether unknown ids count; I count the array length as given.
+
+## 2026-09-23 19:34 — round 1
+
+- Tree: the Guidance 'Platform notes → Web' paragraph says the chevron Button is never aria-hidden, but a code comment in the existing Tree.tsx claims the platform notes ask for aria-hidden; the spec is consistent and I kept the chevron exposed and named.
+- Tree: the Ctrl+A rule says a collapsed parent whose hidden descendants stay unselected is not added under selectChildren; I implemented it by adding all visible enabled nodes and letting the cascade normalisation drop such parents, which the spec does not state as the mechanism.
+- Tree: the spec does not say what a node with `children: []` is; I treated it as a leaf (no chevron, no aria-expanded), consistent with the `*` sentinel wording 'non-empty array'.

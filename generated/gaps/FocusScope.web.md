@@ -61,3 +61,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - FocusScope: `styles: {}` and 'no appearance', but `autoFocus: container` makes the wrapper focusable, and a11y.requires omits focus-visible; I left the UA focus ring on the wrapper rather than add a token outline the schema does not declare — the doc should say whether a focused wrapper shows the system focus ring or none.
 - FocusScope: the notes put the restore marker 'beside' the opener without saying what kind of node; I use a Comment node, since an element could be picked up by layout or selectors — this inserts a foreign node into a React-owned parent, which React tolerates but the doc could name.
 - FocusScope: unmount order for nested scopes that unmount in the same commit is unspecified (the outer's cleanup can restore before the inner's); I left each scope restoring to its own opener independently.
+
+## 2026-09-23 19:07 — round 1
+
+- FocusScope: the spec says the Keyboard story's Buttons are inert on web and Lit, but does not say what 'inert' means for a Button. I kept them as plain Buttons with no handlers; the word could be misread as the `inert` attribute, which would remove them from the Tab order.
+- FocusScope: the Default story wraps Text and two Buttons as children args but the doc gives no autoFocus for Default, so it uses the component default (first).
+- FocusScope: the sentinel visually-hidden pattern names absolute, 1px and clip-path inset(50%) but not whether to also keep the legacy `clip` property; I kept both.

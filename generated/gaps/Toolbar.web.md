@@ -78,3 +78,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toolbar: the measurement pass for `overflow: menu` counts one separator width for every adjacent group pair, taking the width from the first separator rendered. The doc does not say how to budget separators; if separator widths could differ (overrides are per toolbar, so they cannot today), this estimate would be wrong.
 - Toolbar: the doc does not say where the overflow Menu's trigger sits in the roving list. It is treated as the last top-level entry, so End lands on More and Tab falls back to the first enabled control when the last-focused control collapses.
 - Toolbar: `the-toolbar-is-one-tab-stop` (`focusable: false`) is tested as 'no tabindex on the root, root.focus() does not take focus, exactly one descendant has tabIndex 0'. The scenario asserts only the first part; the 'exactly one control has tabindex 0' part comes from the description, not from a `then` expectation.
+
+## 2026-09-23 19:28 — round 1
+
+- Toolbar: the web root carries `data-part="container"`, but the Lit notes put `container` on the scrollable, masked row inside the host while the host carries background, border, radius and padding. Web notes and guidance don't say which element is the container part, so I kept it on the root.
+- Toolbar: the `overflowMenu` part hook (`data-part="overflowMenu"`) is passed to Menu as a rest prop, and I assumed Menu forwards unknown attributes to its own root; the spec doesn't say Menu's root accepts a part hook.
+- Toolbar: the overflow-menu `groupGap` separator width used in the measurement is read from the rendered separator node, and the spec doesn't say what to measure when no group pair is visible (I use 0).
+- Toolbar: `focusRing` and `focusRingWidth` are locked and applied nowhere per the guidance; I declare the hooks on the root and no rule reads them, so a token-usage check may flag them as unused.

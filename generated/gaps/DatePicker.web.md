@@ -95,3 +95,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - DatePicker: `isDateDisabled` says Arrow keys stop 'before min/max, or, with no bound in that direction, ... within 3660 days' but does not say whether the bound in the travel direction or either bound counts. Chose: the bound in the direction of travel (min for backward, max for forward); either bound still stops the step if it is crossed.
 - DatePicker: `tooEarly`/`tooLate` show `{min}`/`{max}` in the input's pattern, and an unparseable bound is 'still compared as a string', but the doc gives no text for an unparseable bound in the message. Chose: fall back to the raw bound string.
 - DatePicker: Escape from inside the calendar with a controlled owner that ignores onOpenChange: Popover records reason `escape` but does not close, and that stale reason is reused on a later parent-driven close (focus then returns to the button even if it had left the panel). Popover-level behaviour, not addressed here.
+
+## 2026-09-23 19:27 — round 1
+
+- DatePicker: the spec lists only `initialFocus: none` as Popover props, but the component also passes `placement="bottom-start"` (from the platform notes) and `dismissible={false}`. Nothing says the header close button is dropped, so I kept `dismissible={false}` and it needs confirming.
+- DatePicker: the `calendar` glyph is not in the spec's Icon dependency, only a note to add it to Icon's glyph set. I assumed it is already in tools/icon-paths.json.
+- DatePicker: the spec says an outside click closes the calendar without change but names no Popover prop that does it. I relied on the Popover's own outside-click dismissal.
+- DatePicker: `id` falls back to `form.idBase` when present, which the spec does not mention. This is inherited from the Input convention.

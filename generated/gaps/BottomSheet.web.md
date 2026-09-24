@@ -79,3 +79,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - BottomSheet: (carried from round 1) dragSlop says rem and em 'multiply by the root font size', but em is relative to the element's font size. I followed the spec.
 - BottomSheet: (carried from round 1) the closeButton wrapper rule (focus the Button and call onClose itself) contradicts the package convention that a part wrapper forwards the press with button.click(). I followed the spec.
 - BottomSheet: (carried from round 1) the examples' footer args are prose strings ('Clear and Apply Buttons'), so the Filters and FullScreenTask stories show that text instead of real Buttons.
+
+## 2026-09-23 19:14 — round 1
+
+- BottomSheet: the spec says the close-button wrapper's extra area focuses the Button and requests close from the wrapper's own click handler, but not how to avoid a double `onClose` when the click lands on the Button itself. The existing code ignores wrapper clicks whose target is inside the Button.
+- BottomSheet: `maxWidth` says the presentation is chosen in script and renders the sheet when the token does not resolve, but not what to render before the layout effect has read it. The existing code renders nothing until mounted, which matches the server output.
+- BottomSheet: `headerPaddingTop` applies 'when the handle is rendered', but the spec does not say which of `inset` and `headerPaddingTop` wins when the handle is hidden but the header is shown. The existing code uses `inset`.
+- BottomSheet: the hidden-heading placement with no header ('at the start of the column') is specified only in prose. The existing code renders the visually hidden heading as an absolutely positioned wrapper inside the surface.
+- BottomSheet: jsdom has no `showModal()`, `PointerEvent` or theme stylesheet, so the drag, the wide presentation and the `Escape` reopen path cannot be proven in the unit gate. The spec acknowledges this only for the drag.
+- BottomSheet: the spec gives `contentCap` and the `half` and `full` heights as `90dvh`, `50dvh` and `100dvh - gutter` but not whether `dvh` needs a fallback for browsers without it. The existing code uses `dvh` alone.

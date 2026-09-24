@@ -110,3 +110,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Listbox: web option ids are `${id}-option-${value}`, so a value containing a space gives an invalid IDREF (Lit uses index-based ids); kept the web contract since hosts build these ids.
 - Listbox: composed Texts get the root `fontFamily`/`lineHeight` 'as their own overrides', but a consumer theming those via CSS hooks (not `overrides`) does not reach Text; chose to forward the `overrides` prop value, else the default token.
 - Listbox: the `Keyboard` story needs 'at least three focusable children', but a listbox has one tab stop and non-focusable options; kept a five-option list as the closest match.
+
+## 2026-09-23 19:18 — round 1
+
+- Listbox: the spec gives no rule for a controlled `activeValue` when a forwarded key would select (Enter or Space). I let the key still select and report the active option through `onActiveChange`, and only the active-option move is host-owned.
+- Listbox: `ListboxMaxVisible` also accepts the numbers 5, 8 and 12 (digit-string convention), though the schema enum lists only the strings.
+- Listbox: `typeaheadReset` has no story or test where it can be read, because jsdom has no token stylesheet. The buffer clears immediately there, as the spec says, so multi-letter typeahead is untested.

@@ -467,6 +467,12 @@ export function Combobox({
   const isInvalid = markedInvalid || resolvedError !== undefined;
   const isLoading = filter === 'async' && loading;
 
+  // Re-validation, as Input: the Form's mode, and every field after a failed submit.
+  const validateMode = form ? (form.validateMode ?? form.validate) : undefined;
+  const afterFailedSubmit = form?.submitFailed ?? false;
+  const validatesOnChange = validateMode === 'change' || afterFailedSubmit;
+  const validatesOnBlur = validateMode === 'blur' || validateMode === 'change' || afterFailedSubmit;
+
   // What the Listbox shows: filtered rows, the synthetic custom row first, nothing while loading.
   const query = showAll || filter === 'none' || filter === 'async' ? '' : normalize(trimmedText);
   const filteredOptions = useMemo(() => {
@@ -659,7 +665,9 @@ export function Combobox({
   const commitValue = (next: ComboboxValue) => {
     if (!isValueControlled) setInternalValue(next);
     onChange?.(next);
-    if (form && form.validate === 'change') form.validateField(name);
+    // validate() reads `latest`, which only refreshes on render: write the new value first.
+    latest.current.selected = next;
+    if (form && validatesOnChange) form.validateField(name);
   };
 
   const updateText = (next: string) => {
@@ -740,7 +748,7 @@ export function Combobox({
 
   const handleInputBlur = (event: ReactFocusEvent<HTMLInputElement>) => {
     onBlur?.(event);
-    if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
+    if (form && validatesOnBlur) form.validateField(name);
   };
 
   const forwardToListbox = (key: string) => {

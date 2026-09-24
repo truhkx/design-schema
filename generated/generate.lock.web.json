@@ -1,18 +1,16 @@
 {
   "Accordion.web": {
-    "hash": "9b913597729fe9f5",
-    "lastAttemptHash": "9b913597729fe9f5",
-    "generatedAt": "2026-09-23T20:03:03+00:00",
-    "model": "opus",
+    "hash": "f1432e899c30fcaa",
+    "lastAttemptHash": "f1432e899c30fcaa",
+    "generatedAt": "2026-09-23T23:22:24+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.4293,
+    "rounds": 1,
+    "costUsd": 0.257,
     "files": [
-      "packages/react/src/Accordion.css",
-      "packages/react/src/Accordion.stories.tsx",
       "packages/react/src/Accordion.tsx"
     ],
-    "gaps": 6,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -27,21 +25,17 @@
     }
   },
   "ActionSheet.web": {
-    "hash": "031dc5c35b527de8",
-    "lastAttemptHash": "031dc5c35b527de8",
-    "generatedAt": "2026-09-23T19:40:02+00:00",
-    "model": "opus",
+    "hash": "1f26c063d3c10495",
+    "lastAttemptHash": "1f26c063d3c10495",
+    "generatedAt": "2026-09-23T23:15:42+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.5935,
+    "rounds": 1,
+    "costUsd": 0.3632,
     "files": [
-      "packages/react/src/ActionSheet.css",
-      "packages/react/src/ActionSheet.stories.tsx",
-      "packages/react/src/ActionSheet.test.tsx",
-      "packages/react/src/ActionSheet.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/ActionSheet.tsx"
     ],
-    "gaps": 12,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -56,21 +50,15 @@
     }
   },
   "Alert.web": {
-    "hash": "9e23b116f8e51254",
-    "lastAttemptHash": "9e23b116f8e51254",
-    "generatedAt": "2026-09-23T19:00:51+00:00",
-    "model": "opus",
+    "hash": "eb10e71992fdfa71",
+    "lastAttemptHash": "eb10e71992fdfa71",
+    "generatedAt": "2026-09-23T23:03:52+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5825,
-    "files": [
-      "packages/react/src/Alert.css",
-      "packages/react/src/Alert.stories.tsx",
-      "packages/react/src/Alert.test.tsx",
-      "packages/react/src/Alert.tsx",
-      "packages/react/src/index.ts"
-    ],
-    "gaps": 6,
+    "costUsd": 0.2183,
+    "files": [],
+    "gaps": 1,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -84,22 +72,20 @@
     }
   },
   "AlertDialog.web": {
-    "hash": "fa0c84761a9f0bb9",
-    "lastAttemptHash": "fa0c84761a9f0bb9",
-    "generatedAt": "2026-09-23T19:24:28+00:00",
-    "model": "opus",
+    "hash": "00fff72644975739",
+    "lastAttemptHash": "00fff72644975739",
+    "generatedAt": "2026-09-23T23:11:55+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.1125,
+    "rounds": 1,
+    "costUsd": 0.2624,
     "files": [
-      "logs/alertdialog-axe.config.ts",
       "packages/react/src/AlertDialog.css",
       "packages/react/src/AlertDialog.stories.tsx",
-      "packages/react/src/AlertDialog.test.tsx",
       "packages/react/src/AlertDialog.tsx",
-      "packages/react/src/hydration.test.tsx"
+      "packages/react/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -114,22 +100,20 @@
     }
   },
   "BottomSheet.web": {
-    "hash": "5394cf687a06a636",
-    "lastAttemptHash": "5394cf687a06a636",
-    "generatedAt": "2026-09-23T19:36:46+00:00",
-    "model": "opus",
+    "hash": "91ba5056582ddad0",
+    "lastAttemptHash": "91ba5056582ddad0",
+    "generatedAt": "2026-09-23T23:14:42+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.96,
+    "rounds": 1,
+    "costUsd": 0.3107,
     "files": [
       "packages/react/src/BottomSheet.css",
       "packages/react/src/BottomSheet.stories.tsx",
-      "packages/react/src/BottomSheet.test.tsx",
       "packages/react/src/BottomSheet.tsx",
-      "packages/react/src/hydration.test.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 11,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -172,18 +156,20 @@
     }
   },
   "Breadcrumb.web": {
-    "hash": "343f3324c8694248",
-    "lastAttemptHash": "343f3324c8694248",
-    "generatedAt": "2026-09-23T19:03:19+00:00",
-    "model": "opus",
+    "hash": "16d05d0eeeaabf81",
+    "lastAttemptHash": "16d05d0eeeaabf81",
+    "generatedAt": "2026-09-23T23:05:20+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5007,
+    "costUsd": 0.2292,
     "files": [
+      "packages/react/src/Breadcrumb.css",
       "packages/react/src/Breadcrumb.stories.tsx",
+      "packages/react/src/Breadcrumb.test.tsx",
       "packages/react/src/Breadcrumb.tsx"
     ],
-    "gaps": 4,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -197,19 +183,15 @@
     }
   },
   "Button.web": {
-    "hash": "3420ac8fa0bafed5",
-    "lastAttemptHash": "3420ac8fa0bafed5",
-    "generatedAt": "2026-09-23T17:54:44+00:00",
-    "model": "opus",
+    "hash": "994fecc821f61d18",
+    "lastAttemptHash": "994fecc821f61d18",
+    "generatedAt": "2026-09-23T22:56:18+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 2,
-    "costUsd": 1.6865,
+    "costUsd": 0.6296,
     "files": [
-      "packages/react/src/Button.css",
-      "packages/react/src/Button.stories.tsx",
-      "packages/react/src/Button.test.tsx",
-      "packages/react/src/Button.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Button.css"
     ],
     "gaps": 8,
     "gates": {
@@ -225,21 +207,20 @@
     }
   },
   "Card.web": {
-    "hash": "a2433a2840e87a1c",
-    "lastAttemptHash": "a2433a2840e87a1c",
-    "generatedAt": "2026-09-23T18:46:27+00:00",
-    "model": "opus",
+    "hash": "d7406de4ac043baa",
+    "lastAttemptHash": "d7406de4ac043baa",
+    "generatedAt": "2026-09-23T22:59:13+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.9902,
+    "rounds": 1,
+    "costUsd": 0.2549,
     "files": [
       "packages/react/src/Card.css",
       "packages/react/src/Card.stories.tsx",
-      "packages/react/src/Card.test.tsx",
       "packages/react/src/Card.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -253,17 +234,21 @@
     }
   },
   "Carousel.web": {
-    "hash": "f68b4712f17c992f",
-    "lastAttemptHash": "f68b4712f17c992f",
-    "generatedAt": "2026-09-23T20:23:42+00:00",
-    "model": "opus",
+    "hash": "2eadd0ace967bf82",
+    "lastAttemptHash": "2eadd0ace967bf82",
+    "generatedAt": "2026-09-23T23:30:05+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7114,
+    "costUsd": 0.3116,
     "files": [
-      "packages/react/src/Carousel.tsx"
+      "packages/react/src/Carousel.css",
+      "packages/react/src/Carousel.stories.tsx",
+      "packages/react/src/Carousel.test.tsx",
+      "packages/react/src/Carousel.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 4,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -278,20 +263,20 @@
     }
   },
   "Checkbox.web": {
-    "hash": "aadbfbff351ee315",
-    "lastAttemptHash": "aadbfbff351ee315",
-    "generatedAt": "2026-09-23T18:51:16+00:00",
-    "model": "opus",
+    "hash": "59dacc9ae78eede9",
+    "lastAttemptHash": "59dacc9ae78eede9",
+    "generatedAt": "2026-09-23T23:00:44+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.6368,
+    "rounds": 1,
+    "costUsd": 0.2706,
     "files": [
       "packages/react/src/Checkbox.css",
       "packages/react/src/Checkbox.stories.tsx",
-      "packages/react/src/Checkbox.test.tsx",
-      "packages/react/src/Checkbox.tsx"
+      "packages/react/src/Checkbox.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -305,21 +290,17 @@
     }
   },
   "Combobox.web": {
-    "hash": "fd50f4da508779dc",
-    "lastAttemptHash": "fd50f4da508779dc",
-    "generatedAt": "2026-09-23T20:00:53+00:00",
-    "model": "opus",
+    "hash": "8777416f89905ed6",
+    "lastAttemptHash": "8777416f89905ed6",
+    "generatedAt": "2026-09-23T23:21:39+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 3.513,
+    "rounds": 1,
+    "costUsd": 0.3801,
     "files": [
-      "packages/react/src/Combobox.css",
-      "packages/react/src/Combobox.stories.tsx",
-      "packages/react/src/Combobox.test.tsx",
-      "packages/react/src/Combobox.tsx",
-      "packages/react/src/hydration.test.tsx"
+      "packages/react/src/Combobox.tsx"
     ],
-    "gaps": 10,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -334,17 +315,21 @@
     }
   },
   "Container.web": {
-    "hash": "3ab01fb4fbbcb973",
-    "lastAttemptHash": "3ab01fb4fbbcb973",
-    "generatedAt": "2026-09-23T18:17:54+00:00",
-    "model": "opus",
+    "hash": "f9f4003c5f81936f",
+    "lastAttemptHash": "f9f4003c5f81936f",
+    "generatedAt": "2026-09-23T22:58:27+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.467,
+    "costUsd": 0.212,
     "files": [
-      "packages/react/src/Container.tsx"
+      "packages/react/src/Container.css",
+      "packages/react/src/Container.stories.tsx",
+      "packages/react/src/Container.test.tsx",
+      "packages/react/src/Container.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 4,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -358,20 +343,21 @@
     }
   },
   "DataGrid.web": {
-    "hash": "28cc3c5569455c89",
-    "lastAttemptHash": "28cc3c5569455c89",
-    "generatedAt": "2026-09-23T20:36:34+00:00",
-    "model": "opus",
+    "hash": "b9f5db1c12855adb",
+    "lastAttemptHash": "b9f5db1c12855adb",
+    "generatedAt": "2026-09-23T23:33:11+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.3188,
+    "costUsd": 0.5787,
     "files": [
       "packages/react/src/DataGrid.css",
       "packages/react/src/DataGrid.stories.tsx",
       "packages/react/src/DataGrid.test.tsx",
-      "packages/react/src/DataGrid.tsx"
+      "packages/react/src/DataGrid.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 19,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -386,22 +372,21 @@
     }
   },
   "DatePicker.web": {
-    "hash": "59e305f048b27b1c",
-    "lastAttemptHash": "59e305f048b27b1c",
-    "generatedAt": "2026-09-23T20:20:38+00:00",
-    "model": "opus",
+    "hash": "61cfbf417e6e486a",
+    "lastAttemptHash": "61cfbf417e6e486a",
+    "generatedAt": "2026-09-23T23:27:56+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8478,
+    "costUsd": 0.3457,
     "files": [
       "packages/react/src/DatePicker.css",
       "packages/react/src/DatePicker.stories.tsx",
       "packages/react/src/DatePicker.test.tsx",
       "packages/react/src/DatePicker.tsx",
-      "packages/react/src/hydration.test.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -416,20 +401,20 @@
     }
   },
   "Dialog.web": {
-    "hash": "e5c7c3482224fa1e",
-    "lastAttemptHash": "e5c7c3482224fa1e",
-    "generatedAt": "2026-09-23T19:21:47+00:00",
-    "model": "opus",
+    "hash": "729a12a7ce4aafd3",
+    "lastAttemptHash": "729a12a7ce4aafd3",
+    "generatedAt": "2026-09-23T23:11:13+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 4.1571,
+    "rounds": 1,
+    "costUsd": 0.3145,
     "files": [
       "packages/react/src/Dialog.css",
       "packages/react/src/Dialog.stories.tsx",
       "packages/react/src/Dialog.tsx",
-      "packages/react/src/hydration.test.tsx"
+      "packages/react/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -444,19 +429,21 @@
     }
   },
   "Disclosure.web": {
-    "hash": "f5cec780fb63e6cc",
-    "lastAttemptHash": "f5cec780fb63e6cc",
-    "generatedAt": "2026-09-23T18:59:39+00:00",
-    "model": "opus",
+    "hash": "7ca6dfc4d9404ba2",
+    "lastAttemptHash": "7ca6dfc4d9404ba2",
+    "generatedAt": "2026-09-23T23:03:13+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.6628,
+    "costUsd": 0.2442,
     "files": [
       "packages/react/src/Disclosure.css",
       "packages/react/src/Disclosure.stories.tsx",
-      "packages/react/src/Disclosure.tsx"
+      "packages/react/src/Disclosure.test.tsx",
+      "packages/react/src/Disclosure.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -470,21 +457,15 @@
     }
   },
   "Divider.web": {
-    "hash": "8fb9aefdc06c553e",
-    "lastAttemptHash": "8fb9aefdc06c553e",
-    "generatedAt": "2026-09-23T18:49:09+00:00",
-    "model": "opus",
+    "hash": "3f563729c6ab20af",
+    "lastAttemptHash": "3f563729c6ab20af",
+    "generatedAt": "2026-09-23T22:59:54+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 2.0762,
-    "files": [
-      "packages/react/src/Divider.css",
-      "packages/react/src/Divider.stories.tsx",
-      "packages/react/src/Divider.test.tsx",
-      "packages/react/src/Divider.tsx",
-      "packages/react/src/index.ts"
-    ],
-    "gaps": 15,
+    "rounds": 1,
+    "costUsd": 0.2207,
+    "files": [],
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -498,21 +479,20 @@
     }
   },
   "Feed.web": {
-    "hash": "7f75cd1d460e43c7",
-    "lastAttemptHash": "7f75cd1d460e43c7",
-    "generatedAt": "2026-09-23T20:43:56+00:00",
-    "model": "opus",
+    "hash": "ee37e5c0f9b02a59",
+    "lastAttemptHash": "ee37e5c0f9b02a59",
+    "generatedAt": "2026-09-23T23:37:24+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7214,
+    "costUsd": 0.3006,
     "files": [
       "packages/react/src/Feed.css",
       "packages/react/src/Feed.stories.tsx",
-      "packages/react/src/Feed.test.tsx",
       "packages/react/src/Feed.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 4,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -527,18 +507,21 @@
     }
   },
   "Fieldset.web": {
-    "hash": "98af65fafd49fb65",
-    "lastAttemptHash": "98af65fafd49fb65",
-    "generatedAt": "2026-09-23T19:09:30+00:00",
-    "model": "opus",
+    "hash": "ebfbb5bc6712b300",
+    "lastAttemptHash": "ebfbb5bc6712b300",
+    "generatedAt": "2026-09-23T23:07:25+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.7409,
+    "rounds": 1,
+    "costUsd": 0.2417,
     "files": [
       "packages/react/src/Fieldset.css",
-      "packages/react/src/Fieldset.tsx"
+      "packages/react/src/Fieldset.stories.tsx",
+      "packages/react/src/Fieldset.test.tsx",
+      "packages/react/src/Fieldset.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -552,13 +535,13 @@
     }
   },
   "FocusScope.web": {
-    "hash": "3fbfa30723f10299",
-    "lastAttemptHash": "3fbfa30723f10299",
-    "generatedAt": "2026-09-23T19:11:27+00:00",
-    "model": "opus",
+    "hash": "bad2c3f499fabd0c",
+    "lastAttemptHash": "bad2c3f499fabd0c",
+    "generatedAt": "2026-09-23T23:08:19+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7488,
+    "costUsd": 0.2688,
     "files": [
       "packages/react/src/FocusScope.css",
       "packages/react/src/FocusScope.stories.tsx",
@@ -566,7 +549,7 @@
       "packages/react/src/FocusScope.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -581,22 +564,15 @@
     }
   },
   "Form.web": {
-    "hash": "fb58e150b72ec2fc",
-    "lastAttemptHash": "fb58e150b72ec2fc",
-    "generatedAt": "2026-09-23T18:16:47+00:00",
-    "model": "opus",
+    "hash": "5d74b9bf5f3862f7",
+    "lastAttemptHash": "5d74b9bf5f3862f7",
+    "generatedAt": "2026-09-23T22:57:41+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.4612,
-    "files": [
-      "packages/react/src/Form.css",
-      "packages/react/src/Form.stories.tsx",
-      "packages/react/src/Form.test.tsx",
-      "packages/react/src/Form.tsx",
-      "packages/react/src/FormContext.ts",
-      "packages/react/src/index.ts"
-    ],
-    "gaps": 9,
+    "rounds": 1,
+    "costUsd": 0.2493,
+    "files": [],
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -611,19 +587,16 @@
   },
   "Heading.web": {
     "hash": "e3004151a3a561b2",
-    "lastAttemptHash": "e3004151a3a561b2",
-    "generatedAt": "2026-09-23T17:46:39+00:00",
-    "model": "opus",
+    "lastAttemptHash": "f93d770d04c265b3",
+    "generatedAt": "2026-09-23T22:54:00+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.0988,
+    "rounds": 3,
+    "costUsd": 0.7604,
     "files": [
-      "packages/react/src/Heading.css",
-      "packages/react/src/Heading.stories.tsx",
-      "packages/react/src/Heading.test.tsx",
-      "packages/react/src/Heading.tsx"
+      "packages/react/src/Heading.css"
     ],
-    "gaps": 9,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -631,19 +604,19 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
-      "hooks": true,
+      "hooks": false,
       "keyboard": true,
       "axe": true
     }
   },
   "Icon.web": {
-    "hash": "fc295e464215a820",
-    "lastAttemptHash": "fc295e464215a820",
-    "generatedAt": "2026-09-23T17:40:48+00:00",
-    "model": "opus",
+    "hash": "d9e62892b1a9a9dc",
+    "lastAttemptHash": "d9e62892b1a9a9dc",
+    "generatedAt": "2026-09-23T22:50:07+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5238,
+    "costUsd": 0.2428,
     "files": [
       "packages/react/src/Icon.css",
       "packages/react/src/Icon.stories.tsx",
@@ -651,7 +624,7 @@
       "packages/react/src/Icon.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 4,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -693,21 +666,19 @@
     }
   },
   "Landmark.web": {
-    "hash": "ce65caa728cd9748",
-    "lastAttemptHash": "ce65caa728cd9748",
-    "generatedAt": "2026-09-23T19:02:22+00:00",
-    "model": "opus",
+    "hash": "e2027a8c71d7b048",
+    "lastAttemptHash": "e2027a8c71d7b048",
+    "generatedAt": "2026-09-23T23:04:35+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5849,
+    "costUsd": 0.2003,
     "files": [
       "packages/react/src/Landmark.css",
       "packages/react/src/Landmark.stories.tsx",
-      "packages/react/src/Landmark.test.tsx",
-      "packages/react/src/Landmark.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Landmark.tsx"
     ],
-    "gaps": 5,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -721,20 +692,21 @@
     }
   },
   "Link.web": {
-    "hash": "1cd676595bcf4453",
-    "lastAttemptHash": "1cd676595bcf4453",
-    "generatedAt": "2026-09-23T17:56:31+00:00",
-    "model": "opus",
+    "hash": "36d489baa560732c",
+    "lastAttemptHash": "36d489baa560732c",
+    "generatedAt": "2026-09-23T22:56:58+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.1084,
+    "rounds": 1,
+    "costUsd": 0.2116,
     "files": [
       "packages/react/src/Link.css",
       "packages/react/src/Link.stories.tsx",
       "packages/react/src/Link.test.tsx",
-      "packages/react/src/Link.tsx"
+      "packages/react/src/Link.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -748,20 +720,21 @@
     }
   },
   "Listbox.web": {
-    "hash": "1b19661a7cd37f2a",
-    "lastAttemptHash": "1b19661a7cd37f2a",
-    "generatedAt": "2026-09-23T19:51:40+00:00",
-    "model": "opus",
+    "hash": "ddc5bb14ebf9caec",
+    "lastAttemptHash": "ddc5bb14ebf9caec",
+    "generatedAt": "2026-09-23T23:19:12+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 3.2161,
+    "rounds": 1,
+    "costUsd": 0.2885,
     "files": [
       "packages/react/src/Listbox.css",
       "packages/react/src/Listbox.stories.tsx",
+      "packages/react/src/Listbox.test.tsx",
       "packages/react/src/Listbox.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 24,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -776,20 +749,21 @@
     }
   },
   "Menu.web": {
-    "hash": "14d114286a709caf",
-    "lastAttemptHash": "14d114286a709caf",
-    "generatedAt": "2026-09-23T19:28:09+00:00",
-    "model": "opus",
+    "hash": "fff0317759cc677e",
+    "lastAttemptHash": "fff0317759cc677e",
+    "generatedAt": "2026-09-23T23:12:55+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.8032,
+    "rounds": 1,
+    "costUsd": 0.3368,
     "files": [
       "packages/react/src/Menu.css",
       "packages/react/src/Menu.stories.tsx",
+      "packages/react/src/Menu.test.tsx",
       "packages/react/src/Menu.tsx",
-      "packages/react/src/hydration.test.tsx"
+      "packages/react/src/index.ts"
     ],
-    "gaps": 13,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -804,18 +778,17 @@
     }
   },
   "Meter.web": {
-    "hash": "5cfad0d5e7216989",
-    "lastAttemptHash": "5cfad0d5e7216989",
-    "generatedAt": "2026-09-23T19:06:36+00:00",
-    "model": "opus",
+    "hash": "bbec9b73ad28ec70",
+    "lastAttemptHash": "bbec9b73ad28ec70",
+    "generatedAt": "2026-09-23T23:06:44+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 2,
-    "costUsd": 1.3017,
+    "costUsd": 0.57,
     "files": [
-      "packages/react/src/Meter.css",
-      "packages/react/src/Meter.tsx"
+      "packages/react/src/Meter.css"
     ],
-    "gaps": 8,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -829,21 +802,17 @@
     }
   },
   "NumberInput.web": {
-    "hash": "23a3729956ac646e",
-    "lastAttemptHash": "23a3729956ac646e",
-    "generatedAt": "2026-09-23T20:08:50+00:00",
-    "model": "opus",
+    "hash": "78944fcf4c9451a2",
+    "lastAttemptHash": "78944fcf4c9451a2",
+    "generatedAt": "2026-09-23T23:24:10+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.1783,
+    "rounds": 1,
+    "costUsd": 0.3484,
     "files": [
-      "packages/react/src/NumberInput.css",
-      "packages/react/src/NumberInput.stories.tsx",
-      "packages/react/src/NumberInput.test.tsx",
-      "packages/react/src/NumberInput.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/NumberInput.tsx"
     ],
-    "gaps": 8,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -883,21 +852,21 @@
     }
   },
   "Popover.web": {
-    "hash": "94999557b832f05b",
-    "lastAttemptHash": "94999557b832f05b",
-    "generatedAt": "2026-09-23T19:33:08+00:00",
-    "model": "opus",
+    "hash": "3ceab92a1f84ae3c",
+    "lastAttemptHash": "3ceab92a1f84ae3c",
+    "generatedAt": "2026-09-23T23:13:46+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.0196,
+    "costUsd": 0.2877,
     "files": [
       "packages/react/src/Popover.css",
       "packages/react/src/Popover.stories.tsx",
+      "packages/react/src/Popover.test.tsx",
       "packages/react/src/Popover.tsx",
-      "packages/react/src/hydration.test.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -912,21 +881,20 @@
     }
   },
   "ProgressBar.web": {
-    "hash": "d558ef67f148c249",
-    "lastAttemptHash": "d558ef67f148c249",
-    "generatedAt": "2026-09-23T20:11:16+00:00",
-    "model": "opus",
+    "hash": "5096b798b3b8dc11",
+    "lastAttemptHash": "5096b798b3b8dc11",
+    "generatedAt": "2026-09-23T23:25:01+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.5668,
+    "rounds": 1,
+    "costUsd": 0.2504,
     "files": [
       "packages/react/src/ProgressBar.css",
       "packages/react/src/ProgressBar.stories.tsx",
-      "packages/react/src/ProgressBar.test.tsx",
       "packages/react/src/ProgressBar.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -940,21 +908,17 @@
     }
   },
   "RadioGroup.web": {
-    "hash": "ddf95018b7d1b87c",
-    "lastAttemptHash": "ddf95018b7d1b87c",
-    "generatedAt": "2026-09-23T18:58:16+00:00",
-    "model": "opus",
+    "hash": "913c480a0d69c693",
+    "lastAttemptHash": "913c480a0d69c693",
+    "generatedAt": "2026-09-23T23:02:31+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.6926,
+    "rounds": 1,
+    "costUsd": 0.2964,
     "files": [
-      "packages/react/src/RadioGroup.css",
-      "packages/react/src/RadioGroup.stories.tsx",
-      "packages/react/src/RadioGroup.test.tsx",
-      "packages/react/src/RadioGroup.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/RadioGroup.tsx"
     ],
-    "gaps": 9,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -969,300 +933,18 @@
     }
   },
   "Search.web": {
-    "hash": "653db81fd6f0b38d",
-    "lastAttemptHash": "653db81fd6f0b38d",
-    "generatedAt": "2026-09-23T20:16:49+00:00",
-    "model": "opus",
+    "hash": "54f4e23496df1a93",
+    "lastAttemptHash": "54f4e23496df1a93",
+    "generatedAt": "2026-09-23T23:26:58+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.606,
+    "costUsd": 0.3144,
     "files": [
       "packages/react/src/Search.css",
       "packages/react/src/Search.stories.tsx",
+      "packages/react/src/Search.test.tsx",
       "packages/react/src/Search.tsx",
-      "packages/react/src/hydration.test.tsx"
-    ],
-    "gaps": 9,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "hooks": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "SegmentedControl.web": {
-    "hash": "63c6ba15406db5bc",
-    "lastAttemptHash": "63c6ba15406db5bc",
-    "generatedAt": "2026-09-23T19:46:42+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.7817,
-    "files": [
-      "packages/react/src/SegmentedControl.css",
-      "packages/react/src/SegmentedControl.stories.tsx",
-      "packages/react/src/SegmentedControl.test.tsx",
-      "packages/react/src/SegmentedControl.tsx",
-      "packages/react/src/index.ts"
-    ],
-    "gaps": 4,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "hooks": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Select.web": {
-    "hash": "809a12f24c4e4235",
-    "lastAttemptHash": "809a12f24c4e4235",
-    "generatedAt": "2026-09-23T19:56:51+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 2,
-    "costUsd": 4.0929,
-    "files": [
-      "packages/react/src/Select.css",
-      "packages/react/src/Select.stories.tsx",
-      "packages/react/src/Select.test.tsx",
-      "packages/react/src/Select.tsx",
-      "packages/react/src/hydration.test.tsx"
-    ],
-    "gaps": 13,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "hooks": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "SidePanel.web": {
-    "hash": "fea06c19aaf90f43",
-    "lastAttemptHash": "fea06c19aaf90f43",
-    "generatedAt": "2026-09-23T19:42:30+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.9302,
-    "files": [
-      "packages/react/src/SidePanel.css",
-      "packages/react/src/SidePanel.stories.tsx",
-      "packages/react/src/SidePanel.test.tsx",
-      "packages/react/src/SidePanel.tsx",
-      "packages/react/src/index.ts"
-    ],
-    "gaps": 8,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "hooks": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Slider.web": {
-    "hash": "01d20ade76531af1",
-    "lastAttemptHash": "01d20ade76531af1",
-    "generatedAt": "2026-09-23T20:05:48+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.9879,
-    "files": [
-      "packages/react/src/Slider.css",
-      "packages/react/src/Slider.stories.tsx",
-      "packages/react/src/Slider.test.tsx",
-      "packages/react/src/Slider.tsx",
-      "packages/react/src/index.ts"
-    ],
-    "gaps": 8,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "hooks": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Splitter.web": {
-    "hash": "0e0f4372985072a8",
-    "lastAttemptHash": "0e0f4372985072a8",
-    "generatedAt": "2026-09-23T20:42:28+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.7246,
-    "files": [
-      "packages/react/src/Splitter.css",
-      "packages/react/src/Splitter.stories.tsx",
-      "packages/react/src/Splitter.test.tsx",
-      "packages/react/src/Splitter.tsx",
-      "packages/react/src/index.ts"
-    ],
-    "gaps": 7,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "hooks": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Stack.web": {
-    "hash": "9703afd3d66c8249",
-    "lastAttemptHash": "9703afd3d66c8249",
-    "generatedAt": "2026-09-23T17:49:13+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.1212,
-    "files": [
-      "logs/stack-axe.config.ts",
-      "packages/react/src/Stack.stories.tsx",
-      "packages/react/src/Stack.tsx"
-    ],
-    "gaps": 9,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "hooks": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "Stepper.web": {
-    "hash": "73c1a119f0ea30a6",
-    "lastAttemptHash": "73c1a119f0ea30a6",
-    "generatedAt": "2026-09-23T20:13:37+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.772,
-    "files": [
-      "packages/react/src/Stepper.css",
-      "packages/react/src/Stepper.stories.tsx",
-      "packages/react/src/Stepper.test.tsx",
-      "packages/react/src/Stepper.tsx",
-      "packages/react/src/index.ts"
-    ],
-    "gaps": 6,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "hooks": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Switch.web": {
-    "hash": "0c745a3937a5bf9d",
-    "lastAttemptHash": "0c745a3937a5bf9d",
-    "generatedAt": "2026-09-23T18:53:30+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 2,
-    "costUsd": 1.6806,
-    "files": [
-      "packages/react/src/Switch.css",
-      "packages/react/src/Switch.tsx"
-    ],
-    "gaps": 6,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "hooks": true,
-      "keyboard": true,
-      "axe": true
-    }
-  },
-  "Table.web": {
-    "hash": "26bad26ca4de7705",
-    "lastAttemptHash": "26bad26ca4de7705",
-    "generatedAt": "2026-09-23T20:25:24+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.9804,
-    "files": [
-      "packages/react/src/Table.css",
-      "packages/react/src/Table.stories.tsx",
-      "packages/react/src/Table.test.tsx",
-      "packages/react/src/Table.tsx",
-      "packages/react/src/index.ts"
-    ],
-    "gaps": 6,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true,
-      "hooks": true,
-      "keyboard": true,
-      "keyboard-run": true,
-      "axe": true
-    }
-  },
-  "Tabs.web": {
-    "hash": "3d250ad940912208",
-    "lastAttemptHash": "3d250ad940912208",
-    "generatedAt": "2026-09-23T19:44:40+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.8513,
-    "files": [
-      "packages/react/src/Tabs.css",
-      "packages/react/src/Tabs.stories.tsx",
-      "packages/react/src/Tabs.test.tsx",
-      "packages/react/src/Tabs.tsx",
       "packages/react/src/index.ts"
     ],
     "gaps": 5,
@@ -1279,23 +961,295 @@
       "axe": true
     }
   },
-  "Text.web": {
-    "hash": "9fcda2ad29416046",
-    "lastAttemptHash": "9fcda2ad29416046",
-    "generatedAt": "2026-09-23T17:44:26+00:00",
-    "model": "opus",
+  "SegmentedControl.web": {
+    "hash": "0fb574a2b0f9139c",
+    "lastAttemptHash": "0fb574a2b0f9139c",
+    "generatedAt": "2026-09-23T23:18:18+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 3,
-    "costUsd": 2.1544,
+    "rounds": 1,
+    "costUsd": 0.26,
     "files": [
-      "logs/text-axe.mjs",
-      "packages/react/src/Text.css",
-      "packages/react/src/Text.stories.tsx",
-      "packages/react/src/Text.test.tsx",
-      "packages/react/src/Text.tsx",
+      "packages/react/src/SegmentedControl.css",
+      "packages/react/src/SegmentedControl.stories.tsx",
+      "packages/react/src/SegmentedControl.test.tsx",
+      "packages/react/src/SegmentedControl.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 11,
+    "gaps": 2,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Select.web": {
+    "hash": "ea9164505a98143b",
+    "lastAttemptHash": "ea9164505a98143b",
+    "generatedAt": "2026-09-23T23:20:35+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.3695,
+    "files": [
+      "packages/react/src/Select.tsx"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "SidePanel.web": {
+    "hash": "53d89e869f7ac5ef",
+    "lastAttemptHash": "53d89e869f7ac5ef",
+    "generatedAt": "2026-09-23T23:16:30+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.3396,
+    "files": [
+      "packages/react/src/SidePanel.css",
+      "packages/react/src/SidePanel.stories.tsx",
+      "packages/react/src/SidePanel.test.tsx",
+      "packages/react/src/SidePanel.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 0,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Slider.web": {
+    "hash": "2540c243728674f6",
+    "lastAttemptHash": "2540c243728674f6",
+    "generatedAt": "2026-09-23T23:23:14+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.2978,
+    "files": [
+      "packages/react/src/Slider.css",
+      "packages/react/src/Slider.stories.tsx",
+      "packages/react/src/Slider.test.tsx",
+      "packages/react/src/Slider.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 1,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Splitter.web": {
+    "hash": "b58ba37e4a671c5c",
+    "lastAttemptHash": "b58ba37e4a671c5c",
+    "generatedAt": "2026-09-23T23:36:27+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.3639,
+    "files": [
+      "packages/react/src/Splitter.css",
+      "packages/react/src/Splitter.stories.tsx",
+      "packages/react/src/Splitter.test.tsx",
+      "packages/react/src/Splitter.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Stack.web": {
+    "hash": "4e6e3aafd94e93ff",
+    "lastAttemptHash": "4e6e3aafd94e93ff",
+    "generatedAt": "2026-09-23T22:54:48+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.2021,
+    "files": [
+      "packages/react/src/Stack.css",
+      "packages/react/src/Stack.stories.tsx",
+      "packages/react/src/Stack.test.tsx",
+      "packages/react/src/Stack.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Stepper.web": {
+    "hash": "22406bcabf937478",
+    "lastAttemptHash": "22406bcabf937478",
+    "generatedAt": "2026-09-23T23:25:58+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.2891,
+    "files": [
+      "packages/react/src/Stepper.css",
+      "packages/react/src/Stepper.stories.tsx",
+      "packages/react/src/Stepper.test.tsx",
+      "packages/react/src/Stepper.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Switch.web": {
+    "hash": "3a63acb955c119ed",
+    "lastAttemptHash": "3a63acb955c119ed",
+    "generatedAt": "2026-09-23T23:01:32+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.2579,
+    "files": [
+      "packages/react/src/Switch.css",
+      "packages/react/src/Switch.stories.tsx",
+      "packages/react/src/Switch.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "axe": true
+    }
+  },
+  "Table.web": {
+    "hash": "0973c9afc93f238e",
+    "lastAttemptHash": "0973c9afc93f238e",
+    "generatedAt": "2026-09-23T23:31:11+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.308,
+    "files": [],
+    "gaps": 0,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Tabs.web": {
+    "hash": "78f969a2b12fe33b",
+    "lastAttemptHash": "78f969a2b12fe33b",
+    "generatedAt": "2026-09-23T23:17:27+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 0.2838,
+    "files": [
+      "packages/react/src/Tabs.css",
+      "packages/react/src/Tabs.stories.tsx",
+      "packages/react/src/Tabs.tsx",
+      "packages/react/src/index.ts"
+    ],
+    "gaps": 4,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "hooks": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "Text.web": {
+    "hash": "abe7e7041167a482",
+    "lastAttemptHash": "abe7e7041167a482",
+    "generatedAt": "2026-09-23T22:51:53+00:00",
+    "model": "sonnet",
+    "runner": "cli",
+    "rounds": 2,
+    "costUsd": 0.536,
+    "files": [
+      "packages/react/src/Text.css",
+      "packages/react/src/Text.tsx"
+    ],
+    "gaps": 2,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1309,22 +1263,21 @@
     }
   },
   "Toast.web": {
-    "hash": "4d4f9855e314a37a",
-    "lastAttemptHash": "4d4f9855e314a37a",
-    "generatedAt": "2026-09-23T19:17:16+00:00",
-    "model": "opus",
+    "hash": "df01ca9ac7b37d9e",
+    "lastAttemptHash": "df01ca9ac7b37d9e",
+    "generatedAt": "2026-09-23T23:10:12+00:00",
+    "model": "sonnet",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 2.485,
+    "rounds": 1,
+    "costUsd": 0.2791,
     "files": [
       "packages/react/src/Toast.css",
       "packages/react/src/Toast.stories.tsx",
       "packages/react/src/Toast.test.tsx",
       "packages/react/src/Toast.tsx",
-      "packages/react/src/hydration.test.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 11,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1339,21 +1292,20 @@
     }
   },
   "Toolbar.web": {
-    "hash": "9526ca0147782f56",
-    "lastAttemptHash": "9526ca0147782f56",
-    "generatedAt": "2026-09-23T20:22:17+00:00",
-    "model": "opus",
+    "hash": "4fce43aede13dc1f",
+    "lastAttemptHash": "4fce43aede13dc1f",
+    "generatedAt": "2026-09-23T23:29:04+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.726,
+    "costUsd": 0.2947,
     "files": [
       "packages/react/src/Toolbar.css",
       "packages/react/src/Toolbar.stories.tsx",
-      "packages/react/src/Toolbar.test.tsx",
       "packages/react/src/Toolbar.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1368,22 +1320,21 @@
     }
   },
   "Tooltip.web": {
-    "hash": "57de931d2ded0361",
-    "lastAttemptHash": "57de931d2ded0361",
-    "generatedAt": "2026-09-23T19:13:26+00:00",
-    "model": "opus",
+    "hash": "2b2ced6bff2eee53",
+    "lastAttemptHash": "2b2ced6bff2eee53",
+    "generatedAt": "2026-09-23T23:09:19+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8318,
+    "costUsd": 0.2905,
     "files": [
       "packages/react/src/Tooltip.css",
       "packages/react/src/Tooltip.stories.tsx",
       "packages/react/src/Tooltip.test.tsx",
       "packages/react/src/Tooltip.tsx",
-      "packages/react/src/hydration.test.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1398,21 +1349,20 @@
     }
   },
   "Tree.web": {
-    "hash": "5354dc8ed8438102",
-    "lastAttemptHash": "5354dc8ed8438102",
-    "generatedAt": "2026-09-23T20:41:00+00:00",
-    "model": "opus",
+    "hash": "8792767b9bac69fd",
+    "lastAttemptHash": "8792767b9bac69fd",
+    "generatedAt": "2026-09-23T23:35:12+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0066,
+    "costUsd": 0.3375,
     "files": [
       "packages/react/src/Tree.css",
       "packages/react/src/Tree.stories.tsx",
       "packages/react/src/Tree.test.tsx",
-      "packages/react/src/Tree.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Tree.tsx"
     ],
-    "gaps": 6,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1427,13 +1377,13 @@
     }
   },
   "TreeGrid.web": {
-    "hash": "e9fbd0fcc2425a36",
-    "lastAttemptHash": "e9fbd0fcc2425a36",
-    "generatedAt": "2026-09-23T20:38:50+00:00",
-    "model": "opus",
+    "hash": "6f4726d9f05272ec",
+    "lastAttemptHash": "6f4726d9f05272ec",
+    "generatedAt": "2026-09-23T23:34:18+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3562,
+    "costUsd": 0.412,
     "files": [
       "packages/react/src/TreeGrid.css",
       "packages/react/src/TreeGrid.stories.tsx",
@@ -1441,7 +1391,7 @@
       "packages/react/src/TreeGrid.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,

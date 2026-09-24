@@ -58,3 +58,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Meter: the invalid-range warning's `<max>`/`<min>` placeholders and the 'distinct min/max pair' key don't say whether they use the raw props or the substituted finite bounds (NaN → 0/100). I used the substituted bounds for both.
 - Meter: the web notes give the `label` and `valueText` wrappers only `flex-shrink`. I also added `min-inline-size: 0` on the label wrapper, since a flex item won't shrink below its content without it, and `white-space: nowrap` on the value wrapper so its text really doesn't wrap.
 - Meter: the spec doesn't say which class names the wrapper spans get. I used `ds-meter__label` and `ds-meter__value-text` (the camelCase part name made kebab-case).
+
+## 2026-09-23 19:05 — round 1
+
+- Meter: the doc says labelColor/valueColor have 'no hook of its own', but the overrides section says every locked binding keeps its hook and the web notes list only track and fill as locked hooks. I followed the binding descriptions and dropped --ds-meter-label-color and --ds-meter-value-color (and the --color-foreground re-scope on the wrappers). Say plainly whether locked, Text-realised bindings get a hook; the Lit build still declares them.
+- Meter: 'warns once per distinct min/max pair for the life of the process' is implemented as a module-level Set checked in a useEffect. Under React StrictMode or SSR the warning fires only on the client after mount; the doc does not say whether server render should warn.
+
+## 2026-09-23 19:06 — round 2
+
+- Meter: the doc says labelColor/valueColor have 'no hook of its own' (and the web notes list only track and fill as locked hooks), but the hooks gate requires every locked binding to declare a --ds-meter-<binding> hook read by the rules. I kept the hooks, realised by re-scoping --color-foreground / --color-foreground-muted on the label and value wrappers so the Texts stay unrestyled. Reconcile the binding descriptions with the gate: either say these bindings carry hooks, or exempt Text-tone-realised locked bindings in check_hooks.

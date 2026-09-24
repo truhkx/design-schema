@@ -64,3 +64,7 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Alert: the spec doesn't say whether jsdom-only tests of the focus-onward step count as behaviour scenarios; they are extra tests in a separate describe block, and the 14 scenarios stay one test each.
 - Alert: the spec doesn't say whether a `contenteditable="false"` element is a focus candidate; it is excluded (matches `[contenteditable]:not([contenteditable="false"])`).
 - Alert: the WithHeading and WithLink stories are extra 'notable states' the spec doesn't list; they were kept from the previous generation. WithLink uses Link's `tone="inherit"`, which the Alert spec never mentions (the contrast list checks color.link, the default tone).
+
+## 2026-09-23 19:03 — round 1
+
+- Alert: the spec says the Icon `overrides.size` takes a token path with default font.size.lg, but the docs do not say what to forward when `overrides.iconSize` is set; the existing code forwards the consumer's iconSize token to the Icon and also writes --ds-alert-icon-size for the box math, and I kept that.

@@ -937,20 +937,20 @@
     }
   },
   "Slider.rn": {
-    "hash": "23324c05174d332f",
-    "lastAttemptHash": "23324c05174d332f",
-    "generatedAt": "2026-09-23T23:18:27+00:00",
+    "hash": "3a1b3e920d2e09c4",
+    "lastAttemptHash": "3a1b3e920d2e09c4",
+    "generatedAt": "2026-09-24T00:12:58+00:00",
     "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.353,
+    "costUsd": 0.311,
     "files": [
       "packages/rn/src/Slider.stories.tsx",
       "packages/rn/src/Slider.test.tsx",
       "packages/rn/src/Slider.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 0,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,

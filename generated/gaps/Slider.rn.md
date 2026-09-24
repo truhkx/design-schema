@@ -89,3 +89,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Slider: the bubble 'sizes to its content on one line' but on React Native an absolutely positioned child is measured against its parent's width (the 44px hit area); the doc doesn't say what box the bubble may use. Choices seen: a track-wide layer centred on the thumb (mine) or a strip five hit areas wide (the other run).
 - Slider: when two range thumbs share a value, the doc resolves a press on the track but not a grab inside the shared hit area, where the thumb on top always wins and, at max, can't move. Choices seen: pick the thumb by the first drag direction (mine) or by which side of the value the press lands (the other run).
 - Slider: 'every committed change validates' under validate: change doesn't say whether intermediate drag values validate or only the end of the interaction; mine validated only when the interaction ends.
+
+## 2026-09-23 20:11 — round 1
+
+- Slider: the spec has no way to say which of the two same-value range thumbs receives focus or a screen-reader action; on native the higher thumb paints on top, so I kept the press-side rule only for gestures.
+- Slider: `label-association` for a range has no `labelledBy` (the thumbs are named by copy labels), so nothing ties the visible label to the range's thumbs on native beyond the copy strings; I left it that way as the doc directs.
+- Slider: bubble and focus behaviour on a device (focus events on a core View) are only defined for react-native-web, so a device is press-only, as the doc says; nothing further to decide.

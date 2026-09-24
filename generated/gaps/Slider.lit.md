@@ -131,3 +131,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Slider: the spec says a Form-reported message shows in the error region, but the Lit form contract does not say how ds-form hands one to a field. I assumed ds-form sets the field's `error` property and left it at that.
 - Slider: the `Keyboard` story only has the two range thumbs, so the usual three-focusable rule does not apply. The Guidance section says so, but the Keyboard section and the generator rules still ask for three stops.
 - Slider: the spec does not say whether a `<ds-slider>` outside a `<ds-form>` should call `checkValidity()` when it is created. I sync validity to ElementInternals on every update and leave it at that.
+
+## 2026-09-23 20:14 — round 1
+
+- Slider: fontFamily is both forwarded to every composed Text's overrides and a root hook (--ds-slider-font-family, applied to .root). The spec says a forwarded binding declares no hook of its own, but also that fontFamily is overridable; I kept both (harmless duplication). Say which is intended.
+- Slider: the Lit value for `required` compares against `defaultValue` normalized (min or [min,max]) but the spec's 'the default' for a controlled `value` slider is ambiguous; I compare the displayed value with the normalized defaultValue in both modes.
